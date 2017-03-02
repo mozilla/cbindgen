@@ -86,7 +86,6 @@ fn main() {
                 if has_no_mangle(&item.attrs) {
                     println!("{} {}({})", map_return_type(&decl.output), item.ident, decl.inputs.iter().map(map_arg).collect::<Vec<_>>().join(", "));
                 }
-                //println!("{:?} {:?} {:?}", decl.output, item.ident, decl.inputs);
             }
             _ => {}
         }
