@@ -26,6 +26,8 @@ use euclid::{TypedPoint2D, SideOffsets2D};
 
 extern crate webrender_traits;
 
+type WrRenderer = Renderer;
+
 static ENABLE_RECORDING: bool = false;
 
 // This macro adds some checks to make sure we notice when the memory representation of
@@ -644,18 +646,18 @@ pub extern "C" fn wr_renderer_set_external_image_handler(renderer: &mut WrRender
 }
 
 #[no_mangle]
-pub extern "C" fn wr_renderer_update(renderer: &mut Renderer) {
+pub extern "C" fn wr_renderer_update(renderer: &mut WrRenderer) {
     renderer.update();
 }
 
 #[no_mangle]
-pub extern "C" fn wr_renderer_render(renderer: &mut Renderer, width: u32, height: u32) {
+pub extern "C" fn wr_renderer_render(renderer: &mut WrRenderer, width: u32, height: u32) {
     renderer.render(DeviceUintSize::new(width, height));
 }
 
 // Call wr_renderer_render() before calling this function.
 #[no_mangle]
-pub unsafe extern "C" fn wr_renderer_readback(renderer: &mut Renderer,
+pub unsafe extern "C" fn wr_renderer_readback(renderer: &mut WrRenderer,
                                               width: u32,
                                               height: u32,
                                               dst_buffer: *mut u8,
@@ -675,12 +677,12 @@ pub unsafe extern "C" fn wr_renderer_readback(renderer: &mut Renderer,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_renderer_set_profiler_enabled(renderer: &mut Renderer, enabled: bool) {
+pub extern "C" fn wr_renderer_set_profiler_enabled(renderer: &mut WrRenderer, enabled: bool) {
     renderer.set_profiler_enabled(enabled);
 }
 
 #[no_mangle]
-pub extern "C" fn wr_renderer_current_epoch(renderer: &mut Renderer,
+pub extern "C" fn wr_renderer_current_epoch(renderer: &mut WrRenderer,
                                             pipeline_id: PipelineId,
                                             out_epoch: &mut Epoch)
                                             -> bool {
@@ -692,12 +694,12 @@ pub extern "C" fn wr_renderer_current_epoch(renderer: &mut Renderer,
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_renderer_delete(renderer: *mut Renderer) {
+pub unsafe extern "C" fn wr_renderer_delete(renderer: *mut WrRenderer) {
     Box::from_raw(renderer);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_renderer_flush_rendered_epochs(renderer: &mut Renderer)
+pub unsafe extern "C" fn wr_renderer_flush_rendered_epochs(renderer: &mut WrRenderer)
                                                            -> *mut Vec<(PipelineId, Epoch)> {
     let map = renderer.flush_rendered_epochs();
     let pipeline_epochs = Box::new(map.into_iter().collect());
@@ -730,7 +732,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
                                 gl_context: *mut c_void,
                                 enable_profiler: bool,
                                 out_api: &mut *mut RenderApi,
-                                out_renderer: &mut *mut Renderer)
+                                out_renderer: &mut *mut WrRenderer)
                                 -> bool {
     assert!(unsafe { is_in_render_thread() });
 
