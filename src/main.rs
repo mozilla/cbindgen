@@ -85,7 +85,7 @@ fn main() {
         match item.node {
             ItemKind::Fn(decl, ..) => {
                 if has_no_mangle(&item.attrs) {
-                    println!("{} {}({})", map_return_type(&decl.output), item.ident, decl.inputs.iter().map(map_arg).collect::<Vec<_>>().join(", "));
+                    println!("WR_INLINE {}\n{}({})\nWR_FUNC;\n", map_return_type(&decl.output), item.ident, decl.inputs.iter().map(map_arg).collect::<Vec<_>>().join(", "));
                 }
             }
             _ => {}
