@@ -1,9 +1,50 @@
 use std::env;
+use std::fmt;
 
 extern crate syn;
 use syn::*;
 
 mod rust_lib;
+
+#[derive(Debug)]
+struct ConvertedType {
+    /// The type converted to C (e.g. `uint32_t`)
+    prefix: String,
+    /// Stuff that might need to go after the identifier (e.g. `[3]` for an array).
+    postfix: String,
+}
+
+impl ConvertedType {
+    fn new<T: Into<String>>(pre: T, post: String) -> Self {
+        ConvertedType {
+            prefix: pre.into(),
+            postfix: post
+        }
+    }
+}
+
+impl Into<String> for ConvertedType {
+    fn into(self) -> String {
+        let mut str = String::from(self.prefix);
+        str.push_str(&self.postfix);
+        str
+    }
+}
+
+impl From<String> for ConvertedType {
+    fn from(str: String) -> ConvertedType {
+        ConvertedType {
+            prefix: str,
+            postfix: String::new()
+        }
+    }
+}
+
+impl fmt::Display for ConvertedType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}{}", &self.prefix, &self.postfix)
+    }
+}
 
 fn has_attribute(target: MetaItem, attrs: &Vec<Attribute>) -> bool {
     return attrs
@@ -45,8 +86,8 @@ fn map_path(p: &Path) -> String {
     if let PathParameters::AngleBracketed(ref d) = p.segments[0].parameters {
         let template_args = d.types
             .iter()
-            .map(map_ty)
-            .collect::<Vec<_>>()
+            .map(|ty| map_ty(ty).into())
+            .collect::<Vec<String>>()
             .join(", ");
         if !template_args.is_empty() {
             c.push('<');
@@ -57,24 +98,24 @@ fn map_path(p: &Path) -> String {
     c
 }
 
-fn map_mut_ty(mut_ty: &MutTy) -> String {
+fn map_mut_ty(mut_ty: &MutTy) -> ConvertedType {
     map_ty(&mut_ty.ty)
 }
 
-fn map_ty(ty: &Ty) -> String {
+fn map_ty(ty: &Ty) -> ConvertedType {
     match ty {
-        &Ty::Path(_, ref p) => map_path(p),
-        &Ty::Ptr(ref p) => format!("{}*", map_ty(&p.ty)),
-        &Ty::Rptr(_, ref mut_ty) => format!("{}*", map_mut_ty(mut_ty)),
-        _ => format!("unknown {:?}", ty),
+        &Ty::Path(_, ref p) => ConvertedType::from(map_path(p)),
+        &Ty::Ptr(ref p) => ConvertedType::from(format!("{}*", map_ty(&p.ty))),
+        &Ty::Rptr(_, ref mut_ty) => ConvertedType::from(format!("{}*", map_mut_ty(mut_ty))),
+        &Ty::Array(ref p, ConstExpr::Lit(Lit::Int(sz, _))) => ConvertedType::new(map_ty(&p), format!("[{}]", sz)),
+        _ => ConvertedType::from(format!("unknown {:?}", ty)),
     }
-
 }
 
 fn map_return_type(ret: &FunctionRetTy) -> String {
     match ret {
         &FunctionRetTy::Default => "void".to_string(),
-        &FunctionRetTy::Ty(ref ty) => map_ty(ty),
+        &FunctionRetTy::Ty(ref ty) => map_ty(ty).into(),
     }
 }
 
@@ -95,9 +136,11 @@ fn map_arg(f: &FnArg) -> String {
 
 fn map_field(f: &Field) -> String {
     let mut ret = String::from("  ");
-    ret.push_str(&map_ty(&f.ty));
+    let converted = map_ty(&f.ty);
+    ret.push_str(&converted.prefix);
     ret.push(' ');
     ret.push_str(&f.ident.as_ref().expect("Struct fields must have idents").to_string());
+    ret.push_str(&converted.postfix);
     ret.push_str(";\n");
     ret
 }
