@@ -34,14 +34,27 @@ fn is_c_abi(abi: &Option<Abi>) -> bool {
 
 fn map_path(p: &Path) -> String {
     let l = p.segments[0].ident.to_string();
-    match l.as_ref() {
+    let mut c = match l.as_ref() {
         "usize" => "size_t".to_string(),
         "u8" => "uint8_t".to_string(),
         "u32" => "uint32_t".to_string(),
         "f32" => "float".to_string(),
         "c_void" => "void".to_string(),
         _ => l,
+    };
+    if let PathParameters::AngleBracketed(ref d) = p.segments[0].parameters {
+        let template_args = d.types
+            .iter()
+            .map(map_ty)
+            .collect::<Vec<_>>()
+            .join(", ");
+        if !template_args.is_empty() {
+            c.push('<');
+            c.push_str(&template_args);
+            c.push('>');
+        }
     }
+    c
 }
 
 fn map_mut_ty(mut_ty: &MutTy) -> String {
