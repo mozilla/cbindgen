@@ -12,7 +12,7 @@ use webrender_traits::{BuiltDisplayListDescriptor, ClipRegion, ColorF, ComplexCl
 use webrender_traits::{DeviceUintPoint, DeviceUintRect, DeviceUintSize, ExtendMode};
 use webrender_traits::{ExternalEvent, ExternalImageId, FilterOp, FontKey, GlyphInstance};
 use webrender_traits::{GradientStop, IdNamespace, ImageBorder, ImageData, ImageDescriptor};
-use webrender_traits::{ImageFormat, ImageKey, ImageMask, ImageRendering, ItemRange, LayerPixel};
+use webrender_traits::{ImageFormat, ImageMask, ImageRendering, ItemRange, LayerPixel};
 use webrender_traits::{LayoutPoint, LayoutRect, LayoutSize, LayoutTransform, MixBlendMode};
 use webrender_traits::{BlobImageData, BlobImageRenderer, BlobImageResult, BlobImageError};
 use webrender_traits::{BlobImageDescriptor, RasterizedBlobImage};
@@ -31,6 +31,7 @@ type WrPipelineId = webrender_traits::PipelineId;
 type WrEpoch = webrender_traits::Epoch;
 type WrRenderedEpochs = Vec<(WrPipelineId, WrEpoch)>;
 type WrApi = webrender_traits::RenderApi;
+type WrImageKey = webrender_traits::ImageKey;
 
 static ENABLE_RECORDING: bool = false;
 
@@ -55,7 +56,7 @@ macro_rules! check_ffi_type {
 }
 
 check_ffi_type!(_pipeline_id_repr struct WrPipelineId as (u32, u32));
-check_ffi_type!(_image_key_repr struct ImageKey as (u32, u32));
+check_ffi_type!(_image_key_repr struct WrImageKey as (u32, u32));
 check_ffi_type!(_font_key_repr struct FontKey as (u32, u32));
 check_ffi_type!(_epoch_repr struct WrEpoch as (u32));
 check_ffi_type!(_image_format_repr enum ImageFormat as u32);
@@ -346,7 +347,7 @@ impl WrRepeatMode
 
 #[repr(C)]
 pub struct WrImageMask {
-    image: ImageKey,
+    image: WrImageKey,
     rect: WrRect,
     repeat: bool,
 }
@@ -420,7 +421,7 @@ impl From<ClipRegion> for WrClipRegion {
             }
         } else {
             let blank = WrImageMask {
-                image: ImageKey(0, 0),
+                image: WrImageKey(0, 0),
                 rect: WrRect {
                     x: 0f32,
                     y: 0f32,
@@ -795,7 +796,7 @@ pub unsafe extern "C" fn wr_api_delete(api: *mut WrAPI) {
 
 #[no_mangle]
 pub extern "C" fn wr_api_add_image(api: &mut WrAPI,
-                                   image_key: ImageKey,
+                                   image_key: WrImageKey,
                                    descriptor: &WrImageDescriptor,
                                    bytes: ByteSlice) {
     assert!(unsafe { is_in_compositor_thread() });
@@ -808,7 +809,7 @@ pub extern "C" fn wr_api_add_image(api: &mut WrAPI,
 
 #[no_mangle]
 pub extern "C" fn wr_api_add_blob_image(api: &mut WrAPI,
-                                        image_key: ImageKey,
+                                        image_key: WrImageKey,
                                         descriptor: &WrImageDescriptor,
                                         bytes: ByteSlice) {
     assert!(unsafe { is_in_compositor_thread() });
@@ -821,7 +822,7 @@ pub extern "C" fn wr_api_add_blob_image(api: &mut WrAPI,
 
 #[no_mangle]
 pub extern "C" fn wr_api_add_external_image_handle(api: &mut WrAPI,
-                                                   image_key: ImageKey,
+                                                   image_key: WrImageKey,
                                                    width: u32,
                                                    height: u32,
                                                    format: ImageFormat,
@@ -842,7 +843,7 @@ pub extern "C" fn wr_api_add_external_image_handle(api: &mut WrAPI,
 
 #[no_mangle]
 pub extern "C" fn wr_api_add_external_image_buffer(api: &mut WrAPI,
-                                                   image_key: ImageKey,
+                                                   image_key: WrImageKey,
                                                    descriptor: &WrImageDescriptor,
                                                    external_image_id: u64) {
     assert!(unsafe { is_in_compositor_thread() });
@@ -854,7 +855,7 @@ pub extern "C" fn wr_api_add_external_image_buffer(api: &mut WrAPI,
 
 #[no_mangle]
 pub extern "C" fn wr_api_update_image(api: &mut WrAPI,
-                                      key: ImageKey,
+                                      key: WrImageKey,
                                       descriptor: &WrImageDescriptor,
                                       bytes: ByteSlice) {
     assert!(unsafe { is_in_compositor_thread() });
@@ -864,7 +865,7 @@ pub extern "C" fn wr_api_update_image(api: &mut WrAPI,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_delete_image(api: &mut WrAPI, key: ImageKey) {
+pub extern "C" fn wr_api_delete_image(api: &mut WrAPI, key: WrImageKey) {
     assert!(unsafe { is_in_compositor_thread() });
     api.delete_image(key)
 }
@@ -1171,7 +1172,7 @@ pub extern "C" fn wr_dp_push_image(state: &mut WrState,
                                    bounds: WrRect,
                                    clip: WrClipRegion,
                                    image_rendering: ImageRendering,
-                                   key: ImageKey) {
+                                   key: WrImageKey) {
     assert!(unsafe { is_in_main_thread() });
 
     let bounds = bounds.to_rect();
@@ -1243,7 +1244,7 @@ pub extern "C" fn wr_dp_push_border_image(state: &mut WrState,
                                           rect: WrRect,
                                           clip: WrClipRegion,
                                           widths: WrBorderWidths,
-                                          image: ImageKey,
+                                          image: WrImageKey,
                                           patch: WrNinePatchDescriptor,
                                           outset: WrSideOffsets2D<f32>,
                                           repeat_horizontal: WrRepeatMode,
@@ -1369,19 +1370,19 @@ pub unsafe extern "C" fn wr_dp_push_built_display_list(state: &mut WrState,
 }
 
 struct Moz2dImageRenderer {
-    images: HashMap<ImageKey, BlobImageResult>
+    images: HashMap<WrImageKey, BlobImageResult>
 }
 
 impl BlobImageRenderer for Moz2dImageRenderer {
     fn request_blob_image(&mut self,
-                          key: ImageKey,
+                          key: WrImageKey,
                           data: Arc<BlobImageData>,
                           descriptor: &BlobImageDescriptor) {
         let result = self.render_blob_image(data, descriptor);
         self.images.insert(key, result);
     }
 
-    fn resolve_blob_image(&mut self, key: ImageKey) -> BlobImageResult {
+    fn resolve_blob_image(&mut self, key: WrImageKey) -> BlobImageResult {
         return match self.images.remove(&key) {
             Some(result) => result,
             None => Err(BlobImageError::InvalidKey),
