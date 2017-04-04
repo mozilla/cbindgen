@@ -4,6 +4,8 @@ use std::io::Read;
 extern crate syn;
 use syn::*;
 
+mod rust_lib;
+
 fn has_attribute(target: MetaItem, attrs: &Vec<Attribute>) -> bool {
     return attrs
                .iter()
