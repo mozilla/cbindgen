@@ -14,6 +14,14 @@ fn has_no_mangle(attrs: &Vec<Attribute>) -> bool {
     has_attribute(MetaItem::Word(Ident::new("no_mangle")), attrs)
 }
 
+fn wr_func_body(attrs: &Vec<Attribute>) -> String {
+    if has_attribute(MetaItem::Word(Ident::new("destructor_safe")), attrs) {
+        String::from("WR_DESTRUCTOR_SAFE_FUNC")
+    } else {
+        String::from("WR_FUNC")
+    }
+}
+
 fn is_c_abi(abi: &Option<Abi>) -> bool {
     abi == &Some(Abi::Named(String::from("C")))
 }
@@ -75,14 +83,15 @@ fn main() {
         match item.node {
             ItemKind::Fn(decl, _unsafe, _const, abi, _generic, _block) => {
                 if has_no_mangle(&item.attrs) && is_c_abi(&abi) {
-                    println!("WR_INLINE {}\n{}({})\nWR_FUNC;\n",
+                    println!("WR_INLINE {}\n{}({})\n{};\n",
                              map_return_type(&decl.output),
                              item.ident,
                              decl.inputs
                                  .iter()
                                  .map(map_arg)
                                  .collect::<Vec<_>>()
-                                 .join(", "));
+                                 .join(", "),
+                             wr_func_body(&item.attrs));
                 }
             }
             _ => {}

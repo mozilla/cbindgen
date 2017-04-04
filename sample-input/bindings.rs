@@ -696,7 +696,7 @@ pub extern "C" fn wr_renderer_current_epoch(renderer: &mut WrRenderer,
     return false;
 }
 
-#[no_mangle]
+#[no_mangle] #[destructor_safe]
 pub unsafe extern "C" fn wr_renderer_delete(renderer: *mut WrRenderer) {
     Box::from_raw(renderer);
 }
@@ -722,7 +722,7 @@ pub unsafe extern "C" fn wr_rendered_epochs_next(pipeline_epochs: &mut WrRendere
     return false;
 }
 
-#[no_mangle]
+#[no_mangle] #[destructor_safe]
 pub unsafe extern "C" fn wr_rendered_epochs_delete(pipeline_epochs: *mut WrRenderedEpochs) {
     Box::from_raw(pipeline_epochs);
 }
@@ -786,7 +786,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
     return true;
 }
 
-#[no_mangle]
+#[no_mangle] #[destructor_safe]
 pub unsafe extern "C" fn wr_api_delete(api: *mut RenderApi) {
     let api = Box::from_raw(api);
     api.shut_down();
@@ -937,7 +937,7 @@ pub extern "C" fn wr_api_generate_frame(api: &mut RenderApi) {
     api.generate_frame(None);
 }
 
-#[no_mangle]
+#[no_mangle] #[destructor_safe]
 pub extern "C" fn wr_api_send_external_event(api: &mut RenderApi, evt: usize) {
     assert!(unsafe { !is_in_render_thread() });
 
