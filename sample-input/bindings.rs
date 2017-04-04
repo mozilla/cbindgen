@@ -16,7 +16,7 @@ use webrender_traits::{ImageFormat, ImageKey, ImageMask, ImageRendering, ItemRan
 use webrender_traits::{LayoutPoint, LayoutRect, LayoutSize, LayoutTransform, MixBlendMode};
 use webrender_traits::{BlobImageData, BlobImageRenderer, BlobImageResult, BlobImageError};
 use webrender_traits::{BlobImageDescriptor, RasterizedBlobImage};
-use webrender_traits::{NinePatchDescriptor, NormalBorder, PropertyBinding, RenderApi};
+use webrender_traits::{NinePatchDescriptor, NormalBorder, PropertyBinding};
 use webrender_traits::RepeatMode;
 use webrender::renderer::{RendererOptions};
 use webrender::renderer::{ExternalImage, ExternalImageHandler, ExternalImageSource};
@@ -30,6 +30,7 @@ type WrRenderer = webrender::renderer::Renderer;
 type WrPipelineId = webrender_traits::PipelineId;
 type WrEpoch = webrender_traits::Epoch;
 type WrRenderedEpochs = Vec<(WrPipelineId, WrEpoch)>;
+type WrApi = webrender_traits::RenderApi;
 
 static ENABLE_RECORDING: bool = false;
 
@@ -734,7 +735,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
                                 window_height: u32,
                                 gl_context: *mut c_void,
                                 enable_profiler: bool,
-                                out_api: &mut *mut RenderApi,
+                                out_api: &mut *mut WrAPI,
                                 out_renderer: &mut *mut WrRenderer)
                                 -> bool {
     assert!(unsafe { is_in_render_thread() });
@@ -787,13 +788,13 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
 }
 
 #[no_mangle] #[destructor_safe]
-pub unsafe extern "C" fn wr_api_delete(api: *mut RenderApi) {
+pub unsafe extern "C" fn wr_api_delete(api: *mut WrAPI) {
     let api = Box::from_raw(api);
     api.shut_down();
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_add_image(api: &mut RenderApi,
+pub extern "C" fn wr_api_add_image(api: &mut WrAPI,
                                    image_key: ImageKey,
                                    descriptor: &WrImageDescriptor,
                                    bytes: ByteSlice) {
@@ -806,7 +807,7 @@ pub extern "C" fn wr_api_add_image(api: &mut RenderApi,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_add_blob_image(api: &mut RenderApi,
+pub extern "C" fn wr_api_add_blob_image(api: &mut WrAPI,
                                         image_key: ImageKey,
                                         descriptor: &WrImageDescriptor,
                                         bytes: ByteSlice) {
@@ -819,7 +820,7 @@ pub extern "C" fn wr_api_add_blob_image(api: &mut RenderApi,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_add_external_image_handle(api: &mut RenderApi,
+pub extern "C" fn wr_api_add_external_image_handle(api: &mut WrAPI,
                                                    image_key: ImageKey,
                                                    width: u32,
                                                    height: u32,
@@ -840,7 +841,7 @@ pub extern "C" fn wr_api_add_external_image_handle(api: &mut RenderApi,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_add_external_image_buffer(api: &mut RenderApi,
+pub extern "C" fn wr_api_add_external_image_buffer(api: &mut WrAPI,
                                                    image_key: ImageKey,
                                                    descriptor: &WrImageDescriptor,
                                                    external_image_id: u64) {
@@ -852,7 +853,7 @@ pub extern "C" fn wr_api_add_external_image_buffer(api: &mut RenderApi,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_update_image(api: &mut RenderApi,
+pub extern "C" fn wr_api_update_image(api: &mut WrAPI,
                                       key: ImageKey,
                                       descriptor: &WrImageDescriptor,
                                       bytes: ByteSlice) {
@@ -863,25 +864,25 @@ pub extern "C" fn wr_api_update_image(api: &mut RenderApi,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_delete_image(api: &mut RenderApi, key: ImageKey) {
+pub extern "C" fn wr_api_delete_image(api: &mut WrAPI, key: ImageKey) {
     assert!(unsafe { is_in_compositor_thread() });
     api.delete_image(key)
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_set_root_pipeline(api: &mut RenderApi, pipeline_id: WrPipelineId) {
+pub extern "C" fn wr_api_set_root_pipeline(api: &mut WrAPI, pipeline_id: WrPipelineId) {
     api.set_root_pipeline(pipeline_id);
     api.generate_frame(None);
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_set_window_parameters(api: &mut RenderApi, width: i32, height: i32) {
+pub extern "C" fn wr_api_set_window_parameters(api: &mut WrAPI, width: i32, height: i32) {
     let size = DeviceUintSize::new(width as u32, height as u32);
     api.set_window_parameters(size, DeviceUintRect::new(DeviceUintPoint::new(0, 0), size));
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_api_set_root_display_list(api: &mut RenderApi,
+pub unsafe extern "C" fn wr_api_set_root_display_list(api: &mut WrAPI,
                                                       epoch: WrEpoch,
                                                       viewport_width: f32,
                                                       viewport_height: f32,
@@ -918,7 +919,7 @@ pub unsafe extern "C" fn wr_api_set_root_display_list(api: &mut RenderApi,
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_api_clear_root_display_list(api: &mut RenderApi,
+pub unsafe extern "C" fn wr_api_clear_root_display_list(api: &mut WrAPI,
                                                         epoch: WrEpoch,
                                                         pipeline_id: WrPipelineId) {
     let root_background_color = ColorF::new(0.3, 0.0, 0.0, 1.0);
@@ -933,19 +934,19 @@ pub unsafe extern "C" fn wr_api_clear_root_display_list(api: &mut RenderApi,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_generate_frame(api: &mut RenderApi) {
+pub extern "C" fn wr_api_generate_frame(api: &mut WrAPI) {
     api.generate_frame(None);
 }
 
 #[no_mangle] #[destructor_safe]
-pub extern "C" fn wr_api_send_external_event(api: &mut RenderApi, evt: usize) {
+pub extern "C" fn wr_api_send_external_event(api: &mut WrAPI, evt: usize) {
     assert!(unsafe { !is_in_render_thread() });
 
     api.send_external_event(ExternalEvent::from_raw(evt));
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_add_raw_font(api: &mut RenderApi,
+pub extern "C" fn wr_api_add_raw_font(api: &mut WrAPI,
                                       key: FontKey,
                                       font_buffer: *mut u8,
                                       buffer_size: usize) {
@@ -959,7 +960,7 @@ pub extern "C" fn wr_api_add_raw_font(api: &mut RenderApi,
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_api_get_namespace(api: &mut RenderApi) -> IdNamespace {
+pub unsafe extern "C" fn wr_api_get_namespace(api: &mut WrAPI) -> IdNamespace {
     api.id_namespace
 }
 
