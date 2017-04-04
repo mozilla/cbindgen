@@ -1,5 +1,7 @@
 use std::fs::File;
+use std::io;
 use std::io::Read;
+use std::io::Write;
 use std::path::PathBuf;
 
 use syn;
@@ -71,7 +73,7 @@ fn parse_mod<F>(crate_dir: PathBuf,
                               next_mod_path2,
                               items_callback);
                 } else {
-                    println!("warning, can't find a mod's file");
+                    writeln!(io::stderr(), "warning, can't find a mod's file").unwrap();
                 }
             }
             syn::ItemKind::ExternCrate(_) => {
@@ -81,7 +83,7 @@ fn parse_mod<F>(crate_dir: PathBuf,
                 let next_crate_path = crate_parent.join(next_crate_name.clone());
 
                 if !next_crate_path.exists() {
-                    println!("warning, can't find an extern crate {}", next_crate_name.clone());
+                    writeln!(io::stderr(), "warning, can't find an extern crate {}", next_crate_name.clone()).unwrap();
                     continue;
                 }
 
