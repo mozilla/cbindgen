@@ -89,6 +89,12 @@ fn map_field(f: &Field) -> String {
     ret
 }
 
+fn map_generic_param(t: &TyParam) -> String {
+    let mut ret = String::from("typename ");
+    ret.push_str(&t.ident.to_string());
+    ret
+}
+
 fn main() {
     let p = env::args().nth(1).unwrap();
 
@@ -114,8 +120,16 @@ fn main() {
                     }
                 }
                 ItemKind::Struct(ref variant,
-                                 ref _generics) => {
+                                 ref generics) => {
                     if is_repr_c(&item.attrs) {
+                        if !generics.ty_params.is_empty() {
+                            println!("template<{}>",
+                                     generics.ty_params
+                                         .iter()
+                                         .map(map_generic_param)
+                                         .collect::<Vec<_>>()
+                                         .join(", "));
+                        }
                         if let &VariantData::Struct(ref fields) = variant {
                             println!("struct {} {{\n{}}};\n",
                                      item.ident,
