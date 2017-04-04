@@ -1,6 +1,5 @@
 use std::env;
-use std::fs::File;
-use std::io::Read;
+
 extern crate syn;
 use syn::*;
 
@@ -92,39 +91,43 @@ fn map_field(f: &Field) -> String {
 
 fn main() {
     let p = env::args().nth(1).unwrap();
-    let mut s = String::new();
-    let mut f = File::open(p).unwrap();
-    f.read_to_string(&mut s).unwrap();
-    let krate = syn::parse_crate(&s).unwrap();
-    for item in krate.items {
-        match item.node {
-            ItemKind::Fn(decl, _unsafe, _const, abi, _generic, _block) => {
-                if has_no_mangle(&item.attrs) && is_c_abi(&abi) {
-                    println!("WR_INLINE {}\n{}({})\n{};\n",
-                             map_return_type(&decl.output),
-                             item.ident,
-                             decl.inputs
-                                 .iter()
-                                 .map(map_arg)
-                                 .collect::<Vec<_>>()
-                                 .join(", "),
-                             wr_func_body(&item.attrs));
-                }
-            }
-            ItemKind::Struct(variant, _generics) => {
-                if is_repr_c(&item.attrs) {
-                    if let VariantData::Struct(fields) = variant {
-                        println!("struct {} {{\n{}}};\n",
+
+    rust_lib::parse(p, &|_, items| {
+        for item in items {
+            match item.node {
+                ItemKind::Fn(ref decl,
+                             ref _unsafe,
+                             ref _const,
+                             ref abi,
+                             ref _generic,
+                             ref _block) => {
+                    if has_no_mangle(&item.attrs) && is_c_abi(&abi) {
+                        println!("WR_INLINE {}\n{}({})\n{};\n",
+                                 map_return_type(&decl.output),
                                  item.ident,
-                                 fields
+                                 decl.inputs
                                      .iter()
-                                     .map(map_field)
-                                     .collect::<String>());
+                                     .map(map_arg)
+                                     .collect::<Vec<_>>()
+                                     .join(", "),
+                                 wr_func_body(&item.attrs));
                     }
                 }
+                ItemKind::Struct(ref variant,
+                                 ref _generics) => {
+                    if is_repr_c(&item.attrs) {
+                        if let &VariantData::Struct(ref fields) = variant {
+                            println!("struct {} {{\n{}}};\n",
+                                     item.ident,
+                                     fields
+                                         .iter()
+                                         .map(map_field)
+                                         .collect::<String>());
+                        }
+                    }
+                }
+                _ => {}
             }
-            _ => {}
         }
-    }
-
+    });
 }
