@@ -9,16 +9,16 @@ use gleam::gl;
 use webrender_traits::{AuxiliaryLists, AuxiliaryListsDescriptor, BorderDetails, BorderRadius};
 use webrender_traits::{BorderSide, BorderStyle, BorderWidths, BoxShadowClipMode, BuiltDisplayList};
 use webrender_traits::{BuiltDisplayListDescriptor, ClipRegion, ColorF, ComplexClipRegion};
-use webrender_traits::{DeviceUintPoint, DeviceUintRect, DeviceUintSize, Epoch, ExtendMode};
+use webrender_traits::{DeviceUintPoint, DeviceUintRect, DeviceUintSize, ExtendMode};
 use webrender_traits::{ExternalEvent, ExternalImageId, FilterOp, FontKey, GlyphInstance};
 use webrender_traits::{GradientStop, IdNamespace, ImageBorder, ImageData, ImageDescriptor};
 use webrender_traits::{ImageFormat, ImageKey, ImageMask, ImageRendering, ItemRange, LayerPixel};
 use webrender_traits::{LayoutPoint, LayoutRect, LayoutSize, LayoutTransform, MixBlendMode};
 use webrender_traits::{BlobImageData, BlobImageRenderer, BlobImageResult, BlobImageError};
 use webrender_traits::{BlobImageDescriptor, RasterizedBlobImage};
-use webrender_traits::{NinePatchDescriptor, NormalBorder, PipelineId, PropertyBinding, RenderApi};
+use webrender_traits::{NinePatchDescriptor, NormalBorder, PropertyBinding, RenderApi};
 use webrender_traits::RepeatMode;
-use webrender::renderer::{Renderer, RendererOptions};
+use webrender::renderer::{RendererOptions};
 use webrender::renderer::{ExternalImage, ExternalImageHandler, ExternalImageSource};
 use webrender::{ApiRecordingReceiver, BinaryRecorder};
 use app_units::Au;
@@ -26,7 +26,10 @@ use euclid::{TypedPoint2D, SideOffsets2D};
 
 extern crate webrender_traits;
 
-type WrRenderer = Renderer;
+type WrRenderer = webrender::renderer::Renderer;
+type WrPipelineId = webrender_traits::PipelineId;
+type WrEpoch = webrender_traits::Epoch;
+type WrRenderedEpochs = Vec<(WrPipelineId, WrEpoch)>;
 
 static ENABLE_RECORDING: bool = false;
 
@@ -50,10 +53,10 @@ macro_rules! check_ffi_type {
     );
 }
 
-check_ffi_type!(_pipeline_id_repr struct PipelineId as (u32, u32));
+check_ffi_type!(_pipeline_id_repr struct WrPipelineId as (u32, u32));
 check_ffi_type!(_image_key_repr struct ImageKey as (u32, u32));
 check_ffi_type!(_font_key_repr struct FontKey as (u32, u32));
-check_ffi_type!(_epoch_repr struct Epoch as (u32));
+check_ffi_type!(_epoch_repr struct WrEpoch as (u32));
 check_ffi_type!(_image_format_repr enum ImageFormat as u32);
 check_ffi_type!(_border_style_repr enum BorderStyle as u32);
 check_ffi_type!(_image_rendering_repr enum ImageRendering as u32);
@@ -683,8 +686,8 @@ pub extern "C" fn wr_renderer_set_profiler_enabled(renderer: &mut WrRenderer, en
 
 #[no_mangle]
 pub extern "C" fn wr_renderer_current_epoch(renderer: &mut WrRenderer,
-                                            pipeline_id: PipelineId,
-                                            out_epoch: &mut Epoch)
+                                            pipeline_id: WrPipelineId,
+                                            out_epoch: &mut WrEpoch)
                                             -> bool {
     if let Some(epoch) = renderer.current_epoch(pipeline_id) {
         *out_epoch = epoch;
@@ -700,16 +703,16 @@ pub unsafe extern "C" fn wr_renderer_delete(renderer: *mut WrRenderer) {
 
 #[no_mangle]
 pub unsafe extern "C" fn wr_renderer_flush_rendered_epochs(renderer: &mut WrRenderer)
-                                                           -> *mut Vec<(PipelineId, Epoch)> {
+                                                           -> *mut WrRenderedEpochs {
     let map = renderer.flush_rendered_epochs();
     let pipeline_epochs = Box::new(map.into_iter().collect());
     return Box::into_raw(pipeline_epochs);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_rendered_epochs_next(pipeline_epochs: &mut Vec<(PipelineId, Epoch)>,
-                                                 out_pipeline: &mut PipelineId,
-                                                 out_epoch: &mut Epoch)
+pub unsafe extern "C" fn wr_rendered_epochs_next(pipeline_epochs: &mut WrRenderedEpochs,
+                                                 out_pipeline: &mut WrPipelineId,
+                                                 out_epoch: &mut WrEpoch)
                                                  -> bool {
     if let Some((pipeline, epoch)) = pipeline_epochs.pop() {
         *out_pipeline = pipeline;
@@ -720,7 +723,7 @@ pub unsafe extern "C" fn wr_rendered_epochs_next(pipeline_epochs: &mut Vec<(Pipe
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wr_rendered_epochs_delete(pipeline_epochs: *mut Vec<(PipelineId, Epoch)>) {
+pub unsafe extern "C" fn wr_rendered_epochs_delete(pipeline_epochs: *mut WrRenderedEpochs) {
     Box::from_raw(pipeline_epochs);
 }
 
@@ -765,10 +768,10 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
     };
 
     let window_size = DeviceUintSize::new(window_width, window_height);
-    let (renderer, sender) = match Renderer::new(gl, opts, window_size) {
+    let (renderer, sender) = match WrRenderer::new(gl, opts, window_size) {
         Ok((renderer, sender)) => (renderer, sender),
         Err(e) => {
-            println!(" Failed to create a Renderer: {:?}", e);
+            println!(" Failed to create a WrRenderer: {:?}", e);
             let msg = CString::new(format!("wr_window_new: {:?}", e)).unwrap();
             unsafe { gfx_critical_note(msg.as_ptr()); }
             return false;
@@ -866,7 +869,7 @@ pub extern "C" fn wr_api_delete_image(api: &mut RenderApi, key: ImageKey) {
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_set_root_pipeline(api: &mut RenderApi, pipeline_id: PipelineId) {
+pub extern "C" fn wr_api_set_root_pipeline(api: &mut RenderApi, pipeline_id: WrPipelineId) {
     api.set_root_pipeline(pipeline_id);
     api.generate_frame(None);
 }
@@ -879,10 +882,10 @@ pub extern "C" fn wr_api_set_window_parameters(api: &mut RenderApi, width: i32, 
 
 #[no_mangle]
 pub unsafe extern "C" fn wr_api_set_root_display_list(api: &mut RenderApi,
-                                                      epoch: Epoch,
+                                                      epoch: WrEpoch,
                                                       viewport_width: f32,
                                                       viewport_height: f32,
-                                                      pipeline_id: PipelineId,
+                                                      pipeline_id: WrPipelineId,
                                                       dl_descriptor: BuiltDisplayListDescriptor,
                                                       dl_data: *mut u8,
                                                       dl_size: usize,
@@ -916,8 +919,8 @@ pub unsafe extern "C" fn wr_api_set_root_display_list(api: &mut RenderApi,
 
 #[no_mangle]
 pub unsafe extern "C" fn wr_api_clear_root_display_list(api: &mut RenderApi,
-                                                        epoch: Epoch,
-                                                        pipeline_id: PipelineId) {
+                                                        epoch: WrEpoch,
+                                                        pipeline_id: WrPipelineId) {
     let root_background_color = ColorF::new(0.3, 0.0, 0.0, 1.0);
     let preserve_frame_state = true;
     let frame_builder = WebRenderFrameBuilder::new(pipeline_id);
@@ -972,12 +975,12 @@ pub unsafe extern "C" fn wr_api_get_namespace(api: &mut RenderApi) -> IdNamespac
 // See RenderThread.h for some notes about how the pieces fit together.
 
 pub struct WebRenderFrameBuilder {
-    pub root_pipeline_id: PipelineId,
+    pub root_pipeline_id: WrPipelineId,
     pub dl_builder: webrender_traits::DisplayListBuilder,
 }
 
 impl WebRenderFrameBuilder {
-    pub fn new(root_pipeline_id: PipelineId) -> WebRenderFrameBuilder {
+    pub fn new(root_pipeline_id: WrPipelineId) -> WebRenderFrameBuilder {
         WebRenderFrameBuilder {
             root_pipeline_id: root_pipeline_id,
             dl_builder: webrender_traits::DisplayListBuilder::new(root_pipeline_id),
@@ -986,13 +989,13 @@ impl WebRenderFrameBuilder {
 }
 
 pub struct WrState {
-    pipeline_id: PipelineId,
+    pipeline_id: WrPipelineId,
     z_index: i32,
     frame_builder: WebRenderFrameBuilder,
 }
 
 #[no_mangle]
-pub extern "C" fn wr_state_new(pipeline_id: PipelineId) -> *mut WrState {
+pub extern "C" fn wr_state_new(pipeline_id: WrPipelineId) -> *mut WrState {
     assert!(unsafe { is_in_main_thread() });
 
     let state = Box::new(WrState {
@@ -1144,7 +1147,7 @@ pub extern "C" fn wr_dp_pop_scroll_layer(state: &mut WrState) {
 pub extern "C" fn wr_dp_push_iframe(state: &mut WrState,
                                     rect: WrRect,
                                     clip: WrClipRegion,
-                                    pipeline_id: PipelineId) {
+                                    pipeline_id: WrPipelineId) {
     assert!(unsafe { is_in_main_thread() });
 
     state.frame_builder.dl_builder.push_iframe(rect.to_rect(), clip.to_clip_region(), pipeline_id);
