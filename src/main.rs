@@ -14,6 +14,10 @@ fn has_no_mangle(attrs: &Vec<Attribute>) -> bool {
     has_attribute(MetaItem::Word(Ident::new("no_mangle")), attrs)
 }
 
+fn is_c_abi(abi: &Option<Abi>) -> bool {
+    abi == &Some(Abi::Named(String::from("C")))
+}
+
 fn map_path(p: &Path) -> String {
     let l = p.segments[0].ident.to_string();
     match l.as_ref() {
@@ -69,8 +73,8 @@ fn main() {
     let krate = syn::parse_crate(&s).unwrap();
     for item in krate.items {
         match item.node {
-            ItemKind::Fn(decl, ..) => {
-                if has_no_mangle(&item.attrs) {
+            ItemKind::Fn(decl, _unsafe, _const, abi, _generic, _block) => {
+                if has_no_mangle(&item.attrs) && is_c_abi(&abi) {
                     println!("WR_INLINE {}\n{}({})\nWR_FUNC;\n",
                              map_return_type(&decl.output),
                              item.ident,
