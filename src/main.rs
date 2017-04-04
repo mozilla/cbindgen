@@ -4,15 +4,15 @@ use std::io::Read;
 extern crate syn;
 use syn::*;
 
+fn has_attribute(target: MetaItem, attrs: &Vec<Attribute>) -> bool {
+    return attrs.iter().any(|ref attr| {
+        attr.style == AttrStyle::Outer &&
+        attr.value == target
+    });
+}
+
 fn has_no_mangle(attrs: &Vec<Attribute>) -> bool {
-    for attr in attrs {
-        if let syn::MetaItem::Word(ref ident) = attr.value {
-            if ident == "no_mangle" {
-                return true;
-            }
-        }
-    }
-    false
+    has_attribute(MetaItem::Word(Ident::new("no_mangle")), attrs)
 }
 
 fn map_path(p: &Path) -> String {
