@@ -22,6 +22,11 @@ fn wr_func_body(attrs: &Vec<Attribute>) -> String {
     }
 }
 
+fn is_repr_c(attrs: &Vec<Attribute>) -> bool {
+    let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("C")))];
+    has_attribute(MetaItem::List(Ident::new("repr"), repr_args), attrs)
+}
+
 fn is_c_abi(abi: &Option<Abi>) -> bool {
     abi == &Some(Abi::Named(String::from("C")))
 }
@@ -74,6 +79,15 @@ fn map_arg(f: &FnArg) -> String {
     }
 }
 
+fn map_field(f: &Field) -> String {
+    let mut ret = String::from("  ");
+    ret.push_str(&map_ty(&f.ty));
+    ret.push(' ');
+    ret.push_str(&f.ident.as_ref().expect("Struct fields must have idents").to_string());
+    ret.push_str(";\n");
+    ret
+}
+
 fn main() {
     let p = env::args().nth(1).unwrap();
     let mut s = String::new();
@@ -93,6 +107,18 @@ fn main() {
                                  .collect::<Vec<_>>()
                                  .join(", "),
                              wr_func_body(&item.attrs));
+                }
+            }
+            ItemKind::Struct(variant, _generics) => {
+                if is_repr_c(&item.attrs) {
+                    if let VariantData::Struct(fields) = variant {
+                        println!("struct {} {{\n{}}};\n",
+                                 item.ident,
+                                 fields
+                                     .iter()
+                                     .map(map_field)
+                                     .collect::<String>());
+                    }
                 }
             }
             _ => {}
