@@ -21,6 +21,7 @@ fn map_path(p: &Path) -> String {
         "usize" => "size_t".to_string(),
         "u8" => "uint8_t".to_string(),
         "u32" => "uint32_t".to_string(),
+        "f32" => "float".to_string(),
         _ => l
     }
 }
