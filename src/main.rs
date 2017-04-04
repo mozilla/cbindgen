@@ -5,10 +5,9 @@ extern crate syn;
 use syn::*;
 
 fn has_attribute(target: MetaItem, attrs: &Vec<Attribute>) -> bool {
-    return attrs.iter().any(|ref attr| {
-        attr.style == AttrStyle::Outer &&
-        attr.value == target
-    });
+    return attrs
+               .iter()
+               .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
 }
 
 fn has_no_mangle(attrs: &Vec<Attribute>) -> bool {
@@ -22,7 +21,7 @@ fn map_path(p: &Path) -> String {
         "u8" => "uint8_t".to_string(),
         "u32" => "uint32_t".to_string(),
         "f32" => "float".to_string(),
-        _ => l
+        _ => l,
     }
 }
 
@@ -32,46 +31,33 @@ fn map_mut_ty(mut_ty: &MutTy) -> String {
 
 fn map_ty(ty: &Ty) -> String {
     match ty {
-        &Ty::Path(_, ref p) => {
-            map_path(p)
-        },
-        &Ty::Ptr(ref p) => {
-            format!("{}*", map_ty(&p.ty))
-        },
-        &Ty::Rptr(_, ref mut_ty) => {
-            format!("{}*", map_mut_ty(mut_ty))
-        }
-        _ => format!("unknown {:?}", ty)
+        &Ty::Path(_, ref p) => map_path(p),
+        &Ty::Ptr(ref p) => format!("{}*", map_ty(&p.ty)),
+        &Ty::Rptr(_, ref mut_ty) => format!("{}*", map_mut_ty(mut_ty)),
+        _ => format!("unknown {:?}", ty),
     }
 
 }
 
-fn map_return_type(ret: &FunctionRetTy) -> String
-{
+fn map_return_type(ret: &FunctionRetTy) -> String {
     match ret {
         &FunctionRetTy::Default => "void".to_string(),
-        &FunctionRetTy::Ty(ref ty) => {
-            map_ty(ty)
-        }
+        &FunctionRetTy::Ty(ref ty) => map_ty(ty),
     }
 }
 
 fn map_pat(pat: &Pat) -> String {
     match pat {
-        &Pat::Ident(_, ref ident, _) => {
-            ident.to_string()
-        },
-        _ => { format!("unknown {:?}", pat) }
+        &Pat::Ident(_, ref ident, _) => ident.to_string(),
+        _ => format!("unknown {:?}", pat),
     }
 
 }
 
 fn map_arg(f: &FnArg) -> String {
     match f {
-        &FnArg::Captured(ref pat, ref ty) => {
-            format!("{} {}", map_ty(ty), map_pat(pat))
-        }
-        _ => { "unknown".to_string() }
+        &FnArg::Captured(ref pat, ref ty) => format!("{} {}", map_ty(ty), map_pat(pat)),
+        _ => "unknown".to_string(),
     }
 }
 
@@ -85,7 +71,14 @@ fn main() {
         match item.node {
             ItemKind::Fn(decl, ..) => {
                 if has_no_mangle(&item.attrs) {
-                    println!("WR_INLINE {}\n{}({})\nWR_FUNC;\n", map_return_type(&decl.output), item.ident, decl.inputs.iter().map(map_arg).collect::<Vec<_>>().join(", "));
+                    println!("WR_INLINE {}\n{}({})\nWR_FUNC;\n",
+                             map_return_type(&decl.output),
+                             item.ident,
+                             decl.inputs
+                                 .iter()
+                                 .map(map_arg)
+                                 .collect::<Vec<_>>()
+                                 .join(", "));
                 }
             }
             _ => {}
