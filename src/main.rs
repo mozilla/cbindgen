@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::env;
 use std::fmt;
 use std::io;
@@ -16,6 +17,9 @@ struct ConvertedType {
     prefix: String,
     /// Stuff that might need to go after the identifier (e.g. `[3]` for an array).
     postfix: String,
+    /// The types this type depends upon. For example a `prefix` of
+    /// Foo<Bar> would have both `Foo` and `Bar` in the `deps`.
+    deps: BTreeSet<String>,
 }
 
 impl ConvertedType {
@@ -31,6 +35,12 @@ impl ConvertedType {
         clone
     }
 
+    fn add_dep(&self, dep: String) -> ConvertedType {
+        let mut clone = self.clone();
+        clone.deps.insert(dep);
+        clone
+    }
+
     fn format_with_ident(&self, ident: &Ident) -> String {
         format!("{} {}{}", &self.prefix, &ident.to_string(), &self.postfix)
     }
@@ -38,9 +48,12 @@ impl ConvertedType {
 
 impl From<String> for ConvertedType {
     fn from(str: String) -> ConvertedType {
+        let mut initial_set = BTreeSet::new();
+        initial_set.insert(str.clone());
         ConvertedType {
             prefix: str,
-            postfix: String::new()
+            postfix: String::new(),
+            deps: initial_set,
         }
     }
 }
@@ -85,7 +98,7 @@ fn is_c_abi(abi: &Option<Abi>) -> bool {
 
 fn map_path(p: &Path) -> ConvertedType {
     let l = p.segments[0].ident.to_string();
-    let mut c = match l.as_ref() {
+    let mut c = ConvertedType::from(match l.as_ref() {
         "usize" => "size_t".to_string(),
         "u8" => "uint8_t".to_string(),
         "u32" => "uint32_t".to_string(),
@@ -96,20 +109,22 @@ fn map_path(p: &Path) -> ConvertedType {
         "f32" => "float".to_string(),
         "c_void" => "void".to_string(),
         _ => l,
-    };
+    });
     if let PathParameters::AngleBracketed(ref d) = p.segments[0].parameters {
         let template_args = d.types
             .iter()
-            .map(|ty| map_ty(ty).to_string())
+            .map(|ty| {
+                let conv = map_ty(ty);
+                c = c.add_dep(conv.to_string());
+                conv.to_string()
+            })
             .collect::<Vec<String>>()
             .join(", ");
         if !template_args.is_empty() {
-            c.push('<');
-            c.push_str(&template_args);
-            c.push('>');
+            c = c.append_prefix(&format!("<{}>", &template_args));
         }
     }
-    ConvertedType::from(c)
+    c
 }
 
 fn map_mut_ty(mut_ty: &MutTy) -> ConvertedType {
@@ -133,16 +148,21 @@ fn map_return_type(ret: &FunctionRetTy) -> ConvertedType {
     }
 }
 
-fn map_arg(f: &FnArg) -> String {
+fn map_arg(f: &FnArg, dep_set: &mut BTreeSet<String>) -> String {
     match f {
-        &FnArg::Captured(Pat::Ident(_, ref ident, _), ref ty) => map_ty(ty).format_with_ident(ident),
+        &FnArg::Captured(Pat::Ident(_, ref ident, _), ref ty) => {
+            let mut converted = map_ty(ty);
+            dep_set.append(&mut converted.deps);
+            converted.format_with_ident(ident)
+        }
         _ => "unknown".to_string(),
     }
 }
 
-fn map_field(f: &Field) -> String {
+fn map_field(f: &Field, dep_set: &mut BTreeSet<String>) -> String {
     let mut ret = String::from("  ");
-    let converted = map_ty(&f.ty);
+    let mut converted = map_ty(&f.ty);
+    dep_set.append(&mut converted.deps);
     ret.push_str(&converted.format_with_ident(f.ident.as_ref().expect("Struct fields must have idents")));
     ret.push_str(";\n");
     ret
@@ -180,20 +200,35 @@ fn fold_enum_variants(accum: (String, i32), v: &Variant) -> (String, i32) {
     (ret, new_value)
 }
 
+struct ConvertedItem {
+    /// This holds the C code that needs to go into the header file.
+    c_code: String,
+    /// This holds a set of identifiers that the C code depends on.
+    /// So for example if a struct A contains another struct B, the
+    /// `ConvertedItem` instance for A will have the string "B" in
+    /// `deps`.
+    deps: BTreeSet<String>,
+}
+
+impl ConvertedItem {
+    fn new(c_code: String, deps: BTreeSet<String>) -> ConvertedItem {
+        ConvertedItem {
+            c_code: c_code,
+            deps: deps,
+        }
+    }
+}
+
 /// A structure to store all the results of converting Rust stuff to C
 /// stuff, so that we can pick and choose what we output.
 struct ConversionResults {
     /// This holds the C function signatures of no_mangle rust functions,
     /// in the order that they were encountered in Rust.
-    funcs: Vec<String>,
+    funcs: Vec<ConvertedItem>,
     /// This holds the C conversions of repr(C) structs and repr(u32) enums
     /// from Rust. The 'ds' in the name stands for 'data structures'. The
-    /// key of the map is the name of the type, and the value is the C code.
-    c_ds: BTreeMap<String, String>,
-    /// This holds the dependency tree. If a struct contains another struct
-    /// or an enum it will be in this map. The key is the dependent type,
-    /// the list of values are all the things it depends on.
-    _dep_tree: BTreeMap<String, Vec<String>>,
+    /// key of the map is the name of the type.
+    ds: BTreeMap<String, ConvertedItem>,
 }
 
 fn main() {
@@ -201,8 +236,7 @@ fn main() {
 
     let results = Mutex::new(ConversionResults {
         funcs: Vec::new(),
-        c_ds: BTreeMap::new(),
-        _dep_tree: BTreeMap::new(),
+        ds: BTreeMap::new(),
     });
 
     rust_lib::parse(p, &|mod_name, items| {
@@ -216,16 +250,20 @@ fn main() {
                              ref _block) => {
                     writeln!(io::stderr(), "processing function {}::{}", mod_name, &item.ident).unwrap();
                     if has_no_mangle(&item.attrs) && is_c_abi(&abi) {
-                        results.lock().unwrap().funcs.push(
+                        let mut deps = BTreeSet::new();
+                        let mut return_type = map_return_type(&decl.output);
+                        deps.append(&mut return_type.deps);
+                        let c_code =
                             format!("WR_INLINE {}\n{}({})\n{};\n",
-                                    map_return_type(&decl.output),
+                                    return_type,
                                     item.ident,
                                     decl.inputs
                                         .iter()
-                                        .map(map_arg)
+                                        .map(|f| map_arg(f, &mut deps))
                                         .collect::<Vec<_>>()
                                         .join(", "),
-                                    wr_func_body(&item.attrs)));
+                                    wr_func_body(&item.attrs));
+                        results.lock().unwrap().funcs.push(ConvertedItem::new(c_code, deps));
                     }
                 }
                 ItemKind::Struct(ref variant,
@@ -233,49 +271,54 @@ fn main() {
                     writeln!(io::stderr(), "processing struct {}::{}", mod_name, &item.ident).unwrap();
                     if is_repr_c(&item.attrs) {
                         if let &VariantData::Struct(ref fields) = variant {
-                            let mut c_struct = String::new();
+                            let mut deps = BTreeSet::new();
+                            let mut c_code = String::new();
                             if !generics.ty_params.is_empty() {
-                                c_struct.push_str(&(
-                                    format!("template<{}>",
+                                c_code.push_str(&(
+                                    format!("template<{}>\n",
                                             generics.ty_params
                                                     .iter()
                                                     .map(map_generic_param)
                                                     .collect::<Vec<_>>()
                                                     .join(", "))));
                             }
-                            c_struct.push_str(&(
+                            c_code.push_str(&(
                                 format!("struct {} {{\n{}}};\n",
                                         item.ident,
                                         fields.iter()
-                                              .map(map_field)
+                                              .map(|f| map_field(f, &mut deps))
                                               .collect::<String>())));
-                            results.lock().unwrap().c_ds.insert(
+                            results.lock().unwrap().ds.insert(
                                 item.ident.to_string(),
-                                c_struct);
+                                ConvertedItem::new(c_code, deps));
                         }
                     }
                 }
                 ItemKind::Enum(ref variants, ref _generics) => {
                     writeln!(io::stderr(), "processing enum {}::{}", mod_name, &item.ident).unwrap();
                     if is_repr_u32(&item.attrs) {
-                        let c_enum = format!("enum class {}: uint32_t {{\n{}\n  Sentinel /* this must be last for serialization purposes. */\n}};\n",
+                        let c_code = format!("enum class {}: uint32_t {{\n{}\n  Sentinel /* this must be last for serialization purposes. */\n}};\n",
                                              item.ident,
                                              variants.iter()
                                                      .fold((String::new(), -1), fold_enum_variants)
                                                      .0);
-                        results.lock().unwrap().c_ds.insert(
+                        results.lock().unwrap().ds.insert(
                             item.ident.to_string(),
-                            c_enum);
+                            ConvertedItem::new(c_code, BTreeSet::new()));
                     }
                 }
                 _ => {}
             }
         }
     });
-    for (_, c_stuff) in &results.lock().unwrap().c_ds {
-        println!("{}", c_stuff);
+    for (_, converted) in &results.lock().unwrap().ds {
+        println!("{}", converted.c_code);
     }
-    for func in &results.lock().unwrap().funcs {
-        println!("{}", func);
+    for converted in &results.lock().unwrap().funcs {
+        println!("{}", converted.c_code);
+        // println!("// depends on {:?}", converted.deps);
     }
+    //for (k, converted) in &results.lock().unwrap().ds {
+    //    println!("// {} -> {:?}", k, converted.deps);
+    //}
 }
