@@ -245,21 +245,20 @@ fn main() {
                         if let &VariantData::Struct(ref fields) = variant {
                             let mut c_struct = String::new();
                             if !generics.ty_params.is_empty() {
-                                c_struct.push_str(
-                                    &(format!("template<{}>",
-                                         generics.ty_params
-                                             .iter()
-                                             .map(map_generic_param)
-                                             .collect::<Vec<_>>()
-                                             .join(", "))));
+                                c_struct.push_str(&(
+                                    format!("template<{}>",
+                                            generics.ty_params
+                                                    .iter()
+                                                    .map(map_generic_param)
+                                                    .collect::<Vec<_>>()
+                                                    .join(", "))));
                             }
-                            c_struct.push_str(
-                                &(format!("struct {} {{\n{}}};\n",
-                                     item.ident,
-                                     fields
-                                         .iter()
-                                         .map(map_field)
-                                         .collect::<String>())));
+                            c_struct.push_str(&(
+                                format!("struct {} {{\n{}}};\n",
+                                        item.ident,
+                                        fields.iter()
+                                              .map(map_field)
+                                              .collect::<String>())));
                             results.lock().unwrap().c_ds.insert(
                                 item.ident.to_string(),
                                 c_struct);
@@ -270,11 +269,10 @@ fn main() {
                     writeln!(io::stderr(), "processing enum {}::{}", mod_name, &item.ident).unwrap();
                     if is_repr_u32(&item.attrs) {
                         let c_enum = format!("enum class {}: uint32_t {{\n{}\n  Sentinel /* this must be last for serialization purposes. */\n}};\n",
-                                 item.ident,
-                                 variants
-                                     .iter()
-                                     .fold((String::new(), -1), fold_enum_variants)
-                                     .0);
+                                             item.ident,
+                                             variants.iter()
+                                                     .fold((String::new(), -1), fold_enum_variants)
+                                                     .0);
                         results.lock().unwrap().c_ds.insert(
                             item.ident.to_string(),
                             c_enum);
