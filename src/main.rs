@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::env;
 use std::fmt;
 use std::io;
@@ -192,11 +192,11 @@ struct ConversionResults {
     /// This holds the C conversions of repr(C) structs and repr(u32) enums
     /// from Rust. The 'ds' in the name stands for 'data structures'. The
     /// key of the map is the name of the type, and the value is the C code.
-    c_ds: HashMap<String, String>,
+    c_ds: BTreeMap<String, String>,
     /// This holds the dependency tree. If a struct contains another struct
     /// or an enum it will be in this map. The key is the dependent type,
     /// the list of values are all the things it depends on.
-    _dep_tree: HashMap<String, Vec<String>>,
+    _dep_tree: BTreeMap<String, Vec<String>>,
 }
 
 fn main() {
@@ -204,8 +204,8 @@ fn main() {
 
     let results = Mutex::new(ConversionResults {
         funcs: Vec::new(),
-        c_ds: HashMap::new(),
-        _dep_tree: HashMap::new(),
+        c_ds: BTreeMap::new(),
+        _dep_tree: BTreeMap::new(),
     });
 
     rust_lib::parse(p, &|mod_name, items| {
