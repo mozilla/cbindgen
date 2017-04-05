@@ -1,5 +1,7 @@
 use std::env;
 use std::fmt;
+use std::io;
+use std::io::Write;
 
 extern crate syn;
 use syn::*;
@@ -66,6 +68,11 @@ fn wr_func_body(attrs: &Vec<Attribute>) -> String {
 
 fn is_repr_c(attrs: &Vec<Attribute>) -> bool {
     let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("C")))];
+    has_attribute(MetaItem::List(Ident::new("repr"), repr_args), attrs)
+}
+
+fn is_repr_u32(attrs: &Vec<Attribute>) -> bool {
+    let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("u32")))];
     has_attribute(MetaItem::List(Ident::new("repr"), repr_args), attrs)
 }
 
@@ -155,10 +162,36 @@ fn map_generic_param(t: &TyParam) -> String {
     ret
 }
 
+fn fold_enum_variants(accum: (String, i32), v: &Variant) -> (String, i32) {
+    // `accum` contains the combined string of converted enum variants so far, to which
+    // we will append the converted version of `v`. The other thing in `accum` is the
+    // value of the previous variant. If `v` has an explicit value we keep that, otherwise
+    // we increment the value of the previous variant to get the new one. This is all
+    // so that we properly support enums with explicitly-specified and discontinuous
+    // values.
+    let mut ret = accum.0;
+    ret.push_str("  ");
+    ret.push_str(&v.ident.to_string());
+    ret.push_str(" = ");
+    let new_value = match &v.discriminant {
+        &None => accum.1 + 1,
+        &Some(ConstExpr::Lit(Lit::Int(ref specified_value, _))) => *specified_value as i32,
+        &Some(_) => {
+            // we don't handle this yet, so just put in something that will fail C compilation
+            writeln!(io::stderr(), "warning, unsupported enum discriminant").unwrap();
+            ret.push_str("???");
+            accum.1 + 1
+        }
+    };
+    ret.push_str(&new_value.to_string());
+    ret.push_str(",\n");
+    (ret, new_value)
+}
+
 fn main() {
     let p = env::args().nth(1).unwrap();
 
-    rust_lib::parse(p, &|_, items| {
+    rust_lib::parse(p, &|mod_name, items| {
         for item in items {
             match item.node {
                 ItemKind::Fn(ref decl,
@@ -167,6 +200,7 @@ fn main() {
                              ref abi,
                              ref _generic,
                              ref _block) => {
+                    writeln!(io::stderr(), "processing function {}::{}", mod_name, &item.ident).unwrap();
                     if has_no_mangle(&item.attrs) && is_c_abi(&abi) {
                         println!("WR_INLINE {}\n{}({})\n{};\n",
                                  map_return_type(&decl.output),
@@ -181,6 +215,7 @@ fn main() {
                 }
                 ItemKind::Struct(ref variant,
                                  ref generics) => {
+                    writeln!(io::stderr(), "processing struct {}::{}", mod_name, &item.ident).unwrap();
                     if is_repr_c(&item.attrs) {
                         if !generics.ty_params.is_empty() {
                             println!("template<{}>",
@@ -198,6 +233,17 @@ fn main() {
                                          .map(map_field)
                                          .collect::<String>());
                         }
+                    }
+                }
+                ItemKind::Enum(ref variants, ref _generics) => {
+                    writeln!(io::stderr(), "processing enum {}::{}", mod_name, &item.ident).unwrap();
+                    if is_repr_u32(&item.attrs) {
+                        println!("enum class {}: uint32_t {{\n{}\n  Sentinel /* this must be last for serialization purposes. */\n}};\n",
+                                 item.ident,
+                                 variants
+                                     .iter()
+                                     .fold((String::new(), -1), fold_enum_variants)
+                                     .0);
                     }
                 }
                 _ => {}
