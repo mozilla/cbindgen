@@ -200,6 +200,8 @@ fn fold_enum_variants(accum: (String, i32), v: &Variant) -> (String, i32) {
     (ret, new_value)
 }
 
+/// Convenience struct to group stuff associated with a converted
+/// item.
 struct ConvertedItem {
     /// This holds the C code that needs to go into the header file.
     c_code: String,
@@ -231,6 +233,9 @@ struct ConversionResults {
     ds: BTreeMap<String, ConvertedItem>,
 }
 
+/// Recursive function to collect the dependencies we need. Deps are collected
+/// into `dst`, using the "database" of dependencies in `results_ref`, and
+/// using `deps` as the starting set of dependencies we want.
 fn collect_deps(dst: &mut BTreeSet<String>, results_ref: &ConversionResults, deps: &BTreeSet<String>) {
     for dep in deps {
         dst.insert(dep.to_string());
@@ -319,11 +324,20 @@ fn main() {
         }
     });
 
+    // Collect all the recursive type dependencies using the functions
+    // as the roots. (i.e. all the structs/enums referred to by the function
+    // return types and arguments, plus all the structs/enums referred to
+    // by *those* and so on). We just skip any types that we don't have
+    // instead of returning an error. This way we don't have to add special
+    // handling for things like void and int32_t and whatnot.
+    // Collect into a BTreeSet to strip duplicates and get a deterministic order.
     let mut all_func_deps = BTreeSet::new();
     let results_ref = &results.lock().unwrap();
     for converted in &results_ref.funcs {
         collect_deps(&mut all_func_deps, results_ref, &converted.deps);
     }
+
+    // Showtime!
     for dep in all_func_deps {
         results_ref.ds.get(&dep).map(|converted| println!("{}", converted.c_code));
     }
