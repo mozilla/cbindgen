@@ -1,7 +1,9 @@
+use std::collections::HashMap;
 use std::env;
 use std::fmt;
 use std::io;
 use std::io::Write;
+use std::sync::Mutex;
 
 extern crate syn;
 use syn::*;
@@ -188,8 +190,30 @@ fn fold_enum_variants(accum: (String, i32), v: &Variant) -> (String, i32) {
     (ret, new_value)
 }
 
+/// A structure to store all the results of converting Rust stuff to C
+/// stuff, so that we can pick and choose what we output.
+struct ConversionResults {
+    /// This holds the C function signatures of no_mangle rust functions,
+    /// in the order that they were encountered in Rust.
+    funcs: Vec<String>,
+    /// This holds the C conversions of repr(C) structs and repr(u32) enums
+    /// from Rust. The 'ds' in the name stands for 'data structures'. The
+    /// key of the map is the name of the type, and the value is the C code.
+    c_ds: HashMap<String, String>,
+    /// This holds the dependency tree. If a struct contains another struct
+    /// or an enum it will be in this map. The key is the dependent type,
+    /// the list of values are all the things it depends on.
+    _dep_tree: HashMap<String, Vec<String>>,
+}
+
 fn main() {
     let p = env::args().nth(1).unwrap();
+
+    let results = Mutex::new(ConversionResults {
+        funcs: Vec::new(),
+        c_ds: HashMap::new(),
+        _dep_tree: HashMap::new(),
+    });
 
     rust_lib::parse(p, &|mod_name, items| {
         for item in items {
@@ -202,52 +226,68 @@ fn main() {
                              ref _block) => {
                     writeln!(io::stderr(), "processing function {}::{}", mod_name, &item.ident).unwrap();
                     if has_no_mangle(&item.attrs) && is_c_abi(&abi) {
-                        println!("WR_INLINE {}\n{}({})\n{};\n",
-                                 map_return_type(&decl.output),
-                                 item.ident,
-                                 decl.inputs
-                                     .iter()
-                                     .map(map_arg)
-                                     .collect::<Vec<_>>()
-                                     .join(", "),
-                                 wr_func_body(&item.attrs));
+                        results.lock().unwrap().funcs.push(
+                            format!("WR_INLINE {}\n{}({})\n{};\n",
+                                    map_return_type(&decl.output),
+                                    item.ident,
+                                    decl.inputs
+                                        .iter()
+                                        .map(map_arg)
+                                        .collect::<Vec<_>>()
+                                        .join(", "),
+                                    wr_func_body(&item.attrs)));
                     }
                 }
                 ItemKind::Struct(ref variant,
                                  ref generics) => {
                     writeln!(io::stderr(), "processing struct {}::{}", mod_name, &item.ident).unwrap();
                     if is_repr_c(&item.attrs) {
-                        if !generics.ty_params.is_empty() {
-                            println!("template<{}>",
-                                     generics.ty_params
-                                         .iter()
-                                         .map(map_generic_param)
-                                         .collect::<Vec<_>>()
-                                         .join(", "));
-                        }
                         if let &VariantData::Struct(ref fields) = variant {
-                            println!("struct {} {{\n{}}};\n",
+                            let mut c_struct = String::new();
+                            if !generics.ty_params.is_empty() {
+                                c_struct.push_str(
+                                    &(format!("template<{}>",
+                                         generics.ty_params
+                                             .iter()
+                                             .map(map_generic_param)
+                                             .collect::<Vec<_>>()
+                                             .join(", "))));
+                            }
+                            c_struct.push_str(
+                                &(format!("struct {} {{\n{}}};\n",
                                      item.ident,
                                      fields
                                          .iter()
                                          .map(map_field)
-                                         .collect::<String>());
+                                         .collect::<String>())));
+                            results.lock().unwrap().c_ds.insert(
+                                item.ident.to_string(),
+                                c_struct);
                         }
                     }
                 }
                 ItemKind::Enum(ref variants, ref _generics) => {
                     writeln!(io::stderr(), "processing enum {}::{}", mod_name, &item.ident).unwrap();
                     if is_repr_u32(&item.attrs) {
-                        println!("enum class {}: uint32_t {{\n{}\n  Sentinel /* this must be last for serialization purposes. */\n}};\n",
+                        let c_enum = format!("enum class {}: uint32_t {{\n{}\n  Sentinel /* this must be last for serialization purposes. */\n}};\n",
                                  item.ident,
                                  variants
                                      .iter()
                                      .fold((String::new(), -1), fold_enum_variants)
                                      .0);
+                        results.lock().unwrap().c_ds.insert(
+                            item.ident.to_string(),
+                            c_enum);
                     }
                 }
                 _ => {}
             }
         }
     });
+    for (_, c_stuff) in &results.lock().unwrap().c_ds {
+        println!("{}", c_stuff);
+    }
+    for func in &results.lock().unwrap().funcs {
+        println!("{}", func);
+    }
 }
