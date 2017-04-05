@@ -284,7 +284,7 @@ fn main() {
                                         .iter()
                                         .map(|f| map_arg(f, &mut deps))
                                         .collect::<Vec<_>>()
-                                        .join(", "),
+                                        .join(",\n    "),
                                     wr_func_body(&item.attrs));
                         results.lock().unwrap().funcs.push(ConvertedItem::new(c_code, deps));
                     }
