@@ -86,7 +86,7 @@ fn is_c_abi(abi: &Option<Abi>) -> bool {
     abi == &Some(Abi::Named(String::from("C")))
 }
 
-fn map_path(p: &Path) -> String {
+fn map_path(p: &Path) -> ConvertedType {
     let l = p.segments[0].ident.to_string();
     let mut c = match l.as_ref() {
         "usize" => "size_t".to_string(),
@@ -112,7 +112,7 @@ fn map_path(p: &Path) -> String {
             c.push('>');
         }
     }
-    c
+    ConvertedType::from(c)
 }
 
 fn map_mut_ty(mut_ty: &MutTy) -> ConvertedType {
@@ -121,7 +121,7 @@ fn map_mut_ty(mut_ty: &MutTy) -> ConvertedType {
 
 fn map_ty(ty: &Ty) -> ConvertedType {
     match ty {
-        &Ty::Path(_, ref p) => ConvertedType::from(map_path(p)),
+        &Ty::Path(_, ref p) => map_path(p),
         &Ty::Ptr(ref p) => ConvertedType::from(format!("{}*", map_ty(&p.ty))),
         &Ty::Rptr(_, ref mut_ty) => ConvertedType::from(format!("{}*", map_mut_ty(mut_ty))),
         &Ty::Array(ref p, ConstExpr::Lit(Lit::Int(sz, _))) => ConvertedType::new(map_ty(&p), format!("[{}]", sz)),
