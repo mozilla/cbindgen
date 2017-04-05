@@ -231,6 +231,13 @@ struct ConversionResults {
     ds: BTreeMap<String, ConvertedItem>,
 }
 
+fn collect_deps(dst: &mut BTreeSet<String>, results_ref: &ConversionResults, deps: &BTreeSet<String>) {
+    for dep in deps {
+        dst.insert(dep.to_string());
+        results_ref.ds.get(dep).map(|converted| collect_deps(dst, results_ref, &converted.deps));
+    }
+}
+
 fn main() {
     let p = env::args().nth(1).unwrap();
 
@@ -311,14 +318,16 @@ fn main() {
             }
         }
     });
-    for (_, converted) in &results.lock().unwrap().ds {
+
+    let mut all_func_deps = BTreeSet::new();
+    let results_ref = &results.lock().unwrap();
+    for converted in &results_ref.funcs {
+        collect_deps(&mut all_func_deps, results_ref, &converted.deps);
+    }
+    for dep in all_func_deps {
+        results_ref.ds.get(&dep).map(|converted| println!("{}", converted.c_code));
+    }
+    for converted in &results_ref.funcs {
         println!("{}", converted.c_code);
     }
-    for converted in &results.lock().unwrap().funcs {
-        println!("{}", converted.c_code);
-        // println!("// depends on {:?}", converted.deps);
-    }
-    //for (k, converted) in &results.lock().unwrap().ds {
-    //    println!("// {} -> {:?}", k, converted.deps);
-    //}
 }
