@@ -10,7 +10,7 @@ use syn::*;
 
 mod rust_lib;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ConvertedType {
     /// The type converted to C (e.g. `uint32_t`)
     prefix: String,
@@ -19,23 +19,20 @@ struct ConvertedType {
 }
 
 impl ConvertedType {
-    fn new<T: Into<String>>(pre: T, post: String) -> Self {
-        ConvertedType {
-            prefix: pre.into(),
-            postfix: post
-        }
+    fn append_prefix(&self, str: &str) -> ConvertedType {
+        let mut clone = self.clone();
+        clone.prefix.push_str(str);
+        clone
+    }
+
+    fn append_postfix(&self, str: &str) -> ConvertedType {
+        let mut clone = self.clone();
+        clone.postfix.push_str(str);
+        clone
     }
 
     fn format_with_ident(&self, ident: &Ident) -> String {
         format!("{} {}{}", &self.prefix, &ident.to_string(), &self.postfix)
-    }
-}
-
-impl Into<String> for ConvertedType {
-    fn into(self) -> String {
-        let mut str = String::from(self.prefix);
-        str.push_str(&self.postfix);
-        str
     }
 }
 
@@ -103,7 +100,7 @@ fn map_path(p: &Path) -> ConvertedType {
     if let PathParameters::AngleBracketed(ref d) = p.segments[0].parameters {
         let template_args = d.types
             .iter()
-            .map(|ty| map_ty(ty).into())
+            .map(|ty| map_ty(ty).to_string())
             .collect::<Vec<String>>()
             .join(", ");
         if !template_args.is_empty() {
@@ -122,9 +119,9 @@ fn map_mut_ty(mut_ty: &MutTy) -> ConvertedType {
 fn map_ty(ty: &Ty) -> ConvertedType {
     match ty {
         &Ty::Path(_, ref p) => map_path(p),
-        &Ty::Ptr(ref p) => ConvertedType::from(format!("{}*", map_ty(&p.ty))),
-        &Ty::Rptr(_, ref mut_ty) => ConvertedType::from(format!("{}*", map_mut_ty(mut_ty))),
-        &Ty::Array(ref p, ConstExpr::Lit(Lit::Int(sz, _))) => ConvertedType::new(map_ty(&p), format!("[{}]", sz)),
+        &Ty::Ptr(ref p) => map_ty(&p.ty).append_prefix("*"),
+        &Ty::Rptr(_, ref mut_ty) => map_mut_ty(mut_ty).append_prefix("*"),
+        &Ty::Array(ref p, ConstExpr::Lit(Lit::Int(sz, _))) => map_ty(&p).append_postfix(&format!("[{}]", sz)),
         _ => ConvertedType::from(format!("unknown {:?}", ty)),
     }
 }
