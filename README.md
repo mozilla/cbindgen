@@ -2,6 +2,8 @@ This project can be used to generate C bindings for rust code. In particular it 
 
 Steps to use:
 - check out the `bindgen` branch of https://github.com/staktrace/gecko-dev (this has a few patches that make binding generation easier)
-- cargo run path/to/bindgen-branch/gfx/webrender\_bindings > webrender\_ffi\_autogen.h
-- Put the generated file into gfx/webrender\_bindings and #include it from webrender\_ffi.h
-- A bunch of the stuff from webrender\_ffi.h can now be removed
+- cargo run path/to/bindgen-branch/gfx/webrender\_bindings > path/to/bindgen-branch/gfx/webrender\_bindings/webrender\_ffi\_autogen.h
+- Try to compile the `bindgen` branch. Deal with the errors by fixing bindgen
+
+Future work:
+- Make bindgen generate even more things, so that webrender\_ffi.h is minimal.
