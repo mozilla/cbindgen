@@ -129,10 +129,10 @@ fn map_ty(ty: &Ty) -> ConvertedType {
     }
 }
 
-fn map_return_type(ret: &FunctionRetTy) -> String {
+fn map_return_type(ret: &FunctionRetTy) -> ConvertedType {
     match ret {
-        &FunctionRetTy::Default => "void".to_string(),
-        &FunctionRetTy::Ty(ref ty) => map_ty(ty).into(),
+        &FunctionRetTy::Default => ConvertedType::from("void".to_string()),
+        &FunctionRetTy::Ty(ref ty) => map_ty(ty),
     }
 }
 
