@@ -25,6 +25,10 @@ impl ConvertedType {
             postfix: post
         }
     }
+
+    fn format_with_ident(&self, ident: &Ident) -> String {
+        format!("{} {}{}", &self.prefix, &ident.to_string(), &self.postfix)
+    }
 }
 
 impl Into<String> for ConvertedType {
@@ -132,17 +136,9 @@ fn map_return_type(ret: &FunctionRetTy) -> String {
     }
 }
 
-fn map_pat(pat: &Pat) -> String {
-    match pat {
-        &Pat::Ident(_, ref ident, _) => ident.to_string(),
-        _ => format!("unknown {:?}", pat),
-    }
-
-}
-
 fn map_arg(f: &FnArg) -> String {
     match f {
-        &FnArg::Captured(ref pat, ref ty) => format!("{} {}", map_ty(ty), map_pat(pat)),
+        &FnArg::Captured(Pat::Ident(_, ref ident, _), ref ty) => map_ty(ty).format_with_ident(ident),
         _ => "unknown".to_string(),
     }
 }
@@ -150,10 +146,7 @@ fn map_arg(f: &FnArg) -> String {
 fn map_field(f: &Field) -> String {
     let mut ret = String::from("  ");
     let converted = map_ty(&f.ty);
-    ret.push_str(&converted.prefix);
-    ret.push(' ');
-    ret.push_str(&f.ident.as_ref().expect("Struct fields must have idents").to_string());
-    ret.push_str(&converted.postfix);
+    ret.push_str(&converted.format_with_ident(f.ident.as_ref().expect("Struct fields must have idents")));
     ret.push_str(";\n");
     ret
 }
