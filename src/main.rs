@@ -231,6 +231,16 @@ struct ConversionResults {
     /// from Rust. The 'ds' in the name stands for 'data structures'. The
     /// key of the map is the name of the type.
     ds: BTreeMap<String, ConvertedItem>,
+    /// This holds type aliases we find in Rust code. This way we can do
+    /// something like:
+    ///  type WrFoo = Foo;  // the type alias
+    ///  fn wr_func(foo: WrFoo) { ... }
+    /// where `Foo` is repr(C), and have the corresponding C struct
+    /// generated with the name WrFoo so that it's not polluting the
+    /// global namespace and everything works ok. In the above example
+    /// we would store WrFoo -> Foo in `type_map` and use it when
+    /// generating the C definition of `WrFoo`.
+    type_map: BTreeMap<String, String>,
 }
 
 /// Recursive function to collect the dependencies we need. Deps are collected
@@ -249,6 +259,7 @@ fn main() {
     let results = Mutex::new(ConversionResults {
         funcs: Vec::new(),
         ds: BTreeMap::new(),
+        type_map: BTreeMap::new(),
     });
 
     rust_lib::parse(p, &|mod_name, items| {
@@ -319,6 +330,10 @@ fn main() {
                             ConvertedItem::new(c_code, BTreeSet::new()));
                     }
                 }
+                ItemKind::Ty(ref ty, ref _generics) => {
+                    results.lock().unwrap().type_map.insert(
+                        item.ident.to_string(), map_ty(ty).to_string());
+                }
                 _ => {}
             }
         }
@@ -339,7 +354,18 @@ fn main() {
 
     // Showtime!
     for dep in all_func_deps {
-        results_ref.ds.get(&dep).map(|converted| println!("{}", converted.c_code));
+        // Check for `dep` in the ds map. If we don't find it, look up `dep`
+        // in the type map, and if we find an alias, look that up in the ds
+        // map instead. If we find the alias, we need to print it out, but
+        // replace the alias (`mapped`) with `dep`, because the function
+        // signature uses `dep`.
+        if let Some(converted) = results_ref.ds.get(&dep) {
+            println!("{}", converted.c_code);
+        } else if let Some(mapped) = results_ref.type_map.get(&dep) {
+            if let Some(converted) = results_ref.ds.get(mapped) {
+                println!("{}", converted.c_code.replace(mapped, &dep));
+            }
+        }
     }
     for converted in &results_ref.funcs {
         println!("{}", converted.c_code);
