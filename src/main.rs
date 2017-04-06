@@ -246,10 +246,12 @@ struct ConversionResults {
 /// Recursive function to collect the dependencies we need. Deps are collected
 /// into `dst`, using the "database" of dependencies in `results_ref`, and
 /// using `deps` as the starting set of dependencies we want.
-fn collect_deps(dst: &mut BTreeSet<String>, results_ref: &ConversionResults, deps: &BTreeSet<String>) {
+fn collect_deps(dst: &mut Vec<String>, results_ref: &ConversionResults, deps: &BTreeSet<String>) {
     for dep in deps {
-        dst.insert(dep.to_string());
         results_ref.ds.get(dep).map(|converted| collect_deps(dst, results_ref, &converted.deps));
+        if !dst.contains(&dep.to_string()) {
+            dst.push(dep.to_string());
+        }
     }
 }
 
@@ -345,8 +347,9 @@ fn main() {
     // by *those* and so on). We just skip any types that we don't have
     // instead of returning an error. This way we don't have to add special
     // handling for things like void and int32_t and whatnot.
-    // Collect into a BTreeSet to strip duplicates and get a deterministic order.
-    let mut all_func_deps = BTreeSet::new();
+    // Collect into a Vec to maintain dependency order - things that are depended
+    // are always before the things that depend on them.
+    let mut all_func_deps = Vec::new();
     let results_ref = &results.lock().unwrap();
     for converted in &results_ref.funcs {
         collect_deps(&mut all_func_deps, results_ref, &converted.deps);
