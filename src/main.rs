@@ -35,12 +35,6 @@ impl ConvertedType {
         clone
     }
 
-    fn add_dep(&self, dep: String) -> ConvertedType {
-        let mut clone = self.clone();
-        clone.deps.insert(dep);
-        clone
-    }
-
     fn format_with_ident(&self, ident: &Ident) -> String {
         format!("{} {}{}", &self.prefix, &ident.to_string(), &self.postfix)
     }
@@ -96,9 +90,25 @@ fn is_c_abi(abi: &Option<Abi>) -> bool {
     abi == &Some(Abi::Named(String::from("C")))
 }
 
+fn is_primitive(path: &str) -> bool {
+    match path {
+        "usize" |
+        "u8"  |
+        "u32" |
+        "u64" |
+        "i8"  |
+        "i32" |
+        "i64" |
+        "f32" |
+        "f64" |
+        "c_void" => true,
+        _ => false,
+    }
+}
+
 fn map_path(p: &Path) -> ConvertedType {
     let l = p.segments[0].ident.to_string();
-    let mut c = ConvertedType::from(match l.as_ref() {
+    ConvertedType::from(match l.as_ref() {
         "usize" => "size_t".to_string(),
         "u8" => "uint8_t".to_string(),
         "u32" => "uint32_t".to_string(),
@@ -107,24 +117,10 @@ fn map_path(p: &Path) -> ConvertedType {
         "i32" => "int32_t".to_string(),
         "i64" => "int64_t".to_string(),
         "f32" => "float".to_string(),
+        "f64" => "double".to_string(),
         "c_void" => "void".to_string(),
         _ => l,
-    });
-    if let PathParameters::AngleBracketed(ref d) = p.segments[0].parameters {
-        let template_args = d.types
-            .iter()
-            .map(|ty| {
-                let conv = map_ty(ty);
-                c = c.add_dep(conv.to_string());
-                conv.to_string()
-            })
-            .collect::<Vec<String>>()
-            .join(", ");
-        if !template_args.is_empty() {
-            c = c.append_prefix(&format!("<{}>", &template_args));
-        }
-    }
-    c
+    })
 }
 
 fn map_mut_ty(mut_ty: &MutTy) -> ConvertedType {
@@ -168,12 +164,6 @@ fn map_field(f: &Field, dep_set: &mut BTreeSet<String>) -> String {
     ret
 }
 
-fn map_generic_param(t: &TyParam) -> String {
-    let mut ret = String::from("typename ");
-    ret.push_str(&t.ident.to_string());
-    ret
-}
-
 fn fold_enum_variants(accum: (String, i32), v: &Variant) -> (String, i32) {
     // `accum` contains the combined string of converted enum variants so far, to which
     // we will append the converted version of `v`. The other thing in `accum` is the
@@ -205,6 +195,10 @@ fn fold_enum_variants(accum: (String, i32), v: &Variant) -> (String, i32) {
 struct ConvertedItem {
     /// This holds the C code that needs to go into the header file.
     c_code: String,
+    /// This holds the generic parameters in use by the C code that
+    /// need to be fulfilled by a type specialization. This is only used
+    /// for structs.
+    ty_params: Vec<String>,
     /// This holds a set of identifiers that the C code depends on.
     /// So for example if a struct A contains another struct B, the
     /// `ConvertedItem` instance for A will have the string "B" in
@@ -213,10 +207,86 @@ struct ConvertedItem {
 }
 
 impl ConvertedItem {
-    fn new(c_code: String, deps: BTreeSet<String>) -> ConvertedItem {
+    fn new(c_code: String, ty_params: Vec<String>, deps: BTreeSet<String>) -> ConvertedItem {
         ConvertedItem {
             c_code: c_code,
+            ty_params: ty_params,
             deps: deps,
+        }
+    }
+}
+
+/// An enum for representing the two ways we use type aliases
+enum TypeAlias {
+    Struct(StructAlias),
+    Typedef(TypedefAlias),
+}
+
+/// A `struct` alias creates a template specialized and renamed type
+/// The type this aliases will be copied and have its name changed
+/// and generic parameters replaced by the alias specified ones
+struct StructAlias {
+    aliased_ident: String,
+    ty_params: Vec<String>,
+}
+
+/// A `typedef` alias creates a C typedef that references a type
+/// that will be generated elsewhere
+struct TypedefAlias {
+    aliased: ConvertedItem,
+}
+
+impl TypeAlias {
+    fn new(ty: &Ty) -> TypeAlias {
+        // If the type is a path and is not a primitive then create a `struct`
+        // type alias so that we generate a specialization for this
+        if let &Ty::Path(_, ref p) = ty {
+            let l = p.segments[0].ident.to_string();
+
+            if !is_primitive(&l) {
+                let ty_params = if let PathParameters::AngleBracketed(ref d) = p.segments[0].parameters {
+                    d.types.iter()
+                           .map(|ty| {
+                               map_ty(ty).to_string()
+                           })
+                           .collect::<Vec<String>>()
+                } else {
+                    vec![]
+                };
+
+                return TypeAlias::Struct(StructAlias {
+                    aliased_ident: l,
+                    ty_params: ty_params,
+                });
+            }
+        }
+
+        // For everything else, create a typedef
+        let converted_type = map_ty(ty);
+        return TypeAlias::Typedef(TypedefAlias {
+            aliased: ConvertedItem::new(format!("{}", converted_type), vec![], converted_type.deps),
+        });
+    }
+
+    fn deps(&self, results_ref: &ConversionResults) -> BTreeSet<String> {
+        match self {
+            &TypeAlias::Struct(ref a) => {
+                let mut deps = BTreeSet::new();
+
+                // A type alias depends on its type parameters
+                // and anything it's aliased type depends on
+                for ty in &a.ty_params {
+                    deps.insert(ty.clone());
+                }
+                if let Some(aliased) = results_ref.ds.get(&a.aliased_ident) {
+                    for ty in &aliased.deps {
+                        deps.insert(ty.clone());
+                    }
+                }
+
+                deps
+            },
+            &TypeAlias::Typedef(ref a) => a.aliased.deps.clone(),
         }
     }
 }
@@ -240,7 +310,7 @@ struct ConversionResults {
     /// global namespace and everything works ok. In the above example
     /// we would store WrFoo -> Foo in `type_map` and use it when
     /// generating the C definition of `WrFoo`.
-    type_map: BTreeMap<String, String>,
+    type_map: BTreeMap<String, TypeAlias>,
 }
 
 /// Recursive function to collect the dependencies we need. Deps are collected
@@ -249,6 +319,8 @@ struct ConversionResults {
 fn collect_deps(dst: &mut Vec<String>, results_ref: &ConversionResults, deps: &BTreeSet<String>) {
     for dep in deps {
         results_ref.ds.get(dep).map(|converted| collect_deps(dst, results_ref, &converted.deps));
+        results_ref.type_map.get(dep).map(|alias| collect_deps(dst, results_ref, &alias.deps(results_ref)));
+
         if !dst.contains(&dep.to_string()) {
             dst.push(dep.to_string());
         }
@@ -288,7 +360,7 @@ fn main() {
                                         .collect::<Vec<_>>()
                                         .join(",\n    "),
                                     wr_func_body(&item.attrs));
-                        results.lock().unwrap().funcs.push(ConvertedItem::new(c_code, deps));
+                        results.lock().unwrap().funcs.push(ConvertedItem::new(c_code, vec![], deps));
                     }
                 }
                 ItemKind::Struct(ref variant,
@@ -298,15 +370,11 @@ fn main() {
                         if let &VariantData::Struct(ref fields) = variant {
                             let mut deps = BTreeSet::new();
                             let mut c_code = String::new();
-                            if !generics.ty_params.is_empty() {
-                                c_code.push_str(&(
-                                    format!("template<{}>\n",
-                                            generics.ty_params
+                            let ty_params = generics.ty_params
                                                     .iter()
-                                                    .map(map_generic_param)
-                                                    .collect::<Vec<_>>()
-                                                    .join(", "))));
-                            }
+                                                    .map(|t| t.ident.to_string())
+                                                    .collect::<Vec<_>>();
+
                             c_code.push_str(&(
                                 format!("struct {} {{\n{}}};\n",
                                         item.ident,
@@ -315,7 +383,7 @@ fn main() {
                                               .collect::<String>())));
                             results.lock().unwrap().ds.insert(
                                 item.ident.to_string(),
-                                ConvertedItem::new(c_code, deps));
+                                ConvertedItem::new(c_code, ty_params, deps));
                         }
                     }
                 }
@@ -329,12 +397,14 @@ fn main() {
                                                      .0);
                         results.lock().unwrap().ds.insert(
                             item.ident.to_string(),
-                            ConvertedItem::new(c_code, BTreeSet::new()));
+                            ConvertedItem::new(c_code, vec![], BTreeSet::new()));
                     }
                 }
                 ItemKind::Ty(ref ty, ref _generics) => {
-                    results.lock().unwrap().type_map.insert(
-                        item.ident.to_string(), map_ty(ty).to_string());
+                    let alias_name = item.ident.to_string();
+                    let alias = TypeAlias::new(ty);
+
+                    results.lock().unwrap().type_map.insert(alias_name, alias);
                 }
                 _ => {}
             }
@@ -363,10 +433,30 @@ fn main() {
         // replace the alias (`mapped`) with `dep`, because the function
         // signature uses `dep`.
         if let Some(converted) = results_ref.ds.get(&dep) {
+            if !converted.ty_params.is_empty() {
+                continue;
+            }
             println!("{}", converted.c_code);
-        } else if let Some(mapped) = results_ref.type_map.get(&dep) {
-            if let Some(converted) = results_ref.ds.get(mapped) {
-                println!("{}", converted.c_code.replace(mapped, &dep));
+        } else if let Some(alias) = results_ref.type_map.get(&dep) {
+            match alias {
+                &TypeAlias::Struct(ref alias) => {
+                    // Create a specialized version of the struct or enum
+                    // with type parameters resolved and a new name
+                    if let Some(aliased) = results_ref.ds.get(&alias.aliased_ident) {
+                        let replaced_name = aliased.c_code.replace(&alias.aliased_ident,
+                                                                   &dep);
+                        let code = alias.ty_params.iter()
+                                                  .zip(aliased.ty_params.iter())
+                                                  .fold(replaced_name,
+                                                        |code, (value, param)| {
+                                                            code.replace(param, value)
+                                                        });
+                        println!("{}", code);
+                    }
+                }
+                &TypeAlias::Typedef(ref alias) => {
+                    println!("typedef {} {};\n", alias.aliased.c_code, dep);
+                }
             }
         }
     }
