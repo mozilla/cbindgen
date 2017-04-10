@@ -133,6 +133,7 @@ fn map_ty(ty: &Ty) -> ConvertedType {
         &Ty::Ptr(ref p) => map_ty(&p.ty).append_prefix("*"),
         &Ty::Rptr(_, ref mut_ty) => map_mut_ty(mut_ty).append_prefix("*"),
         &Ty::Array(ref p, ConstExpr::Lit(Lit::Int(sz, _))) => map_ty(&p).append_postfix(&format!("[{}]", sz)),
+        &Ty::BareFn(ref b) => map_fn(b),
         _ => ConvertedType::from(format!("unknown {:?}", ty)),
     }
 }
@@ -141,6 +142,30 @@ fn map_return_type(ret: &FunctionRetTy) -> ConvertedType {
     match ret {
         &FunctionRetTy::Default => ConvertedType::from("void".to_string()),
         &FunctionRetTy::Ty(ref ty) => map_ty(ty),
+    }
+}
+
+fn map_fn(ty: &BareFnTy) -> ConvertedType {
+    let mut deps = BTreeSet::new();
+
+    let ret = {
+        let mut mapped = map_return_type(&ty.output);
+        deps.append(&mut mapped.deps);
+        format!("{}", mapped)
+    };
+    let args = ty.inputs.iter()
+                        .map(|args| {
+                            let mut mapped = map_ty(&args.ty);
+                            deps.append(&mut mapped.deps);
+                            format!("{}", mapped)
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
+
+    ConvertedType {
+        prefix: format!("{} (*", ret),
+        postfix: format!(")({})", args),
+        deps: deps,
     }
 }
 
@@ -237,7 +262,7 @@ struct TypedefAlias {
 }
 
 impl TypeAlias {
-    fn new(ty: &Ty) -> TypeAlias {
+    fn new(ident: &str, ty: &Ty) -> TypeAlias {
         // If the type is a path and is not a primitive then create a `struct`
         // type alias so that we generate a specialization for this
         if let &Ty::Path(_, ref p) = ty {
@@ -264,7 +289,9 @@ impl TypeAlias {
         // For everything else, create a typedef
         let converted_type = map_ty(ty);
         return TypeAlias::Typedef(TypedefAlias {
-            aliased: ConvertedItem::new(format!("{}", converted_type), vec![], converted_type.deps),
+            aliased: ConvertedItem::new(converted_type.format_with_ident(&Ident::from(ident)),
+                                        vec![],
+                                        converted_type.deps),
         });
     }
 
@@ -402,7 +429,7 @@ fn main() {
                 }
                 ItemKind::Ty(ref ty, ref _generics) => {
                     let alias_name = item.ident.to_string();
-                    let alias = TypeAlias::new(ty);
+                    let alias = TypeAlias::new(&alias_name, ty);
 
                     results.lock().unwrap().type_map.insert(alias_name, alias);
                 }
@@ -455,7 +482,7 @@ fn main() {
                     }
                 }
                 &TypeAlias::Typedef(ref alias) => {
-                    println!("typedef {} {};\n", alias.aliased.c_code, dep);
+                    println!("typedef {};\n", alias.aliased.c_code);
                 }
             }
         }
