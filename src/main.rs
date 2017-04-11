@@ -23,6 +23,13 @@ struct ConvertedType {
 }
 
 impl ConvertedType {
+    fn prepend_prefix(&self, str: &str) -> ConvertedType {
+        let mut clone = self.clone();
+        clone.prefix = String::from(str);
+        clone.prefix.push_str(&self.prefix);
+        clone
+    }
+
     fn append_prefix(&self, str: &str) -> ConvertedType {
         let mut clone = self.clone();
         clone.prefix.push_str(str);
@@ -124,13 +131,17 @@ fn map_path(p: &Path) -> ConvertedType {
 }
 
 fn map_mut_ty(mut_ty: &MutTy) -> ConvertedType {
-    map_ty(&mut_ty.ty)
+    let mut mapped = map_ty(&mut_ty.ty);
+    if mut_ty.mutability == Mutability::Immutable {
+        mapped = mapped.prepend_prefix("const ");
+    }
+    mapped
 }
 
 fn map_ty(ty: &Ty) -> ConvertedType {
     match ty {
         &Ty::Path(_, ref p) => map_path(p),
-        &Ty::Ptr(ref p) => map_ty(&p.ty).append_prefix("*"),
+        &Ty::Ptr(ref mut_ty) => map_mut_ty(mut_ty).append_prefix("*"),
         &Ty::Rptr(_, ref mut_ty) => map_mut_ty(mut_ty).append_prefix("*"),
         &Ty::Array(ref p, ConstExpr::Lit(Lit::Int(sz, _))) => map_ty(&p).append_postfix(&format!("[{}]", sz)),
         &Ty::BareFn(ref b) => map_fn(b),
