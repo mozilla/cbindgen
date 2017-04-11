@@ -471,11 +471,10 @@ fn main() {
     }
 
     // Showtime!
-    println!(r###"
-/* This Source Code Form is subject to the terms of the Mozilla Public
+    println!(r###"/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-    "###);
+"###);
     for dep in all_func_deps {
         // Check for `dep` in the ds map. If we don't find it, look up `dep`
         // in the type map, and if we find an alias, look that up in the ds
