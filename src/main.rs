@@ -483,6 +483,7 @@ fn main() {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "###);
+    println!("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
     for dep in all_func_deps {
         // Check for `dep` in the ds map. If we don't find it, look up `dep`
         // in the type map, and if we find an alias, look that up in the ds
@@ -493,7 +494,6 @@ fn main() {
             if !converted.ty_params.is_empty() {
                 continue;
             }
-            println!("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
             println!("{}", converted.c_code);
         } else if let Some(alias) = results_ref.type_map.get(&dep) {
             match alias {
@@ -509,19 +509,18 @@ fn main() {
                                                         |code, (value, param)| {
                                                             code.replace(param, value)
                                                         });
-                        println!("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
                         println!("{}", code);
                     }
                 }
                 &TypeAlias::Typedef(ref alias) => {
-                    println!("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
                     println!("typedef {};\n", alias.aliased.c_code);
                 }
             }
         }
     }
+    println!("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
     for converted in &results_ref.funcs {
-        println!("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
         println!("{}", converted.c_code);
     }
+    println!("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
 }
