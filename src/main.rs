@@ -414,7 +414,7 @@ fn main() {
                                                     .collect::<Vec<_>>();
 
                             c_code.push_str(&(
-                                format!("struct {} {{\n{}\n  bool operator==(const {}& aOther) {{\n    return {};\n  }}\n}};\n",
+                                format!("struct {} {{\n{}\n  bool operator==(const {}& aOther) const {{\n    return {};\n  }}\n}};\n",
                                         item.ident,
                                         fields.iter()
                                               .map(|f| map_field(f, &mut deps))
