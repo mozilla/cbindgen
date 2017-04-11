@@ -76,7 +76,15 @@ fn has_no_mangle(attrs: &Vec<Attribute>) -> bool {
 }
 
 fn wr_func_body(attrs: &Vec<Attribute>) -> String {
-    if has_attribute(MetaItem::Word(Ident::new("destructor_safe")), attrs) {
+    let destructor_safe = attrs.iter().any(|ref attr| {
+        if attr.style == AttrStyle::Outer && attr.is_sugared_doc {
+            if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                return comment.contains("wr-binding:destructor_safe");
+            }
+        }
+        false
+    });
+    if destructor_safe {
         String::from("WR_DESTRUCTOR_SAFE_FUNC")
     } else {
         String::from("WR_FUNC")
