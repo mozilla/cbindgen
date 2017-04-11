@@ -403,11 +403,18 @@ fn main() {
                                                     .collect::<Vec<_>>();
 
                             c_code.push_str(&(
-                                format!("struct {} {{\n{}}};\n",
+                                format!("struct {} {{\n{}\n  bool operator==(const {}& aOther) {{\n    return {};\n  }}\n}};\n",
                                         item.ident,
                                         fields.iter()
                                               .map(|f| map_field(f, &mut deps))
-                                              .collect::<String>())));
+                                              .collect::<String>(),
+                                        item.ident,
+                                        fields.iter()
+                                              .map(|f| format!("{} == aOther.{}",
+                                                               f.ident.as_ref().unwrap(),
+                                                               f.ident.as_ref().unwrap()))
+                                              .collect::<Vec<_>>()
+                                              .join(" &&\n      "))));
                             results.lock().unwrap().ds.insert(
                                 item.ident.to_string(),
                                 ConvertedItem::new(c_code, ty_params, deps));
