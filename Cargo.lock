@@ -1,5 +1,5 @@
 [root]
-name = "wr-binding"
+name = "cbindgen"
 version = "0.1.0"
 dependencies = [
  "syn 0.11.8 (registry+https://github.com/rust-lang/crates.io-index)",

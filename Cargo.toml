@@ -2,12 +2,10 @@
 name = "cbindgen"
 version = "0.1.0"
 authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>", "Kartikaya Gupta <kats@mozilla.com>", "Ryan Hunt <rhunt@eqrion.net>"]
+homepage = "https://github.com/rlhunt/cbindgen/"
+repository = "https://github.com/rlhunt/cbindgen/"
+exclude = ["examples/**"]
 
 [dependencies.syn]
 version = "0.11.8"
 features = ["full"]
-
-[package]
-homepage = "https://github.com/rlhunt/cbindgen/"
-repository = "https://github.com/rlhunt/cbindgen/"
-exclude = ["examples/**"]
