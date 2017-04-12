@@ -329,7 +329,7 @@ impl Struct {
             field.1.write_with_ident(&field.0, out);
             write!(out, ";").unwrap();
         }
-        write!(out, "\n").unwrap();
+        write!(out, "\n\n").unwrap();
 
         writeln!(out, "  bool operator==(const {}& aOther) const {{", self.name).unwrap();
         write!(out, "    return ").unwrap();

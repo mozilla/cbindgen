@@ -2,6 +2,7 @@ use std::io;
 use std::io::Write;
 use std::collections::BTreeMap;
 use std::collections::HashSet;
+use std::cmp::Ordering;
 
 use syn::*;
 
@@ -114,12 +115,12 @@ impl Library {
                         if item.is_no_mangle() && abi.is_c() {
                             match Function::convert(item.ident.to_string(), item.is_wr_destructor_safe(), decl) {
                                 Ok(func) => {
-                                    writeln!(io::stderr(), "processed function       {}::{}", mod_name, &item.ident).unwrap();
+                                    writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
 
                                     library.functions.insert(func.name.clone(), func);
                                 }
                                 Err(msg) => {
-                                    writeln!(io::stderr(), "skipping function        {}::{} - {}", mod_name, &item.ident, msg).unwrap();
+                                    writeln!(io::stderr(), "skip {}::{} - ({})", mod_name, &item.ident, msg).unwrap();
                                 },
                             }
                         }
@@ -131,18 +132,18 @@ impl Library {
                         if item.is_repr_c() {
                             match Struct::convert(struct_name.clone(), variant, generics) {
                                 Ok(st) => {
-                                    writeln!(io::stderr(), "processed struct         {}::{}", mod_name, &item.ident).unwrap();
+                                    writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
                                     library.structs.insert(struct_name,
                                                            st);
                                 }
                                 Err(msg) => {
-                                    writeln!(io::stderr(), "processed opaque struct  {}::{} - {}", mod_name, &item.ident, msg).unwrap();
+                                    writeln!(io::stderr(), "take {}::{} - opaque ({})", mod_name, &item.ident, msg).unwrap();
                                     library.opaque_structs.insert(struct_name.clone(),
                                                                   OpaqueStruct::new(struct_name));
                                 }
                             }
                         } else {
-                            writeln!(io::stderr(), "processed opaque struct  {}::{}  - not marked as repr(C)", mod_name, &item.ident).unwrap();
+                            writeln!(io::stderr(), "take {}::{} - opaque (not marked as repr(C))", mod_name, &item.ident).unwrap();
                             library.opaque_structs.insert(struct_name.clone(),
                                                           OpaqueStruct::new(struct_name));
                         }
@@ -151,7 +152,7 @@ impl Library {
                         if !generics.lifetimes.is_empty() ||
                            !generics.ty_params.is_empty() ||
                            !generics.where_clause.predicates.is_empty() {
-                            writeln!(io::stderr(), "skipping enum            {}::{} - has generics or lifetimes or where bounds", mod_name, &item.ident).unwrap();
+                            writeln!(io::stderr(), "skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident).unwrap();
                             continue;
                         }
 
@@ -160,22 +161,22 @@ impl Library {
 
                             match Enum::convert(enum_name.clone(), variants) {
                                 Ok(en) => {
-                                    writeln!(io::stderr(), "processed enum           {}::{}", mod_name, &item.ident).unwrap();
+                                    writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
                                     library.enums.insert(enum_name, en);
                                 }
                                 Err(msg) => {
-                                    writeln!(io::stderr(), "skipping enum            {}::{} - {}", mod_name, &item.ident, msg).unwrap();
+                                    writeln!(io::stderr(), "skip {}::{} - ({})", mod_name, &item.ident, msg).unwrap();
                                 }
                             }
                         } else {
-                            writeln!(io::stderr(), "skipping enum            {}::{} - not marked as repr(u32)", mod_name, &item.ident).unwrap();
+                            writeln!(io::stderr(), "skip {}::{} - (not marked as repr(u32)", mod_name, &item.ident).unwrap();
                         }
                     }
                     ItemKind::Ty(ref ty, ref generics) => {
                         if !generics.lifetimes.is_empty() ||
                            !generics.ty_params.is_empty() ||
                            !generics.where_clause.predicates.is_empty() {
-                            writeln!(io::stderr(), "skipping type alias      {}::{} - has generics or lifetimes or where bounds", mod_name, &item.ident).unwrap();
+                            writeln!(io::stderr(), "skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident).unwrap();
                             continue;
                         }
 
@@ -183,7 +184,7 @@ impl Library {
 
                         let fail1 = match Specialization::convert(alias_name.clone(), ty) {
                             Ok(spec) => {
-                                writeln!(io::stderr(), "processed specialization {}::{}", mod_name, &item.ident).unwrap();
+                                writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
                                 library.specializations.insert(alias_name, spec);
                                 continue;
                             }
@@ -191,13 +192,13 @@ impl Library {
                         };
                         let fail2 = match Typedef::convert(alias_name.clone(), ty) {
                             Ok(typedef) => {
-                                writeln!(io::stderr(), "processed typedef        {}::{}", mod_name, &item.ident).unwrap();
+                                writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
                                 library.typedefs.insert(alias_name, typedef);
                                 continue;
                             }
                             Err(msg) => msg,
                         };
-                        writeln!(io::stderr(), "skipping type alias      {}::{} - {} and {}", mod_name, &item.ident, fail1, fail2).unwrap();
+                        writeln!(io::stderr(), "skip {}::{} - ({} and {})", mod_name, &item.ident, fail1, fail2).unwrap();
                     }
                     _ => {}
                 }
@@ -244,7 +245,7 @@ impl Library {
                 out.push(value);
             }
         } else {
-            writeln!(io::stderr(), "warning, can't find {}", p).unwrap();
+            writeln!(io::stderr(), "warning: can't find {}", p).unwrap();
         }
     }
 
@@ -252,7 +253,7 @@ impl Library {
         if let Some(value) = self.resolve_path(p) {
             value.add_deps(self, out);
         } else {
-            writeln!(io::stderr(), "warning, can't find {}", p).unwrap();
+            writeln!(io::stderr(), "warning: can't find {}", p).unwrap();
         }
     }
 
@@ -282,7 +283,7 @@ impl Library {
                             result.items.push(value);
                         }
                         Err(msg) => {
-                            writeln!(io::stderr(), "error specializing {} - {}", dep.name(), msg).unwrap();
+                            writeln!(io::stderr(), "error: specializing {} failed - ({})", dep.name(), msg).unwrap();
                         }
                     }
                     continue;
@@ -291,6 +292,18 @@ impl Library {
             }
             result.items.push(dep);
         }
+
+        // Bring the enums all the way to the top because they
+        // don't depend on anyone else, and it makes the output
+        // nicer
+        result.items.sort_by(|a, b| {
+            match (a, b) {
+                (&PathValue::Enum(ref e1), &PathValue::Enum(ref e2)) => e1.name.cmp(&e2.name),
+                (&PathValue::Enum(_), _) => Ordering::Less,
+                (_, &PathValue::Enum(_)) => Ordering::Greater,
+                _ => Ordering::Equal,
+            }
+        });
 
         result.functions = self.functions.iter()
                                          .map(|(_, function)| function.clone())
