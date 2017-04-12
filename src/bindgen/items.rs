@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use syn::*;
 
 use bindgen::library::*;
@@ -128,59 +130,81 @@ impl Type {
         }
     }
 
-    pub fn generate(&self) -> String {
+    fn write<F: Write>(&self, out: &mut F) {
         match self {
             &Type::ConstPtr(ref t) => {
-                format!("const {}*", t.generate())
+                write!(out, "const ").unwrap();
+                t.write(out);
+                write!(out, "*").unwrap();
             }
             &Type::Ptr(ref t) => {
-                format!("{}*", t.generate())
+                t.write(out);
+                write!(out, "*").unwrap();
             }
             &Type::Path(ref p) => {
-                p.clone()
+                write!(out, "{}", p).unwrap();
             }
             &Type::Primitive(ref p) => {
-                p.clone()
+                write!(out, "{}", p).unwrap();
             }
             &Type::Array(ref t, ref sz) => {
-                format!("{}[{}]", t.generate(), sz)
+                t.write(out);
+                write!(out, "[{}]", sz).unwrap();
             }
             &Type::FuncPtr(ref opt_ret, ref args) => {
-                format!("{} (*)({})",
-                        opt_ret.as_ref().map_or(format!("void"), |x| { x.generate() }),
-                        args.iter()
-                            .map(|x| { format!("{}", x.generate()) })
-                            .collect::<Vec<_>>()
-                            .join(", "))
+                if let &Some(ref ret) = opt_ret {
+                    ret.write(out);
+                } else {
+                    write!(out, "void").unwrap();
+                }
+                write!(out, " (*)(").unwrap();
+                for (i, arg) in args.iter().enumerate() {
+                    if i != 0 {
+                        write!(out, ", ").unwrap();
+                    }
+                    arg.write(out);
+                }
+                write!(out, ")").unwrap();
             }
         }
     }
 
-    pub fn generate_with_ident(&self, ident: &str) -> String {
+    fn write_with_ident<F: Write>(&self, ident: &str, out: &mut F) {
         match self {
             &Type::ConstPtr(ref t) => {
-                format!("const {} *{}", t.generate(), ident)
+                write!(out, "const ").unwrap();
+                t.write(out);
+                write!(out, "*{}", ident).unwrap();
+
             }
             &Type::Ptr(ref t) => {
-                format!("{} *{}", t.generate(), ident)
+                t.write(out);
+                write!(out, "*{}", ident).unwrap();
             }
             &Type::Path(ref p) => {
-                format!("{} {}", p, ident)
+                write!(out, "{} {}", p, ident).unwrap();
             }
             &Type::Primitive(ref p) => {
-                format!("{} {}", p, ident)
+                write!(out, "{} {}", p, ident).unwrap();
             }
             &Type::Array(ref t, ref sz) => {
-                format!("{} {}[{}]", t.generate(), ident, sz)
+                t.write(out);
+                write!(out, " {}[{}]", ident, sz).unwrap();
             }
             &Type::FuncPtr(ref opt_ret, ref args) => {
-                format!("{} (*{})({})",
-                        opt_ret.as_ref().map_or(format!("void"), |x| { x.generate() }),
-                        ident,
-                        args.iter()
-                            .map(|x| { format!("{}", x.generate()) })
-                            .collect::<Vec<_>>()
-                            .join(", "))
+                if let &Some(ref ret) = opt_ret {
+                    ret.write(out);
+                } else {
+                    write!(out, "void").unwrap();
+                }
+                write!(out, " (*{})(", ident).unwrap();
+                for (i, arg) in args.iter().enumerate() {
+                    if i != 0 {
+                        write!(out, ", ").unwrap();
+                    }
+                    arg.write(out);
+                }
+                write!(out, ")").unwrap();
             }
         }
     }
@@ -222,21 +246,24 @@ impl Function {
         }
     }
 
-    pub fn generate(&self) -> String {
-        format!("WR_INLINE {}\n{}({})\n{};",
-                self.return_ty.as_ref().map_or(format!("void"), |x| { x.generate() }),
-                self.name,
-                self.args.iter()
-                         .map(|x| {
-                            format!("{}", x.1.generate_with_ident(&x.0))
-                         })
-                         .collect::<Vec<_>>()
-                         .join(",\n    "),
-                if self.wr_destructor_safe {
-                    "WR_DESTRUCTOR_SAFE_FUNC"
-                } else {
-                    "WR_FUNC"
-                })
+    pub fn write<F: Write>(&self, out: &mut F) {
+        write!(out, "WR_INLINE ").unwrap();
+        match self.return_ty.as_ref() {
+            Some(ty) => ty.write(out),
+            None => write!(out, "void").unwrap(),
+        }
+        write!(out, "\n{}(", self.name).unwrap();
+        for (i, arg) in self.args.iter().enumerate() {
+            if i != 0 {
+                write!(out, ",\n    ").unwrap();
+            }
+            arg.1.write_with_ident(&arg.0, out);
+        }
+        if self.wr_destructor_safe {
+            write!(out, "WR_DESTRUCTOR_SAFE_FUNC;").unwrap()
+        } else {
+            write!(out, "WR_FUNC;").unwrap()
+        }
     }
 }
 
@@ -291,20 +318,27 @@ impl Struct {
         }
     }
 
-    pub fn generate(&self) -> String {
-        let fields = self.fields.iter()
-                           .map(|x| format!("  {};", x.1.generate_with_ident(&x.0)))
-                           .collect::<Vec<_>>()
-                           .join("\n");
+    pub fn write<F: Write>(&self, out: &mut F) {
+        writeln!(out, "struct {} {{", self.name).unwrap();
+        for (i, field) in self.fields.iter().enumerate() {
+            if i != 0 {
+                write!(out, ";\n  ").unwrap();
+            }
+            field.1.write_with_ident(&field.0, out);
+        }
+        write!(out, "\n").unwrap();
 
-        let op = format!("  bool operator==(const {}& aOther) const {{\n    return {};\n  }}",
-            self.name,
-            self.fields.iter()
-                       .map(|x| format!("{} == aOther.{}", x.0, x.0))
-                       .collect::<Vec<_>>()
-                       .join(" &&\n      "));
+        writeln!(out, "  bool operator==(const {}& aOther) const {{", self.name).unwrap();
+        write!(out, "    return ").unwrap();
+        for (i, field) in self.fields.iter().enumerate() {
+            if i != 0 {
+                write!(out, " &&\n      ").unwrap();
+            }
+            write!(out, "{} == {}", field.0, field.0).unwrap();
+        }
+        writeln!(out, "  }};").unwrap();
 
-        format!("struct {} {{\n{}\n\n{}\n}};", self.name, fields, op)
+        write!(out, "}};").unwrap();
     }
 }
 
@@ -320,8 +354,8 @@ impl OpaqueStruct {
         }
     }
 
-    pub fn generate(&self) -> String {
-        format!("struct {};", self.name)
+    pub fn write<F: Write>(&self, out: &mut F) {
+        write!(out, "struct {};", self.name).unwrap();
     }
 }
 
@@ -364,16 +398,16 @@ impl Enum {
         })
     }
 
-    pub fn generate(&self) -> String {
-        let mut values = self.values.iter()
-                                    .map(|x| format!("  {} = {},", x.0, x.1))
-                                    .collect::<Vec<_>>()
-                                    .join("\n");
-        values.push_str("\n\n  Sentinel /* this must be last for serialization purposes. */");
-
-        format!("enum class {} : uint32_t {{\n{}\n}};",
-                self.name,
-                values)
+    pub fn write<F: Write>(&self, out: &mut F) {
+        writeln!(out, "enum class {} : uint32_t {{", self.name).unwrap();
+        for (i, value) in self.values.iter().enumerate() {
+            if i != 0 {
+                write!(out, ",\n  ").unwrap();
+            }
+            write!(out, "{} = {}", value.0, value.1).unwrap();
+        }
+        write!(out, "\n\n  Sentinel /* this must be last for serialization purposes. */").unwrap();
+        write!(out, "}};").unwrap();
     }
 }
 
@@ -486,8 +520,9 @@ impl Typedef {
         self.aliased.add_deps(library, out);
     }
 
-    pub fn generate(&self) -> String {
-        format!("typedef {};",
-                self.aliased.generate_with_ident(&self.name))
+    pub fn write<F: Write>(&self, out: &mut F) {
+        write!(out, "typedef ").unwrap();
+        self.aliased.write_with_ident(&self.name, out);
+        write!(out, ";").unwrap();
     }
 }

@@ -1,3 +1,4 @@
+use std::io;
 use std::collections::HashSet;
 
 extern crate syn;
@@ -33,8 +34,10 @@ r###"struct WrGlyphInstance {
   }
 };"###));
 
-    let lib = bindgen::Library::load(crate_or_src, vec![glyph_instance], HashSet::new());
+    let lib = bindgen::Library::load(crate_or_src,
+                                     vec![glyph_instance],
+                                     HashSet::new());
     let built = lib.build().unwrap();
 
-    print!("{}", built.generate());
+    built.write(&mut io::stdout());
 }

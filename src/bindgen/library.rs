@@ -59,8 +59,8 @@ impl Prebuilt {
         }
     }
 
-    fn generate(&self) -> String {
-        self.source.clone()
+    fn write<F: Write>(&self, out: &mut F) {
+        write!(out, "{}", self.source).unwrap();
     }
 }
 
@@ -92,7 +92,10 @@ impl Library {
         }
     }
 
-    pub fn load(crate_or_src: &str, prebuilts: Vec<Prebuilt>, ignore: HashSet<String>) -> Library {
+    pub fn load(crate_or_src: &str,
+                prebuilts: Vec<Prebuilt>,
+                ignore: HashSet<String>) -> Library
+    {
         let mut library = Library::blank();
 
         rust_lib::parse(crate_or_src, &mut |mod_name, items| {
@@ -312,41 +315,36 @@ impl BuiltLibrary {
         }
     }
 
-    pub fn generate(&self) -> String {
-        let mut result = String::new();
-
-        result.push_str(r###"/* This Source Code Form is subject to the terms of the Mozilla Public
+    pub fn write<F: Write>(&self, out: &mut F) {
+        writeln!(out,
+r###"/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+"###).unwrap();
 
-"###);
-        result.push_str("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
+        writeln!(out, "/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */\n").unwrap();
 
         for item in &self.items {
-            result.push_str(&match item {
-                &PathValue::Enum(ref x) => x.generate(),
-                &PathValue::Struct(ref x) => x.generate(),
-                &PathValue::OpaqueStruct(ref x) => x.generate(),
-                &PathValue::Typedef(ref x) => x.generate(),
+            match item {
+                &PathValue::Enum(ref x) => x.write(out),
+                &PathValue::Struct(ref x) => x.write(out),
+                &PathValue::OpaqueStruct(ref x) => x.write(out),
+                &PathValue::Typedef(ref x) => x.write(out),
                 &PathValue::Specialization(_) => {
                     panic!("should not encounter a specialization in a built library")
                 }
-                &PathValue::Prebuilt(ref x) => x.generate(),
-            });
-            result.push_str("\n\n");
+                &PathValue::Prebuilt(ref x) => x.write(out),
+            }
+            write!(out, "\n\n").unwrap();
         }
 
-        result.push_str("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
-        result.push_str("\n");
+        writeln!(out, "/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */\n").unwrap();
 
         for function in &self.functions {
-            result.push_str(&function.generate());
-            result.push_str("\n\n");
+            function.write(out);
+            write!(out, "\n\n").unwrap();
         }
 
-        result.push_str("/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */");
-        result.push_str("\n");
-
-        result
+        writeln!(out, "/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */\n").unwrap();
     }
 }
