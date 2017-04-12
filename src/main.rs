@@ -1,13 +1,24 @@
-use std::env;
 use std::collections::HashSet;
 
 extern crate syn;
+extern crate clap;
+
+use clap::{Arg, App};
 
 mod rust_lib;
 mod bindgen;
 
 fn main() {
-    let p = env::args().nth(1).unwrap();
+    let matches = App::new("cbindgen")
+                    .version("0.1.0")
+                    .about("Generate C bindings for a Rust library")
+                    .arg(Arg::with_name("INPUT")
+                         .help("The crate or source file to generate bindings for")
+                         .required(true)
+                         .index(1))
+                    .get_matches();
+
+    let crate_or_src = matches.value_of("INPUT").unwrap();
 
     let glyph_instance = bindgen::Prebuilt::new(
                                     String::from("GlyphInstance"),
@@ -22,7 +33,7 @@ r###"struct WrGlyphInstance {
   }
 };"###));
 
-    let lib = bindgen::Library::load(p, vec![glyph_instance], HashSet::new());
+    let lib = bindgen::Library::load(crate_or_src, vec![glyph_instance], HashSet::new());
     let built = lib.build().unwrap();
 
     print!("{}", built.generate());

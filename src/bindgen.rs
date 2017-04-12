@@ -289,10 +289,10 @@ impl Library {
         }
     }
 
-    pub fn load(root_crate: String, prebuilts: Vec<Prebuilt>, ignore: HashSet<String>) -> Library {
+    pub fn load(crate_or_src: &str, prebuilts: Vec<Prebuilt>, ignore: HashSet<String>) -> Library {
         let mut library = Library::blank();
 
-        rust_lib::parse(root_crate, &mut |mod_name, items| {
+        rust_lib::parse(crate_or_src, &mut |mod_name, items| {
             for item in items {
                 if ignore.contains(&item.ident.to_string()) {
                     continue;

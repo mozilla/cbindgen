@@ -7,6 +7,9 @@ authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>", "Kartikaya Gupta <kats@moz
 repository = "https://github.com/rlhunt/cbindgen/"
 exclude = ["examples/**"]
 
+[dependencies]
+clap = "2.23.2"
+
 [dependencies.syn]
 version = "0.11.8"
 features = ["full"]

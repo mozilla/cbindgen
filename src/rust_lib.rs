@@ -15,12 +15,25 @@ use syn;
  * to read the crate's Cargo.toml to find the crate, but it works well
  * enough to find the crates that matter for creating bindings.
  */
-pub fn parse<F>(crate_dir: String,
+pub fn parse<F>(crate_or_src: &str,
                 items_callback: &mut F)
     where F: FnMut(String, &Vec<syn::Item>)
 {
-    parse_crate(PathBuf::from(crate_dir),
-                items_callback);
+    let path = PathBuf::from(crate_or_src);
+
+    if path.is_dir() {
+        parse_crate(path,
+                    items_callback);
+    } else {
+        let src_parsed = {
+            let mut s = String::new();
+            let mut f = File::open(path).unwrap();
+            f.read_to_string(&mut s).unwrap();
+            syn::parse_crate(&s).unwrap()
+        };
+
+        items_callback(String::new(), &src_parsed.items);
+    }
 }
 
 fn parse_crate<F>(crate_dir: PathBuf,
