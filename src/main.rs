@@ -1,4 +1,5 @@
 use std::io;
+use std::fs::File;
 use std::collections::HashSet;
 
 extern crate syn;
@@ -14,9 +15,13 @@ fn main() {
                     .version("0.1.0")
                     .about("Generate C bindings for a Rust library")
                     .arg(Arg::with_name("INPUT")
-                         .help("The crate or source file to generate bindings for")
+                         .help("the crate or source file to generate bindings for")
                          .required(true)
                          .index(1))
+                    .arg(Arg::with_name("OUTPUT")
+                         .help("the path to output the directories to")
+                         .required(false)
+                         .index(2))
                     .get_matches();
 
     let crate_or_src = matches.value_of("INPUT").unwrap();
@@ -39,5 +44,9 @@ r###"struct WrGlyphInstance {
                                      HashSet::new());
     let built = lib.build().unwrap();
 
-    built.write(&mut io::stdout());
+    if let Some(out_file) = matches.value_of("OUTPUT") {
+        built.write(&mut File::create(out_file).unwrap());
+    } else {
+        built.write(&mut io::stdout());
+    }
 }
