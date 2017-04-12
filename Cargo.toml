@@ -1,8 +1,9 @@
 [package]
 name = "cbindgen"
+description = "This project can be used to generate C bindings for rust code."
+license = "MPL-2.0"
 version = "0.1.0"
 authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>", "Kartikaya Gupta <kats@mozilla.com>", "Ryan Hunt <rhunt@eqrion.net>"]
-homepage = "https://github.com/rlhunt/cbindgen/"
 repository = "https://github.com/rlhunt/cbindgen/"
 exclude = ["examples/**"]
 
