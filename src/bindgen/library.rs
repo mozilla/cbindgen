@@ -322,7 +322,7 @@ r###"/* This Source Code Form is subject to the terms of the Mozilla Public
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 "###).unwrap();
 
-        writeln!(out, "/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */\n").unwrap();
+        writeln!(out, "/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. */\n").unwrap();
 
         for item in &self.items {
             match item {
@@ -338,13 +338,13 @@ r###"/* This Source Code Form is subject to the terms of the Mozilla Public
             write!(out, "\n\n").unwrap();
         }
 
-        writeln!(out, "/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */\n").unwrap();
+        writeln!(out, "/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. */\n").unwrap();
 
         for function in &self.functions {
             function.write(out);
             write!(out, "\n\n").unwrap();
         }
 
-        writeln!(out, "/* THIS FILE IS GENERATED! DO NOT MODIFY MANUALLY! See https://github.com/jrmuizel/wr-binding! */\n").unwrap();
+        writeln!(out, "/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. */").unwrap();
     }
 }

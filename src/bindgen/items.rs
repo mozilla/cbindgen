@@ -259,6 +259,7 @@ impl Function {
             }
             arg.1.write_with_ident(&arg.0, out);
         }
+        write!(out, ")\n").unwrap();
         if self.wr_destructor_safe {
             write!(out, "WR_DESTRUCTOR_SAFE_FUNC;").unwrap()
         } else {
@@ -322,9 +323,11 @@ impl Struct {
         writeln!(out, "struct {} {{", self.name).unwrap();
         for (i, field) in self.fields.iter().enumerate() {
             if i != 0 {
-                write!(out, ";\n  ").unwrap();
+                write!(out, "\n").unwrap();
             }
+            write!(out, "  ").unwrap();
             field.1.write_with_ident(&field.0, out);
+            write!(out, ";").unwrap();
         }
         write!(out, "\n").unwrap();
 
@@ -334,9 +337,9 @@ impl Struct {
             if i != 0 {
                 write!(out, " &&\n      ").unwrap();
             }
-            write!(out, "{} == {}", field.0, field.0).unwrap();
+            write!(out, "{} == aOther.{}", field.0, field.0).unwrap();
         }
-        writeln!(out, "  }};").unwrap();
+        writeln!(out, ";\n  }}").unwrap();
 
         write!(out, "}};").unwrap();
     }
@@ -402,11 +405,11 @@ impl Enum {
         writeln!(out, "enum class {} : uint32_t {{", self.name).unwrap();
         for (i, value) in self.values.iter().enumerate() {
             if i != 0 {
-                write!(out, ",\n  ").unwrap();
+                write!(out, "\n").unwrap();
             }
-            write!(out, "{} = {}", value.0, value.1).unwrap();
+            write!(out, "  {} = {},", value.0, value.1).unwrap();
         }
-        write!(out, "\n\n  Sentinel /* this must be last for serialization purposes. */").unwrap();
+        writeln!(out, "\n\n  Sentinel /* this must be last for serialization purposes. */").unwrap();
         write!(out, "}};").unwrap();
     }
 }
