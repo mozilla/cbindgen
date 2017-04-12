@@ -1,15 +1,25 @@
-This project can be used to generate C bindings for rust code. In particular it will be used for generating a C API for webrender.
+# `cbindgen`
 
-Steps to use:
-- cargo run path/to/mozilla/gfx/webrender\_bindings > path/to/mozilla/gfx/webrender\_bindings/webrender\_ffi\_generated.h
-- Compile and test your mozilla build. Deal with any errors by fixing the wr-binding generator or other things in the mozilla tree.
+This project can be used to generate C bindings for rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/).
 
-The first step above will spew a bunch of output to stderr - you can ignore it unless the run fails. The way wr-binding works
-is by processing the .rs files and looking for function signatures with the `no_mangle` attribute on them. These functions will
-have C signatures generated. Furthermore, the generator looks for structs with `repr(C)` and enums with `repr(u32)`, and if they
-are used by the `no_mangle` functions, generates bindings for those as well. If you try to use a struct that is not `repr(C)` or
-an enum that is not `repr(u32)` the generator will just ignore it and you will probably get a build failure in your mozilla
-tree.
+## Use
 
-Future work:
-- Make wr-binding generate even more things, so that webrender\_ffi.h is minimal.
+`cbindgen path_to_crate > autogen.h`
+
+## How it works
+
+1. All the structs, enums, type aliases, and functions that are representable in C are gathered
+2. A dependency graph is built using the extern "C" functions as roots
+  * This removes unneeded types from the bindings and sorts the structs that depend on each other
+3. Some code generation is done to specialize generics that are specified as type aliases
+3. The items are printed in dependency order in C syntax
+
+## Future work
+
+1. Add code for customizing bindings and removing code specific to WebRender
+2. Improve the CLI
+3. Better logging
+4. Sort the output types better
+5. Better support for types with fully specified names
+6. Add a validation step
+7. ...
