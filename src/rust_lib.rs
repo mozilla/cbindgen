@@ -16,16 +16,16 @@ use syn;
  * enough to find the crates that matter for creating bindings.
  */
 pub fn parse<F>(crate_dir: String,
-                items_callback: &F)
-    where F: Fn(String, &Vec<syn::Item>)
+                items_callback: &mut F)
+    where F: FnMut(String, &Vec<syn::Item>)
 {
     parse_crate(PathBuf::from(crate_dir),
                 items_callback);
 }
 
 fn parse_crate<F>(crate_dir: PathBuf,
-                  items_callback: &F)
-    where F: Fn(String, &Vec<syn::Item>)
+                  items_callback: &mut F)
+    where F: FnMut(String, &Vec<syn::Item>)
 {
     parse_mod(crate_dir.clone(),
               crate_dir.join("src/lib.rs"),
@@ -34,8 +34,8 @@ fn parse_crate<F>(crate_dir: PathBuf,
 
 fn parse_mod<F>(crate_dir: PathBuf,
                 mod_path: PathBuf,
-                items_callback: &F)
-    where F: Fn(String, &Vec<syn::Item>)
+                items_callback: &mut F)
+    where F: FnMut(String, &Vec<syn::Item>)
 {
     let mod_dir = mod_path.parent().unwrap().to_path_buf();
     let mod_parsed = {
