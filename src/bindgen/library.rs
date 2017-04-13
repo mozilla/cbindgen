@@ -1,4 +1,3 @@
-use std::io;
 use std::io::Write;
 use std::collections::BTreeMap;
 use std::cmp::Ordering;
@@ -86,12 +85,12 @@ impl Library {
                         if item.is_no_mangle() && abi.is_c() {
                             match Function::convert(item.ident.to_string(), item.is_wr_destructor_safe(), decl) {
                                 Ok(func) => {
-                                    writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
+                                    info!("take {}::{}", mod_name, &item.ident);
 
                                     library.functions.insert(func.name.clone(), func);
                                 }
                                 Err(msg) => {
-                                    writeln!(io::stderr(), "skip {}::{} - ({})", mod_name, &item.ident, msg).unwrap();
+                                    info!("skip {}::{} - ({})", mod_name, &item.ident, msg);
                                 },
                             }
                         }
@@ -103,18 +102,18 @@ impl Library {
                         if item.is_repr_c() {
                             match Struct::convert(struct_name.clone(), variant, generics) {
                                 Ok(st) => {
-                                    writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
+                                    info!("take {}::{}", mod_name, &item.ident);
                                     library.structs.insert(struct_name,
                                                            st);
                                 }
                                 Err(msg) => {
-                                    writeln!(io::stderr(), "take {}::{} - opaque ({})", mod_name, &item.ident, msg).unwrap();
+                                    info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
                                     library.opaque_structs.insert(struct_name.clone(),
                                                                   OpaqueStruct::new(struct_name));
                                 }
                             }
                         } else {
-                            writeln!(io::stderr(), "take {}::{} - opaque (not marked as repr(C))", mod_name, &item.ident).unwrap();
+                            info!("take {}::{} - opaque (not marked as repr(C))", mod_name, &item.ident);
                             library.opaque_structs.insert(struct_name.clone(),
                                                           OpaqueStruct::new(struct_name));
                         }
@@ -123,7 +122,7 @@ impl Library {
                         if !generics.lifetimes.is_empty() ||
                            !generics.ty_params.is_empty() ||
                            !generics.where_clause.predicates.is_empty() {
-                            writeln!(io::stderr(), "skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident).unwrap();
+                            info!("skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident);
                             continue;
                         }
 
@@ -132,22 +131,22 @@ impl Library {
 
                             match Enum::convert(enum_name.clone(), variants) {
                                 Ok(en) => {
-                                    writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
+                                    info!("take {}::{}", mod_name, &item.ident);
                                     library.enums.insert(enum_name, en);
                                 }
                                 Err(msg) => {
-                                    writeln!(io::stderr(), "skip {}::{} - ({})", mod_name, &item.ident, msg).unwrap();
+                                    info!("skip {}::{} - ({})", mod_name, &item.ident, msg);
                                 }
                             }
                         } else {
-                            writeln!(io::stderr(), "skip {}::{} - (not marked as repr(u32)", mod_name, &item.ident).unwrap();
+                            info!("skip {}::{} - (not marked as repr(u32)", mod_name, &item.ident);
                         }
                     }
                     ItemKind::Ty(ref ty, ref generics) => {
                         if !generics.lifetimes.is_empty() ||
                            !generics.ty_params.is_empty() ||
                            !generics.where_clause.predicates.is_empty() {
-                            writeln!(io::stderr(), "skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident).unwrap();
+                            info!("skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident);
                             continue;
                         }
 
@@ -155,7 +154,7 @@ impl Library {
 
                         let fail1 = match Specialization::convert(alias_name.clone(), ty) {
                             Ok(spec) => {
-                                writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
+                                info!("take {}::{}", mod_name, &item.ident);
                                 library.specializations.insert(alias_name, spec);
                                 continue;
                             }
@@ -163,13 +162,13 @@ impl Library {
                         };
                         let fail2 = match Typedef::convert(alias_name.clone(), ty) {
                             Ok(typedef) => {
-                                writeln!(io::stderr(), "take {}::{}", mod_name, &item.ident).unwrap();
+                                info!("take {}::{}", mod_name, &item.ident);
                                 library.typedefs.insert(alias_name, typedef);
                                 continue;
                             }
                             Err(msg) => msg,
                         };
-                        writeln!(io::stderr(), "skip {}::{} - ({} and {})", mod_name, &item.ident, fail1, fail2).unwrap();
+                        info!("skip {}::{} - ({} and {})", mod_name, &item.ident, fail1, fail2);
                     }
                     _ => {}
                 }
@@ -207,7 +206,7 @@ impl Library {
                 out.push(value);
             }
         } else {
-            writeln!(io::stderr(), "warning: can't find {}", p).unwrap();
+            warn!("can't find {}", p);
         }
     }
 
@@ -215,7 +214,7 @@ impl Library {
         if let Some(value) = self.resolve_path(p) {
             value.add_deps(self, out);
         } else {
-            writeln!(io::stderr(), "warning: can't find {}", p).unwrap();
+            warn!("can't find {}", p);
         }
     }
 
@@ -245,7 +244,7 @@ impl Library {
                             result.items.push(value);
                         }
                         Err(msg) => {
-                            writeln!(io::stderr(), "error: specializing {} failed - ({})", dep.name(), msg).unwrap();
+                            warn!("specializing {} failed - ({})", dep.name(), msg);
                         }
                     }
                     continue;

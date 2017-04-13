@@ -1,11 +1,14 @@
 use std::io;
 use std::fs::File;
 
+#[macro_use]
+extern crate log;
 extern crate syn;
 extern crate clap;
 
 use clap::{Arg, App};
 
+mod logging;
 mod config;
 mod rust_lib;
 mod bindgen;
@@ -21,6 +24,9 @@ fn main() {
                          .long("config")
                          .value_name("CONFIG")
                          .help("the config to use. currently either `wr`, or `default`"))
+                    .arg(Arg::with_name("v")
+                         .short("v")
+                         .help("whether to print verbose logs"))
                     .arg(Arg::with_name("INPUT")
                          .help("the crate or source file to generate bindings for")
                          .required(true)
@@ -30,6 +36,12 @@ fn main() {
                          .required(false)
                          .index(2))
                     .get_matches();
+
+    if matches.is_present("v") {
+        logging::InfoLogger::init().unwrap();
+    } else {
+        logging::WarnLogger::init().unwrap();
+    }
 
     let input = matches.value_of("INPUT").unwrap();
     let config = match matches.value_of("config") {
