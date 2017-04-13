@@ -3,6 +3,7 @@ use std::io::Write;
 use syn::*;
 
 use config::Config;
+use bindgen::directive::*;
 use bindgen::library::*;
 use bindgen::syn_helpers::*;
 
@@ -214,13 +215,16 @@ impl Type {
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
-    pub wr_destructor_safe: bool,
+    pub directives: Vec<Directive>,
     pub return_ty: Option<Type>,
     pub args: Vec<(String, Type)>,
 }
 
 impl Function {
-    pub fn convert(name: String, wr_destructor_safe: bool, decl: &FnDecl) -> ConvertResult<Function> {
+    pub fn convert(name: String,
+                   directives: Vec<Directive>,
+                   decl: &FnDecl) -> ConvertResult<Function>
+    {
         let args = decl.inputs.iter()
                               .map(|x| x.as_ident_and_type().ok())
                               .collect::<Vec<_>>();
@@ -229,7 +233,7 @@ impl Function {
         if args.iter().all(|x| x.is_some()) {
             Ok(Function {
                 name: name,
-                wr_destructor_safe: wr_destructor_safe,
+                directives: directives,
                 return_ty: ret,
                 args: args.iter().filter_map(|x| x.clone()).collect(),
             })
@@ -248,8 +252,15 @@ impl Function {
     }
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
-        if let Some(ref f) = config.function_prefix {
-            write!(out, "{} ", f).unwrap();
+        match self.directives.set_function_prefix() {
+            Some(x) => {
+                write!(out, "{} ", x).unwrap()
+            }
+            _ => {
+                if let Some(ref f) = config.function_prefix {
+                    write!(out, "{} ", f).unwrap();
+                }
+            }
         }
 
         match self.return_ty.as_ref() {
@@ -266,11 +277,14 @@ impl Function {
         }
         write!(out, ")").unwrap();
 
-        if self.wr_destructor_safe {
-            write!(out, "\nWR_DESTRUCTOR_SAFE_FUNC").unwrap()
-        } else {
-            if let Some(ref f) = config.function_prefix {
-                write!(out, "\n{}", f).unwrap();
+        match self.directives.set_function_postfix() {
+            Some(x) => {
+                write!(out, "\n{}", x).unwrap()
+            }
+            _ => {
+                if let Some(ref f) = config.function_postfix {
+                    write!(out, "\n{}", f).unwrap();
+                }
             }
         }
         write!(out, ";").unwrap()
@@ -280,12 +294,17 @@ impl Function {
 #[derive(Debug, Clone)]
 pub struct Struct {
     pub name: String,
+    pub directives: Vec<Directive>,
     pub fields: Vec<(String, Type)>,
     pub generic_params: Vec<PathRef>,
 }
 
 impl Struct {
-    pub fn convert(name: String, decl: &VariantData, generics: &Generics) -> ConvertResult<Struct> {
+    pub fn convert(name: String,
+                   directives: Vec<Directive>,
+                   decl: &VariantData,
+                   generics: &Generics) -> ConvertResult<Struct>
+    {
         let fields = match decl {
             &VariantData::Struct(ref fields) => {
                 fields.iter()
@@ -314,6 +333,7 @@ impl Struct {
         if fields.iter().all(|x| x.is_some()) {
             Ok(Struct {
                 name: name,
+                directives: directives,
                 fields: fields.iter().filter_map(|x| x.clone()).collect(),
                 generic_params: generic_params,
             })
@@ -330,21 +350,40 @@ impl Struct {
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
         writeln!(out, "struct {} {{", self.name).unwrap();
-        for (i, field) in self.fields.iter().enumerate() {
+
+        let fields = match self.directives.set_field_names() {
+            Some(overrides) => {
+                let mut fields = Vec::new();
+
+                for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
+                    if i >= overrides.len() {
+                        fields.push((name.clone(), ty.clone()));
+                    } else {
+                        fields.push((overrides[i].clone(), ty.clone()));
+                    }
+                }
+
+                fields
+            }
+            _ => self.fields.clone(),
+        };
+
+        for (i, &(ref name, ref ty)) in fields.iter().enumerate() {
             if i != 0 {
                 write!(out, "\n").unwrap();
             }
             write!(out, "  ").unwrap();
-            field.1.write_with_ident(&field.0, out);
+            ty.write_with_ident(name, out);
             write!(out, ";").unwrap();
         }
+
         write!(out, "\n").unwrap();
 
-        if config.struct_gen_op_eq && !self.fields.is_empty() {
+        if (self.directives.set_struct_gen_op_eq().unwrap_or(false) || config.struct_gen_op_eq) && !self.fields.is_empty() {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator==(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
-            for (i, field) in self.fields.iter().enumerate() {
+            for (i, field) in fields.iter().enumerate() {
                 if i != 0 {
                     write!(out, " &&\n      ").unwrap();
                 }
@@ -354,11 +393,11 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.struct_gen_op_neq && !self.fields.is_empty() {
+        if (self.directives.set_struct_gen_op_neq().unwrap_or(false) || config.struct_gen_op_neq) && !self.fields.is_empty() {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator!=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
-            for (i, field) in self.fields.iter().enumerate() {
+            for (i, field) in fields.iter().enumerate() {
                 if i != 0 {
                     write!(out, " ||\n      ").unwrap();
                 }
@@ -368,11 +407,11 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.struct_gen_op_lt && self.fields.len() == 1 {
+        if (self.directives.set_struct_gen_op_lt().unwrap_or(false) || config.struct_gen_op_lt) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator<(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
-            for (i, field) in self.fields.iter().enumerate() {
+            for (i, field) in fields.iter().enumerate() {
                 if i != 0 {
                     write!(out, " &&\n      ").unwrap();
                 }
@@ -382,11 +421,11 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.struct_gen_op_lte && self.fields.len() == 1 {
+        if (self.directives.set_struct_gen_op_lte().unwrap_or(false) || config.struct_gen_op_lte) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator<=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
-            for (i, field) in self.fields.iter().enumerate() {
+            for (i, field) in fields.iter().enumerate() {
                 if i != 0 {
                     write!(out, " &&\n      ").unwrap();
                 }
@@ -396,11 +435,11 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.struct_gen_op_gt && self.fields.len() == 1 {
+        if (self.directives.set_struct_gen_op_gt().unwrap_or(false) || config.struct_gen_op_gt) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator>(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
-            for (i, field) in self.fields.iter().enumerate() {
+            for (i, field) in fields.iter().enumerate() {
                 if i != 0 {
                     write!(out, " &&\n      ").unwrap();
                 }
@@ -410,11 +449,11 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.struct_gen_op_gte && self.fields.len() == 1 {
+        if (self.directives.set_struct_gen_op_gte().unwrap_or(false) || config.struct_gen_op_gte) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator>=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
-            for (i, field) in self.fields.iter().enumerate() {
+            for (i, field) in fields.iter().enumerate() {
                 if i != 0 {
                     write!(out, " &&\n      ").unwrap();
                 }
@@ -431,12 +470,15 @@ impl Struct {
 #[derive(Debug, Clone)]
 pub struct OpaqueStruct {
     pub name: PathRef,
+    pub directives: Vec<Directive>,
 }
 
 impl OpaqueStruct {
-    pub fn new(name: String) -> OpaqueStruct {
+    pub fn new(name: String, directives: Vec<Directive>) -> OpaqueStruct
+    {
         OpaqueStruct {
             name: name,
+            directives: directives,
         }
     }
 
@@ -448,11 +490,15 @@ impl OpaqueStruct {
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub name: String,
+    pub directives: Vec<Directive>,
     pub values: Vec<(String, u64)>,
 }
 
 impl Enum {
-    pub fn convert(name: String, variants: &Vec<Variant>) -> ConvertResult<Enum> {
+    pub fn convert(name: String,
+                   directives: Vec<Directive>,
+                   variants: &Vec<Variant>) -> ConvertResult<Enum>
+    {
         let mut values = Vec::new();
         let mut current = 0;
 
@@ -480,6 +526,7 @@ impl Enum {
 
         Ok(Enum {
             name: name,
+            directives: directives,
             values: values,
         })
     }
@@ -502,12 +549,16 @@ impl Enum {
 #[derive(Debug, Clone)]
 pub struct Specialization {
     pub name: String,
+    pub directives: Vec<Directive>,
     pub aliased: PathRef,
     pub generic_values: Vec<PathRef>,
 }
 
 impl Specialization {
-    pub fn convert(name: String, ty: &Ty) -> ConvertResult<Specialization> {
+    pub fn convert(name: String,
+                   directives: Vec<Directive>,
+                   ty: &Ty) -> ConvertResult<Specialization>
+    {
         match ty {
             &Ty::Path(ref _q, ref p) => {
                 let (path, generics) = try!(p.convert_to_generic_single_segment().ok_or("not a generic single segment"));
@@ -518,6 +569,7 @@ impl Specialization {
 
                 Ok(Specialization {
                     name: name,
+                    directives: directives,
                     aliased: path,
                     generic_values: generics.iter()
                                             .map(|x| map_path_name_to_primitive(x))
@@ -548,6 +600,7 @@ impl Specialization {
                     PathValue::OpaqueStruct(_) => {
                         Ok(PathValue::OpaqueStruct(OpaqueStruct {
                             name: self.name.clone(),
+                            directives: self.directives.clone(),
                         }))
                     }
                     PathValue::Struct(aliased) => {
@@ -561,6 +614,7 @@ impl Specialization {
                                                              .collect::<Vec<_>>();
                         Ok(PathValue::Struct(Struct {
                             name: self.name.clone(),
+                            directives: self.directives.clone(),
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
                                                   .collect(),
@@ -570,6 +624,7 @@ impl Specialization {
                     PathValue::Enum(aliased) => {
                         Ok(PathValue::Enum(Enum {
                             name: self.name.clone(),
+                            directives: self.directives.clone(),
                             values: aliased.values.clone(),
                         }))
                     }
@@ -586,13 +641,17 @@ impl Specialization {
 #[derive(Debug, Clone)]
 pub struct Typedef {
     pub name: String,
+    pub directives: Vec<Directive>,
     pub aliased: Type,
 }
 
 impl Typedef {
-    pub fn convert(name: String, ty: &Ty) -> ConvertResult<Typedef> {
+    pub fn convert(name: String,
+                   directives: Vec<Directive>,
+                   ty: &Ty) -> ConvertResult<Typedef> {
         Ok(Typedef {
             name: name,
+            directives: directives,
             aliased: try!(Type::convert(ty)),
         })
     }

@@ -6,6 +6,7 @@ use syn::*;
 
 use config::Config;
 use rust_lib;
+use bindgen::directive::*;
 use bindgen::items::*;
 use bindgen::syn_helpers::*;
 
@@ -83,7 +84,15 @@ impl Library {
                                  ref _generic,
                                  ref _block) => {
                         if item.is_no_mangle() && abi.is_c() {
-                            match Function::convert(item.ident.to_string(), item.is_wr_destructor_safe(), decl) {
+                            let directives = match Directive::parse(item.get_doc_attr()) {
+                                Ok(x) => x,
+                                Err(msg) => {
+                                    warn!("{}", msg);
+                                    vec![]
+                                }
+                            };
+
+                            match Function::convert(item.ident.to_string(), directives, decl) {
                                 Ok(func) => {
                                     info!("take {}::{}", mod_name, &item.ident);
 
@@ -98,9 +107,16 @@ impl Library {
                     ItemKind::Struct(ref variant,
                                      ref generics) => {
                         let struct_name = item.ident.to_string();
+                        let directives = match Directive::parse(item.get_doc_attr()) {
+                            Ok(x) => x,
+                            Err(msg) => {
+                                warn!("{}", msg);
+                                vec![]
+                            }
+                        };
 
                         if item.is_repr_c() {
-                            match Struct::convert(struct_name.clone(), variant, generics) {
+                            match Struct::convert(struct_name.clone(), directives.clone(), variant, generics) {
                                 Ok(st) => {
                                     info!("take {}::{}", mod_name, &item.ident);
                                     library.structs.insert(struct_name,
@@ -109,13 +125,13 @@ impl Library {
                                 Err(msg) => {
                                     info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
                                     library.opaque_structs.insert(struct_name.clone(),
-                                                                  OpaqueStruct::new(struct_name));
+                                                                  OpaqueStruct::new(struct_name, directives));
                                 }
                             }
                         } else {
                             info!("take {}::{} - opaque (not marked as repr(C))", mod_name, &item.ident);
                             library.opaque_structs.insert(struct_name.clone(),
-                                                          OpaqueStruct::new(struct_name));
+                                                          OpaqueStruct::new(struct_name, directives));
                         }
                     }
                     ItemKind::Enum(ref variants, ref generics) => {
@@ -128,8 +144,15 @@ impl Library {
 
                         if item.is_repr_u32() {
                             let enum_name = item.ident.to_string();
+                            let directives = match Directive::parse(item.get_doc_attr()) {
+                                Ok(x) => x,
+                                Err(msg) => {
+                                    warn!("{}", msg);
+                                    vec![]
+                                }
+                            };
 
-                            match Enum::convert(enum_name.clone(), variants) {
+                            match Enum::convert(enum_name.clone(), directives, variants) {
                                 Ok(en) => {
                                     info!("take {}::{}", mod_name, &item.ident);
                                     library.enums.insert(enum_name, en);
@@ -151,8 +174,15 @@ impl Library {
                         }
 
                         let alias_name = item.ident.to_string();
+                        let directives = match Directive::parse(item.get_doc_attr()) {
+                            Ok(x) => x,
+                            Err(msg) => {
+                                warn!("{}", msg);
+                                vec![]
+                            }
+                        };
 
-                        let fail1 = match Specialization::convert(alias_name.clone(), ty) {
+                        let fail1 = match Specialization::convert(alias_name.clone(), directives.clone(), ty) {
                             Ok(spec) => {
                                 info!("take {}::{}", mod_name, &item.ident);
                                 library.specializations.insert(alias_name, spec);
@@ -160,7 +190,7 @@ impl Library {
                             }
                             Err(msg) => msg,
                         };
-                        let fail2 = match Typedef::convert(alias_name.clone(), ty) {
+                        let fail2 = match Typedef::convert(alias_name.clone(), directives, ty) {
                             Ok(typedef) => {
                                 info!("take {}::{}", mod_name, &item.ident);
                                 library.typedefs.insert(alias_name, typedef);

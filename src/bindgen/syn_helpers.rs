@@ -5,7 +5,7 @@ use bindgen::library::*;
 
 pub trait SynItemHelpers {
     fn has_attr(&self, target: MetaItem) -> bool;
-    fn has_doc_attr_with(&self, value: &str) -> bool;
+    fn get_doc_attr(&self) -> String;
 
     fn is_no_mangle(&self) -> bool {
         self.has_attr(MetaItem::Word(Ident::new("no_mangle")))
@@ -18,10 +18,6 @@ pub trait SynItemHelpers {
         let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("u32")))];
         self.has_attr(MetaItem::List(Ident::new("repr"), repr_args))
     }
-
-    fn is_wr_destructor_safe(&self) -> bool {
-        self.has_doc_attr_with("wr-binding:destructor_safe")
-    }
 }
 impl SynItemHelpers for Item {
     fn has_attr(&self, target: MetaItem) -> bool {
@@ -29,15 +25,18 @@ impl SynItemHelpers for Item {
                    .iter()
                    .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
     }
-    fn has_doc_attr_with(&self, target: &str) -> bool {
-        self.attrs.iter().any(|ref attr| {
-                     if attr.style == AttrStyle::Outer && attr.is_sugared_doc {
-                         if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
-                             return comment.contains(target);
-                         }
-                     }
-                     false
-                 })
+    fn get_doc_attr(&self) -> String {
+        let mut doc = String::new();
+        for attr in &self.attrs {
+            if attr.style == AttrStyle::Outer &&
+               attr.is_sugared_doc {
+                if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                    doc.push_str(&comment);
+                    doc.push('\n');
+                }
+            }
+        }
+        doc
     }
 }
 
