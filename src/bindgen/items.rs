@@ -328,7 +328,7 @@ impl Struct {
         }
     }
 
-    pub fn write<F: Write>(&self, out: &mut F) {
+    pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
         writeln!(out, "struct {} {{", self.name).unwrap();
         for (i, field) in self.fields.iter().enumerate() {
             if i != 0 {
@@ -338,17 +338,91 @@ impl Struct {
             field.1.write_with_ident(&field.0, out);
             write!(out, ";").unwrap();
         }
-        write!(out, "\n\n").unwrap();
+        write!(out, "\n").unwrap();
 
-        writeln!(out, "  bool operator==(const {}& aOther) const {{", self.name).unwrap();
-        write!(out, "    return ").unwrap();
-        for (i, field) in self.fields.iter().enumerate() {
-            if i != 0 {
-                write!(out, " &&\n      ").unwrap();
+        if config.struct_gen_op_eq && !self.fields.is_empty() {
+            write!(out, "\n").unwrap();
+            write!(out, "  bool operator==(const {}& aOther) const {{\n", self.name).unwrap();
+            write!(out, "    return ").unwrap();
+            for (i, field) in self.fields.iter().enumerate() {
+                if i != 0 {
+                    write!(out, " &&\n      ").unwrap();
+                }
+                write!(out, "{} == aOther.{}", field.0, field.0).unwrap();
             }
-            write!(out, "{} == aOther.{}", field.0, field.0).unwrap();
+            write!(out, ";\n  }}").unwrap();
+            write!(out, "\n").unwrap();
         }
-        writeln!(out, ";\n  }}").unwrap();
+
+        if config.struct_gen_op_neq && !self.fields.is_empty() {
+            write!(out, "\n").unwrap();
+            write!(out, "  bool operator!=(const {}& aOther) const {{\n", self.name).unwrap();
+            write!(out, "    return ").unwrap();
+            for (i, field) in self.fields.iter().enumerate() {
+                if i != 0 {
+                    write!(out, " ||\n      ").unwrap();
+                }
+                write!(out, "{} != aOther.{}", field.0, field.0).unwrap();
+            }
+            write!(out, ";\n  }}").unwrap();
+            write!(out, "\n").unwrap();
+        }
+
+        if config.struct_gen_op_lt && self.fields.len() == 1 {
+            write!(out, "\n").unwrap();
+            write!(out, "  bool operator<(const {}& aOther) const {{\n", self.name).unwrap();
+            write!(out, "    return ").unwrap();
+            for (i, field) in self.fields.iter().enumerate() {
+                if i != 0 {
+                    write!(out, " &&\n      ").unwrap();
+                }
+                write!(out, "{} < aOther.{}", field.0, field.0).unwrap();
+            }
+            write!(out, ";\n  }}").unwrap();
+            write!(out, "\n").unwrap();
+        }
+
+        if config.struct_gen_op_lte && self.fields.len() == 1 {
+            write!(out, "\n").unwrap();
+            write!(out, "  bool operator<=(const {}& aOther) const {{\n", self.name).unwrap();
+            write!(out, "    return ").unwrap();
+            for (i, field) in self.fields.iter().enumerate() {
+                if i != 0 {
+                    write!(out, " &&\n      ").unwrap();
+                }
+                write!(out, "{} <= aOther.{}", field.0, field.0).unwrap();
+            }
+            write!(out, ";\n  }}").unwrap();
+            write!(out, "\n").unwrap();
+        }
+
+        if config.struct_gen_op_gt && self.fields.len() == 1 {
+            write!(out, "\n").unwrap();
+            write!(out, "  bool operator>(const {}& aOther) const {{\n", self.name).unwrap();
+            write!(out, "    return ").unwrap();
+            for (i, field) in self.fields.iter().enumerate() {
+                if i != 0 {
+                    write!(out, " &&\n      ").unwrap();
+                }
+                write!(out, "{} > aOther.{}", field.0, field.0).unwrap();
+            }
+            write!(out, ";\n  }}").unwrap();
+            write!(out, "\n").unwrap();
+        }
+
+        if config.struct_gen_op_gte && self.fields.len() == 1 {
+            write!(out, "\n").unwrap();
+            write!(out, "  bool operator>=(const {}& aOther) const {{\n", self.name).unwrap();
+            write!(out, "    return ").unwrap();
+            for (i, field) in self.fields.iter().enumerate() {
+                if i != 0 {
+                    write!(out, " &&\n      ").unwrap();
+                }
+                write!(out, "{} > aOther.{}", field.0, field.0).unwrap();
+            }
+            write!(out, ";\n  }}").unwrap();
+            write!(out, "\n").unwrap();
+        }
 
         write!(out, "}};").unwrap();
     }

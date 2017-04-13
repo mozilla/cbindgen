@@ -3,7 +3,7 @@ pub struct Config {
     pub file_header: Option<String>,
     /// Optional text to output at the end of the file
     pub file_trailer: Option<String>,
-    /// Optional text to output at major sections to deter manual editting
+    /// Optional text to output at major sections to deter manual editing
     pub file_autogen_warning: Option<String>,
     /// Optional text to output before each function declaration
     pub function_prefix: Option<String>,
@@ -12,6 +12,18 @@ pub struct Config {
     /// Whether to add a `Sentinel` value at the end of every enum
     /// This is useful in Gecko for IPC serialization
     pub enum_add_sentinel: bool,
+    /// Whether to generate a piecewise equality operator
+    pub struct_gen_op_eq: bool,
+    /// Whether to generate a piecewise inequality operator
+    pub struct_gen_op_neq: bool,
+    /// Whether to generate a less than operator on structs with one field
+    pub struct_gen_op_lt: bool,
+    /// Whether to generate a less than or equal to operator on structs with one field
+    pub struct_gen_op_lte: bool,
+    /// Whether to generate a greater than operator on structs with one field
+    pub struct_gen_op_gt: bool,
+    /// Whether to generate a greater than or equal to operator on structs with one field
+    pub struct_gen_op_gte: bool,
 }
 
 impl Config {
@@ -23,6 +35,12 @@ impl Config {
             function_prefix: None,
             function_postfix: None,
             enum_add_sentinel: false,
+            struct_gen_op_eq: false,
+            struct_gen_op_neq: false,
+            struct_gen_op_lt: false,
+            struct_gen_op_lte: false,
+            struct_gen_op_gt: false,
+            struct_gen_op_gte: false,
         }
     }
 
@@ -40,6 +58,12 @@ impl Config {
             function_prefix: Some(String::from("WR_INLINE")),
             function_postfix: Some(String::from("WR_FUNC")),
             enum_add_sentinel: true,
+            struct_gen_op_eq: true,
+            struct_gen_op_neq: false,
+            struct_gen_op_lt: false,
+            struct_gen_op_lte: false,
+            struct_gen_op_gt: false,
+            struct_gen_op_gte: false,
         }
     }
 

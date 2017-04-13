@@ -301,7 +301,7 @@ impl BuiltLibrary {
             write!(out, "\n").unwrap();
             match item {
                 &PathValue::Enum(ref x) => x.write(config, out),
-                &PathValue::Struct(ref x) => x.write(out),
+                &PathValue::Struct(ref x) => x.write(config, out),
                 &PathValue::OpaqueStruct(ref x) => x.write(out),
                 &PathValue::Typedef(ref x) => x.write(out),
                 &PathValue::Specialization(_) => {
