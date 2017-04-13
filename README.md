@@ -1,10 +1,10 @@
 # `cbindgen`
 
-This project can be used to generate C bindings for rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/).
+This project can be used to generate C bindings for Rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/).
 
 ## Use
 
-`cbindgen path_to_crate > autogen.h`
+`cbindgen crate/ crate/bindings.h`
 
 ## How it works
 
@@ -16,10 +16,8 @@ This project can be used to generate C bindings for rust code. It is currently b
 
 ## Future work
 
-1. Add code for customizing bindings and removing code specific to WebRender
-2. Improve the CLI
-3. Better logging
-4. Sort the output types better
-5. Better support for types with fully specified names
-6. Add a validation step
-7. ...
+1. More customizable formatting and custom configs
+2. Extensible system for specifying in source directives
+3. Better support for types with fully specified names
+4. Add a validation step
+5. ...
