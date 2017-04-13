@@ -1,6 +1,5 @@
 use std::io;
 use std::fs::File;
-use std::collections::HashSet;
 
 extern crate syn;
 extern crate clap;
@@ -38,10 +37,7 @@ fn main() {
         None => Config::default(),
     };
 
-    let lib = bindgen::Library::load(input,
-                                     &config,
-                                     vec![],
-                                     HashSet::new());
+    let lib = bindgen::Library::load(input, &config);
 
     let built = lib.build(&config).unwrap();
 

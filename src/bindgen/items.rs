@@ -499,13 +499,6 @@ impl Specialization {
                             values: aliased.values.clone(),
                         }))
                     }
-                    PathValue::Prebuilt(aliased) => {
-                        Ok(PathValue::Prebuilt(Prebuilt {
-                            // assume that the prebuilt has the right name
-                            name: aliased.name,
-                            source: aliased.source,
-                        }))
-                    }
                     _ => Err(format!("unknown type to specialize"))
                 }
             }

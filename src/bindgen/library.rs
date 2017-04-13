@@ -1,7 +1,6 @@
 use std::io;
 use std::io::Write;
 use std::collections::BTreeMap;
-use std::collections::HashSet;
 use std::cmp::Ordering;
 
 use syn::*;
@@ -22,7 +21,6 @@ pub enum PathValue {
     OpaqueStruct(OpaqueStruct),
     Typedef(Typedef),
     Specialization(Specialization),
-    Prebuilt(Prebuilt),
 }
 impl PathValue {
     pub fn name(&self) -> &String {
@@ -32,7 +30,6 @@ impl PathValue {
             &PathValue::OpaqueStruct(ref x) => { &x.name },
             &PathValue::Typedef(ref x) => { &x.name },
             &PathValue::Specialization(ref x) => { &x.name },
-            &PathValue::Prebuilt(ref x) => { &x.name },
         }
     }
 
@@ -43,26 +40,7 @@ impl PathValue {
             &PathValue::OpaqueStruct(_) => { },
             &PathValue::Typedef(ref x) => { x.add_deps(library, out); },
             &PathValue::Specialization(ref x) => { x.add_deps(library, out); },
-            &PathValue::Prebuilt(_) => { },
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Prebuilt {
-    pub name: String,
-    pub source: String,
-}
-impl Prebuilt {
-    pub fn new(name: String, source: String) -> Prebuilt {
-        Prebuilt {
-            name: name,
-            source: source,
-        }
-    }
-
-    fn write<F: Write>(&self, out: &mut F) {
-        write!(out, "{}", self.source).unwrap();
     }
 }
 
@@ -77,7 +55,6 @@ pub struct Library {
     opaque_structs: BTreeMap<String, OpaqueStruct>,
     typedefs: BTreeMap<String, Typedef>,
     specializations: BTreeMap<String, Specialization>,
-    prebuilts: BTreeMap<String, Prebuilt>,
     functions: BTreeMap<String, Function>,
 }
 
@@ -89,24 +66,16 @@ impl Library {
             opaque_structs: BTreeMap::new(),
             typedefs: BTreeMap::new(),
             specializations: BTreeMap::new(),
-            prebuilts: BTreeMap::new(),
             functions: BTreeMap::new(),
         }
     }
 
-    pub fn load(crate_or_src: &str,
-                _config: &Config,
-                prebuilts: Vec<Prebuilt>,
-                ignore: HashSet<String>) -> Library
+    pub fn load(crate_or_src: &str, _config: &Config) -> Library
     {
         let mut library = Library::blank();
 
         rust_lib::parse(crate_or_src, &mut |mod_name, items| {
             for item in items {
-                if ignore.contains(&item.ident.to_string()) {
-                    continue;
-                }
-
                 match item.node {
                     ItemKind::Fn(ref decl,
                                  ref _unsafe,
@@ -207,19 +176,10 @@ impl Library {
             }
         });
 
-        for prebuilt in prebuilts {
-            library.prebuilts.insert(prebuilt.name.clone(), prebuilt);
-        }
-
         library
     }
 
     pub fn resolve_path(&self, p: &PathRef) -> Option<PathValue> {
-        // Search the prebuilts first, allow them to override
-        if let Some(x) = self.prebuilts.get(p) {
-            return Some(PathValue::Prebuilt(x.clone()));
-        }
-
         if let Some(x) = self.enums.get(p) {
             return Some(PathValue::Enum(x.clone()));
         }
@@ -348,7 +308,6 @@ impl BuiltLibrary {
                 &PathValue::Specialization(_) => {
                     panic!("should not encounter a specialization in a built library")
                 }
-                &PathValue::Prebuilt(ref x) => x.write(out),
             }
             write!(out, "\n").unwrap();
         }
