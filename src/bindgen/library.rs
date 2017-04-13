@@ -6,6 +6,7 @@ use std::cmp::Ordering;
 
 use syn::*;
 
+use config::Config;
 use rust_lib;
 use bindgen::items::*;
 use bindgen::syn_helpers::*;
@@ -94,6 +95,7 @@ impl Library {
     }
 
     pub fn load(crate_or_src: &str,
+                _config: &Config,
                 prebuilts: Vec<Prebuilt>,
                 ignore: HashSet<String>) -> Library
     {
@@ -257,7 +259,7 @@ impl Library {
         }
     }
 
-    pub fn build(&self) -> BuildResult<BuiltLibrary> {
+    pub fn build(&self, _config: &Config) -> BuildResult<BuiltLibrary> {
         let mut result = BuiltLibrary::blank();
 
         // Gather only the items that we need for this
@@ -328,18 +330,18 @@ impl BuiltLibrary {
         }
     }
 
-    pub fn write<F: Write>(&self, out: &mut F) {
-        writeln!(out,
-r###"/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-"###).unwrap();
-
-        writeln!(out, "/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. */\n").unwrap();
+    pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
+        if let Some(ref f) = config.file_header {
+            write!(out, "{}\n", f).unwrap();
+        }
+        if let Some(ref f) = config.file_autogen_warning {
+            write!(out, "\n{}\n", f).unwrap();
+        }
 
         for item in &self.items {
+            write!(out, "\n").unwrap();
             match item {
-                &PathValue::Enum(ref x) => x.write(out),
+                &PathValue::Enum(ref x) => x.write(config, out),
                 &PathValue::Struct(ref x) => x.write(out),
                 &PathValue::OpaqueStruct(ref x) => x.write(out),
                 &PathValue::Typedef(ref x) => x.write(out),
@@ -348,16 +350,24 @@ r###"/* This Source Code Form is subject to the terms of the Mozilla Public
                 }
                 &PathValue::Prebuilt(ref x) => x.write(out),
             }
-            write!(out, "\n\n").unwrap();
+            write!(out, "\n").unwrap();
         }
 
-        writeln!(out, "/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. */\n").unwrap();
+        if let Some(ref f) = config.file_autogen_warning {
+            write!(out, "\n{}\n", f).unwrap();
+        }
 
         for function in &self.functions {
-            function.write(out);
-            write!(out, "\n\n").unwrap();
+            write!(out, "\n").unwrap();
+            function.write(config, out);
+            write!(out, "\n").unwrap();
         }
 
-        writeln!(out, "/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. */").unwrap();
+        if let Some(ref f) = config.file_autogen_warning {
+            write!(out, "\n{}\n", f).unwrap();
+        }
+        if let Some(ref f) = config.file_trailer {
+            write!(out, "\n{}\n", f).unwrap();
+        }
     }
 }

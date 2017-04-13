@@ -2,6 +2,7 @@ use std::io::Write;
 
 use syn::*;
 
+use config::Config;
 use bindgen::library::*;
 use bindgen::syn_helpers::*;
 
@@ -174,12 +175,12 @@ impl Type {
             &Type::ConstPtr(ref t) => {
                 write!(out, "const ").unwrap();
                 t.write(out);
-                write!(out, "*{}", ident).unwrap();
+                write!(out, "* {}", ident).unwrap();
 
             }
             &Type::Ptr(ref t) => {
                 t.write(out);
-                write!(out, "*{}", ident).unwrap();
+                write!(out, "* {}", ident).unwrap();
             }
             &Type::Path(ref p) => {
                 write!(out, "{} {}", p, ident).unwrap();
@@ -246,12 +247,16 @@ impl Function {
         }
     }
 
-    pub fn write<F: Write>(&self, out: &mut F) {
-        write!(out, "WR_INLINE ").unwrap();
+    pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
+        if let Some(ref f) = config.function_prefix {
+            write!(out, "{} ", f).unwrap();
+        }
+
         match self.return_ty.as_ref() {
             Some(ty) => ty.write(out),
             None => write!(out, "void").unwrap(),
         }
+
         write!(out, "\n{}(", self.name).unwrap();
         for (i, arg) in self.args.iter().enumerate() {
             if i != 0 {
@@ -259,12 +264,16 @@ impl Function {
             }
             arg.1.write_with_ident(&arg.0, out);
         }
-        write!(out, ")\n").unwrap();
+        write!(out, ")").unwrap();
+
         if self.wr_destructor_safe {
-            write!(out, "WR_DESTRUCTOR_SAFE_FUNC;").unwrap()
+            write!(out, "\nWR_DESTRUCTOR_SAFE_FUNC").unwrap()
         } else {
-            write!(out, "WR_FUNC;").unwrap()
+            if let Some(ref f) = config.function_prefix {
+                write!(out, "\n{}", f).unwrap();
+            }
         }
+        write!(out, ";").unwrap()
     }
 }
 
@@ -401,7 +410,7 @@ impl Enum {
         })
     }
 
-    pub fn write<F: Write>(&self, out: &mut F) {
+    pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
         writeln!(out, "enum class {} : uint32_t {{", self.name).unwrap();
         for (i, value) in self.values.iter().enumerate() {
             if i != 0 {
@@ -409,8 +418,10 @@ impl Enum {
             }
             write!(out, "  {} = {},", value.0, value.1).unwrap();
         }
-        writeln!(out, "\n\n  Sentinel /* this must be last for serialization purposes. */").unwrap();
-        write!(out, "}};").unwrap();
+        if config.enum_add_sentinel {
+            write!(out, "\n\n  Sentinel /* this must be last for serialization purposes. */").unwrap();
+        }
+        write!(out, "\n}};").unwrap();
     }
 }
 

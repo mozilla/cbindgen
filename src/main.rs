@@ -7,13 +7,21 @@ extern crate clap;
 
 use clap::{Arg, App};
 
+mod config;
 mod rust_lib;
 mod bindgen;
+
+use config::Config;
 
 fn main() {
     let matches = App::new("cbindgen")
                     .version("0.1.0")
                     .about("Generate C bindings for a Rust library")
+                    .arg(Arg::with_name("config")
+                         .short("c")
+                         .long("config")
+                         .value_name("CONFIG")
+                         .help("the config to use. currently either `wr`, or `default`"))
                     .arg(Arg::with_name("INPUT")
                          .help("the crate or source file to generate bindings for")
                          .required(true)
@@ -24,29 +32,25 @@ fn main() {
                          .index(2))
                     .get_matches();
 
-    let crate_or_src = matches.value_of("INPUT").unwrap();
+    let input = matches.value_of("INPUT").unwrap();
+    let config = match matches.value_of("config") {
+        Some(c) => Config::load(c).expect("unknown config"),
+        None => Config::default(),
+    };
 
-    let glyph_instance = bindgen::Prebuilt::new(
-                                    String::from("GlyphInstance"),
-                                    String::from(
-r###"struct WrGlyphInstance {
-  uint32_t index;
-  Point2D point;
-
-  bool operator==(const WrGlyphInstance& aOther) const {
-    return index == aOther.index &&
-      point == aOther.point;
-  }
-};"###));
-
-    let lib = bindgen::Library::load(crate_or_src,
-                                     vec![glyph_instance],
+    let lib = bindgen::Library::load(input,
+                                     &config,
+                                     vec![],
                                      HashSet::new());
-    let built = lib.build().unwrap();
 
-    if let Some(out_file) = matches.value_of("OUTPUT") {
-        built.write(&mut File::create(out_file).unwrap());
-    } else {
-        built.write(&mut io::stdout());
+    let built = lib.build(&config).unwrap();
+
+    match matches.value_of("OUTPUT") {
+        Some(file) => {
+            built.write(&config, &mut File::create(file).unwrap());
+        }
+        _ => {
+            built.write(&config, &mut io::stdout());
+        }
     }
 }
