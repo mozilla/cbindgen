@@ -49,7 +49,9 @@ impl Config {
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"###;
 
-        let autogen = "/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen. */";
+        let autogen = r###"/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen.
+ * To generate this file, clone `https://github.com/rlhunt/cbindgen` or run `cargo install cbindgen`,
+ * then run `cbindgen -c wr gfx/webrender_bindings/ gfx/webrender_bindings/webrender_ffi_generated.h` */"###;
 
         Config {
             file_header: Some(String::from(license)),
