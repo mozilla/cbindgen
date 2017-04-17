@@ -4,6 +4,7 @@ use std::cmp::Ordering;
 
 use syn::*;
 
+use config;
 use config::Config;
 use rust_lib;
 use bindgen::directive::*;
@@ -322,6 +323,9 @@ impl BuiltLibrary {
     pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
         if let Some(ref f) = config.file_header {
             write!(out, "{}\n", f).unwrap();
+        }
+        if config.file_include_version {
+            write!(out, "\n/* Generated with cbindgen:{} */\n", config::VERSION).unwrap();
         }
         if let Some(ref f) = config.file_autogen_warning {
             write!(out, "\n{}\n", f).unwrap();

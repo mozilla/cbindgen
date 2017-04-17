@@ -1,3 +1,5 @@
+pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
 pub struct Config {
     /// Optional text to output at the beginning of the file
     pub file_header: Option<String>,
@@ -5,6 +7,8 @@ pub struct Config {
     pub file_trailer: Option<String>,
     /// Optional text to output at major sections to deter manual editing
     pub file_autogen_warning: Option<String>,
+    /// Include a comment with the version of cbindgen used to generate the file
+    pub file_include_version: bool,
     /// Optional text to output before each function declaration
     pub function_prefix: Option<String>,
     /// Optional text to output after each function declaration
@@ -32,6 +36,7 @@ impl Config {
             file_header: None,
             file_trailer: None,
             file_autogen_warning: None,
+            file_include_version: false,
             function_prefix: None,
             function_postfix: None,
             enum_add_sentinel: false,
@@ -57,6 +62,7 @@ impl Config {
             file_header: Some(String::from(license)),
             file_trailer: None,
             file_autogen_warning: Some(String::from(autogen)),
+            file_include_version: true,
             function_prefix: Some(String::from("WR_INLINE")),
             function_postfix: Some(String::from("WR_FUNC")),
             enum_add_sentinel: true,
