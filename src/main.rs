@@ -17,7 +17,7 @@ use config::Config;
 
 fn main() {
     let matches = App::new("cbindgen")
-                    .version("0.1.0")
+                    .version(config::VERSION)
                     .about("Generate C bindings for a Rust library")
                     .arg(Arg::with_name("config")
                          .short("c")
