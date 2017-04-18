@@ -11,7 +11,30 @@ This project can be used to generate C bindings for Rust code. It is currently b
 
 ## Use
 
+### Command line
+
 `cbindgen crate/ crate/bindings.h`
+
+See `cbindgen --help` for more options.
+
+### `build.rs`
+
+`cbindgen` can also be used in build scripts. How this fits into compiling the native code depends on your project.
+
+Here's an example build.rs script:
+```rust
+extern crate cbindgen;
+
+use cbindgen::{Config, Library};
+
+fn main() {
+    let config = Config::default();
+
+    Library::load("../build-script", &config)
+        .build(&config).unwrap()
+        .write_to_file(&config, "bindings.h");
+}
+```
 
 ## Examples
 
