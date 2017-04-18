@@ -161,13 +161,15 @@ impl Library {
                             }
                         };
 
-                        match Enum::convert(enum_name.clone(), item.get_repr(), directives, variants) {
+                        match Enum::convert(enum_name.clone(), item.get_repr(), directives.clone(), variants) {
                             Ok(en) => {
                                 info!("take {}::{}", mod_name, &item.ident);
                                 library.enums.insert(enum_name, en);
                             }
                             Err(msg) => {
-                                info!("skip {}::{} - ({})", mod_name, &item.ident, msg);
+                                info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
+                                library.opaque_structs.insert(enum_name.clone(),
+                                                              OpaqueStruct::new(enum_name, directives));
                             }
                         }
                     }
