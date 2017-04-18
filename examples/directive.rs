@@ -7,8 +7,15 @@ struct A(i32);
 #[repr(C)]
 struct B(i32, f32);
 
+/// cbindgen:enum-trailing-values=[Z, W]
+#[repr(u32)]
+enum C {
+    X = 2,
+    Y,
+}
+
 /// cbindgen:function-prefix=PREFIX
 /// cbindgen:function-postfix=PREFIX
 #[no_mangle]
-extern "C" fn root(x: A, y: B) {
+extern "C" fn root(x: A, y: B, z: C) {
 }

@@ -567,6 +567,13 @@ impl Enum {
             }
         }
 
+        if let Some(variants) = directives.list("enum-trailing-values") {
+            for variant in variants {
+                values.push((variant, current));
+                current = current + 1;
+            }
+        }
+
         Ok(Enum {
             name: name,
             repr: repr,
