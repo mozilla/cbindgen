@@ -575,9 +575,7 @@ impl Specialization {
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
-        if !path_name_is_primitive(&self.aliased) {
-            library.add_deps_for_path_deps(&self.aliased, out);
-        }
+        library.add_deps_for_path_deps(&self.aliased, out);
         for value in &self.generic_values {
             value.add_deps(&library, out);
         }
