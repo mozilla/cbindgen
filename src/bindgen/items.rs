@@ -491,15 +491,27 @@ impl OpaqueStruct {
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub name: String,
+    pub repr: Repr,
     pub directives: Vec<Directive>,
     pub values: Vec<(String, u64)>,
 }
 
 impl Enum {
     pub fn convert(name: String,
+                   repr: Repr,
                    directives: Vec<Directive>,
                    variants: &Vec<Variant>) -> ConvertResult<Enum>
     {
+        if repr != Repr::U32 &&
+           repr != Repr::U16 &&
+           repr != Repr::U8 {
+            return if repr == Repr::C {
+                Err(format!("repr(C) is not FFI safe for enums"))
+            } else {
+                Err(format!("enum not marked with a repr(u32) or repr(u16) or repr(u8)"))
+            };
+        }
+
         let mut values = Vec::new();
         let mut current = 0;
 
@@ -527,13 +539,21 @@ impl Enum {
 
         Ok(Enum {
             name: name,
+            repr: repr,
             directives: directives,
             values: values,
         })
     }
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
-        writeln!(out, "enum class {} : uint32_t {{", self.name).unwrap();
+        let size = match self.repr {
+            Repr::U32 => "uint32_t",
+            Repr::U16 => "uint16_t",
+            Repr::U8 => "uint8_t",
+            _ => unreachable!(),
+        };
+
+        writeln!(out, "enum class {} : {} {{", self.name, size).unwrap();
         for (i, value) in self.values.iter().enumerate() {
             if i != 0 {
                 write!(out, "\n").unwrap();
@@ -619,6 +639,7 @@ impl Specialization {
                     PathValue::Enum(aliased) => {
                         Ok(PathValue::Enum(Enum {
                             name: self.name.clone(),
+                            repr: aliased.repr.clone(),
                             directives: self.directives.clone(),
                             values: aliased.values.clone(),
                         }))

@@ -18,6 +18,29 @@ pub trait SynItemHelpers {
         let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("u32")))];
         self.has_attr(MetaItem::List(Ident::new("repr"), repr_args))
     }
+    fn is_repr_u16(&self) -> bool {
+        let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("u16")))];
+        self.has_attr(MetaItem::List(Ident::new("repr"), repr_args))
+    }
+    fn is_repr_u8(&self) -> bool {
+        let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("u8")))];
+        self.has_attr(MetaItem::List(Ident::new("repr"), repr_args))
+    }
+    fn get_repr(&self) -> Repr {
+        if self.is_repr_c() {
+            return Repr::C;
+        }
+        if self.is_repr_u32() {
+            return Repr::U32;
+        }
+        if self.is_repr_u16() {
+            return Repr::U16;
+        }
+        if self.is_repr_u8() {
+            return Repr::U8;
+        }
+        Repr::None
+    }
 }
 impl SynItemHelpers for Item {
     fn has_attr(&self, target: MetaItem) -> bool {

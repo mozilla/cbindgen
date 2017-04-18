@@ -14,6 +14,15 @@ use bindgen::syn_helpers::*;
 pub type ConvertResult<T> = Result<T, String>;
 pub type BuildResult<T> = Result<T, String>;
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Repr {
+    None,
+    C,
+    U8,
+    U16,
+    U32,
+}
+
 pub type PathRef = String;
 #[derive(Debug, Clone)]
 pub enum PathValue {
@@ -143,27 +152,23 @@ impl Library {
                             continue;
                         }
 
-                        if item.is_repr_u32() {
-                            let enum_name = item.ident.to_string();
-                            let directives = match Directive::parse(item.get_doc_attr()) {
-                                Ok(x) => x,
-                                Err(msg) => {
-                                    warn!("{}", msg);
-                                    vec![]
-                                }
-                            };
-
-                            match Enum::convert(enum_name.clone(), directives, variants) {
-                                Ok(en) => {
-                                    info!("take {}::{}", mod_name, &item.ident);
-                                    library.enums.insert(enum_name, en);
-                                }
-                                Err(msg) => {
-                                    info!("skip {}::{} - ({})", mod_name, &item.ident, msg);
-                                }
+                        let enum_name = item.ident.to_string();
+                        let directives = match Directive::parse(item.get_doc_attr()) {
+                            Ok(x) => x,
+                            Err(msg) => {
+                                warn!("{}", msg);
+                                vec![]
                             }
-                        } else {
-                            info!("skip {}::{} - (not marked as repr(u32)", mod_name, &item.ident);
+                        };
+
+                        match Enum::convert(enum_name.clone(), item.get_repr(), directives, variants) {
+                            Ok(en) => {
+                                info!("take {}::{}", mod_name, &item.ident);
+                                library.enums.insert(enum_name, en);
+                            }
+                            Err(msg) => {
+                                info!("skip {}::{} - ({})", mod_name, &item.ident, msg);
+                            }
                         }
                     }
                     ItemKind::Ty(ref ty, ref generics) => {
