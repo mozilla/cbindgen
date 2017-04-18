@@ -10,7 +10,7 @@ use clap::{Arg, App};
 mod logging;
 mod bindgen;
 
-use bindgen::Config;
+use bindgen::{Config, Library};
 
 fn main() {
     let matches = App::new("cbindgen")
@@ -41,14 +41,20 @@ fn main() {
     }
 
     let input = matches.value_of("INPUT").unwrap();
+
     let config = match matches.value_of("config") {
         Some(c) => Config::load(c).expect("unknown config"),
         None => Config::default(),
     };
 
-    let lib = bindgen::Library::load(input, &config);
-
-    let built = lib.build(&config).unwrap();
+    let built = match Library::load(input, &config).build(&config) {
+        Ok(x) => x,
+        Err(msg) => {
+            error!("{}", msg);
+            error!("could not build bindings for {}", input);
+            return;
+        },
+    };
 
     match matches.value_of("OUTPUT") {
         Some(file) => {
