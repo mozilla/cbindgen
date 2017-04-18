@@ -126,40 +126,6 @@ impl SynFieldHelpers for Field {
     }
 }
 
-// TODO: find a better place for these
-pub fn convert_path_name_to_primitive(path_name: &str) -> Option<String> {
-    match path_name {
-        "usize" => Some("size_t".to_string()),
-        "u8" => Some("uint8_t".to_string()),
-        "u32" => Some("uint32_t".to_string()),
-        "u64" => Some("uint64_t".to_string()),
-        "i8" => Some("int8_t".to_string()),
-        "i32" => Some("int32_t".to_string()),
-        "i64" => Some("int64_t".to_string()),
-        "f32" => Some("float".to_string()),
-        "f64" => Some("double".to_string()),
-        "c_void" => Some("void".to_string()),
-        "bool" => Some("bool".to_string()),
-        _ => None,
-    }
-}
-pub fn path_name_is_primitive(path_name: &str) -> bool {
-    match path_name {
-        "usize" => true,
-        "u8" => true,
-        "u32" => true,
-        "u64" => true,
-        "i8" => true,
-        "i32" => true,
-        "i64" => true,
-        "f32" => true,
-        "f64" => true,
-        "c_void" => true,
-        "bool" => true,
-        _ => false,
-    }
-}
-
 pub trait SynPathHelpers {
     fn convert_to_simple_single_segment(&self) -> ConvertResult<String>;
     fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)>;

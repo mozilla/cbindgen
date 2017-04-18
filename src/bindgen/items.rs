@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::fmt;
 
 use syn::*;
 
@@ -8,11 +9,67 @@ use bindgen::library::*;
 use bindgen::syn_helpers::*;
 
 #[derive(Debug, Clone)]
+pub enum PrimitiveType {
+    Void,
+    Bool,
+    USize,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Float,
+    Double,
+}
+impl PrimitiveType {
+    fn maybe(path: &str) -> Option<PrimitiveType> {
+        match path {
+            "c_void" => Some(PrimitiveType::Void),
+            "bool" => Some(PrimitiveType::Bool),
+            "char" => Some(PrimitiveType::UInt16),
+            "usize" => Some(PrimitiveType::USize),
+            "u8" => Some(PrimitiveType::UInt8),
+            "u16" => Some(PrimitiveType::UInt16),
+            "u32" => Some(PrimitiveType::UInt32),
+            "u64" => Some(PrimitiveType::UInt64),
+            "i8" => Some(PrimitiveType::Int8),
+            "i16" => Some(PrimitiveType::Int16),
+            "i32" => Some(PrimitiveType::Int32),
+            "i64" => Some(PrimitiveType::Int64),
+            "f32" => Some(PrimitiveType::Float),
+            "f64" => Some(PrimitiveType::Double),
+            _ => None,
+        }
+    }
+}
+impl fmt::Display for PrimitiveType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &PrimitiveType::Void => write!(f, "void"),
+            &PrimitiveType::Bool => write!(f, "bool"),
+            &PrimitiveType::USize => write!(f, "size_t"),
+            &PrimitiveType::UInt8 => write!(f, "uint8_t"),
+            &PrimitiveType::UInt16 => write!(f, "uint16_t"),
+            &PrimitiveType::UInt32 => write!(f, "uint32_t"),
+            &PrimitiveType::UInt64 => write!(f, "uint64_t"),
+            &PrimitiveType::Int8 => write!(f, "int8_t"),
+            &PrimitiveType::Int16 => write!(f, "int16_t"),
+            &PrimitiveType::Int32 => write!(f, "int32_t"),
+            &PrimitiveType::Int64 => write!(f, "int64_t"),
+            &PrimitiveType::Float => write!(f, "float"),
+            &PrimitiveType::Double => write!(f, "double")}
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum Type {
     ConstPtr(Box<Type>),
     Ptr(Box<Type>),
     Path(PathRef),
-    Primitive(String),
+    Primitive(PrimitiveType),
     Array(Box<Type>, u64),
     FuncPtr(Option<Box<Type>>, Vec<Type>),
 }
@@ -38,7 +95,7 @@ impl Type {
             &Ty::Path(_, ref p) => {
                 let p = try!(p.convert_to_simple_single_segment());
 
-                if let Some(prim) = convert_path_name_to_primitive(&p) {
+                if let Some(prim) = PrimitiveType::maybe(&p) {
                     Ok(Type::Primitive(prim))
                 } else {
                     Ok(Type::Path(p))
@@ -571,7 +628,7 @@ impl Specialization {
             &Ty::Path(ref _q, ref p) => {
                 let (path, generics) = try!(p.convert_to_generic_single_segment());
 
-                if path_name_is_primitive(&path) {
+                if PrimitiveType::maybe(&path).is_some() {
                     return Err(format!("can't specialize a primitive"));
                 }
 
