@@ -84,7 +84,7 @@ fn parse_mod<F>(crate_dir: PathBuf,
                               next_mod_path2,
                               items_callback);
                 } else {
-                    warn!("can't find mod {} in crate {}", next_mod_name, crate_name);
+                    info!("can't find mod {} in crate {}", next_mod_name, crate_name);
                 }
             }
             syn::ItemKind::ExternCrate(_) => {
@@ -94,7 +94,7 @@ fn parse_mod<F>(crate_dir: PathBuf,
                 let next_crate_path = crate_parent.join(next_crate_name.clone());
 
                 if !next_crate_path.exists() {
-                    warn!("can't find extern crate {}", next_crate_name.clone());
+                    info!("can't find extern crate {}", next_crate_name.clone());
                     continue;
                 }
 
