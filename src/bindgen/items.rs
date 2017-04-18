@@ -623,7 +623,21 @@ impl Specialization {
                             values: aliased.values.clone(),
                         }))
                     }
-                    _ => Err(format!("unknown type to specialize"))
+                    PathValue::Typedef(aliased) => {
+                        Ok(PathValue::Typedef(Typedef {
+                            name: self.name.clone(),
+                            directives: self.directives.clone(),
+                            aliased: aliased.aliased.clone(),
+                        }))
+                    }
+                    PathValue::Specialization(aliased) => {
+                        Specialization {
+                            name: self.name.clone(),
+                            directives: self.directives.clone(),
+                            aliased: aliased.aliased.clone(),
+                            generic_values: aliased.generic_values.clone(),
+                        }.specialize(library)
+                    }
                 }
             }
             None => {
