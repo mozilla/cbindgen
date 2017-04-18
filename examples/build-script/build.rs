@@ -3,7 +3,7 @@ extern crate cbindgen;
 use cbindgen::{Config, Library};
 
 fn main() {
-    let config = Config::default();
+    let config = Config::from_file("bindconf.json");
 
     Library::load("../build-script", &config)
         .generate().unwrap()

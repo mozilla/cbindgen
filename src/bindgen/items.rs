@@ -300,7 +300,7 @@ impl Function {
     }
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
-        if let Some(ref f) = config.item.function_prefix(&self.directives) {
+        if let Some(ref f) = config.per_item.function_prefix(&self.directives) {
             write!(out, "{} ", f).unwrap();
         }
 
@@ -318,7 +318,7 @@ impl Function {
         }
         write!(out, ")").unwrap();
 
-        if let Some(ref f) = config.item.function_postfix(&self.directives) {
+        if let Some(ref f) = config.per_item.function_postfix(&self.directives) {
             write!(out, "\n{}", f).unwrap();
         }
         write!(out, ";").unwrap()
@@ -410,7 +410,7 @@ impl Struct {
 
         write!(out, "\n").unwrap();
 
-        if config.item.struct_gen_op_eq(&self.directives) && !self.fields.is_empty() {
+        if config.per_item.struct_gen_op_eq(&self.directives) && !self.fields.is_empty() {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator==(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -424,7 +424,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.item.struct_gen_op_neq(&self.directives) && !self.fields.is_empty() {
+        if config.per_item.struct_gen_op_neq(&self.directives) && !self.fields.is_empty() {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator!=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -438,7 +438,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.item.struct_gen_op_lt(&self.directives) && self.fields.len() == 1 {
+        if config.per_item.struct_gen_op_lt(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator<(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -452,7 +452,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.item.struct_gen_op_lte(&self.directives) && self.fields.len() == 1 {
+        if config.per_item.struct_gen_op_lte(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator<=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -466,7 +466,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.item.struct_gen_op_gt(&self.directives) && self.fields.len() == 1 {
+        if config.per_item.struct_gen_op_gt(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator>(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -480,7 +480,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.item.struct_gen_op_gte(&self.directives) && self.fields.len() == 1 {
+        if config.per_item.struct_gen_op_gte(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator>=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -590,7 +590,7 @@ impl Enum {
             }
             write!(out, "  {} = {},", value.0, value.1).unwrap();
         }
-        if config.item.enum_add_sentinel(&self.directives) {
+        if config.per_item.enum_add_sentinel(&self.directives) {
             write!(out, "\n\n  Sentinel /* this must be last for serialization purposes. */").unwrap();
         }
         write!(out, "\n}};").unwrap();

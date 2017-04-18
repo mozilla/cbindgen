@@ -339,13 +339,13 @@ impl<'a> GeneratedLibrary<'a> {
     }
 
     pub fn write<F: Write>(&self, out: &mut F) {
-        if let Some(ref f) = self.config.file.header {
+        if let Some(ref f) = self.config.global.header {
             write!(out, "{}\n", f).unwrap();
         }
-        if self.config.file.include_version {
+        if self.config.global.include_version {
             write!(out, "\n/* Generated with cbindgen:{} */\n", config::VERSION).unwrap();
         }
-        if let Some(ref f) = self.config.file.autogen_warning {
+        if let Some(ref f) = self.config.global.autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
 
@@ -363,7 +363,7 @@ impl<'a> GeneratedLibrary<'a> {
             write!(out, "\n").unwrap();
         }
 
-        if let Some(ref f) = self.config.file.autogen_warning {
+        if let Some(ref f) = self.config.global.autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
 
@@ -373,10 +373,10 @@ impl<'a> GeneratedLibrary<'a> {
             write!(out, "\n").unwrap();
         }
 
-        if let Some(ref f) = self.config.file.autogen_warning {
+        if let Some(ref f) = self.config.global.autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
-        if let Some(ref f) = self.config.file.trailer {
+        if let Some(ref f) = self.config.global.trailer {
             write!(out, "\n{}\n", f).unwrap();
         }
     }

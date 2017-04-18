@@ -10,6 +10,9 @@ exclude = ["examples/**"]
 [dependencies]
 clap = "2"
 log = "0.3"
+serde = "0.9"
+serde_derive = "0.9"
+serde_json = "0.9"
 
 [dependencies.syn]
 version = "0.11"

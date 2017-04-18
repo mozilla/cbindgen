@@ -1,8 +1,12 @@
+use std::fs::File;
+
+use serde_json;
+
 pub use bindgen::directive::*;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct FileConfig {
     /// Optional text to output at the beginning of the file
     pub header: Option<String>,
@@ -14,7 +18,7 @@ pub struct FileConfig {
     pub include_version: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ItemConfig {
     /// Optional text to output before each function declaration
     pub function_prefix: Option<String>,
@@ -37,10 +41,10 @@ pub struct ItemConfig {
     pub struct_gen_op_gte: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
-    pub file: FileConfig,
-    pub item: ItemConfig,
+    pub global: FileConfig,
+    pub per_item: ItemConfig,
 }
 
 impl FileConfig {
@@ -128,14 +132,19 @@ impl ItemConfig {
 }
 
 impl Config {
-    pub fn default() -> Config {
+
+    pub fn from_default() -> Config {
         Config {
-            file: FileConfig::default(),
-            item: ItemConfig::default(),
+            global: FileConfig::default(),
+            per_item: ItemConfig::default(),
         }
     }
 
-    pub fn gecko_webrender() -> Config {
+    pub fn from_file(file: &str) -> Config {
+        serde_json::from_reader(&File::open(file).unwrap()).unwrap()
+    }
+
+    pub fn from_webrender() -> Config {
         let license = r###"/* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"###;
@@ -145,13 +154,13 @@ impl Config {
  * then run `cbindgen -c wr gfx/webrender_bindings/ gfx/webrender_bindings/webrender_ffi_generated.h` */"###;
 
         Config {
-            file: FileConfig {
+            global: FileConfig {
                 header: Some(String::from(license)),
                 trailer: None,
                 autogen_warning: Some(String::from(autogen)),
                 include_version: true,
             },
-            item: ItemConfig {
+            per_item: ItemConfig {
                 function_prefix: Some(String::from("WR_INLINE")),
                 function_postfix: Some(String::from("WR_FUNC")),
                 enum_add_sentinel: true,
@@ -165,11 +174,11 @@ impl Config {
         }
     }
 
-    pub fn load(config: &str) -> Option<Config> {
+    pub fn load(config: &str) -> Config {
         match config {
-            "default" => Some(Config::default()),
-            "wr" => Some(Config::gecko_webrender()),
-            _ => None,
+            "default" => Config::from_default(),
+            "wr" => Config::from_webrender(),
+            file => Config::from_file(file),
         }
     }
 }

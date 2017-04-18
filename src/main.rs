@@ -1,9 +1,13 @@
 use std::io;
 
+extern crate clap;
 #[macro_use]
 extern crate log;
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 extern crate syn;
-extern crate clap;
 
 use clap::{Arg, App};
 
@@ -43,8 +47,8 @@ fn main() {
     let input = matches.value_of("INPUT").unwrap();
 
     let config = match matches.value_of("config") {
-        Some(c) => Config::load(c).expect("unknown config"),
-        None => Config::default(),
+        Some(c) => Config::load(c),
+        None => Config::from_default(),
     };
 
     let built = match Library::load(input, &config).generate() {
