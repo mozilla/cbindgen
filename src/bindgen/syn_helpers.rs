@@ -3,6 +3,22 @@ use syn::*;
 use bindgen::items::*;
 use bindgen::library::*;
 
+pub trait IterHelpers : Iterator {
+    fn try_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
+        where F: FnMut(&Self::Item) -> Result<T, E>;
+}
+impl<I> IterHelpers for I where I: Iterator {
+    fn try_map<F, T, E>(&mut self, mut f: F) -> Result<Vec<T>, E>
+        where F: FnMut(&Self::Item) -> Result<T, E>
+    {
+        let mut out = Vec::new();
+        while let Some(item) = self.next() {
+            out.push(try!(f(&item)));
+        }
+        Ok(out)
+    }
+}
+
 pub trait SynItemHelpers {
     fn has_attr(&self, target: MetaItem) -> bool;
     fn get_doc_attr(&self) -> String;

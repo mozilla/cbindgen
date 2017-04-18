@@ -50,19 +50,14 @@ impl Type {
                 Ok(Type::Array(Box::new(converted), sz))
             },
             &Ty::BareFn(ref f) => {
-                let args = f.inputs.iter()
-                                   .map(|x| Type::convert(&x.ty).ok())
-                                   .collect::<Vec<_>>();
+                let args = try!(f.inputs.iter()
+                                        .try_map(|x| Type::convert(&x.ty)));
                 let ret = try!(f.output.as_type());
 
-                if args.iter().all(|x| x.is_some()) {
-                    Ok(Type::FuncPtr(
-                        ret.map(|x| Box::new(x)),
-                        args.iter().filter_map(|x| x.clone()).collect(),
-                    ))
-                } else {
-                    Err(format!("one of the params failed to convert"))
-                }
+                Ok(Type::FuncPtr(
+                    ret.map(|x| Box::new(x)),
+                    args,
+                ))
             }
             _ => Err(format!("unexpected type")),
         }
@@ -226,21 +221,16 @@ impl Function {
                    directives: Vec<Directive>,
                    decl: &FnDecl) -> ConvertResult<Function>
     {
-        let args = decl.inputs.iter()
-                              .map(|x| x.as_ident_and_type().ok())
-                              .collect::<Vec<_>>();
+        let args = try!(decl.inputs.iter()
+                                   .try_map(|x| x.as_ident_and_type()));
         let ret = try!(decl.output.as_type());
 
-        if args.iter().all(|x| x.is_some()) {
-            Ok(Function {
-                name: name,
-                directives: directives,
-                ret: ret,
-                args: args.iter().filter_map(|x| x.clone()).collect(),
-            })
-        } else {
-            Err(format!("one of the params failed to convert"))
-        }
+        Ok(Function {
+            name: name,
+            directives: directives,
+            ret: ret,
+            args: args,
+        })
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
@@ -308,16 +298,15 @@ impl Struct {
     {
         let fields = match decl {
             &VariantData::Struct(ref fields) => {
-                fields.iter()
-                      .map(|x| x.as_ident_and_type().ok())
-                      .collect::<Vec<_>>()
+                try!(fields.iter()
+                           .try_map(|x| x.as_ident_and_type()))
             }
             &VariantData::Tuple(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields {
-                    out.push(Some((format!("m{}", current),
-                                   try!(Type::convert(&field.ty)))));
+                    out.push((format!("m{}", current),
+                              try!(Type::convert(&field.ty))));
                     current += 1;
                 }
                 out
@@ -331,16 +320,12 @@ impl Struct {
                                                .map(|x| x.ident.to_string())
                                                .collect::<Vec<_>>();
 
-        if fields.iter().all(|x| x.is_some()) {
-            Ok(Struct {
-                name: name,
-                directives: directives,
-                fields: fields.iter().filter_map(|x| x.clone()).collect(),
-                generic_params: generic_params,
-            })
-        } else {
-            Err(format!("one of the fields failed to convert"))
-        }
+        Ok(Struct {
+            name: name,
+            directives: directives,
+            fields: fields,
+            generic_params: generic_params,
+        })
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
