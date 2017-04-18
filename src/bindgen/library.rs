@@ -4,11 +4,11 @@ use std::cmp::Ordering;
 
 use syn::*;
 
-use config;
-use config::Config;
-use rust_lib;
+use bindgen::config;
+use bindgen::config::Config;
 use bindgen::directive::*;
 use bindgen::items::*;
+use bindgen::rust_lib;
 use bindgen::syn_helpers::*;
 
 pub type ConvertResult<T> = Result<T, String>;

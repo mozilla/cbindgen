@@ -9,15 +9,13 @@ extern crate clap;
 use clap::{Arg, App};
 
 mod logging;
-mod config;
-mod rust_lib;
 mod bindgen;
 
-use config::Config;
+use bindgen::Config;
 
 fn main() {
     let matches = App::new("cbindgen")
-                    .version(config::VERSION)
+                    .version(bindgen::VERSION)
                     .about("Generate C bindings for a Rust library")
                     .arg(Arg::with_name("config")
                          .short("c")

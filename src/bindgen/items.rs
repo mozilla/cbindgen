@@ -2,7 +2,7 @@ use std::io::Write;
 
 use syn::*;
 
-use config::Config;
+use bindgen::config::Config;
 use bindgen::directive::*;
 use bindgen::library::*;
 use bindgen::syn_helpers::*;
