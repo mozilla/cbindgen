@@ -268,14 +268,14 @@ impl Type {
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
-    pub directives: Vec<Directive>,
+    pub directives: DirectiveSet,
     pub ret: Option<Type>,
     pub args: Vec<(String, Type)>,
 }
 
 impl Function {
     pub fn convert(name: String,
-                   directives: Vec<Directive>,
+                   directives: DirectiveSet,
                    decl: &FnDecl) -> ConvertResult<Function>
     {
         let args = try!(decl.inputs.iter()
@@ -300,15 +300,8 @@ impl Function {
     }
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
-        match self.directives.set_function_prefix() {
-            Some(x) => {
-                write!(out, "{} ", x).unwrap()
-            }
-            _ => {
-                if let Some(ref f) = config.function_prefix {
-                    write!(out, "{} ", f).unwrap();
-                }
-            }
+        if let Some(ref f) = config.item.function_prefix(&self.directives) {
+            write!(out, "{} ", f).unwrap();
         }
 
         match self.ret.as_ref() {
@@ -325,15 +318,8 @@ impl Function {
         }
         write!(out, ")").unwrap();
 
-        match self.directives.set_function_postfix() {
-            Some(x) => {
-                write!(out, "\n{}", x).unwrap()
-            }
-            _ => {
-                if let Some(ref f) = config.function_postfix {
-                    write!(out, "\n{}", f).unwrap();
-                }
-            }
+        if let Some(ref f) = config.item.function_postfix(&self.directives) {
+            write!(out, "\n{}", f).unwrap();
         }
         write!(out, ";").unwrap()
     }
@@ -342,14 +328,14 @@ impl Function {
 #[derive(Debug, Clone)]
 pub struct Struct {
     pub name: String,
-    pub directives: Vec<Directive>,
+    pub directives: DirectiveSet,
     pub fields: Vec<(String, Type)>,
     pub generic_params: Vec<PathRef>,
 }
 
 impl Struct {
     pub fn convert(name: String,
-                   directives: Vec<Directive>,
+                   directives: DirectiveSet,
                    decl: &VariantData,
                    generics: &Generics) -> ConvertResult<Struct>
     {
@@ -396,7 +382,7 @@ impl Struct {
 
         writeln!(out, "struct {} {{", self.name).unwrap();
 
-        let fields = match self.directives.set_field_names() {
+        let fields = match self.directives.list("field-names") {
             Some(overrides) => {
                 let mut fields = Vec::new();
 
@@ -424,7 +410,7 @@ impl Struct {
 
         write!(out, "\n").unwrap();
 
-        if (self.directives.set_struct_gen_op_eq().unwrap_or(false) || config.struct_gen_op_eq) && !self.fields.is_empty() {
+        if config.item.struct_gen_op_eq(&self.directives) && !self.fields.is_empty() {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator==(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -438,7 +424,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if (self.directives.set_struct_gen_op_neq().unwrap_or(false) || config.struct_gen_op_neq) && !self.fields.is_empty() {
+        if config.item.struct_gen_op_neq(&self.directives) && !self.fields.is_empty() {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator!=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -452,7 +438,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if (self.directives.set_struct_gen_op_lt().unwrap_or(false) || config.struct_gen_op_lt) && self.fields.len() == 1 {
+        if config.item.struct_gen_op_lt(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator<(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -466,7 +452,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if (self.directives.set_struct_gen_op_lte().unwrap_or(false) || config.struct_gen_op_lte) && self.fields.len() == 1 {
+        if config.item.struct_gen_op_lte(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator<=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -480,7 +466,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if (self.directives.set_struct_gen_op_gt().unwrap_or(false) || config.struct_gen_op_gt) && self.fields.len() == 1 {
+        if config.item.struct_gen_op_gt(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator>(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -494,7 +480,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if (self.directives.set_struct_gen_op_gte().unwrap_or(false) || config.struct_gen_op_gte) && self.fields.len() == 1 {
+        if config.item.struct_gen_op_gte(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator>=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -515,11 +501,11 @@ impl Struct {
 #[derive(Debug, Clone)]
 pub struct OpaqueStruct {
     pub name: PathRef,
-    pub directives: Vec<Directive>,
+    pub directives: DirectiveSet,
 }
 
 impl OpaqueStruct {
-    pub fn new(name: String, directives: Vec<Directive>) -> OpaqueStruct
+    pub fn new(name: String, directives: DirectiveSet) -> OpaqueStruct
     {
         OpaqueStruct {
             name: name,
@@ -536,14 +522,14 @@ impl OpaqueStruct {
 pub struct Enum {
     pub name: String,
     pub repr: Repr,
-    pub directives: Vec<Directive>,
+    pub directives: DirectiveSet,
     pub values: Vec<(String, u64)>,
 }
 
 impl Enum {
     pub fn convert(name: String,
                    repr: Repr,
-                   directives: Vec<Directive>,
+                   directives: DirectiveSet,
                    variants: &Vec<Variant>) -> ConvertResult<Enum>
     {
         if repr != Repr::U32 &&
@@ -604,7 +590,7 @@ impl Enum {
             }
             write!(out, "  {} = {},", value.0, value.1).unwrap();
         }
-        if config.enum_add_sentinel {
+        if config.item.enum_add_sentinel(&self.directives) {
             write!(out, "\n\n  Sentinel /* this must be last for serialization purposes. */").unwrap();
         }
         write!(out, "\n}};").unwrap();
@@ -614,14 +600,14 @@ impl Enum {
 #[derive(Debug, Clone)]
 pub struct Specialization {
     pub name: String,
-    pub directives: Vec<Directive>,
+    pub directives: DirectiveSet,
     pub aliased: PathRef,
     pub generic_values: Vec<Type>,
 }
 
 impl Specialization {
     pub fn convert(name: String,
-                   directives: Vec<Directive>,
+                   directives: DirectiveSet,
                    ty: &Ty) -> ConvertResult<Specialization>
     {
         match ty {
@@ -715,13 +701,13 @@ impl Specialization {
 #[derive(Debug, Clone)]
 pub struct Typedef {
     pub name: String,
-    pub directives: Vec<Directive>,
+    pub directives: DirectiveSet,
     pub aliased: Type,
 }
 
 impl Typedef {
     pub fn convert(name: String,
-                   directives: Vec<Directive>,
+                   directives: DirectiveSet,
                    ty: &Ty) -> ConvertResult<Typedef> {
         Ok(Typedef {
             name: name,

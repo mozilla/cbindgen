@@ -98,11 +98,11 @@ impl<'a> Library<'a> {
                                  ref _generic,
                                  ref _block) => {
                         if item.is_no_mangle() && abi.is_c() {
-                            let directives = match Directive::parse(item.get_doc_attr()) {
+                            let directives = match DirectiveSet::parse(item.get_doc_attr()) {
                                 Ok(x) => x,
                                 Err(msg) => {
                                     warn!("{}", msg);
-                                    vec![]
+                                    DirectiveSet::new()
                                 }
                             };
 
@@ -121,11 +121,11 @@ impl<'a> Library<'a> {
                     ItemKind::Struct(ref variant,
                                      ref generics) => {
                         let struct_name = item.ident.to_string();
-                        let directives = match Directive::parse(item.get_doc_attr()) {
+                        let directives = match DirectiveSet::parse(item.get_doc_attr()) {
                             Ok(x) => x,
                             Err(msg) => {
                                 warn!("{}", msg);
-                                vec![]
+                                DirectiveSet::new()
                             }
                         };
 
@@ -157,11 +157,11 @@ impl<'a> Library<'a> {
                         }
 
                         let enum_name = item.ident.to_string();
-                        let directives = match Directive::parse(item.get_doc_attr()) {
+                        let directives = match DirectiveSet::parse(item.get_doc_attr()) {
                             Ok(x) => x,
                             Err(msg) => {
                                 warn!("{}", msg);
-                                vec![]
+                                DirectiveSet::new()
                             }
                         };
 
@@ -186,11 +186,11 @@ impl<'a> Library<'a> {
                         }
 
                         let alias_name = item.ident.to_string();
-                        let directives = match Directive::parse(item.get_doc_attr()) {
+                        let directives = match DirectiveSet::parse(item.get_doc_attr()) {
                             Ok(x) => x,
                             Err(msg) => {
                                 warn!("{}", msg);
-                                vec![]
+                                DirectiveSet::new()
                             }
                         };
 
@@ -339,13 +339,13 @@ impl<'a> GeneratedLibrary<'a> {
     }
 
     pub fn write<F: Write>(&self, out: &mut F) {
-        if let Some(ref f) = self.config.file_header {
+        if let Some(ref f) = self.config.file.header {
             write!(out, "{}\n", f).unwrap();
         }
-        if self.config.file_include_version {
+        if self.config.file.include_version {
             write!(out, "\n/* Generated with cbindgen:{} */\n", config::VERSION).unwrap();
         }
-        if let Some(ref f) = self.config.file_autogen_warning {
+        if let Some(ref f) = self.config.file.autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
 
@@ -363,7 +363,7 @@ impl<'a> GeneratedLibrary<'a> {
             write!(out, "\n").unwrap();
         }
 
-        if let Some(ref f) = self.config.file_autogen_warning {
+        if let Some(ref f) = self.config.file.autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
 
@@ -373,10 +373,10 @@ impl<'a> GeneratedLibrary<'a> {
             write!(out, "\n").unwrap();
         }
 
-        if let Some(ref f) = self.config.file_autogen_warning {
+        if let Some(ref f) = self.config.file.autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
-        if let Some(ref f) = self.config.file_trailer {
+        if let Some(ref f) = self.config.file.trailer {
             write!(out, "\n{}\n", f).unwrap();
         }
     }

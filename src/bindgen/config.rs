@@ -1,15 +1,21 @@
+pub use bindgen::directive::*;
+
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone)]
-pub struct Config {
+pub struct FileConfig {
     /// Optional text to output at the beginning of the file
-    pub file_header: Option<String>,
+    pub header: Option<String>,
     /// Optional text to output at the end of the file
-    pub file_trailer: Option<String>,
+    pub trailer: Option<String>,
     /// Optional text to output at major sections to deter manual editing
-    pub file_autogen_warning: Option<String>,
+    pub autogen_warning: Option<String>,
     /// Include a comment with the version of cbindgen used to generate the file
-    pub file_include_version: bool,
+    pub include_version: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct ItemConfig {
     /// Optional text to output before each function declaration
     pub function_prefix: Option<String>,
     /// Optional text to output after each function declaration
@@ -31,13 +37,26 @@ pub struct Config {
     pub struct_gen_op_gte: bool,
 }
 
-impl Config {
-    pub fn default() -> Config {
-        Config {
-            file_header: None,
-            file_trailer: None,
-            file_autogen_warning: None,
-            file_include_version: false,
+#[derive(Debug, Clone)]
+pub struct Config {
+    pub file: FileConfig,
+    pub item: ItemConfig,
+}
+
+impl FileConfig {
+    pub fn default() -> FileConfig {
+        FileConfig {
+            header: None,
+            trailer: None,
+            autogen_warning: None,
+            include_version: false,
+        }
+    }
+}
+
+impl ItemConfig {
+    pub fn default() -> ItemConfig {
+        ItemConfig {
             function_prefix: None,
             function_postfix: None,
             enum_add_sentinel: false,
@@ -47,6 +66,72 @@ impl Config {
             struct_gen_op_lte: false,
             struct_gen_op_gt: false,
             struct_gen_op_gte: false,
+        }
+    }
+
+    pub fn function_prefix(&self, directives: &DirectiveSet) -> Option<String> {
+        match directives.atom("function-prefix") {
+            Some(x) => x,
+            None => self.function_prefix.clone(),
+        }
+    }
+    pub fn function_postfix(&self, directives: &DirectiveSet) -> Option<String> {
+        match directives.atom("function-postfix") {
+            Some(x) => x,
+            None => self.function_postfix.clone(),
+        }
+    }
+
+    pub fn enum_add_sentinel(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("enum-add-sentinel") {
+            Some(x) => x,
+            None => self.enum_add_sentinel,
+        }
+    }
+
+    pub fn struct_gen_op_eq(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-eq") {
+            Some(x) => x,
+            None => self.struct_gen_op_eq,
+        }
+    }
+    pub fn struct_gen_op_neq(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-neq") {
+            Some(x) => x,
+            None => self.struct_gen_op_neq,
+        }
+    }
+    pub fn struct_gen_op_lt(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-lt") {
+            Some(x) => x,
+            None => self.struct_gen_op_lt,
+        }
+    }
+    pub fn struct_gen_op_lte(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-lte") {
+            Some(x) => x,
+            None => self.struct_gen_op_lte,
+        }
+    }
+    pub fn struct_gen_op_gt(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-gt") {
+            Some(x) => x,
+            None => self.struct_gen_op_gt,
+        }
+    }
+    pub fn struct_gen_op_gte(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-gte") {
+            Some(x) => x,
+            None => self.struct_gen_op_gte,
+        }
+    }
+}
+
+impl Config {
+    pub fn default() -> Config {
+        Config {
+            file: FileConfig::default(),
+            item: ItemConfig::default(),
         }
     }
 
@@ -60,19 +145,23 @@ impl Config {
  * then run `cbindgen -c wr gfx/webrender_bindings/ gfx/webrender_bindings/webrender_ffi_generated.h` */"###;
 
         Config {
-            file_header: Some(String::from(license)),
-            file_trailer: None,
-            file_autogen_warning: Some(String::from(autogen)),
-            file_include_version: true,
-            function_prefix: Some(String::from("WR_INLINE")),
-            function_postfix: Some(String::from("WR_FUNC")),
-            enum_add_sentinel: true,
-            struct_gen_op_eq: true,
-            struct_gen_op_neq: false,
-            struct_gen_op_lt: false,
-            struct_gen_op_lte: false,
-            struct_gen_op_gt: false,
-            struct_gen_op_gte: false,
+            file: FileConfig {
+                header: Some(String::from(license)),
+                trailer: None,
+                autogen_warning: Some(String::from(autogen)),
+                include_version: true,
+            },
+            item: ItemConfig {
+                function_prefix: Some(String::from("WR_INLINE")),
+                function_postfix: Some(String::from("WR_FUNC")),
+                enum_add_sentinel: true,
+                struct_gen_op_eq: true,
+                struct_gen_op_neq: false,
+                struct_gen_op_lt: false,
+                struct_gen_op_lte: false,
+                struct_gen_op_gt: false,
+                struct_gen_op_gte: false,
+            },
         }
     }
 
