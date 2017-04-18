@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::collections::BTreeMap;
 use std::cmp::Ordering;
+use std::fs::File;
 
 use syn::*;
 
@@ -325,6 +326,11 @@ impl BuiltLibrary {
             items: Vec::new(),
             functions: Vec::new(),
         }
+    }
+
+    pub fn write_to_file(&self, config: &Config, path: &str) {
+        self.write(&config,
+                   &mut File::create(path).unwrap());
     }
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut F) {

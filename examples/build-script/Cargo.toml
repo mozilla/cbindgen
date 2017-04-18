@@ -1,0 +1,8 @@
+[package]
+name = "build-script"
+version = "0.1.0"
+authors = ["Ryan Hunt <rhunt@eqrion.net>"]
+build = "build.rs"
+
+[build-dependencies]
+cbindgen = { path = "../../" }
