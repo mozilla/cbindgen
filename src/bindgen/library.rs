@@ -13,7 +13,7 @@ use bindgen::rust_lib;
 use bindgen::syn_helpers::*;
 
 pub type ConvertResult<T> = Result<T, String>;
-pub type BuildResult<T> = Result<T, String>;
+pub type GenerateResult<T> = Result<T, String>;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Repr {
@@ -57,7 +57,7 @@ impl PathValue {
 
 /// A library collects all of the information needed to generate
 /// bindings for a specified rust library. It is turned into a
-/// BuiltLibrary, and in the process filters out unneeded information
+/// GeneratedLibrary, and in the process filters out unneeded information
 /// and in the future will do validation.
 #[derive(Debug, Clone)]
 pub struct Library<'a> {
@@ -260,8 +260,8 @@ impl<'a> Library<'a> {
         }
     }
 
-    pub fn build(self) -> BuildResult<BuiltLibrary<'a>> {
-        let mut result = BuiltLibrary::blank(self.config);
+    pub fn generate(self) -> GenerateResult<GeneratedLibrary<'a>> {
+        let mut result = GeneratedLibrary::blank(self.config);
 
         // Gather only the items that we need for this
         // `extern "c"` interface
@@ -271,7 +271,7 @@ impl<'a> Library<'a> {
         }
 
         // Copy the binding items in dependencies order
-        // into the BuiltLibrary, specializing any type
+        // into the GeneratedLibrary, specializing any type
         // aliases we encounter
         for dep in deps {
             match &dep {
@@ -316,18 +316,18 @@ impl<'a> Library<'a> {
     }
 }
 
-/// A BuiltLibrary represents a completed bindings file ready to be printed.
+/// A GeneratedLibrary represents a completed bindings file ready to be printed.
 #[derive(Debug, Clone)]
-pub struct BuiltLibrary<'a> {
+pub struct GeneratedLibrary<'a> {
     config: &'a Config,
 
     items: Vec<PathValue>,
     functions: Vec<Function>,
 }
 
-impl<'a> BuiltLibrary<'a> {
-    fn blank(config: &'a Config) -> BuiltLibrary<'a> {
-        BuiltLibrary {
+impl<'a> GeneratedLibrary<'a> {
+    fn blank(config: &'a Config) -> GeneratedLibrary<'a> {
+        GeneratedLibrary {
             config: config,
             items: Vec::new(),
             functions: Vec::new(),

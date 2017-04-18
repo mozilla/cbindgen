@@ -31,7 +31,7 @@ fn main() {
     let config = Config::default();
 
     Library::load("../build-script", &config)
-        .build().unwrap()
+        .generate().unwrap()
         .write_to_file("bindings.h");
 }
 ```

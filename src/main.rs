@@ -47,11 +47,11 @@ fn main() {
         None => Config::default(),
     };
 
-    let built = match Library::load(input, &config).build() {
+    let built = match Library::load(input, &config).generate() {
         Ok(x) => x,
         Err(msg) => {
             error!("{}", msg);
-            error!("could not build bindings for {}", input);
+            error!("could not generate bindings for {}", input);
             return;
         },
     };
