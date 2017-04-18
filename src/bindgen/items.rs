@@ -86,8 +86,8 @@ impl Type {
             &Type::Array(ref t, _) => {
                 t.add_deps(library, out);
             }
-            &Type::FuncPtr(ref opt_ret, ref args) => {
-                if let Some(ref ty) = opt_ret.as_ref() {
+            &Type::FuncPtr(ref ret, ref args) => {
+                if let Some(ref ty) = ret.as_ref() {
                     ty.add_deps(library, out);
                 }
                 for arg in args {
@@ -124,8 +124,8 @@ impl Type {
             &Type::Array(ref t, ref sz) => {
                 Type::Array(Box::new(t.specialize(mappings)), *sz)
             }
-            &Type::FuncPtr(ref opt_ret, ref args) => {
-                Type::FuncPtr(opt_ret.as_ref().map(|x| Box::new(x.specialize(mappings))),
+            &Type::FuncPtr(ref ret, ref args) => {
+                Type::FuncPtr(ret.as_ref().map(|x| Box::new(x.specialize(mappings))),
                               args.iter()
                                   .map(|x| x.specialize(mappings))
                                   .collect())
@@ -154,8 +154,8 @@ impl Type {
                 t.write(out);
                 write!(out, "[{}]", sz).unwrap();
             }
-            &Type::FuncPtr(ref opt_ret, ref args) => {
-                if let &Some(ref ret) = opt_ret {
+            &Type::FuncPtr(ref ret, ref args) => {
+                if let &Some(ref ret) = ret {
                     ret.write(out);
                 } else {
                     write!(out, "void").unwrap();
@@ -194,8 +194,8 @@ impl Type {
                 t.write(out);
                 write!(out, " {}[{}]", ident, sz).unwrap();
             }
-            &Type::FuncPtr(ref opt_ret, ref args) => {
-                if let &Some(ref ret) = opt_ret {
+            &Type::FuncPtr(ref ret, ref args) => {
+                if let &Some(ref ret) = ret {
                     ret.write(out);
                 } else {
                     write!(out, "void").unwrap();
@@ -217,7 +217,7 @@ impl Type {
 pub struct Function {
     pub name: String,
     pub directives: Vec<Directive>,
-    pub return_ty: Option<Type>,
+    pub ret: Option<Type>,
     pub args: Vec<(String, Type)>,
 }
 
@@ -235,7 +235,7 @@ impl Function {
             Ok(Function {
                 name: name,
                 directives: directives,
-                return_ty: ret,
+                ret: ret,
                 args: args.iter().filter_map(|x| x.clone()).collect(),
             })
         } else {
@@ -244,11 +244,11 @@ impl Function {
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
-        if let &Some(ref ty) = &self.return_ty {
-            ty.add_deps(library, out);
+        if let &Some(ref ret) = &self.ret {
+            ret.add_deps(library, out);
         }
-        for &(_, ref arg) in &self.args {
-            arg.add_deps(library, out);
+        for &(_, ref ty) in &self.args {
+            ty.add_deps(library, out);
         }
     }
 
@@ -264,8 +264,8 @@ impl Function {
             }
         }
 
-        match self.return_ty.as_ref() {
-            Some(ty) => ty.write(out),
+        match self.ret.as_ref() {
+            Some(ret) => ret.write(out),
             None => write!(out, "void").unwrap(),
         }
 
@@ -350,6 +350,8 @@ impl Struct {
     }
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
+        assert!(self.generic_params.is_empty());
+
         writeln!(out, "struct {} {{", self.name).unwrap();
 
         let fields = match self.directives.set_field_names() {

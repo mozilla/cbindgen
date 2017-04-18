@@ -1,5 +1,4 @@
 use std::io;
-use std::fs::File;
 
 #[macro_use]
 extern crate log;
@@ -53,7 +52,7 @@ fn main() {
 
     match matches.value_of("OUTPUT") {
         Some(file) => {
-            built.write(&config, &mut File::create(file).unwrap());
+            built.write_to_file(&config, file);
         }
         _ => {
             built.write(&config, &mut io::stdout());
