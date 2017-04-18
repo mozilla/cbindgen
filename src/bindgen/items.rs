@@ -68,7 +68,7 @@ impl Type {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
+    pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut Vec<PathValue>) {
         match self {
             &Type::ConstPtr(ref t) => {
                 t.add_deps(library, out);
@@ -77,6 +77,9 @@ impl Type {
                 t.add_deps(library, out);
             }
             &Type::Path(ref p) => {
+                if generic_params.contains(p) {
+                    return;
+                }
                 library.add_deps_for_path(p, out);
             }
             &Type::Primitive(_) => { }
@@ -92,6 +95,10 @@ impl Type {
                 }
             }
         }
+    }
+
+    pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
+        self.add_deps_with_generics(&Vec::new(), library, out)
     }
 
     pub fn specialize(&self, mappings: &Vec<(&String, &Type)>) -> Type {
@@ -338,7 +345,7 @@ impl Struct {
 
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
         for &(_, ref ty) in &self.fields {
-            ty.add_deps(library, out);
+            ty.add_deps_with_generics(&self.generic_params, library, out);
         }
     }
 
