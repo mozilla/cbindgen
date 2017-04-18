@@ -47,7 +47,7 @@ fn main() {
         None => Config::default(),
     };
 
-    let built = match Library::load(input, &config).build(&config) {
+    let built = match Library::load(input, &config).build() {
         Ok(x) => x,
         Err(msg) => {
             error!("{}", msg);
@@ -58,10 +58,10 @@ fn main() {
 
     match matches.value_of("OUTPUT") {
         Some(file) => {
-            built.write_to_file(&config, file);
+            built.write_to_file(file);
         }
         _ => {
-            built.write(&config, &mut io::stdout());
+            built.write(&mut io::stdout());
         }
     }
 }

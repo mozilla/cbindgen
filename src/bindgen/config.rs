@@ -1,5 +1,6 @@
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
+#[derive(Debug, Clone)]
 pub struct Config {
     /// Optional text to output at the beginning of the file
     pub file_header: Option<String>,

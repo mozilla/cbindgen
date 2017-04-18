@@ -6,6 +6,6 @@ fn main() {
     let config = Config::default();
 
     Library::load("../build-script", &config)
-        .build(&config).unwrap()
-        .write_to_file(&config, "bindings.h");
+        .build().unwrap()
+        .write_to_file("bindings.h");
 }

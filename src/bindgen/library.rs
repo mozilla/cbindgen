@@ -60,7 +60,9 @@ impl PathValue {
 /// BuiltLibrary, and in the process filters out unneeded information
 /// and in the future will do validation.
 #[derive(Debug, Clone)]
-pub struct Library {
+pub struct Library<'a> {
+    config: &'a Config,
+
     enums: BTreeMap<String, Enum>,
     structs: BTreeMap<String, Struct>,
     opaque_structs: BTreeMap<String, OpaqueStruct>,
@@ -69,9 +71,10 @@ pub struct Library {
     functions: BTreeMap<String, Function>,
 }
 
-impl Library {
-    fn blank() -> Library {
+impl<'a> Library<'a> {
+    fn blank(config: &'a Config) -> Library<'a> {
         Library {
+            config: config,
             enums: BTreeMap::new(),
             structs: BTreeMap::new(),
             opaque_structs: BTreeMap::new(),
@@ -81,9 +84,9 @@ impl Library {
         }
     }
 
-    pub fn load(crate_or_src: &str, _config: &Config) -> Library
+    pub fn load(crate_or_src: &str, config: &'a Config) -> Library<'a>
     {
-        let mut library = Library::blank();
+        let mut library = Library::blank(config);
 
         rust_lib::parse(crate_or_src, &mut |mod_name, items| {
             for item in items {
@@ -257,14 +260,14 @@ impl Library {
         }
     }
 
-    pub fn build(&self, _config: &Config) -> BuildResult<BuiltLibrary> {
-        let mut result = BuiltLibrary::blank();
+    pub fn build(self) -> BuildResult<BuiltLibrary<'a>> {
+        let mut result = BuiltLibrary::blank(self.config);
 
         // Gather only the items that we need for this
         // `extern "c"` interface
         let mut deps = Vec::new();
         for (_, function) in &self.functions {
-            function.add_deps(self, &mut deps);
+            function.add_deps(&self, &mut deps);
         }
 
         // Copy the binding items in dependencies order
@@ -278,7 +281,7 @@ impl Library {
                     }
                 }
                 &PathValue::Specialization(ref s) => {
-                    match s.specialize(self) {
+                    match s.specialize(&self) {
                         Ok(value) => {
                             result.items.push(value);
                         }
@@ -315,40 +318,42 @@ impl Library {
 
 /// A BuiltLibrary represents a completed bindings file ready to be printed.
 #[derive(Debug, Clone)]
-pub struct BuiltLibrary {
+pub struct BuiltLibrary<'a> {
+    config: &'a Config,
+
     items: Vec<PathValue>,
     functions: Vec<Function>,
 }
 
-impl BuiltLibrary {
-    fn blank() -> BuiltLibrary {
+impl<'a> BuiltLibrary<'a> {
+    fn blank(config: &'a Config) -> BuiltLibrary<'a> {
         BuiltLibrary {
+            config: config,
             items: Vec::new(),
             functions: Vec::new(),
         }
     }
 
-    pub fn write_to_file(&self, config: &Config, path: &str) {
-        self.write(&config,
-                   &mut File::create(path).unwrap());
+    pub fn write_to_file(&self, path: &str) {
+        self.write(&mut File::create(path).unwrap());
     }
 
-    pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
-        if let Some(ref f) = config.file_header {
+    pub fn write<F: Write>(&self, out: &mut F) {
+        if let Some(ref f) = self.config.file_header {
             write!(out, "{}\n", f).unwrap();
         }
-        if config.file_include_version {
+        if self.config.file_include_version {
             write!(out, "\n/* Generated with cbindgen:{} */\n", config::VERSION).unwrap();
         }
-        if let Some(ref f) = config.file_autogen_warning {
+        if let Some(ref f) = self.config.file_autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
 
         for item in &self.items {
             write!(out, "\n").unwrap();
             match item {
-                &PathValue::Enum(ref x) => x.write(config, out),
-                &PathValue::Struct(ref x) => x.write(config, out),
+                &PathValue::Enum(ref x) => x.write(self.config, out),
+                &PathValue::Struct(ref x) => x.write(self.config, out),
                 &PathValue::OpaqueStruct(ref x) => x.write(out),
                 &PathValue::Typedef(ref x) => x.write(out),
                 &PathValue::Specialization(_) => {
@@ -358,20 +363,20 @@ impl BuiltLibrary {
             write!(out, "\n").unwrap();
         }
 
-        if let Some(ref f) = config.file_autogen_warning {
+        if let Some(ref f) = self.config.file_autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
 
         for function in &self.functions {
             write!(out, "\n").unwrap();
-            function.write(config, out);
+            function.write(self.config, out);
             write!(out, "\n").unwrap();
         }
 
-        if let Some(ref f) = config.file_autogen_warning {
+        if let Some(ref f) = self.config.file_autogen_warning {
             write!(out, "\n{}\n", f).unwrap();
         }
-        if let Some(ref f) = config.file_trailer {
+        if let Some(ref f) = self.config.file_trailer {
             write!(out, "\n{}\n", f).unwrap();
         }
     }
