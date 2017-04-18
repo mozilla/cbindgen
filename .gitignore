@@ -1,1 +1,4 @@
 target
+
+examples/build-script/Cargo.lock
+examples/build-script/bindings.h
