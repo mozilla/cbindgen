@@ -88,22 +88,6 @@ impl SynFieldHelpers for Field {
 }
 
 // TODO: find a better place for these
-pub fn map_path_name_to_primitive(path_name: &str) -> String {
-    match path_name {
-        "usize" => "size_t".to_string(),
-        "u8" => "uint8_t".to_string(),
-        "u32" => "uint32_t".to_string(),
-        "u64" => "uint64_t".to_string(),
-        "i8" => "int8_t".to_string(),
-        "i32" => "int32_t".to_string(),
-        "i64" => "int64_t".to_string(),
-        "f32" => "float".to_string(),
-        "f64" => "double".to_string(),
-        "c_void" => "void".to_string(),
-        "bool" => "bool".to_string(),
-        _ => path_name.to_string(),
-    }
-}
 pub fn convert_path_name_to_primitive(path_name: &str) -> Option<String> {
     match path_name {
         "usize" => Some("size_t".to_string()),
@@ -138,13 +122,13 @@ pub fn path_name_is_primitive(path_name: &str) -> bool {
 }
 
 pub trait SynPathHelpers {
-    fn convert_to_simple_single_segment(&self) -> Option<String>;
-    fn convert_to_generic_single_segment(&self) -> Option<(String, Vec<String>)>;
+    fn convert_to_simple_single_segment(&self) -> ConvertResult<String>;
+    fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)>;
 }
 impl SynPathHelpers for Path {
-    fn convert_to_simple_single_segment(&self) -> Option<String> {
+    fn convert_to_simple_single_segment(&self) -> ConvertResult<String> {
         if self.segments.len() != 1 {
-            return None;
+            return Err(format!("Path is not a single segment"));
         }
 
         match &self.segments[0].parameters {
@@ -152,52 +136,44 @@ impl SynPathHelpers for Path {
                 if !d.lifetimes.is_empty() ||
                    !d.types.is_empty() ||
                    !d.bindings.is_empty() {
-                    return None;
+                    return Err(format!("Path contains generics, bindings, or lifetimes"));
                 }
             }
             &PathParameters::Parenthesized(_) => {
-                return None;
+                return Err(format!("Path contains parentheses"));
             }
         }
 
         let name = self.segments[0].ident.to_string();
 
-        Some(name)
+        Ok(name)
     }
 
-    fn convert_to_generic_single_segment(&self) -> Option<(String, Vec<String>)> {
+    fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)> {
         if self.segments.len() != 1 {
-            return None;
+            return Err(format!("Path is not a single segment"));
         }
 
         let generics = match &self.segments[0].parameters {
             &PathParameters::AngleBracketed(ref d) => {
                 if !d.lifetimes.is_empty() ||
                    !d.bindings.is_empty() {
-                    return None;
+                    return Err(format!("Generic parameter contains bindings, or lifetimes"));
                 }
 
                 let mut generics = Vec::new();
                 for ty in &d.types {
-                    match ty {
-                        &Ty::Path(_, ref p) => {
-                            match p.convert_to_simple_single_segment() {
-                                Some(path) => generics.push(path),
-                                None => return None,
-                            }
-                        },
-                        _ => { return None },
-                    }
+                    generics.push(try!(Type::convert(ty)));
                 }
                 generics
             }
             &PathParameters::Parenthesized(_) => {
-                return None;
+                return Err(format!("Path contains parentheses"));
             }
         };
 
         let name = self.segments[0].ident.to_string();
 
-        Some((name, generics))
+        Ok((name, generics))
     }
 }

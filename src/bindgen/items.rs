@@ -36,15 +36,12 @@ impl Type {
                 })
             }
             &Ty::Path(_, ref p) => {
-                match p.convert_to_simple_single_segment() {
-                    Some(p) => {
-                        if let Some(prim) = convert_path_name_to_primitive(&p) {
-                            Ok(Type::Primitive(prim))
-                        } else {
-                            Ok(Type::Path(p))
-                        }
-                    }
-                    None => Err(format!("not a simple single segment")),
+                let p = try!(p.convert_to_simple_single_segment());
+
+                if let Some(prim) = convert_path_name_to_primitive(&p) {
+                    Ok(Type::Primitive(prim))
+                } else {
+                    Ok(Type::Path(p))
                 }
             }
             &Ty::Array(ref ty, ConstExpr::Lit(Lit::Int(sz, _))) => {
@@ -97,7 +94,7 @@ impl Type {
         }
     }
 
-    pub fn specialize(&self, mappings: &Vec<(&String, &String)>) -> Type {
+    pub fn specialize(&self, mappings: &Vec<(&String, &Type)>) -> Type {
         match self {
             &Type::ConstPtr(ref t) => {
                 Type::ConstPtr(Box::new(t.specialize(mappings)))
@@ -106,16 +103,13 @@ impl Type {
                 Type::Ptr(Box::new(t.specialize(mappings)))
             }
             &Type::Path(ref p) => {
-                let mut p = p.clone();
-
                 for &(param, value) in mappings {
-                    if p == *param {
-                        p = value.clone();
-                        break;
+                    if *p == *param {
+                        return value.clone();
                     }
                 }
 
-                Type::Path(p)
+                Type::Path(p.clone())
             }
             &Type::Primitive(ref p) => {
                 Type::Primitive(p.clone())
@@ -551,7 +545,7 @@ pub struct Specialization {
     pub name: String,
     pub directives: Vec<Directive>,
     pub aliased: PathRef,
-    pub generic_values: Vec<PathRef>,
+    pub generic_values: Vec<Type>,
 }
 
 impl Specialization {
@@ -561,7 +555,7 @@ impl Specialization {
     {
         match ty {
             &Ty::Path(ref _q, ref p) => {
-                let (path, generics) = try!(p.convert_to_generic_single_segment().ok_or("not a generic single segment"));
+                let (path, generics) = try!(p.convert_to_generic_single_segment());
 
                 if path_name_is_primitive(&path) {
                     return Err(format!("can't specialize a primitive"));
@@ -571,9 +565,7 @@ impl Specialization {
                     name: name,
                     directives: directives,
                     aliased: path,
-                    generic_values: generics.iter()
-                                            .map(|x| map_path_name_to_primitive(x))
-                                            .collect(),
+                    generic_values: generics,
                 })
             }
             _ => {
@@ -587,9 +579,7 @@ impl Specialization {
             library.add_deps_for_path_deps(&self.aliased, out);
         }
         for value in &self.generic_values {
-            if !path_name_is_primitive(value) {
-                library.add_deps_for_path(value, out);
-            }
+            value.add_deps(&library, out);
         }
     }
 
