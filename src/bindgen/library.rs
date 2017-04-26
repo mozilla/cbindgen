@@ -91,6 +91,39 @@ impl<'a> Library<'a> {
         rust_lib::parse(crate_or_src, &mut |mod_name, items| {
             for item in items {
                 match item.node {
+                    ItemKind::ForeignMod(ref block) => {
+                        if !block.abi.is_c() {
+                            info!("skip {}::{} - non c abi extern block", mod_name, &item.ident);
+                            continue;
+                        }
+
+                        for foreign_item in &block.items {
+                            match foreign_item.node {
+                                ForeignItemKind::Fn(ref decl,
+                                                    ref _generic) => {
+                                    let directives = match DirectiveSet::parse(foreign_item.get_doc_attr()) {
+                                        Ok(x) => x,
+                                        Err(msg) => {
+                                            warn!("{}", msg);
+                                            DirectiveSet::new()
+                                        }
+                                    };
+
+                                    match Function::convert(foreign_item.ident.to_string(), directives, decl, true) {
+                                        Ok(func) => {
+                                            info!("take {}::{}", mod_name, &foreign_item.ident);
+
+                                            library.functions.insert(func.name.clone(), func);
+                                        }
+                                        Err(msg) => {
+                                            info!("skip {}::{} - ({})", mod_name, &foreign_item.ident, msg);
+                                        },
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
                     ItemKind::Fn(ref decl,
                                  ref _unsafe,
                                  ref _const,
@@ -106,7 +139,7 @@ impl<'a> Library<'a> {
                                 }
                             };
 
-                            match Function::convert(item.ident.to_string(), directives, decl) {
+                            match Function::convert(item.ident.to_string(), directives, decl, false) {
                                 Ok(func) => {
                                     info!("take {}::{}", mod_name, &item.ident);
 
@@ -368,6 +401,10 @@ impl<'a> GeneratedLibrary<'a> {
         }
 
         for function in &self.functions {
+            if function.extern_decl {
+                continue;
+            }
+
             write!(out, "\n").unwrap();
             function.write(self.config, out);
             write!(out, "\n").unwrap();

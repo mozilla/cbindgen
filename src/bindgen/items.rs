@@ -12,6 +12,7 @@ use bindgen::syn_helpers::*;
 pub enum PrimitiveType {
     Void,
     Bool,
+    Char,
     USize,
     UInt8,
     UInt16,
@@ -28,6 +29,7 @@ impl PrimitiveType {
     fn maybe(path: &str) -> Option<PrimitiveType> {
         match path {
             "c_void" => Some(PrimitiveType::Void),
+            "c_char" => Some(PrimitiveType::Char),
             "bool" => Some(PrimitiveType::Bool),
             "char" => Some(PrimitiveType::UInt16),
             "usize" => Some(PrimitiveType::USize),
@@ -50,6 +52,7 @@ impl fmt::Display for PrimitiveType {
         match self {
             &PrimitiveType::Void => write!(f, "void"),
             &PrimitiveType::Bool => write!(f, "bool"),
+            &PrimitiveType::Char => write!(f, "char"),
             &PrimitiveType::USize => write!(f, "size_t"),
             &PrimitiveType::UInt8 => write!(f, "uint8_t"),
             &PrimitiveType::UInt16 => write!(f, "uint16_t"),
@@ -271,12 +274,14 @@ pub struct Function {
     pub directives: DirectiveSet,
     pub ret: Option<Type>,
     pub args: Vec<(String, Type)>,
+    pub extern_decl: bool,
 }
 
 impl Function {
     pub fn convert(name: String,
                    directives: DirectiveSet,
-                   decl: &FnDecl) -> ConvertResult<Function>
+                   decl: &FnDecl,
+                   extern_decl: bool) -> ConvertResult<Function>
     {
         let args = try!(decl.inputs.iter()
                                    .try_map(|x| x.as_ident_and_type()));
@@ -287,6 +292,7 @@ impl Function {
             directives: directives,
             ret: ret,
             args: args,
+            extern_decl: extern_decl,
         })
     }
 

@@ -78,6 +78,26 @@ impl SynItemHelpers for Item {
         doc
     }
 }
+impl SynItemHelpers for ForeignItem {
+    fn has_attr(&self, target: MetaItem) -> bool {
+        return self.attrs
+                   .iter()
+                   .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
+    }
+    fn get_doc_attr(&self) -> String {
+        let mut doc = String::new();
+        for attr in &self.attrs {
+            if attr.style == AttrStyle::Outer &&
+               attr.is_sugared_doc {
+                if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                    doc.push_str(&comment);
+                    doc.push('\n');
+                }
+            }
+        }
+        doc
+    }
+}
 
 pub trait SynAbiHelpers {
     fn is_c(&self) -> bool;
@@ -85,6 +105,11 @@ pub trait SynAbiHelpers {
 impl SynAbiHelpers for Option<Abi> {
     fn is_c(&self) -> bool {
         self == &Some(Abi::Named(String::from("C")))
+    }
+}
+impl SynAbiHelpers for Abi {
+    fn is_c(&self) -> bool {
+        self == &Abi::Named(String::from("C"))
     }
 }
 
