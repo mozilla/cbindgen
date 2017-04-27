@@ -1,4 +1,9 @@
-# `cbindgen`
+# `cbindgen` &emsp; [![Build Status]][travis] [![Latest Version]][crates.io]
+
+[Build Status]: https://api.travis-ci.org/rlhunt/cbindgen.svg?branch=master
+[travis]: https://travis-ci.org/rlhunt/cbindgen
+[Latest Version]: https://img.shields.io/crates/v/cbindgen.svg
+[crates.io]: https://crates.io/crates/cbindgen
 
 This project can be used to generate C bindings for Rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/).
 
