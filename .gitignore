@@ -1,4 +1,4 @@
 target
 
-examples/build-script/Cargo.lock
-examples/build-script/bindings.h
+samples/build-script/Cargo.lock
+samples/build-script/bindings.h
