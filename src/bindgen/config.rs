@@ -1,147 +1,40 @@
 use std::fs::File;
+use std::io::prelude::*;
+use std::io::{self, BufReader};
+use std::default::Default;
 
-use serde_json;
+use toml;
 
 pub use bindgen::directive::*;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct FileConfig {
-    /// Optional text to output at the beginning of the file
-    pub header: Option<String>,
-    /// Optional text to output at the end of the file
-    pub trailer: Option<String>,
-    /// Optional text to output at major sections to deter manual editing
-    pub autogen_warning: Option<String>,
-    /// Include a comment with the version of cbindgen used to generate the file
-    pub include_version: bool,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct ItemConfig {
-    /// Optional text to output before each function declaration
-    pub function_prefix: Option<String>,
-    /// Optional text to output after each function declaration
-    pub function_postfix: Option<String>,
-    /// Whether to add a `Sentinel` value at the end of every enum
-    /// This is useful in Gecko for IPC serialization
-    pub enum_add_sentinel: bool,
-    /// Whether to generate a piecewise equality operator
-    pub struct_gen_op_eq: bool,
-    /// Whether to generate a piecewise inequality operator
-    pub struct_gen_op_neq: bool,
-    /// Whether to generate a less than operator on structs with one field
-    pub struct_gen_op_lt: bool,
-    /// Whether to generate a less than or equal to operator on structs with one field
-    pub struct_gen_op_lte: bool,
-    /// Whether to generate a greater than operator on structs with one field
-    pub struct_gen_op_gt: bool,
-    /// Whether to generate a greater than or equal to operator on structs with one field
-    pub struct_gen_op_gte: bool,
-}
-
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
 pub struct Config {
-    pub global: FileConfig,
-    pub per_item: ItemConfig,
-}
-
-impl FileConfig {
-    pub fn default() -> FileConfig {
-        FileConfig {
-            header: None,
-            trailer: None,
-            autogen_warning: None,
-            include_version: false,
-        }
-    }
-}
-
-impl ItemConfig {
-    pub fn default() -> ItemConfig {
-        ItemConfig {
-            function_prefix: None,
-            function_postfix: None,
-            enum_add_sentinel: false,
-            struct_gen_op_eq: false,
-            struct_gen_op_neq: false,
-            struct_gen_op_lt: false,
-            struct_gen_op_lte: false,
-            struct_gen_op_gt: false,
-            struct_gen_op_gte: false,
-        }
-    }
-
-    pub fn function_prefix(&self, directives: &DirectiveSet) -> Option<String> {
-        match directives.atom("function-prefix") {
-            Some(x) => x,
-            None => self.function_prefix.clone(),
-        }
-    }
-    pub fn function_postfix(&self, directives: &DirectiveSet) -> Option<String> {
-        match directives.atom("function-postfix") {
-            Some(x) => x,
-            None => self.function_postfix.clone(),
-        }
-    }
-
-    pub fn enum_add_sentinel(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("enum-add-sentinel") {
-            Some(x) => x,
-            None => self.enum_add_sentinel,
-        }
-    }
-
-    pub fn struct_gen_op_eq(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-eq") {
-            Some(x) => x,
-            None => self.struct_gen_op_eq,
-        }
-    }
-    pub fn struct_gen_op_neq(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-neq") {
-            Some(x) => x,
-            None => self.struct_gen_op_neq,
-        }
-    }
-    pub fn struct_gen_op_lt(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-lt") {
-            Some(x) => x,
-            None => self.struct_gen_op_lt,
-        }
-    }
-    pub fn struct_gen_op_lte(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-lte") {
-            Some(x) => x,
-            None => self.struct_gen_op_lte,
-        }
-    }
-    pub fn struct_gen_op_gt(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-gt") {
-            Some(x) => x,
-            None => self.struct_gen_op_gt,
-        }
-    }
-    pub fn struct_gen_op_gte(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-gte") {
-            Some(x) => x,
-            None => self.struct_gen_op_gte,
-        }
-    }
+    pub file: FileConfig,
+    #[serde(rename = "fn")]
+    pub function: FunctionConfig,
+    #[serde(rename = "struct")]
+    pub structure: StructConfig,
+    #[serde(rename = "enum")]
+    pub enumeration: EnumConfig,
 }
 
 impl Config {
-
-    pub fn from_default() -> Config {
-        Config {
-            global: FileConfig::default(),
-            per_item: ItemConfig::default(),
+    pub fn from_file(file_name: &str) -> Config {
+        fn read(file_name: &str) -> io::Result<String> {
+            let file = File::open(file_name)?;
+            let mut reader = BufReader::new(&file);
+            let mut contents = String::new();
+            reader.read_to_string(&mut contents)?;
+            Ok(contents)
         }
-    }
 
-    pub fn from_file(file: &str) -> Config {
-        serde_json::from_reader(&File::open(file).unwrap()).unwrap()
+        let config_text = read(file_name).expect("couldn't open config file");
+        toml::from_str(&config_text).expect("couldn't parse config file")
     }
 
     pub fn from_webrender() -> Config {
@@ -154,31 +47,154 @@ impl Config {
  * then run `cbindgen -c wr gfx/webrender_bindings/ gfx/webrender_bindings/webrender_ffi_generated.h` */"###;
 
         Config {
-            global: FileConfig {
+            file: FileConfig {
                 header: Some(String::from(license)),
                 trailer: None,
                 autogen_warning: Some(String::from(autogen)),
-                include_version: true,
+                include_version: Some(true),
             },
-            per_item: ItemConfig {
-                function_prefix: Some(String::from("WR_INLINE")),
-                function_postfix: Some(String::from("WR_FUNC")),
-                enum_add_sentinel: true,
-                struct_gen_op_eq: true,
-                struct_gen_op_neq: false,
-                struct_gen_op_lt: false,
-                struct_gen_op_lte: false,
-                struct_gen_op_gt: false,
-                struct_gen_op_gte: false,
+            function: FunctionConfig {
+                prefix: Some(String::from("WR_INLINE")),
+                postfix: Some(String::from("WR_FUNC")),
+            },
+            structure: StructConfig {
+                derive_op_eq: Some(true),
+                derive_op_neq: Some(false),
+                derive_op_lt: Some(false),
+                derive_op_lte: Some(false),
+                derive_op_gt: Some(false),
+                derive_op_gte: Some(false),
+            },
+            enumeration: EnumConfig {
+                add_sentinel: Some(true),
             },
         }
     }
 
     pub fn load(config: &str) -> Config {
         match config {
-            "default" => Config::from_default(),
+            "default" => Config::default(),
             "wr" => Config::from_webrender(),
             file => Config::from_file(file),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct FileConfig {
+    /// Optional text to output at the beginning of the file
+    pub header: Option<String>,
+    /// Optional text to output at the end of the file
+    pub trailer: Option<String>,
+    /// Optional text to output at major sections to deter manual editing
+    pub autogen_warning: Option<String>,
+    /// Include a comment with the version of cbindgen used to generate the file
+    pub include_version: Option<bool>,
+}
+
+#[derive(Default, Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct FunctionConfig {
+    /// Optional text to output before each function declaration
+    pub prefix: Option<String>,
+    /// Optional text to output after each function declaration
+    pub postfix: Option<String>,
+}
+
+impl FunctionConfig {
+    pub fn prefix(&self, directives: &DirectiveSet) -> Option<String> {
+        match directives.atom("function-prefix") {
+            Some(x) => x,
+            None => self.prefix.clone(),
+        }
+    }
+
+    pub fn postfix(&self, directives: &DirectiveSet) -> Option<String> {
+        match directives.atom("function-postfix") {
+            Some(x) => x,
+            None => self.postfix.clone(),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct StructConfig {
+    /// Whether to generate a piecewise equality operator
+    pub derive_op_eq: Option<bool>,
+    /// Whether to generate a piecewise inequality operator
+    pub derive_op_neq: Option<bool>,
+    /// Whether to generate a less than operator on structs with one field
+    pub derive_op_lt: Option<bool>,
+    /// Whether to generate a less than or equal to operator on structs with one field
+    pub derive_op_lte: Option<bool>,
+    /// Whether to generate a greater than operator on structs with one field
+    pub derive_op_gt: Option<bool>,
+    /// Whether to generate a greater than or equal to operator on structs with one field
+    pub derive_op_gte: Option<bool>,
+}
+
+impl StructConfig {
+    pub fn derive_op_eq(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-eq") {
+            Some(x) => x,
+            None => self.derive_op_eq.unwrap_or(false),
+        }
+    }
+    pub fn derive_op_neq(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-neq") {
+            Some(x) => x,
+            None => self.derive_op_neq.unwrap_or(false),
+        }
+    }
+    pub fn derive_op_lt(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-lt") {
+            Some(x) => x,
+            None => self.derive_op_lt.unwrap_or(false),
+        }
+    }
+    pub fn derive_op_lte(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-lte") {
+            Some(x) => x,
+            None => self.derive_op_lte.unwrap_or(false),
+        }
+    }
+    pub fn derive_op_gt(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-gt") {
+            Some(x) => x,
+            None => self.derive_op_gt.unwrap_or(false),
+        }
+    }
+    pub fn derive_op_gte(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("struct-gen-op-gte") {
+            Some(x) => x,
+            None => self.derive_op_gte.unwrap_or(false),
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct EnumConfig {
+    /// Whether to add a `Sentinel` value at the end of every enum
+    /// This is useful in Gecko for IPC serialization
+    pub add_sentinel: Option<bool>,
+}
+
+impl EnumConfig {
+    pub fn add_sentinel(&self, directives: &DirectiveSet) -> bool {
+        match directives.bool("enum-add-sentinel") {
+            Some(x) => x,
+            None => self.add_sentinel.unwrap_or(false),
         }
     }
 }

@@ -12,8 +12,13 @@ pub struct Normal {
     y: f32,
 }
 
+#[repr(C)]
+pub struct Comparable {
+    x: i32,
+}
+
 #[no_mangle]
-pub extern "C" fn root(x: *mut Opaque, y: Normal)
+pub extern "C" fn root(x: *mut Opaque, y: Normal, z: Comparable)
 {
 
 }

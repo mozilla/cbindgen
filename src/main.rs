@@ -4,10 +4,10 @@ extern crate clap;
 #[macro_use]
 extern crate log;
 extern crate serde;
-extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 extern crate syn;
+extern crate toml;
 
 use clap::{Arg, App};
 
@@ -48,7 +48,7 @@ fn main() {
 
     let config = match matches.value_of("config") {
         Some(c) => Config::load(c),
-        None => Config::from_default(),
+        None => Config::default(),
     };
 
     let built = match Library::load(input, &config).generate() {
