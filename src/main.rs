@@ -48,7 +48,7 @@ fn main() {
 
     let config = match matches.value_of("config") {
         Some(c) => Config::load(c),
-        None => Config::default(),
+        None => Config::from_root_or_default(&input),
     };
 
     let built = match Library::load(input, &config).generate() {

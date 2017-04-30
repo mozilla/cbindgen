@@ -1,13 +1,29 @@
+use std::default::Default;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-use std::default::Default;
+use std::path::PathBuf;
 
 use toml;
 
 pub use bindgen::directive::*;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Curly {
+    SameLine,
+    NextLine,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Layout {
+    Horizontal,
+    Vertical,
+    Auto,
+}
 
 #[derive(Default, Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -24,7 +40,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(file_name: &str) -> Config {
+    pub fn from_file(file_name: &str) -> Result<Config, String> {
         fn read(file_name: &str) -> io::Result<String> {
             let file = File::open(file_name)?;
             let mut reader = BufReader::new(&file);
@@ -33,8 +49,22 @@ impl Config {
             Ok(contents)
         }
 
-        let config_text = read(file_name).expect("couldn't open config file");
-        toml::from_str(&config_text).expect("couldn't parse config file")
+        let config_text = read(file_name).unwrap();
+
+        match toml::from_str::<Config>(&config_text) {
+            Ok(x) => Ok(x),
+            Err(e) => Err(format!("couldn't parse config file: {}", e)),
+        }
+    }
+
+    pub fn from_root_or_default(root: &str) -> Config {
+        let c = PathBuf::from(root).join("cbindgen.toml");
+
+        if c.exists() {
+            Config::from_file(c.to_str().unwrap()).unwrap()
+        } else {
+            Config::default()
+        }
     }
 
     pub fn from_webrender() -> Config {
@@ -56,6 +86,7 @@ impl Config {
             function: FunctionConfig {
                 prefix: Some(String::from("WR_INLINE")),
                 postfix: Some(String::from("WR_FUNC")),
+                args: Some(Layout::Horizontal),
             },
             structure: StructConfig {
                 derive_eq: Some(true),
@@ -64,9 +95,11 @@ impl Config {
                 derive_lte: Some(false),
                 derive_gt: Some(false),
                 derive_gte: Some(false),
+                braces: Some(Curly::SameLine),
             },
             enumeration: EnumConfig {
                 add_sentinel: Some(true),
+                braces: Some(Curly::SameLine),
             },
         }
     }
@@ -75,7 +108,7 @@ impl Config {
         match config {
             "default" => Config::default(),
             "wr" => Config::from_webrender(),
-            file => Config::from_file(file),
+            file => Config::from_file(file).unwrap(),
         }
     }
 }
@@ -104,6 +137,8 @@ pub struct FunctionConfig {
     pub prefix: Option<String>,
     /// Optional text to output after each function declaration
     pub postfix: Option<String>,
+    /// The style to layout the args
+    pub args: Option<Layout>,
 }
 
 impl FunctionConfig {
@@ -145,6 +180,8 @@ pub struct StructConfig {
     pub derive_gt: Option<bool>,
     /// Whether to generate a greater than or equal to operator on structs with one field
     pub derive_gte: Option<bool>,
+    /// The style to use for braces
+    pub braces: Option<Curly>,
 }
 
 impl StructConfig {
@@ -212,6 +249,8 @@ pub struct EnumConfig {
     /// Whether to add a `Sentinel` value at the end of every enum
     /// This is useful in Gecko for IPC serialization
     pub add_sentinel: Option<bool>,
+    /// The style to use for braces
+    pub braces: Option<Curly>,
 }
 
 impl EnumConfig {

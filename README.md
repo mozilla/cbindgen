@@ -30,13 +30,14 @@ Here's an example build.rs script:
 ```rust
 extern crate cbindgen;
 
+use std::env;
 use cbindgen::{Config, Library};
 
 fn main() {
-    let config = Config::from_file("cbindgen.toml");
-    let source = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let root = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let config = Config::from_root_or_default(&root);
 
-    Library::load(&source, &config)
+    Library::load(&root, &config)
         .generate().unwrap()
         .write_to_file("bindings.h");
 }
