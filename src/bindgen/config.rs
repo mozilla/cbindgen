@@ -58,12 +58,12 @@ impl Config {
                 postfix: Some(String::from("WR_FUNC")),
             },
             structure: StructConfig {
-                derive_op_eq: Some(true),
-                derive_op_neq: Some(false),
-                derive_op_lt: Some(false),
-                derive_op_lte: Some(false),
-                derive_op_gt: Some(false),
-                derive_op_gte: Some(false),
+                derive_eq: Some(true),
+                derive_neq: Some(false),
+                derive_lt: Some(false),
+                derive_lte: Some(false),
+                derive_gt: Some(false),
+                derive_gte: Some(false),
             },
             enumeration: EnumConfig {
                 add_sentinel: Some(true),
@@ -108,17 +108,23 @@ pub struct FunctionConfig {
 
 impl FunctionConfig {
     pub fn prefix(&self, directives: &DirectiveSet) -> Option<String> {
-        match directives.atom("function-prefix") {
-            Some(x) => x,
-            None => self.prefix.clone(),
+        if let Some(x) = directives.atom("function-prefix") {
+            return x;
         }
+        if let Some(x) = directives.atom("prefix") {
+            return x;
+        }
+        self.prefix.clone()
     }
 
     pub fn postfix(&self, directives: &DirectiveSet) -> Option<String> {
-        match directives.atom("function-postfix") {
-            Some(x) => x,
-            None => self.postfix.clone(),
+        if let Some(x) = directives.atom("function-postfix") {
+            return x;
         }
+        if let Some(x) = directives.atom("postfix") {
+            return x;
+        }
+        self.postfix.clone()
     }
 }
 
@@ -128,55 +134,73 @@ impl FunctionConfig {
 #[serde(default)]
 pub struct StructConfig {
     /// Whether to generate a piecewise equality operator
-    pub derive_op_eq: Option<bool>,
+    pub derive_eq: Option<bool>,
     /// Whether to generate a piecewise inequality operator
-    pub derive_op_neq: Option<bool>,
+    pub derive_neq: Option<bool>,
     /// Whether to generate a less than operator on structs with one field
-    pub derive_op_lt: Option<bool>,
+    pub derive_lt: Option<bool>,
     /// Whether to generate a less than or equal to operator on structs with one field
-    pub derive_op_lte: Option<bool>,
+    pub derive_lte: Option<bool>,
     /// Whether to generate a greater than operator on structs with one field
-    pub derive_op_gt: Option<bool>,
+    pub derive_gt: Option<bool>,
     /// Whether to generate a greater than or equal to operator on structs with one field
-    pub derive_op_gte: Option<bool>,
+    pub derive_gte: Option<bool>,
 }
 
 impl StructConfig {
-    pub fn derive_op_eq(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-eq") {
-            Some(x) => x,
-            None => self.derive_op_eq.unwrap_or(false),
+    pub fn derive_eq(&self, directives: &DirectiveSet) -> bool {
+        if let Some(x) = directives.bool("struct-gen-op-eq") {
+            return x;
         }
+        if let Some(x) = directives.bool("derive-eq") {
+            return x;
+        }
+        self.derive_eq.unwrap_or(false)
     }
-    pub fn derive_op_neq(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-neq") {
-            Some(x) => x,
-            None => self.derive_op_neq.unwrap_or(false),
+    pub fn derive_neq(&self, directives: &DirectiveSet) -> bool {
+        if let Some(x) = directives.bool("struct-gen-op-neq") {
+            return x;
         }
+        if let Some(x) = directives.bool("derive-neq") {
+            return x;
+        }
+        self.derive_neq.unwrap_or(false)
     }
-    pub fn derive_op_lt(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-lt") {
-            Some(x) => x,
-            None => self.derive_op_lt.unwrap_or(false),
+    pub fn derive_lt(&self, directives: &DirectiveSet) -> bool {
+        if let Some(x) = directives.bool("struct-gen-op-lt") {
+            return x;
         }
+        if let Some(x) = directives.bool("derive-lt") {
+            return x;
+        }
+        self.derive_lt.unwrap_or(false)
     }
-    pub fn derive_op_lte(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-lte") {
-            Some(x) => x,
-            None => self.derive_op_lte.unwrap_or(false),
+    pub fn derive_lte(&self, directives: &DirectiveSet) -> bool {
+        if let Some(x) = directives.bool("struct-gen-op-lte") {
+            return x;
         }
+        if let Some(x) = directives.bool("derive-lte") {
+            return x;
+        }
+        self.derive_lte.unwrap_or(false)
     }
-    pub fn derive_op_gt(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-gt") {
-            Some(x) => x,
-            None => self.derive_op_gt.unwrap_or(false),
+    pub fn derive_gt(&self, directives: &DirectiveSet) -> bool {
+        if let Some(x) = directives.bool("struct-gen-op-gt") {
+            return x;
         }
+        if let Some(x) = directives.bool("derive-gt") {
+            return x;
+        }
+        self.derive_gt.unwrap_or(false)
     }
-    pub fn derive_op_gte(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("struct-gen-op-gte") {
-            Some(x) => x,
-            None => self.derive_op_gte.unwrap_or(false),
+    pub fn derive_gte(&self, directives: &DirectiveSet) -> bool {
+        if let Some(x) = directives.bool("struct-gen-op-gte") {
+            return x;
         }
+        if let Some(x) = directives.bool("derive-gte") {
+            return x;
+        }
+        self.derive_gte.unwrap_or(false)
     }
 }
 
@@ -192,9 +216,12 @@ pub struct EnumConfig {
 
 impl EnumConfig {
     pub fn add_sentinel(&self, directives: &DirectiveSet) -> bool {
-        match directives.bool("enum-add-sentinel") {
-            Some(x) => x,
-            None => self.add_sentinel.unwrap_or(false),
+        if let Some(x) = directives.bool("enum-add-sentinel") {
+            return x;
         }
+        if let Some(x) = directives.bool("add-sentinel") {
+            return x;
+        }
+        self.add_sentinel.unwrap_or(false)
     }
 }

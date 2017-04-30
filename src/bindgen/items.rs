@@ -416,7 +416,7 @@ impl Struct {
 
         write!(out, "\n").unwrap();
 
-        if config.structure.derive_op_eq(&self.directives) && !self.fields.is_empty() {
+        if config.structure.derive_eq(&self.directives) && !self.fields.is_empty() {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator==(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -430,7 +430,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.structure.derive_op_neq(&self.directives) && !self.fields.is_empty() {
+        if config.structure.derive_neq(&self.directives) && !self.fields.is_empty() {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator!=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -444,7 +444,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.structure.derive_op_lt(&self.directives) && self.fields.len() == 1 {
+        if config.structure.derive_lt(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator<(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -458,7 +458,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.structure.derive_op_lte(&self.directives) && self.fields.len() == 1 {
+        if config.structure.derive_lte(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator<=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -472,7 +472,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.structure.derive_op_gt(&self.directives) && self.fields.len() == 1 {
+        if config.structure.derive_gt(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator>(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
@@ -486,7 +486,7 @@ impl Struct {
             write!(out, "\n").unwrap();
         }
 
-        if config.structure.derive_op_gte(&self.directives) && self.fields.len() == 1 {
+        if config.structure.derive_gte(&self.directives) && self.fields.len() == 1 {
             write!(out, "\n").unwrap();
             write!(out, "  bool operator>=(const {}& aOther) const {{\n", self.name).unwrap();
             write!(out, "    return ").unwrap();
