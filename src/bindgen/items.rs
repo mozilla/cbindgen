@@ -7,6 +7,7 @@ use bindgen::config::Config;
 use bindgen::directive::*;
 use bindgen::library::*;
 use bindgen::syn_helpers::*;
+use bindgen::writer::*;
 
 #[derive(Debug, Clone)]
 pub enum PrimitiveType {
@@ -188,81 +189,80 @@ impl Type {
         }
     }
 
-    fn write<F: Write>(&self, out: &mut F) {
+    fn write<F: Write>(&self, out: &mut Writer<F>) {
         match self {
             &Type::ConstPtr(ref t) => {
-                write!(out, "const ").unwrap();
+                out.write("const ");
                 t.write(out);
-                write!(out, "*").unwrap();
+                out.write("*");
             }
             &Type::Ptr(ref t) => {
                 t.write(out);
-                write!(out, "*").unwrap();
+                out.write("*");
             }
             &Type::Path(ref p) => {
-                write!(out, "{}", p).unwrap();
+                out.write(p);
             }
             &Type::Primitive(ref p) => {
-                write!(out, "{}", p).unwrap();
+                out.write(&format!("{}", p));
             }
             &Type::Array(ref t, ref sz) => {
                 t.write(out);
-                write!(out, "[{}]", sz).unwrap();
+                out.write(&format!("[{}]", sz));
             }
             &Type::FuncPtr(ref ret, ref args) => {
                 if let &Some(ref ret) = ret {
                     ret.write(out);
                 } else {
-                    write!(out, "void").unwrap();
+                    out.write("void");
                 }
-                write!(out, " (*)(").unwrap();
+                out.write(" (*)(");
                 for (i, arg) in args.iter().enumerate() {
                     if i != 0 {
-                        write!(out, ", ").unwrap();
+                        out.write(", ");
                     }
                     arg.write(out);
                 }
-                write!(out, ")").unwrap();
+                out.write(")");
             }
         }
     }
 
-    fn write_with_ident<F: Write>(&self, ident: &str, out: &mut F) {
+    fn write_with_ident<F: Write>(&self, ident: &str, out: &mut Writer<F>) {
         match self {
             &Type::ConstPtr(ref t) => {
-                write!(out, "const ").unwrap();
+                out.write("const ");
                 t.write(out);
-                write!(out, "* {}", ident).unwrap();
-
+                out.write(&format!("* {}", ident));
             }
             &Type::Ptr(ref t) => {
                 t.write(out);
-                write!(out, "* {}", ident).unwrap();
+                out.write(&format!("* {}", ident));
             }
             &Type::Path(ref p) => {
-                write!(out, "{} {}", p, ident).unwrap();
+                out.write(&format!("{} {}", p, ident));
             }
             &Type::Primitive(ref p) => {
-                write!(out, "{} {}", p, ident).unwrap();
+                out.write(&format!("{} {}", p, ident));
             }
             &Type::Array(ref t, ref sz) => {
                 t.write(out);
-                write!(out, " {}[{}]", ident, sz).unwrap();
+                out.write(&format!(" {}[{}]", ident, sz));
             }
             &Type::FuncPtr(ref ret, ref args) => {
                 if let &Some(ref ret) = ret {
                     ret.write(out);
                 } else {
-                    write!(out, "void").unwrap();
+                    out.write("void");
                 }
-                write!(out, " (*{})(", ident).unwrap();
+                out.write(&format!(" (*{})(", ident));
                 for (i, arg) in args.iter().enumerate() {
                     if i != 0 {
-                        write!(out, ", ").unwrap();
+                        out.write(", ");
                     }
                     arg.write(out);
                 }
-                write!(out, ")").unwrap();
+                out.write(")");
             }
         }
     }
@@ -305,29 +305,31 @@ impl Function {
         }
     }
 
-    pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
+    pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
         if let Some(ref f) = config.function.prefix(&self.directives) {
-            write!(out, "{} ", f).unwrap();
+            out.write(&format!("{} ", f));
         }
 
         match self.ret.as_ref() {
             Some(ret) => ret.write(out),
-            None => write!(out, "void").unwrap(),
+            None => out.write("void"),
         }
 
-        write!(out, "\n{}(", self.name).unwrap();
+        out.new_line();
+        out.write(&format!("{}(", self.name));
         for (i, arg) in self.args.iter().enumerate() {
             if i != 0 {
-                write!(out, ",\n    ").unwrap();
+                out.write(",\n    ");
             }
             arg.1.write_with_ident(&arg.0, out);
         }
-        write!(out, ")").unwrap();
+        out.write(")");
 
         if let Some(ref f) = config.function.postfix(&self.directives) {
-            write!(out, "\n{}", f).unwrap();
+            out.new_line();
+            out.write(f)
         }
-        write!(out, ";").unwrap()
+        out.write(";");
     }
 }
 
@@ -383,11 +385,10 @@ impl Struct {
         }
     }
 
-    pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
+    pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
         assert!(self.generic_params.is_empty());
 
-        writeln!(out, "struct {} {{", self.name).unwrap();
-
+        // Calculate overriden fields, should be done in convert
         let fields = match self.directives.list("field-names") {
             Some(overrides) => {
                 let mut fields = Vec::new();
@@ -405,102 +406,64 @@ impl Struct {
             _ => self.fields.clone(),
         };
 
+        out.write(&format!("struct {}", self.name));
+        out.open_brace();
+
         for (i, &(ref name, ref ty)) in fields.iter().enumerate() {
             if i != 0 {
-                write!(out, "\n").unwrap();
+                out.new_line()
             }
-            write!(out, "  ").unwrap();
             ty.write_with_ident(name, out);
-            write!(out, ";").unwrap();
+            out.write(";");
         }
 
-        write!(out, "\n").unwrap();
+        out.new_line();
 
-        if config.structure.derive_eq(&self.directives) && !self.fields.is_empty() {
-            write!(out, "\n").unwrap();
-            write!(out, "  bool operator==(const {}& aOther) const {{\n", self.name).unwrap();
-            write!(out, "    return ").unwrap();
-            for (i, field) in fields.iter().enumerate() {
-                if i != 0 {
-                    write!(out, " &&\n      ").unwrap();
+        {
+            let mut emit_op = |op, conjuc| {
+                out.new_line();
+
+                out.write(&format!("bool operator{}(const {}& aOther) const", op, self.name));
+                out.open_brace();
+                out.write("return ");
+                for (i, field) in fields.iter().enumerate() {
+                    if i == 1 {
+                        out.push_tab();
+                    }
+                    if i != 0 {
+                        out.write(&format!(" {}", conjuc));
+                        out.new_line();
+                    }
+                    out.write(&format!("{} {} aOther.{}", field.0, op, field.0));
                 }
-                write!(out, "{} == aOther.{}", field.0, field.0).unwrap();
-            }
-            write!(out, ";\n  }}").unwrap();
-            write!(out, "\n").unwrap();
-        }
-
-        if config.structure.derive_neq(&self.directives) && !self.fields.is_empty() {
-            write!(out, "\n").unwrap();
-            write!(out, "  bool operator!=(const {}& aOther) const {{\n", self.name).unwrap();
-            write!(out, "    return ").unwrap();
-            for (i, field) in fields.iter().enumerate() {
-                if i != 0 {
-                    write!(out, " ||\n      ").unwrap();
+                out.write(";");
+                if fields.len() > 1 {
+                    out.pop_tab();
                 }
-                write!(out, "{} != aOther.{}", field.0, field.0).unwrap();
+                out.close_brace(false);
+            };
+
+            if config.structure.derive_eq(&self.directives) && !self.fields.is_empty() {
+                emit_op("==", "&&");
             }
-            write!(out, ";\n  }}").unwrap();
-            write!(out, "\n").unwrap();
+            if config.structure.derive_neq(&self.directives) && !self.fields.is_empty() {
+                emit_op("!=", "||");
+            }
+            if config.structure.derive_lt(&self.directives) && self.fields.len() == 1 {
+                emit_op("<", "&&");
+            }
+            if config.structure.derive_lte(&self.directives) && self.fields.len() == 1 {
+                emit_op("<=", "&&");
+            }
+            if config.structure.derive_gt(&self.directives) && self.fields.len() == 1 {
+                emit_op(">", "&&");
+            }
+            if config.structure.derive_gte(&self.directives) && self.fields.len() == 1 {
+                emit_op(">=", "&&");
+            }
         }
 
-        if config.structure.derive_lt(&self.directives) && self.fields.len() == 1 {
-            write!(out, "\n").unwrap();
-            write!(out, "  bool operator<(const {}& aOther) const {{\n", self.name).unwrap();
-            write!(out, "    return ").unwrap();
-            for (i, field) in fields.iter().enumerate() {
-                if i != 0 {
-                    write!(out, " &&\n      ").unwrap();
-                }
-                write!(out, "{} < aOther.{}", field.0, field.0).unwrap();
-            }
-            write!(out, ";\n  }}").unwrap();
-            write!(out, "\n").unwrap();
-        }
-
-        if config.structure.derive_lte(&self.directives) && self.fields.len() == 1 {
-            write!(out, "\n").unwrap();
-            write!(out, "  bool operator<=(const {}& aOther) const {{\n", self.name).unwrap();
-            write!(out, "    return ").unwrap();
-            for (i, field) in fields.iter().enumerate() {
-                if i != 0 {
-                    write!(out, " &&\n      ").unwrap();
-                }
-                write!(out, "{} <= aOther.{}", field.0, field.0).unwrap();
-            }
-            write!(out, ";\n  }}").unwrap();
-            write!(out, "\n").unwrap();
-        }
-
-        if config.structure.derive_gt(&self.directives) && self.fields.len() == 1 {
-            write!(out, "\n").unwrap();
-            write!(out, "  bool operator>(const {}& aOther) const {{\n", self.name).unwrap();
-            write!(out, "    return ").unwrap();
-            for (i, field) in fields.iter().enumerate() {
-                if i != 0 {
-                    write!(out, " &&\n      ").unwrap();
-                }
-                write!(out, "{} > aOther.{}", field.0, field.0).unwrap();
-            }
-            write!(out, ";\n  }}").unwrap();
-            write!(out, "\n").unwrap();
-        }
-
-        if config.structure.derive_gte(&self.directives) && self.fields.len() == 1 {
-            write!(out, "\n").unwrap();
-            write!(out, "  bool operator>=(const {}& aOther) const {{\n", self.name).unwrap();
-            write!(out, "    return ").unwrap();
-            for (i, field) in fields.iter().enumerate() {
-                if i != 0 {
-                    write!(out, " &&\n      ").unwrap();
-                }
-                write!(out, "{} > aOther.{}", field.0, field.0).unwrap();
-            }
-            write!(out, ";\n  }}").unwrap();
-            write!(out, "\n").unwrap();
-        }
-
-        write!(out, "}};").unwrap();
+        out.close_brace(true);
     }
 }
 
@@ -519,8 +482,8 @@ impl OpaqueStruct {
         }
     }
 
-    pub fn write<F: Write>(&self, out: &mut F) {
-        write!(out, "struct {};", self.name).unwrap();
+    pub fn write<F: Write>(&self, out: &mut Writer<F>) {
+        out.write(&format!("struct {};", self.name));
     }
 }
 
@@ -588,7 +551,7 @@ impl Enum {
         })
     }
 
-    pub fn write<F: Write>(&self, config: &Config, out: &mut F) {
+    pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
         let size = match self.repr {
             Repr::U32 => "uint32_t",
             Repr::U16 => "uint16_t",
@@ -596,17 +559,19 @@ impl Enum {
             _ => unreachable!(),
         };
 
-        writeln!(out, "enum class {} : {} {{", self.name, size).unwrap();
+        out.write(&format!("enum class {} : {} {{", self.name, size));
+        out.new_line();
         for (i, value) in self.values.iter().enumerate() {
             if i != 0 {
-                write!(out, "\n").unwrap();
+                out.new_line()
             }
-            write!(out, "  {} = {},", value.0, value.1).unwrap();
+            out.write(&format!("  {} = {},", value.0, value.1));
         }
         if config.enumeration.add_sentinel(&self.directives) {
-            write!(out, "\n\n  Sentinel /* this must be last for serialization purposes. */").unwrap();
+            out.write("\n\n  Sentinel /* this must be last for serialization purposes. */");
         }
-        write!(out, "\n}};").unwrap();
+        out.new_line();
+        out.write("};");
     }
 }
 
@@ -733,9 +698,9 @@ impl Typedef {
         self.aliased.add_deps(library, out);
     }
 
-    pub fn write<F: Write>(&self, out: &mut F) {
-        write!(out, "typedef ").unwrap();
+    pub fn write<F: Write>(&self, out: &mut Writer<F>) {
+        out.write("typedef ");
         self.aliased.write_with_ident(&self.name, out);
-        write!(out, ";").unwrap();
+        out.write(";");
     }
 }

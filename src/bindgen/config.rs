@@ -12,7 +12,14 @@ pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum Curly {
+pub enum Language {
+    Cxx,
+    C,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Braces {
     SameLine,
     NextLine,
 }
@@ -25,18 +32,54 @@ pub enum Layout {
     Auto,
 }
 
-#[derive(Default, Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct Config {
-    pub file: FileConfig,
+    /// Optional text to output at the beginning of the file
+    pub header: Option<String>,
+    /// Optional text to output at the end of the file
+    pub trailer: Option<String>,
+    /// Optional text to output at major sections to deter manual editing
+    pub autogen_warning: Option<String>,
+    /// Include a comment with the version of cbindgen used to generate the file
+    pub include_version: bool,
+    /// The style to use for braces
+    pub braces: Braces,
+    /// The preferred length of a line, used for auto breaking function arguments
+    pub line_length: u32,
+    /// The amount of spaces in a tab
+    pub tab_width: u32,
+    /// The language to output bindings for
+    pub language: Language,
+    /// The configuration options for functions
     #[serde(rename = "fn")]
     pub function: FunctionConfig,
+    /// The configuration options for structs
     #[serde(rename = "struct")]
     pub structure: StructConfig,
+    /// The configuration options for enums
     #[serde(rename = "enum")]
     pub enumeration: EnumConfig,
+}
+
+impl Default for Config {
+    fn default() -> Config {
+        Config {
+            header: None,
+            trailer: None,
+            autogen_warning: None,
+            include_version: true,
+            braces: Braces::SameLine,
+            line_length: 100,
+            tab_width: 2,
+            language: Language::C,
+            function: FunctionConfig::default(),
+            structure: StructConfig::default(),
+            enumeration: EnumConfig::default(),
+        }
+    }
 }
 
 impl Config {
@@ -77,29 +120,29 @@ impl Config {
  * then run `cbindgen -c wr gfx/webrender_bindings/ gfx/webrender_bindings/webrender_ffi_generated.h` */"###;
 
         Config {
-            file: FileConfig {
-                header: Some(String::from(license)),
-                trailer: None,
-                autogen_warning: Some(String::from(autogen)),
-                include_version: Some(true),
-            },
+            header: Some(String::from(license)),
+            trailer: None,
+            autogen_warning: Some(String::from(autogen)),
+            include_version: true,
+            braces: Braces::SameLine,
+            line_length: 100,
+            tab_width: 2,
+            language: Language::Cxx,
             function: FunctionConfig {
                 prefix: Some(String::from("WR_INLINE")),
                 postfix: Some(String::from("WR_FUNC")),
-                args: Some(Layout::Horizontal),
+                args: Layout::Horizontal,
             },
             structure: StructConfig {
-                derive_eq: Some(true),
-                derive_neq: Some(false),
-                derive_lt: Some(false),
-                derive_lte: Some(false),
-                derive_gt: Some(false),
-                derive_gte: Some(false),
-                braces: Some(Curly::SameLine),
+                derive_eq: true,
+                derive_neq: false,
+                derive_lt: false,
+                derive_lte: false,
+                derive_gt: false,
+                derive_gte: false,
             },
             enumeration: EnumConfig {
-                add_sentinel: Some(true),
-                braces: Some(Curly::SameLine),
+                add_sentinel: true,
             },
         }
     }
@@ -113,22 +156,7 @@ impl Config {
     }
 }
 
-#[derive(Default, Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-#[serde(deny_unknown_fields)]
-#[serde(default)]
-pub struct FileConfig {
-    /// Optional text to output at the beginning of the file
-    pub header: Option<String>,
-    /// Optional text to output at the end of the file
-    pub trailer: Option<String>,
-    /// Optional text to output at major sections to deter manual editing
-    pub autogen_warning: Option<String>,
-    /// Include a comment with the version of cbindgen used to generate the file
-    pub include_version: Option<bool>,
-}
-
-#[derive(Default, Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
@@ -138,7 +166,17 @@ pub struct FunctionConfig {
     /// Optional text to output after each function declaration
     pub postfix: Option<String>,
     /// The style to layout the args
-    pub args: Option<Layout>,
+    pub args: Layout,
+}
+
+impl Default for FunctionConfig {
+    fn default() -> FunctionConfig {
+        FunctionConfig {
+            prefix: None,
+            postfix: None,
+            args: Layout::Auto,
+        }
+    }
 }
 
 impl FunctionConfig {
@@ -163,25 +201,36 @@ impl FunctionConfig {
     }
 }
 
-#[derive(Default, Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct StructConfig {
     /// Whether to generate a piecewise equality operator
-    pub derive_eq: Option<bool>,
+    pub derive_eq: bool,
     /// Whether to generate a piecewise inequality operator
-    pub derive_neq: Option<bool>,
+    pub derive_neq: bool,
     /// Whether to generate a less than operator on structs with one field
-    pub derive_lt: Option<bool>,
+    pub derive_lt: bool,
     /// Whether to generate a less than or equal to operator on structs with one field
-    pub derive_lte: Option<bool>,
+    pub derive_lte: bool,
     /// Whether to generate a greater than operator on structs with one field
-    pub derive_gt: Option<bool>,
+    pub derive_gt: bool,
     /// Whether to generate a greater than or equal to operator on structs with one field
-    pub derive_gte: Option<bool>,
-    /// The style to use for braces
-    pub braces: Option<Curly>,
+    pub derive_gte: bool,
+}
+
+impl Default for StructConfig {
+    fn default() -> StructConfig {
+        StructConfig {
+            derive_eq: false,
+            derive_neq: false,
+            derive_lt: false,
+            derive_lte: false,
+            derive_gt: false,
+            derive_gte: false,
+        }
+    }
 }
 
 impl StructConfig {
@@ -192,7 +241,7 @@ impl StructConfig {
         if let Some(x) = directives.bool("derive-eq") {
             return x;
         }
-        self.derive_eq.unwrap_or(false)
+        self.derive_eq
     }
     pub fn derive_neq(&self, directives: &DirectiveSet) -> bool {
         if let Some(x) = directives.bool("struct-gen-op-neq") {
@@ -201,7 +250,7 @@ impl StructConfig {
         if let Some(x) = directives.bool("derive-neq") {
             return x;
         }
-        self.derive_neq.unwrap_or(false)
+        self.derive_neq
     }
     pub fn derive_lt(&self, directives: &DirectiveSet) -> bool {
         if let Some(x) = directives.bool("struct-gen-op-lt") {
@@ -210,7 +259,7 @@ impl StructConfig {
         if let Some(x) = directives.bool("derive-lt") {
             return x;
         }
-        self.derive_lt.unwrap_or(false)
+        self.derive_lt
     }
     pub fn derive_lte(&self, directives: &DirectiveSet) -> bool {
         if let Some(x) = directives.bool("struct-gen-op-lte") {
@@ -219,7 +268,7 @@ impl StructConfig {
         if let Some(x) = directives.bool("derive-lte") {
             return x;
         }
-        self.derive_lte.unwrap_or(false)
+        self.derive_lte
     }
     pub fn derive_gt(&self, directives: &DirectiveSet) -> bool {
         if let Some(x) = directives.bool("struct-gen-op-gt") {
@@ -228,7 +277,7 @@ impl StructConfig {
         if let Some(x) = directives.bool("derive-gt") {
             return x;
         }
-        self.derive_gt.unwrap_or(false)
+        self.derive_gt
     }
     pub fn derive_gte(&self, directives: &DirectiveSet) -> bool {
         if let Some(x) = directives.bool("struct-gen-op-gte") {
@@ -237,20 +286,26 @@ impl StructConfig {
         if let Some(x) = directives.bool("derive-gte") {
             return x;
         }
-        self.derive_gte.unwrap_or(false)
+        self.derive_gte
     }
 }
 
-#[derive(Default, Debug, Clone, Deserialize)]
+#[derive( Debug, Clone, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct EnumConfig {
     /// Whether to add a `Sentinel` value at the end of every enum
     /// This is useful in Gecko for IPC serialization
-    pub add_sentinel: Option<bool>,
-    /// The style to use for braces
-    pub braces: Option<Curly>,
+    pub add_sentinel: bool,
+}
+
+impl Default for EnumConfig {
+    fn default() -> EnumConfig {
+        EnumConfig {
+            add_sentinel: false,
+        }
+    }
 }
 
 impl EnumConfig {
@@ -261,6 +316,6 @@ impl EnumConfig {
         if let Some(x) = directives.bool("add-sentinel") {
             return x;
         }
-        self.add_sentinel.unwrap_or(false)
+        self.add_sentinel
     }
 }

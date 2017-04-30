@@ -11,6 +11,7 @@ use bindgen::directive::*;
 use bindgen::items::*;
 use bindgen::rust_lib;
 use bindgen::syn_helpers::*;
+use bindgen::writer::Writer;
 
 pub type ConvertResult<T> = Result<T, String>;
 pub type GenerateResult<T> = Result<T, String>;
@@ -371,33 +372,42 @@ impl<'a> GeneratedLibrary<'a> {
         self.write(&mut File::create(path).unwrap());
     }
 
-    pub fn write<F: Write>(&self, out: &mut F) {
-        if let Some(ref f) = self.config.file.header {
-            write!(out, "{}\n", f).unwrap();
+    pub fn write<F: Write>(&self, file: &mut F) {
+        let mut out = Writer::new(file, self.config);
+
+        if let Some(ref f) = self.config.header {
+            out.write(&f);
+            out.new_line();
         }
-        if self.config.file.include_version.unwrap_or(false) {
-            write!(out, "\n/* Generated with cbindgen:{} */\n", config::VERSION).unwrap();
+        if self.config.include_version {
+            out.new_line();
+            out.write(&format!("/* Generated with cbindgen:{} */", config::VERSION));
+            out.new_line();
         }
-        if let Some(ref f) = self.config.file.autogen_warning {
-            write!(out, "\n{}\n", f).unwrap();
+        if let Some(ref f) = self.config.autogen_warning {
+            out.new_line();
+            out.write(&f);
+            out.new_line();
         }
 
         for item in &self.items {
-            write!(out, "\n").unwrap();
+            out.new_line();
             match item {
-                &PathValue::Enum(ref x) => x.write(self.config, out),
-                &PathValue::Struct(ref x) => x.write(self.config, out),
-                &PathValue::OpaqueStruct(ref x) => x.write(out),
-                &PathValue::Typedef(ref x) => x.write(out),
+                &PathValue::Enum(ref x) => x.write(self.config, &mut out),
+                &PathValue::Struct(ref x) => x.write(self.config, &mut out),
+                &PathValue::OpaqueStruct(ref x) => x.write(&mut out),
+                &PathValue::Typedef(ref x) => x.write(&mut out),
                 &PathValue::Specialization(_) => {
                     panic!("should not encounter a specialization in a built library")
                 }
             }
-            write!(out, "\n").unwrap();
+            out.new_line();
         }
 
-        if let Some(ref f) = self.config.file.autogen_warning {
-            write!(out, "\n{}\n", f).unwrap();
+        if let Some(ref f) = self.config.autogen_warning {
+            out.new_line();
+            out.write(&f);
+            out.new_line();
         }
 
         for function in &self.functions {
@@ -405,16 +415,20 @@ impl<'a> GeneratedLibrary<'a> {
                 continue;
             }
 
-            write!(out, "\n").unwrap();
-            function.write(self.config, out);
-            write!(out, "\n").unwrap();
+            out.new_line();
+            function.write(self.config, &mut out);
+            out.new_line();
         }
 
-        if let Some(ref f) = self.config.file.autogen_warning {
-            write!(out, "\n{}\n", f).unwrap();
+        if let Some(ref f) = self.config.autogen_warning {
+            out.new_line();
+            out.write(&f);
+            out.new_line();
         }
-        if let Some(ref f) = self.config.file.trailer {
-            write!(out, "\n{}\n", f).unwrap();
+        if let Some(ref f) = self.config.trailer {
+            out.new_line();
+            out.write(&f);
+            out.new_line();
         }
     }
 }
