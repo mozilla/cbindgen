@@ -651,19 +651,20 @@ impl Enum {
             _ => unreachable!(),
         };
 
-        out.write(&format!("enum class {} : {} {{", self.name, size));
-        out.new_line();
+        out.write(&format!("enum class {} : {}", self.name, size));
+        out.open_brace();
         for (i, value) in self.values.iter().enumerate() {
             if i != 0 {
                 out.new_line()
             }
-            out.write(&format!("  {} = {},", value.0, value.1));
+            out.write(&format!("{} = {},", value.0, value.1));
         }
         if config.enumeration.add_sentinel(&self.directives) {
-            out.write("\n\n  Sentinel /* this must be last for serialization purposes. */");
+            out.new_line();
+            out.new_line();
+            out.write("Sentinel /* this must be last for serialization purposes. */");
         }
-        out.new_line();
-        out.write("};");
+        out.close_brace(true);
     }
 }
 
