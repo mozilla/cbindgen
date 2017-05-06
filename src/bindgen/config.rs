@@ -11,21 +11,21 @@ pub use bindgen::directive::*;
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 pub enum Language {
     Cxx,
     C,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 pub enum Braces {
     SameLine,
     NextLine,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 pub enum Layout {
     Horizontal,
     Vertical,
@@ -33,7 +33,7 @@ pub enum Layout {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct Config {
@@ -157,7 +157,7 @@ impl Config {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct FunctionConfig {
@@ -202,7 +202,7 @@ impl FunctionConfig {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct StructConfig {
@@ -291,7 +291,7 @@ impl StructConfig {
 }
 
 #[derive( Debug, Clone, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct EnumConfig {
