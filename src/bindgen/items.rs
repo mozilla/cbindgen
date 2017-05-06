@@ -422,20 +422,7 @@ impl Function {
             out.write(&format!("{} {}(",
                       &ret,
                       name));
-            for (i, arg) in args.iter().enumerate() {
-                out.write(arg);
-                if i != args.len() - 1 {
-                    out.write(",");
-                    if i == 0 {
-                        let align_length = ret.len() + name.len() + 2;
-                        out.push_set_spaces(align_length);
-                    }
-                    out.new_line();
-                }
-            }
-            if args.len() > 1 {
-                out.pop_tab();
-            }
+            out.write_aligned_list(args, format!(","));
             out.write(")");
             if let Some(ref postfix) = postfix {
                 out.new_line();
@@ -501,20 +488,21 @@ impl Struct {
     pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
         assert!(self.generic_params.is_empty());
 
-        // Calculate overriden fields, should be done in convert
+        // This needs to be done here because `type` specialization may
+        // provide an alternative list of directives to use for renaming
         let fields = match self.directives.list("field-names") {
             Some(overrides) => {
-                let mut fields = Vec::new();
+                let mut overriden_fields = Vec::new();
 
                 for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
                     if i >= overrides.len() {
-                        fields.push((name.clone(), ty.clone()));
+                        overriden_fields.push((name.clone(), ty.clone()));
                     } else {
-                        fields.push((overrides[i].clone(), ty.clone()));
+                        overriden_fields.push((overrides[i].clone(), ty.clone()));
                     }
                 }
 
-                fields
+                overriden_fields
             }
             _ => self.fields.clone(),
         };
@@ -539,39 +527,30 @@ impl Struct {
                 out.write(&format!("bool operator{}(const {}& aOther) const", op, self.name));
                 out.open_brace();
                 out.write("return ");
-                for (i, field) in fields.iter().enumerate() {
-                    if i == 1 {
-                        out.push_tab();
-                    }
-                    if i != 0 {
-                        out.write(&format!(" {}", conjuc));
-                        out.new_line();
-                    }
-                    out.write(&format!("{} {} aOther.{}", field.0, op, field.0));
-                }
+                out.write_aligned_list(fields.iter()
+                                             .map(|x| format!("{} {} aOther.{}", x.0, op, x.0))
+                                             .collect(),
+                                       format!(" {}", conjuc));
                 out.write(";");
-                if fields.len() > 1 {
-                    out.pop_tab();
-                }
                 out.close_brace(false);
             };
 
-            if config.structure.derive_eq(&self.directives) && !self.fields.is_empty() {
+            if config.structure.derive_eq(&self.directives) && !fields.is_empty() {
                 emit_op("==", "&&");
             }
-            if config.structure.derive_neq(&self.directives) && !self.fields.is_empty() {
+            if config.structure.derive_neq(&self.directives) && !fields.is_empty() {
                 emit_op("!=", "||");
             }
-            if config.structure.derive_lt(&self.directives) && self.fields.len() == 1 {
+            if config.structure.derive_lt(&self.directives) && fields.len() == 1 {
                 emit_op("<", "&&");
             }
-            if config.structure.derive_lte(&self.directives) && self.fields.len() == 1 {
+            if config.structure.derive_lte(&self.directives) && fields.len() == 1 {
                 emit_op("<=", "&&");
             }
-            if config.structure.derive_gt(&self.directives) && self.fields.len() == 1 {
+            if config.structure.derive_gt(&self.directives) && fields.len() == 1 {
                 emit_op(">", "&&");
             }
-            if config.structure.derive_gte(&self.directives) && self.fields.len() == 1 {
+            if config.structure.derive_gte(&self.directives) && fields.len() == 1 {
                 emit_op(">=", "&&");
             }
         }

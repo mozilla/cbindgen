@@ -5,8 +5,8 @@ pub struct Writer<'a, 'f, F: 'f + Write> {
     out: &'f mut F,
     config: &'a Config,
     spaces: Vec<usize>,
-    pending_spaces: usize,
-    has_written: bool,
+    line_started: bool,
+    line_length: usize,
 }
 
 impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
@@ -15,8 +15,8 @@ impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
             out: out,
             config: config,
             spaces: vec![0],
-            pending_spaces: 0,
-            has_written: false,
+            line_started: false,
+            line_length: 0,
         }
     }
 
@@ -24,49 +24,39 @@ impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
         *self.spaces.last().unwrap()
     }
 
+
+    fn push_set_spaces(&mut self, spaces: usize) {
+        self.spaces.push(spaces);
+    }
+
     pub fn push_tab(&mut self) {
         let spaces = self.spaces() -
                      (self.spaces() % self.config.tab_width) + 
                      self.config.tab_width;
         self.spaces.push(spaces);
-
-        if !self.has_written {
-            self.pending_spaces = self.spaces();
-        }
-    }
-    pub fn push_set_spaces(&mut self, spaces: usize) {
-        self.spaces.push(spaces);
-
-        if !self.has_written {
-            self.pending_spaces = self.spaces();
-        }
     }
 
     pub fn pop_tab(&mut self) {
         assert!(!self.spaces.is_empty());
         self.spaces.pop();
-
-        if !self.has_written {
-            self.pending_spaces = self.spaces();
-        }
     }
 
     pub fn new_line(&mut self) {
         write!(self.out, "\n").unwrap();
-        self.pending_spaces = self.spaces();
-        self.has_written = false;
+        self.line_started = false;
+        self.line_length = 0;
     }
 
     pub fn open_brace(&mut self) {
         match self.config.braces {
             Braces::SameLine => {
-                write!(self.out, " {{").unwrap();
+                self.write(" {");
                 self.push_tab();
                 self.new_line();
             }
             Braces::NextLine => {
                 self.new_line();
-                write!(self.out, "{{").unwrap();
+                self.write("{");
                 self.push_tab();
                 self.new_line();
             }
@@ -84,12 +74,28 @@ impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
     }
 
     pub fn write(&mut self, text: &str) {
-        for _ in 0..self.pending_spaces {
-            write!(self.out, " ").unwrap();
+        if !self.line_started {
+            for _ in 0..self.spaces() {
+                write!(self.out, " ").unwrap();
+            }
+            self.line_started = true;
+            self.line_length += self.spaces();
         }
-        self.pending_spaces = 0;
-        self.has_written = true;
 
-        write!(self.out, "{}", text).unwrap()
+        write!(self.out, "{}", text).unwrap();
+        self.line_length += text.len();
+    }
+
+    pub fn write_aligned_list(&mut self, items: Vec<String>, join: String) {
+        let align_length = self.line_length;
+        self.push_set_spaces(align_length);
+        for (i, item) in items.iter().enumerate() {
+            self.write(item);
+            if i != items.len() - 1 {
+                self.write(&join);
+                self.new_line();
+            }
+        }
+        self.pop_tab();
     }
 }
