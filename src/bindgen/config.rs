@@ -41,6 +41,8 @@ pub struct Config {
     pub header: Option<String>,
     /// Optional text to output at the end of the file
     pub trailer: Option<String>,
+    /// Option name to use for an include guard
+    pub include_guard: Option<String>,
     /// Optional text to output at major sections to deter manual editing
     pub autogen_warning: Option<String>,
     /// Include a comment with the version of cbindgen used to generate the file
@@ -69,6 +71,7 @@ impl Default for Config {
         Config {
             header: None,
             trailer: None,
+            include_guard: None,
             autogen_warning: None,
             include_version: true,
             braces: Braces::SameLine,
@@ -78,6 +81,79 @@ impl Default for Config {
             function: FunctionConfig::default(),
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct FunctionConfig {
+    /// Optional text to output before each function declaration
+    pub prefix: Option<String>,
+    /// Optional text to output after each function declaration
+    pub postfix: Option<String>,
+    /// The style to layout the args
+    pub args: Layout,
+}
+
+impl Default for FunctionConfig {
+    fn default() -> FunctionConfig {
+        FunctionConfig {
+            prefix: None,
+            postfix: None,
+            args: Layout::Auto,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct StructConfig {
+    /// Whether to generate a piecewise equality operator
+    pub derive_eq: bool,
+    /// Whether to generate a piecewise inequality operator
+    pub derive_neq: bool,
+    /// Whether to generate a less than operator on structs with one field
+    pub derive_lt: bool,
+    /// Whether to generate a less than or equal to operator on structs with one field
+    pub derive_lte: bool,
+    /// Whether to generate a greater than operator on structs with one field
+    pub derive_gt: bool,
+    /// Whether to generate a greater than or equal to operator on structs with one field
+    pub derive_gte: bool,
+}
+
+impl Default for StructConfig {
+    fn default() -> StructConfig {
+        StructConfig {
+            derive_eq: false,
+            derive_neq: false,
+            derive_lt: false,
+            derive_lte: false,
+            derive_gt: false,
+            derive_gte: false,
+        }
+    }
+}
+
+#[derive( Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct EnumConfig {
+    /// Whether to add a `Sentinel` value at the end of every enum
+    /// This is useful in Gecko for IPC serialization
+    pub add_sentinel: bool,
+}
+
+impl Default for EnumConfig {
+    fn default() -> EnumConfig {
+        EnumConfig {
+            add_sentinel: false,
         }
     }
 }
@@ -122,6 +198,7 @@ impl Config {
         Config {
             header: Some(String::from(license)),
             trailer: None,
+            include_guard: None,
             autogen_warning: Some(String::from(autogen)),
             include_version: true,
             braces: Braces::SameLine,
@@ -156,29 +233,6 @@ impl Config {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[serde(deny_unknown_fields)]
-#[serde(default)]
-pub struct FunctionConfig {
-    /// Optional text to output before each function declaration
-    pub prefix: Option<String>,
-    /// Optional text to output after each function declaration
-    pub postfix: Option<String>,
-    /// The style to layout the args
-    pub args: Layout,
-}
-
-impl Default for FunctionConfig {
-    fn default() -> FunctionConfig {
-        FunctionConfig {
-            prefix: None,
-            postfix: None,
-            args: Layout::Auto,
-        }
-    }
-}
-
 impl FunctionConfig {
     pub fn prefix(&self, directives: &DirectiveSet) -> Option<String> {
         if let Some(x) = directives.atom("function-prefix") {
@@ -198,38 +252,6 @@ impl FunctionConfig {
             return x;
         }
         self.postfix.clone()
-    }
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[serde(deny_unknown_fields)]
-#[serde(default)]
-pub struct StructConfig {
-    /// Whether to generate a piecewise equality operator
-    pub derive_eq: bool,
-    /// Whether to generate a piecewise inequality operator
-    pub derive_neq: bool,
-    /// Whether to generate a less than operator on structs with one field
-    pub derive_lt: bool,
-    /// Whether to generate a less than or equal to operator on structs with one field
-    pub derive_lte: bool,
-    /// Whether to generate a greater than operator on structs with one field
-    pub derive_gt: bool,
-    /// Whether to generate a greater than or equal to operator on structs with one field
-    pub derive_gte: bool,
-}
-
-impl Default for StructConfig {
-    fn default() -> StructConfig {
-        StructConfig {
-            derive_eq: false,
-            derive_neq: false,
-            derive_lt: false,
-            derive_lte: false,
-            derive_gt: false,
-            derive_gte: false,
-        }
     }
 }
 
@@ -287,24 +309,6 @@ impl StructConfig {
             return x;
         }
         self.derive_gte
-    }
-}
-
-#[derive( Debug, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[serde(deny_unknown_fields)]
-#[serde(default)]
-pub struct EnumConfig {
-    /// Whether to add a `Sentinel` value at the end of every enum
-    /// This is useful in Gecko for IPC serialization
-    pub add_sentinel: bool,
-}
-
-impl Default for EnumConfig {
-    fn default() -> EnumConfig {
-        EnumConfig {
-            add_sentinel: false,
-        }
     }
 }
 

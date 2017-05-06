@@ -379,6 +379,13 @@ impl<'a> GeneratedLibrary<'a> {
             out.write(&f);
             out.new_line();
         }
+        if let Some(ref f) = self.config.include_guard {
+            out.new_line();
+            out.write(&format!("#ifndef {}", f));
+            out.new_line();
+            out.write(&format!("#define {}", f));
+            out.new_line();
+        }
         if self.config.include_version {
             out.new_line();
             out.write(&format!("/* Generated with cbindgen:{} */", config::VERSION));
@@ -423,6 +430,11 @@ impl<'a> GeneratedLibrary<'a> {
         if let Some(ref f) = self.config.autogen_warning {
             out.new_line();
             out.write(&f);
+            out.new_line();
+        }
+        if let Some(ref f) = self.config.include_guard {
+            out.new_line();
+            out.write(&format!("#endif // {}", f));
             out.new_line();
         }
         if let Some(ref f) = self.config.trailer {
