@@ -70,6 +70,16 @@ impl PrimitiveType {
             _ => None,
         }
     }
+
+    fn can_cmp_order(&self) -> bool {
+        match self {
+            &PrimitiveType::Bool => false,
+            _ => true,
+        }
+    }
+    fn can_cmp_eq(&self) -> bool {
+        true
+    }
 }
 impl fmt::Display for PrimitiveType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -98,7 +108,8 @@ impl fmt::Display for PrimitiveType {
             &PrimitiveType::Int32 => write!(f, "int32_t"),
             &PrimitiveType::Int64 => write!(f, "int64_t"),
             &PrimitiveType::Float => write!(f, "float"),
-            &PrimitiveType::Double => write!(f, "double")}
+            &PrimitiveType::Double => write!(f, "double")
+        }
     }
 }
 
@@ -220,6 +231,27 @@ impl Type {
                                   .map(|x| x.specialize(mappings))
                                   .collect())
             }
+        }
+    }
+
+    fn can_cmp_order(&self) -> bool {
+        match self {
+            &Type::ConstPtr(..) => true,
+            &Type::Ptr(..) => true,
+            &Type::Path(..) => true,
+            &Type::Primitive(ref p) => p.can_cmp_order(),
+            &Type::Array(..) => false,
+            &Type::FuncPtr(..) => false,
+        }
+    }
+    fn can_cmp_eq(&self) -> bool {
+        match self {
+            &Type::ConstPtr(..) => true,
+            &Type::Ptr(..) => true,
+            &Type::Path(..) => true,
+            &Type::Primitive(ref p) => p.can_cmp_eq(),
+            &Type::Array(..) => false,
+            &Type::FuncPtr(..) => true,
         }
     }
 
@@ -535,22 +567,28 @@ impl Struct {
                 out.close_brace(false);
             };
 
-            if config.structure.derive_eq(&self.directives) && !fields.is_empty() {
+            if config.structure.derive_eq(&self.directives) &&
+               !fields.is_empty() && fields.iter().all(|x| x.1.can_cmp_eq()) {
                 emit_op("==", "&&");
             }
-            if config.structure.derive_neq(&self.directives) && !fields.is_empty() {
+            if config.structure.derive_neq(&self.directives) &&
+               !fields.is_empty() && fields.iter().all(|x| x.1.can_cmp_eq()) {
                 emit_op("!=", "||");
             }
-            if config.structure.derive_lt(&self.directives) && fields.len() == 1 {
+            if config.structure.derive_lt(&self.directives) &&
+               fields.len() == 1 && fields[0].1.can_cmp_order() {
                 emit_op("<", "&&");
             }
-            if config.structure.derive_lte(&self.directives) && fields.len() == 1 {
+            if config.structure.derive_lte(&self.directives) &&
+               fields.len() == 1 && fields[0].1.can_cmp_order() {
                 emit_op("<=", "&&");
             }
-            if config.structure.derive_gt(&self.directives) && fields.len() == 1 {
+            if config.structure.derive_gt(&self.directives) &&
+               fields.len() == 1 && fields[0].1.can_cmp_order() {
                 emit_op(">", "&&");
             }
-            if config.structure.derive_gte(&self.directives) && fields.len() == 1 {
+            if config.structure.derive_gte(&self.directives) &&
+               fields.len() == 1 && fields[0].1.can_cmp_order() {
                 emit_op(">=", "&&");
             }
         }
