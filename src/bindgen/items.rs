@@ -3,7 +3,7 @@ use std::fmt;
 
 use syn::*;
 
-use bindgen::config::Config;
+use bindgen::config::{Config, Layout};
 use bindgen::directive::*;
 use bindgen::library::*;
 use bindgen::syn_helpers::*;
@@ -223,82 +223,88 @@ impl Type {
         }
     }
 
-    fn write<F: Write>(&self, out: &mut Writer<F>) {
+    fn to_string(&self) -> String {
         match self {
             &Type::ConstPtr(ref t) => {
-                out.write("const ");
-                t.write(out);
-                out.write("*");
+                format!("const {}*", t.to_string())
             }
             &Type::Ptr(ref t) => {
-                t.write(out);
-                out.write("*");
+                format!("{}*", t.to_string())
             }
             &Type::Path(ref p) => {
-                out.write(p);
+                p.clone()
             }
             &Type::Primitive(ref p) => {
-                out.write(&format!("{}", p));
+                format!("{}", p)
             }
             &Type::Array(ref t, ref sz) => {
-                t.write(out);
-                out.write(&format!("[{}]", sz));
+                format!("{}[{}]", t.to_string(), sz)
             }
             &Type::FuncPtr(ref ret, ref args) => {
+                let mut out = String::new();
+
                 if let &Some(ref ret) = ret {
-                    ret.write(out);
+                    out.push_str(&ret.to_string());
                 } else {
-                    out.write("void");
+                    out.push_str("void");
                 }
-                out.write(" (*)(");
+                out.push_str(" (*)(");
                 for (i, arg) in args.iter().enumerate() {
                     if i != 0 {
-                        out.write(", ");
+                        out.push_str(", ");
                     }
-                    arg.write(out);
+                    out.push_str(&arg.to_string());
                 }
-                out.write(")");
+                out.push_str(")");
+
+                out
+            }
+        }
+    }
+
+    fn to_string_with_ident(&self, ident: &str) -> String {
+        match self {
+            &Type::ConstPtr(ref t) => {
+                format!("const {}* {}", t.to_string(), ident)
+            }
+            &Type::Ptr(ref t) => {
+                format!("{}* {}", t.to_string(), ident)
+            }
+            &Type::Path(ref p) => {
+                format!("{} {}", p, ident)
+            }
+            &Type::Primitive(ref p) => {
+                format!("{} {}", p, ident)
+            }
+            &Type::Array(ref t, ref sz) => {
+                format!("{} {}[{}]", t.to_string(), ident, sz)
+            }
+            &Type::FuncPtr(ref ret, ref args) => {
+                let mut out = String::new();
+
+                if let &Some(ref ret) = ret {
+                    out.push_str(&ret.to_string());
+                } else {
+                    out.push_str("void");
+                }
+                out.push_str(" (*");
+                out.push_str(ident);
+                out.push_str(")(");
+                for (i, arg) in args.iter().enumerate() {
+                    if i != 0 {
+                        out.push_str(", ");
+                    }
+                    out.push_str(&arg.to_string());
+                }
+                out.push_str(")");
+
+                out
             }
         }
     }
 
     fn write_with_ident<F: Write>(&self, ident: &str, out: &mut Writer<F>) {
-        match self {
-            &Type::ConstPtr(ref t) => {
-                out.write("const ");
-                t.write(out);
-                out.write(&format!("* {}", ident));
-            }
-            &Type::Ptr(ref t) => {
-                t.write(out);
-                out.write(&format!("* {}", ident));
-            }
-            &Type::Path(ref p) => {
-                out.write(&format!("{} {}", p, ident));
-            }
-            &Type::Primitive(ref p) => {
-                out.write(&format!("{} {}", p, ident));
-            }
-            &Type::Array(ref t, ref sz) => {
-                t.write(out);
-                out.write(&format!(" {}[{}]", ident, sz));
-            }
-            &Type::FuncPtr(ref ret, ref args) => {
-                if let &Some(ref ret) = ret {
-                    ret.write(out);
-                } else {
-                    out.write("void");
-                }
-                out.write(&format!(" (*{})(", ident));
-                for (i, arg) in args.iter().enumerate() {
-                    if i != 0 {
-                        out.write(", ");
-                    }
-                    arg.write(out);
-                }
-                out.write(")");
-            }
-        }
+        out.write(&self.to_string_with_ident(ident));
     }
 }
 
@@ -340,30 +346,103 @@ impl Function {
     }
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
-        if let Some(ref f) = config.function.prefix(&self.directives) {
-            out.write(&format!("{} ", f));
-        }
+        // Try three different ways of formatting, depending on the line length
+        //    1. PREFIX RET NAME ( ARGS ... ) POSTFIX ;
+        //    2. PREFIX
+        //       RET NAME ( ARGS ... )
+        //       POSTFIX ;
+        //    3. PREFIX
+        //       RET NAME ( ARGS
+        //                  ... )
+        //       POSTFIX ;
 
-        match self.ret.as_ref() {
-            Some(ret) => ret.write(out),
-            None => out.write("void"),
-        }
+        let prefix = config.function.prefix(&self.directives);
+        let ret = match self.ret.as_ref() {
+            Some(ret) => ret.to_string(),
+            None => format!("void"),
+        };
+        let name = &self.name;
+        let args = self.args.iter().map(|x| x.1.to_string_with_ident(&x.0)).collect::<Vec<_>>();
+        let postfix = config.function.postfix(&self.directives);
 
-        out.new_line();
-        out.write(&format!("{}(", self.name));
-        for (i, arg) in self.args.iter().enumerate() {
-            if i != 0 {
-                out.write(",\n    ");
+        let option_1: usize = prefix.as_ref().map_or(0, |x| x.len()) +
+                              ret.len() +
+                              name.len() +
+                              args.iter().map(|x| x.len()).sum::<usize>() +
+                              postfix.as_ref().map_or(0, |x| x.len()) + 7;
+
+        let option_2: usize = ret.len() +
+                              name.len() +
+                              args.iter().map(|x| x.len()).sum::<usize>();
+
+        if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
+            config.function.args == Layout::Horizontal {
+            // 1. PREFIX RET NAME ( ARGS ... ) POSTFIX ;
+
+            if let Some(ref prefix) = prefix {
+                out.write(prefix);
+                out.write(" ");
             }
-            arg.1.write_with_ident(&arg.0, out);
-        }
-        out.write(")");
+            out.write(&format!("{} {}({}) ",
+                      &ret,
+                      name,
+                      args.join(", ")));
+            if let Some(ref postfix) = postfix {
+                out.write(postfix);
+            }
+            out.write(";");
+        } else if config.function.args == Layout::Auto && option_2 <= config.line_length {
+            // 2. PREFIX
+            //    RET NAME ( ARGS ... )
+            //    POSTFIX ;
 
-        if let Some(ref f) = config.function.postfix(&self.directives) {
-            out.new_line();
-            out.write(f)
+            if let Some(ref prefix) = prefix {
+                out.write(prefix);
+                out.new_line();
+            }
+            out.write(&format!("{} {}({}) ",
+                      &ret,
+                      name,
+                      args.join(", ")));
+            if let Some(ref postfix) = postfix {
+                out.new_line();
+                out.write(postfix);
+            }
+            out.write(";");
+        } else {
+            // 3. PREFIX
+            //    RET NAME ( ARGS 
+            //               ... )
+            //    POSTFIX ;
+
+            if let Some(ref prefix) = prefix {
+                out.write(prefix);
+                out.new_line();
+            }
+            out.write(&format!("{} {}(",
+                      &ret,
+                      name));
+            for (i, arg) in args.iter().enumerate() {
+                out.write(arg);
+                if i != args.len() - 1 {
+                    out.write(",");
+                    if i == 0 {
+                        let align_length = ret.len() + name.len() + 2;
+                        out.push_set_spaces(align_length);
+                    }
+                    out.new_line();
+                }
+            }
+            if args.len() > 1 {
+                out.pop_tab();
+            }
+            out.write(")");
+            if let Some(ref postfix) = postfix {
+                out.new_line();
+                out.write(postfix);
+            }
+            out.write(";");
         }
-        out.write(";");
     }
 }
 

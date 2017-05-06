@@ -24,7 +24,7 @@ pub enum Braces {
     NextLine,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Layout {
     Horizontal,
@@ -48,9 +48,9 @@ pub struct Config {
     /// The style to use for braces
     pub braces: Braces,
     /// The preferred length of a line, used for auto breaking function arguments
-    pub line_length: u32,
+    pub line_length: usize,
     /// The amount of spaces in a tab
-    pub tab_width: u32,
+    pub tab_width: usize,
     /// The language to output bindings for
     pub language: Language,
     /// The configuration options for functions
@@ -131,7 +131,7 @@ impl Config {
             function: FunctionConfig {
                 prefix: Some(String::from("WR_INLINE")),
                 postfix: Some(String::from("WR_FUNC")),
-                args: Layout::Horizontal,
+                args: Layout::Vertical,
             },
             structure: StructConfig {
                 derive_eq: true,

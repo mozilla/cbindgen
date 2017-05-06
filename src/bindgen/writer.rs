@@ -4,8 +4,8 @@ use std::io::Write;
 pub struct Writer<'a, 'f, F: 'f + Write> {
     out: &'f mut F,
     config: &'a Config,
-    tabs: Vec<u32>,
-    pending_spaces: u32,
+    spaces: Vec<usize>,
+    pending_spaces: usize,
     has_written: bool,
 }
 
@@ -14,37 +14,46 @@ impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
         Writer {
             out: out,
             config: config,
-            tabs: vec![0],
+            spaces: vec![0],
             pending_spaces: 0,
             has_written: false,
         }
     }
 
-    fn tabs(&mut self) -> u32 {
-        *self.tabs.last().unwrap()
+    fn spaces(&mut self) -> usize {
+        *self.spaces.last().unwrap()
     }
 
     pub fn push_tab(&mut self) {
-        let tabs = self.tabs() + 1;
-        self.tabs.push(tabs);
+        let spaces = self.spaces() -
+                     (self.spaces() % self.config.tab_width) + 
+                     self.config.tab_width;
+        self.spaces.push(spaces);
 
         if !self.has_written {
-            self.pending_spaces = self.tabs() * self.config.tab_width;
+            self.pending_spaces = self.spaces();
+        }
+    }
+    pub fn push_set_spaces(&mut self, spaces: usize) {
+        self.spaces.push(spaces);
+
+        if !self.has_written {
+            self.pending_spaces = self.spaces();
         }
     }
 
     pub fn pop_tab(&mut self) {
-        assert!(!self.tabs.is_empty());
-        self.tabs.pop();
+        assert!(!self.spaces.is_empty());
+        self.spaces.pop();
 
         if !self.has_written {
-            self.pending_spaces = self.tabs() * self.config.tab_width;
+            self.pending_spaces = self.spaces();
         }
     }
 
     pub fn new_line(&mut self) {
         write!(self.out, "\n").unwrap();
-        self.pending_spaces = self.tabs() * self.config.tab_width;
+        self.pending_spaces = self.spaces();
         self.has_written = false;
     }
 
