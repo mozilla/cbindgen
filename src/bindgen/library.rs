@@ -376,29 +376,30 @@ impl<'a> GeneratedLibrary<'a> {
         let mut out = Writer::new(file, self.config);
 
         if let Some(ref f) = self.config.header {
+            out.new_line_if_not_start();
             out.write(&f);
             out.new_line();
         }
         if let Some(ref f) = self.config.include_guard {
-            out.new_line();
+            out.new_line_if_not_start();
             out.write(&format!("#ifndef {}", f));
             out.new_line();
             out.write(&format!("#define {}", f));
             out.new_line();
         }
         if self.config.include_version {
-            out.new_line();
+            out.new_line_if_not_start();
             out.write(&format!("/* Generated with cbindgen:{} */", config::VERSION));
             out.new_line();
         }
         if let Some(ref f) = self.config.autogen_warning {
-            out.new_line();
+            out.new_line_if_not_start();
             out.write(&f);
             out.new_line();
         }
 
         for item in &self.items {
-            out.new_line();
+            out.new_line_if_not_start();
             match item {
                 &PathValue::Enum(ref x) => x.write(self.config, &mut out),
                 &PathValue::Struct(ref x) => x.write(self.config, &mut out),
@@ -412,7 +413,7 @@ impl<'a> GeneratedLibrary<'a> {
         }
 
         if let Some(ref f) = self.config.autogen_warning {
-            out.new_line();
+            out.new_line_if_not_start();
             out.write(&f);
             out.new_line();
         }
@@ -422,23 +423,23 @@ impl<'a> GeneratedLibrary<'a> {
                 continue;
             }
 
-            out.new_line();
+            out.new_line_if_not_start();
             function.write(self.config, &mut out);
             out.new_line();
         }
 
         if let Some(ref f) = self.config.autogen_warning {
-            out.new_line();
+            out.new_line_if_not_start();
             out.write(&f);
             out.new_line();
         }
         if let Some(ref f) = self.config.include_guard {
-            out.new_line();
+            out.new_line_if_not_start();
             out.write(&format!("#endif // {}", f));
             out.new_line();
         }
         if let Some(ref f) = self.config.trailer {
-            out.new_line();
+            out.new_line_if_not_start();
             out.write(&f);
             out.new_line();
         }

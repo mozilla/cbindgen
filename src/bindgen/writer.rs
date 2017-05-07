@@ -7,6 +7,7 @@ pub struct Writer<'a, 'f, F: 'f + Write> {
     spaces: Vec<usize>,
     line_started: bool,
     line_length: usize,
+    line_number: usize,
 }
 
 impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
@@ -17,13 +18,13 @@ impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
             spaces: vec![0],
             line_started: false,
             line_length: 0,
+            line_number: 1,
         }
     }
 
     fn spaces(&mut self) -> usize {
         *self.spaces.last().unwrap()
     }
-
 
     fn push_set_spaces(&mut self, spaces: usize) {
         self.spaces.push(spaces);
@@ -45,6 +46,13 @@ impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
         write!(self.out, "\n").unwrap();
         self.line_started = false;
         self.line_length = 0;
+        self.line_number += 1;
+    }
+
+    pub fn new_line_if_not_start(&mut self) {
+        if self.line_number != 1 {
+            self.new_line();
+        }
     }
 
     pub fn open_brace(&mut self) {
