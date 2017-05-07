@@ -1,7 +1,17 @@
 include_guard = "build_script_h"
 include_version = true
+braces = "NextLine"
+tab_width = 4
+
+[enum]
+rename_variants = "SnakeCase"
+
+[fn]
+rename_args = "UpperCase"
+args = "Vertical"
 
 [struct]
+rename_fields = "GeckoCase"
 derive_eq = true
 derive_lt = true
 derive_lte = true

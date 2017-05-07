@@ -251,6 +251,16 @@ impl<'a> Library<'a> {
             }
         });
 
+        for (_, ref mut s) in &mut library.structs {
+            s.resolve(config);
+        }
+        for (_, ref mut f) in &mut library.functions {
+            f.resolve(config);
+        }
+        for (_, ref mut e) in &mut library.enums {
+            e.resolve(config);
+        }
+
         library
     }
 

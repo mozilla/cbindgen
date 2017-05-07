@@ -6,6 +6,7 @@ use syn::*;
 use bindgen::config::{Config, Layout};
 use bindgen::directive::*;
 use bindgen::library::*;
+use bindgen::rename::*;
 use bindgen::syn_helpers::*;
 use bindgen::writer::*;
 
@@ -368,6 +369,16 @@ impl Function {
         })
     }
 
+    pub fn resolve(&mut self, config: &Config) {
+        if let Some(r) = config.function.rename_args {
+            self.args = self.args.iter()
+                                 .map(|x| (r.apply_to_snake_case(&x.0,
+                                                                 RenameContext::FunctionArg),
+                                           x.1.clone()))
+                                  .collect()
+        }
+    }
+
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
         if let &Some(ref ret) = &self.ret {
             ret.add_deps(library, out);
@@ -512,6 +523,28 @@ impl Struct {
         })
     }
 
+    pub fn resolve(&mut self, config: &Config) {
+        if let Some(o) = self.directives.list("field-names") {
+            let mut overriden_fields = Vec::new();
+
+            for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
+                if i >= o.len() {
+                    overriden_fields.push((name.clone(), ty.clone()));
+                } else {
+                    overriden_fields.push((o[i].clone(), ty.clone()));
+                }
+            }
+
+            self.fields = overriden_fields;
+        } else if let Some(r) = config.structure.rename_fields {
+            self.fields = self.fields.iter()
+                                     .map(|x| (r.apply_to_snake_case(&x.0,
+                                                                     RenameContext::StructMember),
+                                               x.1.clone()))
+                                     .collect();
+        }
+    }
+
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
         for &(_, ref ty) in &self.fields {
             ty.add_deps_with_generics(&self.generic_params, library, out);
@@ -521,29 +554,10 @@ impl Struct {
     pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
         assert!(self.generic_params.is_empty());
 
-        // This needs to be done here because `type` specialization may
-        // provide an alternative list of directives to use for renaming
-        let fields = match self.directives.list("field-names") {
-            Some(overrides) => {
-                let mut overriden_fields = Vec::new();
-
-                for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
-                    if i >= overrides.len() {
-                        overriden_fields.push((name.clone(), ty.clone()));
-                    } else {
-                        overriden_fields.push((overrides[i].clone(), ty.clone()));
-                    }
-                }
-
-                overriden_fields
-            }
-            _ => self.fields.clone(),
-        };
-
         out.write(&format!("struct {}", self.name));
         out.open_brace();
 
-        for (i, &(ref name, ref ty)) in fields.iter().enumerate() {
+        for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
             if i != 0 {
                 out.new_line()
             }
@@ -560,36 +574,36 @@ impl Struct {
                 out.write(&format!("bool operator{}(const {}& aOther) const", op, self.name));
                 out.open_brace();
                 out.write("return ");
-                out.write_aligned_list(fields.iter()
-                                             .map(|x| format!("{} {} aOther.{}", x.0, op, x.0))
-                                             .collect(),
+                out.write_aligned_list(self.fields.iter()
+                                                  .map(|x| format!("{} {} aOther.{}", x.0, op, x.0))
+                                                  .collect(),
                                        format!(" {}", conjuc));
                 out.write(";");
                 out.close_brace(false);
             };
 
             if config.structure.derive_eq(&self.directives) &&
-               !fields.is_empty() && fields.iter().all(|x| x.1.can_cmp_eq()) {
+               !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq()) {
                 emit_op("==", "&&");
             }
             if config.structure.derive_neq(&self.directives) &&
-               !fields.is_empty() && fields.iter().all(|x| x.1.can_cmp_eq()) {
+               !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq()) {
                 emit_op("!=", "||");
             }
             if config.structure.derive_lt(&self.directives) &&
-               fields.len() == 1 && fields[0].1.can_cmp_order() {
+               self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
                 emit_op("<", "&&");
             }
             if config.structure.derive_lte(&self.directives) &&
-               fields.len() == 1 && fields[0].1.can_cmp_order() {
+               self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
                 emit_op("<=", "&&");
             }
             if config.structure.derive_gt(&self.directives) &&
-               fields.len() == 1 && fields[0].1.can_cmp_order() {
+               self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
                 emit_op(">", "&&");
             }
             if config.structure.derive_gte(&self.directives) &&
-               fields.len() == 1 && fields[0].1.can_cmp_order() {
+               self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
                 emit_op(">=", "&&");
             }
         }
@@ -680,6 +694,16 @@ impl Enum {
             directives: directives,
             values: values,
         })
+    }
+
+    pub fn resolve(&mut self, config: &Config) {
+        if let Some(r) = config.enumeration.rename_variants {
+            self.values = self.values.iter()
+                                     .map(|x| (r.apply_to_pascal_case(&x.0,
+                                                                      RenameContext::EnumVariant),
+                                               x.1.clone()))
+                                     .collect();
+        }
     }
 
     pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {

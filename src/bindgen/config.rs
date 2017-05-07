@@ -3,34 +3,83 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
 use std::path::PathBuf;
+use std::str::FromStr;
 
 use toml;
 
 pub use bindgen::directive::*;
+pub use bindgen::rename::*;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone)]
 pub enum Language {
     Cxx,
     C,
 }
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone)]
 pub enum Braces {
     SameLine,
     NextLine,
 }
-
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Layout {
     Horizontal,
     Vertical,
     Auto,
 }
+
+impl FromStr for Language {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Language, Self::Err> {
+        match s {
+            "cxx" => Ok(Language::Cxx),
+            "Cxx" => Ok(Language::Cxx),
+            "CXX" => Ok(Language::Cxx),
+            "cpp" => Ok(Language::Cxx),
+            "Cpp" => Ok(Language::Cxx),
+            "CPP" => Ok(Language::Cxx),
+            "c++" => Ok(Language::Cxx),
+            "C++" => Ok(Language::Cxx),
+            "c" => Ok(Language::C),
+            "C" => Ok(Language::C),
+            _ => Err(format!("unrecognized Language: '{}'", s)),
+        }
+    }
+}
+impl FromStr for Braces {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Braces, Self::Err> {
+        match s {
+            "SameLine" => Ok(Braces::SameLine),
+            "same_line" => Ok(Braces::SameLine),
+            "NextLine" => Ok(Braces::NextLine),
+            "next_line" => Ok(Braces::NextLine),
+            _ => Err(format!("unrecognized Braces: '{}'", s)),
+        }
+    }
+}
+impl FromStr for Layout {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Layout, Self::Err> {
+        match s {
+            "Horizontal" => Ok(Layout::Horizontal),
+            "horizontal" => Ok(Layout::Horizontal),
+            "Vertical" => Ok(Layout::Vertical),
+            "vertical" => Ok(Layout::Vertical),
+            "Auto" => Ok(Layout::Auto),
+            "auto" => Ok(Layout::Auto),
+            _ => Err(format!("unrecognized Layout: '{}'", s)),
+        }
+    }
+}
+
+deserialize_enum_str!(Language);
+deserialize_enum_str!(Braces);
+deserialize_enum_str!(Layout);
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -96,6 +145,8 @@ pub struct FunctionConfig {
     pub postfix: Option<String>,
     /// The style to layout the args
     pub args: Layout,
+    /// The rename rule to apply to function args
+    pub rename_args: Option<RenameRule>,
 }
 
 impl Default for FunctionConfig {
@@ -104,6 +155,7 @@ impl Default for FunctionConfig {
             prefix: None,
             postfix: None,
             args: Layout::Auto,
+            rename_args: None,
         }
     }
 }
@@ -113,6 +165,8 @@ impl Default for FunctionConfig {
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct StructConfig {
+    /// The rename rule to apply to the name of struct fields
+    pub rename_fields: Option<RenameRule>,
     /// Whether to generate a piecewise equality operator
     pub derive_eq: bool,
     /// Whether to generate a piecewise inequality operator
@@ -130,6 +184,7 @@ pub struct StructConfig {
 impl Default for StructConfig {
     fn default() -> StructConfig {
         StructConfig {
+            rename_fields: None,
             derive_eq: false,
             derive_neq: false,
             derive_lt: false,
@@ -145,6 +200,8 @@ impl Default for StructConfig {
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct EnumConfig {
+    /// The rename rule to apply to the name of enum variants
+    pub rename_variants: Option<RenameRule>,
     /// Whether to add a `Sentinel` value at the end of every enum
     /// This is useful in Gecko for IPC serialization
     pub add_sentinel: bool,
@@ -153,6 +210,7 @@ pub struct EnumConfig {
 impl Default for EnumConfig {
     fn default() -> EnumConfig {
         EnumConfig {
+            rename_variants: None,
             add_sentinel: false,
         }
     }
@@ -209,8 +267,10 @@ impl Config {
                 prefix: Some(String::from("WR_INLINE")),
                 postfix: Some(String::from("WR_FUNC")),
                 args: Layout::Vertical,
+                rename_args: Some(RenameRule::GeckoCase),
             },
             structure: StructConfig {
+                rename_fields: Some(RenameRule::GeckoCase),
                 derive_eq: true,
                 derive_neq: false,
                 derive_lt: false,
@@ -219,6 +279,7 @@ impl Config {
                 derive_gte: false,
             },
             enumeration: EnumConfig {
+                rename_variants: None,
                 add_sentinel: true,
             },
         }
