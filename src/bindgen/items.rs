@@ -415,11 +415,12 @@ impl Function {
                 out.write(prefix);
                 out.write(" ");
             }
-            out.write(&format!("{} {}({}) ",
+            out.write(&format!("{} {}({})",
                       &ret,
                       name,
                       args.join(", ")));
             if let Some(ref postfix) = postfix {
+                out.write(" ");
                 out.write(postfix);
             }
             out.write(";");
@@ -432,7 +433,7 @@ impl Function {
                 out.write(prefix);
                 out.new_line();
             }
-            out.write(&format!("{} {}({}) ",
+            out.write(&format!("{} {}({})",
                       &ret,
                       name,
                       args.join(", ")));
