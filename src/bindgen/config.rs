@@ -270,7 +270,7 @@ impl Config {
                 rename_args: Some(RenameRule::GeckoCase),
             },
             structure: StructConfig {
-                rename_fields: Some(RenameRule::GeckoCase),
+                rename_fields: None,
                 derive_eq: true,
                 derive_neq: false,
                 derive_lt: false,
