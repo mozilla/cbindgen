@@ -589,9 +589,9 @@ impl Struct {
             out.write(";");
         }
 
-        out.new_line();
-
         if config.language == Language::Cxx {
+            let mut wrote_start_newline = false;
+
             let other = if let Some(r) = config.function.rename_args {
                 r.apply_to_snake_case("other", RenameContext::FunctionArg)
             } else {
@@ -599,6 +599,11 @@ impl Struct {
             };
 
             let mut emit_op = |op, conjuc| {
+                if !wrote_start_newline {
+                    wrote_start_newline = true;
+                    out.new_line();
+                }
+
                 out.new_line();
 
                 out.write(&format!("bool operator{}(const {}& {}) const", op, self.name, other));
