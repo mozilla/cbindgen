@@ -5,7 +5,7 @@
 [Latest Version]: https://img.shields.io/crates/v/cbindgen.svg
 [crates.io]: https://crates.io/crates/cbindgen
 
-This project can be used to generate C bindings for Rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/).
+This project can be used to generate C bindings for Rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/), but has been designed to support any project.
 
 ## Features
 
@@ -13,12 +13,13 @@ This project can be used to generate C bindings for Rust code. It is currently b
   * Only the necessary types for exposed functions are given bindings
   * Can specify directives for controlling some aspects of binding
   * Generic structs can be exposed using `type IntFoo = Foo<i32>;`
+  * Customizable formatting, can be used in C or C++ projects
 
 ## Use
 
 ### Command line
 
-`cbindgen crate/ crate/bindings.h`
+`cbindgen crate/ -o crate/bindings.h`
 
 See `cbindgen --help` for more options.
 
@@ -46,7 +47,7 @@ fn main() {
 
 ## Examples
 
-See `examples/` for some examples of rust source that can be handled.
+See `samples/` for some examples of rust source that can be handled.
 
 ## How it works
 
@@ -58,8 +59,8 @@ See `examples/` for some examples of rust source that can be handled.
 
 ## Future work
 
-1. More customizable formatting and custom configs
-2. Extensible system for specifying in source directives
-3. Better support for types with fully specified names
-4. Add a validation step
+1. Add a validation step to catch common issues
+2. Better support for types with fully specified names
+3. Better support for finding dependencies managed by Cargo
+4. Support for generating a FFI interface for a Struct+Impl
 5. ...
