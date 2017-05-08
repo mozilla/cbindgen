@@ -69,13 +69,17 @@ impl RenameRule {
         }
     }
 
-    pub fn apply_to_snake_case(&self, text: &str, context: RenameContext) -> String {
+    pub fn apply_to_snake_case(&self, mut text: &str, context: RenameContext) -> String {
         if text.len() == 0 {
             return String::new();
         }
 
         match *self {
             RenameRule::GeckoCase => {
+                if &text[..1] == "_" {
+                    text = &text[1..];
+                }
+
                 context.to_str().to_owned() +
                     &RenameRule::PascalCase.apply_to_snake_case(text, context)
             }

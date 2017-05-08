@@ -500,7 +500,7 @@ impl Struct {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields {
-                    out.push((format!("m{}", current),
+                    out.push((format!("{}", current),
                               try!(Type::convert(&field.ty))));
                     current += 1;
                 }
@@ -572,14 +572,20 @@ impl Struct {
         out.new_line();
 
         if config.language == Language::Cxx {
+            let other = if let Some(r) = config.function.rename_args {
+                r.apply_to_snake_case("other", RenameContext::FunctionArg)
+            } else {
+                String::from("other")
+            };
+
             let mut emit_op = |op, conjuc| {
                 out.new_line();
 
-                out.write(&format!("bool operator{}(const {}& aOther) const", op, self.name));
+                out.write(&format!("bool operator{}(const {}& {}) const", op, self.name, other));
                 out.open_brace();
                 out.write("return ");
                 out.write_aligned_list(self.fields.iter()
-                                                  .map(|x| format!("{} {} aOther.{}", x.0, op, x.0))
+                                                  .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
                                                   .collect(),
                                        format!(" {}", conjuc));
                 out.write(";");

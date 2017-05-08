@@ -24,11 +24,15 @@ pub struct Comparable {
     x: i32,
 }
 
+#[repr(C)]
+pub struct TupleStruct(i32, f32);
+
 #[no_mangle]
 pub extern "C" fn root(x: *mut Opaque,
                        y: Normal,
                        z: Comparable,
-                       w: Options)
+                       w: Options,
+                       a: TupleStruct)
 {
 
 }
