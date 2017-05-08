@@ -802,7 +802,7 @@ impl Specialization {
         }
     }
 
-    pub fn specialize(&self, library: &Library) -> ConvertResult<PathValue> {
+    pub fn specialize(&self, config: &Config, library: &Library) -> ConvertResult<PathValue> {
         match library.resolve_path(&self.aliased) {
             Some(aliased) => {
                 match aliased {
@@ -821,22 +821,29 @@ impl Specialization {
                         let mappings = aliased.generic_params.iter()
                                                              .zip(self.generic_values.iter())
                                                              .collect::<Vec<_>>();
-                        Ok(PathValue::Struct(Struct {
+
+                        let mut value = Struct {
                             name: self.name.clone(),
                             directives: self.directives.clone(),
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
                                                   .collect(),
                             generic_params: vec![],
-                        }))
+                        };
+                        value.resolve(config);
+
+                        Ok(PathValue::Struct(value))
                     }
                     PathValue::Enum(aliased) => {
-                        Ok(PathValue::Enum(Enum {
+                        let mut value = Enum {
                             name: self.name.clone(),
                             repr: aliased.repr.clone(),
                             directives: self.directives.clone(),
                             values: aliased.values.clone(),
-                        }))
+                        };
+                        value.resolve(config);
+
+                        Ok(PathValue::Enum(value))
                     }
                     PathValue::Typedef(aliased) => {
                         Ok(PathValue::Typedef(Typedef {
@@ -851,7 +858,7 @@ impl Specialization {
                             directives: self.directives.clone(),
                             aliased: aliased.aliased.clone(),
                             generic_values: aliased.generic_values.clone(),
-                        }.specialize(library)
+                        }.specialize(config, library)
                     }
                 }
             }

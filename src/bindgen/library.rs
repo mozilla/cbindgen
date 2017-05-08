@@ -325,7 +325,7 @@ impl<'a> Library<'a> {
                     }
                 }
                 &PathValue::Specialization(ref s) => {
-                    match s.specialize(&self) {
+                    match s.specialize(self.config, &self) {
                         Ok(value) => {
                             result.items.push(value);
                         }
