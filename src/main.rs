@@ -24,7 +24,7 @@ fn main() {
                          .short("c")
                          .long("config")
                          .value_name("CONFIG")
-                         .help("the config to use. currently either `wr`, or `default`"))
+                         .help("the path to the cbindgen.toml config to use"))
                     .arg(Arg::with_name("v")
                          .short("v")
                          .help("whether to print verbose logs"))
@@ -49,7 +49,7 @@ fn main() {
     let input = matches.value_of("INPUT").unwrap();
 
     let config = match matches.value_of("config") {
-        Some(c) => Config::load(c),
+        Some(c) => Config::from_file(c).unwrap(),
         None => Config::from_root_or_default(&input),
     };
 

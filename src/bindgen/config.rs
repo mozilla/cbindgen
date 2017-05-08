@@ -243,62 +243,10 @@ impl Config {
             Config::default()
         }
     }
-
-    pub fn from_webrender() -> Config {
-        let license = r###"/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */"###;
-
-        let autogen = r###"/* DO NOT MODIFY THIS MANUALLY! This file was generated using cbindgen.
- * To generate this file, clone `https://github.com/rlhunt/cbindgen` or run `cargo install cbindgen`,
- * then run `cbindgen -c wr gfx/webrender_bindings/ gfx/webrender_bindings/webrender_ffi_generated.h` */"###;
-
-        Config {
-            header: Some(String::from(license)),
-            trailer: None,
-            include_guard: None,
-            autogen_warning: Some(String::from(autogen)),
-            include_version: true,
-            braces: Braces::SameLine,
-            line_length: 100,
-            tab_width: 2,
-            language: Language::Cxx,
-            function: FunctionConfig {
-                prefix: Some(String::from("WR_INLINE")),
-                postfix: Some(String::from("WR_FUNC")),
-                args: Layout::Vertical,
-                rename_args: Some(RenameRule::GeckoCase),
-            },
-            structure: StructConfig {
-                rename_fields: None,
-                derive_eq: true,
-                derive_neq: false,
-                derive_lt: false,
-                derive_lte: false,
-                derive_gt: false,
-                derive_gte: false,
-            },
-            enumeration: EnumConfig {
-                rename_variants: None,
-                add_sentinel: true,
-            },
-        }
-    }
-
-    pub fn load(config: &str) -> Config {
-        match config {
-            "default" => Config::default(),
-            "wr" => Config::from_webrender(),
-            file => Config::from_file(file).unwrap(),
-        }
-    }
 }
 
 impl FunctionConfig {
     pub fn prefix(&self, directives: &DirectiveSet) -> Option<String> {
-        if let Some(x) = directives.atom("function-prefix") {
-            return x;
-        }
         if let Some(x) = directives.atom("prefix") {
             return x;
         }
@@ -306,9 +254,6 @@ impl FunctionConfig {
     }
 
     pub fn postfix(&self, directives: &DirectiveSet) -> Option<String> {
-        if let Some(x) = directives.atom("function-postfix") {
-            return x;
-        }
         if let Some(x) = directives.atom("postfix") {
             return x;
         }
@@ -318,54 +263,36 @@ impl FunctionConfig {
 
 impl StructConfig {
     pub fn derive_eq(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("struct-gen-op-eq") {
-            return x;
-        }
         if let Some(x) = directives.bool("derive-eq") {
             return x;
         }
         self.derive_eq
     }
     pub fn derive_neq(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("struct-gen-op-neq") {
-            return x;
-        }
         if let Some(x) = directives.bool("derive-neq") {
             return x;
         }
         self.derive_neq
     }
     pub fn derive_lt(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("struct-gen-op-lt") {
-            return x;
-        }
         if let Some(x) = directives.bool("derive-lt") {
             return x;
         }
         self.derive_lt
     }
     pub fn derive_lte(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("struct-gen-op-lte") {
-            return x;
-        }
         if let Some(x) = directives.bool("derive-lte") {
             return x;
         }
         self.derive_lte
     }
     pub fn derive_gt(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("struct-gen-op-gt") {
-            return x;
-        }
         if let Some(x) = directives.bool("derive-gt") {
             return x;
         }
         self.derive_gt
     }
     pub fn derive_gte(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("struct-gen-op-gte") {
-            return x;
-        }
         if let Some(x) = directives.bool("derive-gte") {
             return x;
         }
@@ -375,9 +302,6 @@ impl StructConfig {
 
 impl EnumConfig {
     pub fn add_sentinel(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("enum-add-sentinel") {
-            return x;
-        }
         if let Some(x) = directives.bool("add-sentinel") {
             return x;
         }
