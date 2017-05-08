@@ -2,6 +2,7 @@ include_guard = "build_script_h"
 include_version = true
 braces = "NextLine"
 tab_width = 4
+language = "C++"
 
 [enum]
 rename_variants = "SnakeCase"

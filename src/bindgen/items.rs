@@ -3,7 +3,7 @@ use std::fmt;
 
 use syn::*;
 
-use bindgen::config::{Config, Layout};
+use bindgen::config::{Config, Language, Layout};
 use bindgen::directive::*;
 use bindgen::library::*;
 use bindgen::rename::*;
@@ -554,7 +554,11 @@ impl Struct {
     pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
         assert!(self.generic_params.is_empty());
 
-        out.write(&format!("struct {}", self.name));
+        if config.language == Language::C {
+            out.write("typedef struct");
+        } else {
+            out.write(&format!("struct {}", self.name));
+        }
         out.open_brace();
 
         for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
@@ -567,7 +571,7 @@ impl Struct {
 
         out.new_line();
 
-        {
+        if config.language == Language::Cxx {
             let mut emit_op = |op, conjuc| {
                 out.new_line();
 
@@ -608,7 +612,12 @@ impl Struct {
             }
         }
 
-        out.close_brace(true);
+        if config.language == Language::C {
+            out.close_brace(false);
+            out.write(&format!(" {};", self.name));
+        } else {
+            out.close_brace(true);
+        }
     }
 }
 
@@ -627,8 +636,14 @@ impl OpaqueStruct {
         }
     }
 
-    pub fn write<F: Write>(&self, out: &mut Writer<F>) {
-        out.write(&format!("struct {};", self.name));
+    pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
+        if config.language == Language::C {
+            out.write(&format!("struct {};", self.name));
+            out.new_line();
+            out.write(&format!("typedef struct {} {};", self.name, self.name));
+        } else {
+            out.write(&format!("struct {};", self.name));
+        }
     }
 }
 
@@ -714,7 +729,11 @@ impl Enum {
             _ => unreachable!(),
         };
 
-        out.write(&format!("enum class {} : {}", self.name, size));
+        if config.language == Language::C {
+            out.write(&format!("typedef enum"));
+        } else {
+            out.write(&format!("enum class {} : {}", self.name, size));
+        }
         out.open_brace();
         for (i, value) in self.values.iter().enumerate() {
             if i != 0 {
@@ -727,7 +746,12 @@ impl Enum {
             out.new_line();
             out.write("Sentinel /* this must be last for serialization purposes. */");
         }
-        out.close_brace(true);
+        if config.language == Language::C {
+            out.close_brace(false);
+            out.write(&format!(" {};", self.name));
+        } else {
+            out.close_brace(true);
+        }
     }
 }
 

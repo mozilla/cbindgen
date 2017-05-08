@@ -2,3 +2,5 @@ target
 
 samples/build-script/Cargo.lock
 samples/build-script/bindings.h
+samples/build-script/main.c
+samples/build-script/a.out

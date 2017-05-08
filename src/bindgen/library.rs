@@ -6,7 +6,7 @@ use std::fs::File;
 use syn::*;
 
 use bindgen::config;
-use bindgen::config::Config;
+use bindgen::config::{Config, Language};
 use bindgen::directive::*;
 use bindgen::items::*;
 use bindgen::rust_lib;
@@ -408,12 +408,22 @@ impl<'a> GeneratedLibrary<'a> {
             out.new_line();
         }
 
+        out.new_line_if_not_start();
+        out.write("#include <stdint.h>");
+        out.new_line();
+
+        if self.config.language == Language::Cxx {
+            out.new_line_if_not_start();
+            out.write("extern \"C\" {");
+            out.new_line();
+        }
+
         for item in &self.items {
             out.new_line_if_not_start();
             match item {
                 &PathValue::Enum(ref x) => x.write(self.config, &mut out),
                 &PathValue::Struct(ref x) => x.write(self.config, &mut out),
-                &PathValue::OpaqueStruct(ref x) => x.write(&mut out),
+                &PathValue::OpaqueStruct(ref x) => x.write(self.config, &mut out),
                 &PathValue::Typedef(ref x) => x.write(&mut out),
                 &PathValue::Specialization(_) => {
                     panic!("should not encounter a specialization in a built library")
@@ -435,6 +445,12 @@ impl<'a> GeneratedLibrary<'a> {
 
             out.new_line_if_not_start();
             function.write(self.config, &mut out);
+            out.new_line();
+        }
+
+        if self.config.language == Language::Cxx {
+            out.new_line_if_not_start();
+            out.write("} // extern \"C\"");
             out.new_line();
         }
 

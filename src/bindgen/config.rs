@@ -12,12 +12,12 @@ pub use bindgen::rename::*;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Language {
     Cxx,
     C,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Braces {
     SameLine,
     NextLine,
