@@ -13,6 +13,7 @@ pub struct Opaque {
     y: f32,
 }
 
+/// cbindgen:rename-all=UpperCase
 #[repr(C)]
 pub struct Normal {
     x: i32,

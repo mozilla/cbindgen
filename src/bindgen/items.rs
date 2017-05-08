@@ -370,7 +370,17 @@ impl Function {
     }
 
     pub fn resolve(&mut self, config: &Config) {
-        if let Some(r) = config.function.rename_args {
+        let rules = [self.directives.parse_atom::<RenameRule>("rename-all"),
+                     config.function.rename_args];
+
+        // TODO, cleanup
+        let rule = if rules[0].is_some() {
+            rules[0]
+        } else {
+            rules[1]
+        };
+
+        if let Some(r) = rule {
             self.args = self.args.iter()
                                  .map(|x| (r.apply_to_snake_case(&x.0,
                                                                  RenameContext::FunctionArg),
@@ -524,6 +534,16 @@ impl Struct {
     }
 
     pub fn resolve(&mut self, config: &Config) {
+        let rules = [self.directives.parse_atom::<RenameRule>("rename-all"),
+                     config.structure.rename_fields];
+
+        // TODO, cleanup
+        let rule = if rules[0].is_some() {
+            rules[0]
+        } else {
+            rules[1]
+        };
+
         if let Some(o) = self.directives.list("field-names") {
             let mut overriden_fields = Vec::new();
 
@@ -536,7 +556,7 @@ impl Struct {
             }
 
             self.fields = overriden_fields;
-        } else if let Some(r) = config.structure.rename_fields {
+        } else if let Some(r) = rule {
             self.fields = self.fields.iter()
                                      .map(|x| (r.apply_to_snake_case(&x.0,
                                                                      RenameContext::StructMember),
@@ -718,7 +738,17 @@ impl Enum {
     }
 
     pub fn resolve(&mut self, config: &Config) {
-        if let Some(r) = config.enumeration.rename_variants {
+        let rules = [self.directives.parse_atom::<RenameRule>("rename-all"),
+                     config.enumeration.rename_variants];
+
+        // TODO, cleanup
+        let rule = if rules[0].is_some() {
+            rules[0]
+        } else {
+            rules[1]
+        };
+
+        if let Some(r) = rule {
             self.values = self.values.iter()
                                      .map(|x| (r.apply_to_pascal_case(&x.0,
                                                                       RenameContext::EnumVariant),

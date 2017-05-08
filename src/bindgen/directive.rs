@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 pub enum DirectiveValue {
@@ -90,6 +91,17 @@ impl DirectiveSet {
     pub fn bool(&self, name: &str) -> Option<bool> {
         match self.directives.get(name) {
             Some(&DirectiveValue::Bool(ref x)) => Some(*x),
+            _ => None,
+        }
+    }
+
+    pub fn parse_atom<T>(&self, name: &str) -> Option<T>
+        where T: Default + FromStr
+    {
+        match self.directives.get(name) {
+            Some(&DirectiveValue::Atom(ref x)) => {
+                Some(x.as_ref().map_or(T::default(), |y| { y.parse::<T>().ok().unwrap() }))
+            }
             _ => None,
         }
     }

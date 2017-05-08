@@ -18,6 +18,7 @@ impl RenameContext {
 
 #[derive(Debug, Clone, Copy)]
 pub enum RenameRule {
+    None,
     GeckoCase,
     LowerCase,
     UpperCase,
@@ -34,6 +35,7 @@ impl RenameRule {
         }
 
         match *self {
+            RenameRule::None => String::from(text),
             RenameRule::GeckoCase => context.to_str().to_owned() + text,
             RenameRule::LowerCase => text.to_lowercase(),
             RenameRule::UpperCase => text.to_uppercase(),
@@ -75,6 +77,7 @@ impl RenameRule {
         }
 
         match *self {
+            RenameRule::None => String::from(text),
             RenameRule::GeckoCase => {
                 if &text[..1] == "_" {
                     text = &text[1..];
@@ -132,11 +135,20 @@ impl RenameRule {
     }
 }
 
+impl Default for RenameRule {
+    fn default() -> RenameRule {
+        RenameRule::None
+    }
+}
+
 impl FromStr for RenameRule {
     type Err = String;
 
     fn from_str(s: &str) -> Result<RenameRule, Self::Err> {
         match s {
+            "none" => Ok(RenameRule::None),
+            "None" => Ok(RenameRule::None),
+
             "mGeckoCase" => Ok(RenameRule::GeckoCase),
             "GeckoCase" => Ok(RenameRule::GeckoCase),
             "gecko_case" => Ok(RenameRule::GeckoCase),
