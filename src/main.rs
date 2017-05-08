@@ -32,10 +32,12 @@ fn main() {
                          .help("the crate or source file to generate bindings for")
                          .required(true)
                          .index(1))
-                    .arg(Arg::with_name("OUTPUT")
-                         .help("the path to output the directories to")
-                         .required(false)
-                         .index(2))
+                    .arg(Arg::with_name("out")
+                         .short("o")
+                         .long("output")
+                         .value_name("OUTPUT")
+                         .help("the path to output the bindings to")
+                         .required(false))
                     .get_matches();
 
     if matches.is_present("v") {
@@ -60,7 +62,7 @@ fn main() {
         },
     };
 
-    match matches.value_of("OUTPUT") {
+    match matches.value_of("out") {
         Some(file) => {
             built.write_to_file(file);
         }
