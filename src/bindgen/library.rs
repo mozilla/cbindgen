@@ -340,14 +340,18 @@ impl<'a> Library<'a> {
             result.items.push(dep);
         }
 
-        // Bring the enums all the way to the top because they
-        // don't depend on anyone else, and it makes the output
-        // nicer
+        // Sort enums and opaque structs into their own layers because they don't
+        // depend on each other or anything else.
         result.items.sort_by(|a, b| {
             match (a, b) {
                 (&PathValue::Enum(ref e1), &PathValue::Enum(ref e2)) => e1.name.cmp(&e2.name),
                 (&PathValue::Enum(_), _) => Ordering::Less,
                 (_, &PathValue::Enum(_)) => Ordering::Greater,
+
+                (&PathValue::OpaqueStruct(ref o1), &PathValue::OpaqueStruct(ref o2)) => o1.name.cmp(&o2.name),
+                (&PathValue::OpaqueStruct(_), _) => Ordering::Less,
+                (_, &PathValue::OpaqueStruct(_)) => Ordering::Greater,
+
                 _ => Ordering::Equal,
             }
         });
