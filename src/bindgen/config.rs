@@ -126,7 +126,7 @@ impl Default for Config {
             braces: Braces::SameLine,
             line_length: 100,
             tab_width: 2,
-            language: Language::C,
+            language: Language::Cxx,
             function: FunctionConfig::default(),
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),
