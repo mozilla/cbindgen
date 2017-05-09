@@ -54,6 +54,14 @@ impl PathValue {
             &PathValue::Specialization(ref x) => { x.add_deps(library, out); },
         }
     }
+
+    pub fn resolve(&mut self, config: &Config) {
+        match self {
+            &mut PathValue::Enum(ref mut x) => { x.resolve(config); },
+            &mut PathValue::Struct(ref mut x) => { x.resolve(config); },
+            _ => { },
+        }
+    }
 }
 
 /// A library collects all of the information needed to generate
@@ -251,16 +259,6 @@ impl<'a> Library<'a> {
             }
         });
 
-        for (_, ref mut s) in &mut library.structs {
-            s.resolve(config);
-        }
-        for (_, ref mut f) in &mut library.functions {
-            f.resolve(config);
-        }
-        for (_, ref mut e) in &mut library.enums {
-            e.resolve(config);
-        }
-
         library
     }
 
@@ -359,6 +357,15 @@ impl<'a> Library<'a> {
         result.functions = self.functions.iter()
                                          .map(|(_, function)| function.clone())
                                          .collect::<Vec<_>>();
+
+        // Do one last pass to resolve all the items, this performs any renaming
+        // before we write to output
+        for item in &mut result.items {
+            item.resolve(self.config);
+        }
+        for func in &mut result.functions {
+            func.resolve(self.config);
+        }
 
         Ok(result)
     }

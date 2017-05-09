@@ -865,28 +865,22 @@ impl Specialization {
                                                              .zip(self.generic_values.iter())
                                                              .collect::<Vec<_>>();
 
-                        let mut value = Struct {
+                        Ok(PathValue::Struct(Struct {
                             name: self.name.clone(),
                             directives: self.directives.clone(),
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
                                                   .collect(),
                             generic_params: vec![],
-                        };
-                        value.resolve(config);
-
-                        Ok(PathValue::Struct(value))
+                        }))
                     }
                     PathValue::Enum(aliased) => {
-                        let mut value = Enum {
+                        Ok(PathValue::Enum(Enum {
                             name: self.name.clone(),
                             repr: aliased.repr.clone(),
                             directives: self.directives.clone(),
                             values: aliased.values.clone(),
-                        };
-                        value.resolve(config);
-
-                        Ok(PathValue::Enum(value))
+                        }))
                     }
                     PathValue::Typedef(aliased) => {
                         Ok(PathValue::Typedef(Typedef {
