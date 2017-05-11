@@ -27,6 +27,7 @@ macro_rules! deserialize_enum_str {
     }
 }
 
+mod cdecl;
 mod config;
 mod directive;
 mod items;

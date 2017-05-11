@@ -3,6 +3,7 @@ use std::fmt;
 
 use syn::*;
 
+use bindgen::cdecl;
 use bindgen::config::{Config, Language, Layout};
 use bindgen::directive::*;
 use bindgen::library::*;
@@ -256,96 +257,16 @@ impl Type {
         }
     }
 
-    fn to_string(&self, already_const: bool) -> String {
-        match self {
-            &Type::ConstPtr(ref t) => {
-                if already_const {
-                    format!("{}*", t.to_string(true))
-                } else {
-                    format!("const {}*", t.to_string(true))
-                }
-            }
-            &Type::Ptr(ref t) => {
-                format!("{}*", t.to_string(already_const))
-            }
-            &Type::Path(ref p) => {
-                p.clone()
-            }
-            &Type::Primitive(ref p) => {
-                format!("{}", p)
-            }
-            &Type::Array(ref t, ref sz) => {
-                format!("{}[{}]", t.to_string(already_const), sz)
-            }
-            &Type::FuncPtr(ref ret, ref args) => {
-                let mut out = String::new();
-
-                if let &Some(ref ret) = ret {
-                    out.push_str(&ret.to_string(already_const));
-                } else {
-                    out.push_str("void");
-                }
-                out.push_str(" (*)(");
-                for (i, arg) in args.iter().enumerate() {
-                    if i != 0 {
-                        out.push_str(", ");
-                    }
-                    out.push_str(&arg.to_string(already_const));
-                }
-                out.push_str(")");
-
-                out
-            }
-        }
+    fn to_string(&self) -> String {
+        cdecl::to_cdecl(self)
     }
 
-    fn to_string_with_ident(&self, ident: &str, already_const: bool) -> String {
-        match self {
-            &Type::ConstPtr(ref t)  => {
-                if already_const {
-                    format!("{}* {}", t.to_string(true), ident)
-                } else {
-                    format!("const {}* {}", t.to_string(true), ident)
-                }
-            }
-            &Type::Ptr(ref t) => {
-                format!("{}* {}", t.to_string(already_const), ident)
-            }
-            &Type::Path(ref p) => {
-                format!("{} {}", p, ident)
-            }
-            &Type::Primitive(ref p) => {
-                format!("{} {}", p, ident)
-            }
-            &Type::Array(ref t, ref sz) => {
-                format!("{} {}[{}]", t.to_string(already_const), ident, sz)
-            }
-            &Type::FuncPtr(ref ret, ref args) => {
-                let mut out = String::new();
-
-                if let &Some(ref ret) = ret {
-                    out.push_str(&ret.to_string(already_const));
-                } else {
-                    out.push_str("void");
-                }
-                out.push_str(" (*");
-                out.push_str(ident);
-                out.push_str(")(");
-                for (i, arg) in args.iter().enumerate() {
-                    if i != 0 {
-                        out.push_str(", ");
-                    }
-                    out.push_str(&arg.to_string(already_const));
-                }
-                out.push_str(")");
-
-                out
-            }
-        }
+    fn to_string_with_ident(&self, ident: &str) -> String {
+        cdecl::to_cdecl_with_ident(ident.to_owned(), self)
     }
 
     fn write_with_ident<F: Write>(&self, ident: &str, out: &mut Writer<F>) {
-        out.write(&self.to_string_with_ident(ident, false));
+        out.write(&self.to_string_with_ident(ident));
     }
 }
 
@@ -419,11 +340,11 @@ impl Function {
 
         let prefix = config.function.prefix(&self.directives);
         let ret = match self.ret.as_ref() {
-            Some(ret) => ret.to_string(false),
+            Some(ret) => ret.to_string(),
             None => format!("void"),
         };
         let name = &self.name;
-        let args = self.args.iter().map(|x| x.1.to_string_with_ident(&x.0, false)).collect::<Vec<_>>();
+        let args = self.args.iter().map(|x| x.1.to_string_with_ident(&x.0)).collect::<Vec<_>>();
         let postfix = config.function.postfix(&self.directives);
 
         let option_1: usize = prefix.as_ref().map_or(0, |x| x.len()) +
