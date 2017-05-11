@@ -28,7 +28,8 @@ enum C {
 }
 
 #[no_mangle]
-extern "C" fn root(x: *mut Opaque, y: A, z: B, w: C)
-{
-
-}
+extern "C" fn root(x: *mut Opaque,
+                   y: A,
+                   z: B,
+                   w: C)
+{ }

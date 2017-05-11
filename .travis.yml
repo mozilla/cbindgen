@@ -6,3 +6,11 @@ rust:
 matrix:
   allow_failures:
   - rust: nightly
+addons:
+    apt:
+      packages:
+        - g++
+script:
+  - cargo build --verbose
+  - cargo test --verbose
+  - python run-tests.py

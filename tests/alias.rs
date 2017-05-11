@@ -1,21 +1,18 @@
 #[repr(C)]
-struct Dep
-{
+struct Dep {
     a: i32,
     b: f32,
 }
 
 #[repr(C)]
-struct Foo<X>
-{
+struct Foo<X> {
     a: X,
     b: X,
     c: Dep,
 }
 
 #[repr(u32)]
-enum Status
-{
+enum Status {
     Ok,
     Err,
 }
@@ -27,7 +24,8 @@ type Unit = i32;
 type SpecialStatus = Status;
 
 #[no_mangle]
-extern "C" fn root(x: IntFoo, y: DoubleFoo, z: Unit, w: SpecialStatus)
-{
-
-}
+extern "C" fn root(x: IntFoo,
+                   y: DoubleFoo,
+                   z: Unit,
+                   w: SpecialStatus)
+{ }
