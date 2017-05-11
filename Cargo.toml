@@ -7,6 +7,9 @@ version = "0.1.8"
 exclude = ["compile-tests"]
 repository = "https://github.com/rlhunt/cbindgen/"
 
+[badges]
+travis-ci = { repository = "https://github.com/rlhunt/cbindgen" }
+
 [dependencies]
 clap = "2"
 log = "0.3"
