@@ -47,7 +47,7 @@ fn main() {
 
 ## Examples
 
-See `tests/` for some examples of rust source that can be handled.
+See `compile-tests/` for some examples of rust source that can be handled.
 
 ## How it works
 

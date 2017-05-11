@@ -3,8 +3,8 @@ name = "cbindgen"
 description = "A tool for generating C bindings to Rust code."
 authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>", "Kartikaya Gupta <kats@mozilla.com>", "Ryan Hunt <rhunt@eqrion.net>"]
 license = "MPL-2.0"
-version = "0.1.8"
-exclude = ["compile-tests"]
+version = "0.1.9"
+exclude = ["compile-tests/**"]
 repository = "https://github.com/rlhunt/cbindgen/"
 
 [badges]
