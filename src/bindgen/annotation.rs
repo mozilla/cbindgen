@@ -1,45 +1,49 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+// A system for specifying properties on items. Annotations are
+// given through document comments and parsed by this code.
+//
+// An annotation is in the form cbindgen:PROPERTY=VALUE
+// Where PROPERTY depends on the item
+// Where VALUE can be
+//  * list - [Item1, Item2, Item3, ...]
+//  * atom - Foo
+//  * bool - true,false
+// Examples:
+//  * cbindgen:field-names=[mHandle, mNamespace]
+//  * cbindgen:function-postfix=WR_DESTRUCTOR_SAFE
+
+/// A value specified by an annotation.
 #[derive(Debug, Clone)]
-pub enum DirectiveValue {
+pub enum AnnotationValue {
     List(Vec<String>),
     Atom(Option<String>),
     Bool(bool),
 }
 
-/// A simple system for specifying properties on items
-///
-/// a directive is given by cbindgen:PROPERTY=VALUE
-/// where PROPERTY depends on the item
-/// where VALUE can be
-///  * list - [item1, item2, item3]
-///  * atom - foo
-///  * bool - true,false
-/// Examples:
-/// * cbindgen:field-names=[mHandle, mNamespace]
-/// * cbindgen:function-postfix=WR_DESTRUCTOR_SAFE
+/// A set of annotations specified by a document comment.
 #[derive(Debug, Clone)]
-pub struct DirectiveSet {
-    directives: HashMap<String, DirectiveValue>
+pub struct AnnotationSet {
+    annotations: HashMap<String, AnnotationValue>
 }
 
-impl DirectiveSet {
-    pub fn new() -> DirectiveSet {
-        DirectiveSet {
-            directives: HashMap::new(),
+impl AnnotationSet {
+    pub fn new() -> AnnotationSet {
+        AnnotationSet {
+            annotations: HashMap::new(),
         }
     }
 
-    pub fn parse(text: String) -> Result<DirectiveSet, String> {
-        let mut directives = HashMap::new();
+    pub fn parse(text: String) -> Result<AnnotationSet, String> {
+        let mut annotations = HashMap::new();
 
         for line in text.lines().map(|x| x.trim_left_matches("///").trim()) {
             if !line.starts_with("cbindgen:") {
                 continue;
             }
-            let directive = &line[9..];
-            let parts: Vec<&str> = directive.split("=")
+            let annotation = &line[9..];
+            let parts: Vec<&str> = annotation.split("=")
                                             .map(|x| x.trim())
                                             .collect();
 
@@ -50,47 +54,47 @@ impl DirectiveSet {
             let name = parts[0];
 
             if parts.len() == 1 {
-                directives.insert(name.to_string(), DirectiveValue::Bool(true));
+                annotations.insert(name.to_string(), AnnotationValue::Bool(true));
                 continue;
             }
 
             let value = parts[1];
 
             if let Some(x) = parse_list(value) {
-                directives.insert(name.to_string(), DirectiveValue::List(x));
+                annotations.insert(name.to_string(), AnnotationValue::List(x));
                 continue;
             }
             if let Ok(x) = value.parse::<bool>() {
-                directives.insert(name.to_string(), DirectiveValue::Bool(x));
+                annotations.insert(name.to_string(), AnnotationValue::Bool(x));
                 continue;
             }
-            directives.insert(name.to_string(), if value.len() == 0 {
-                DirectiveValue::Atom(None)
+            annotations.insert(name.to_string(), if value.len() == 0 {
+                AnnotationValue::Atom(None)
             } else {
-                DirectiveValue::Atom(Some(value.to_string()))
+                AnnotationValue::Atom(Some(value.to_string()))
             });
         }
 
-        Ok(DirectiveSet {
-            directives: directives
+        Ok(AnnotationSet {
+            annotations: annotations
         })
     }
 
     pub fn list(&self, name: &str) -> Option<Vec<String>> {
-        match self.directives.get(name) {
-            Some(&DirectiveValue::List(ref x)) => Some(x.clone()),
+        match self.annotations.get(name) {
+            Some(&AnnotationValue::List(ref x)) => Some(x.clone()),
             _ => None,
         }
     }
     pub fn atom(&self, name: &str) -> Option<Option<String>> {
-        match self.directives.get(name) {
-            Some(&DirectiveValue::Atom(ref x)) => Some(x.clone()),
+        match self.annotations.get(name) {
+            Some(&AnnotationValue::Atom(ref x)) => Some(x.clone()),
             _ => None,
         }
     }
     pub fn bool(&self, name: &str) -> Option<bool> {
-        match self.directives.get(name) {
-            Some(&DirectiveValue::Bool(ref x)) => Some(*x),
+        match self.annotations.get(name) {
+            Some(&AnnotationValue::Bool(ref x)) => Some(*x),
             _ => None,
         }
     }
@@ -98,8 +102,8 @@ impl DirectiveSet {
     pub fn parse_atom<T>(&self, name: &str) -> Option<T>
         where T: Default + FromStr
     {
-        match self.directives.get(name) {
-            Some(&DirectiveValue::Atom(ref x)) => {
+        match self.annotations.get(name) {
+            Some(&AnnotationValue::Atom(ref x)) => {
                 Some(x.as_ref().map_or(T::default(), |y| { y.parse::<T>().ok().unwrap() }))
             }
             _ => None,

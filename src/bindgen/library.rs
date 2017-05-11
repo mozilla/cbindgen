@@ -7,7 +7,7 @@ use syn::*;
 
 use bindgen::config;
 use bindgen::config::{Config, Language};
-use bindgen::directive::*;
+use bindgen::annotation::*;
 use bindgen::items::*;
 use bindgen::rust_lib;
 use bindgen::syn_helpers::*;
@@ -110,15 +110,15 @@ impl<'a> Library<'a> {
                             match foreign_item.node {
                                 ForeignItemKind::Fn(ref decl,
                                                     ref _generic) => {
-                                    let directives = match DirectiveSet::parse(foreign_item.get_doc_attr()) {
+                                    let annotations = match AnnotationSet::parse(foreign_item.get_doc_attr()) {
                                         Ok(x) => x,
                                         Err(msg) => {
                                             warn!("{}", msg);
-                                            DirectiveSet::new()
+                                            AnnotationSet::new()
                                         }
                                     };
 
-                                    match Function::convert(foreign_item.ident.to_string(), directives, decl, true) {
+                                    match Function::convert(foreign_item.ident.to_string(), annotations, decl, true) {
                                         Ok(func) => {
                                             info!("take {}::{}", mod_name, &foreign_item.ident);
 
@@ -140,15 +140,15 @@ impl<'a> Library<'a> {
                                  ref _generic,
                                  ref _block) => {
                         if item.is_no_mangle() && abi.is_c() {
-                            let directives = match DirectiveSet::parse(item.get_doc_attr()) {
+                            let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
                                 Ok(x) => x,
                                 Err(msg) => {
                                     warn!("{}", msg);
-                                    DirectiveSet::new()
+                                    AnnotationSet::new()
                                 }
                             };
 
-                            match Function::convert(item.ident.to_string(), directives, decl, false) {
+                            match Function::convert(item.ident.to_string(), annotations, decl, false) {
                                 Ok(func) => {
                                     info!("take {}::{}", mod_name, &item.ident);
 
@@ -163,16 +163,16 @@ impl<'a> Library<'a> {
                     ItemKind::Struct(ref variant,
                                      ref generics) => {
                         let struct_name = item.ident.to_string();
-                        let directives = match DirectiveSet::parse(item.get_doc_attr()) {
+                        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
                             Ok(x) => x,
                             Err(msg) => {
                                 warn!("{}", msg);
-                                DirectiveSet::new()
+                                AnnotationSet::new()
                             }
                         };
 
                         if item.is_repr_c() {
-                            match Struct::convert(struct_name.clone(), directives.clone(), variant, generics) {
+                            match Struct::convert(struct_name.clone(), annotations.clone(), variant, generics) {
                                 Ok(st) => {
                                     info!("take {}::{}", mod_name, &item.ident);
                                     library.structs.insert(struct_name,
@@ -181,13 +181,13 @@ impl<'a> Library<'a> {
                                 Err(msg) => {
                                     info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
                                     library.opaque_structs.insert(struct_name.clone(),
-                                                                  OpaqueStruct::new(struct_name, directives));
+                                                                  OpaqueStruct::new(struct_name, annotations));
                                 }
                             }
                         } else {
                             info!("take {}::{} - opaque (not marked as repr(C))", mod_name, &item.ident);
                             library.opaque_structs.insert(struct_name.clone(),
-                                                          OpaqueStruct::new(struct_name, directives));
+                                                          OpaqueStruct::new(struct_name, annotations));
                         }
                     }
                     ItemKind::Enum(ref variants, ref generics) => {
@@ -199,15 +199,15 @@ impl<'a> Library<'a> {
                         }
 
                         let enum_name = item.ident.to_string();
-                        let directives = match DirectiveSet::parse(item.get_doc_attr()) {
+                        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
                             Ok(x) => x,
                             Err(msg) => {
                                 warn!("{}", msg);
-                                DirectiveSet::new()
+                                AnnotationSet::new()
                             }
                         };
 
-                        match Enum::convert(enum_name.clone(), item.get_repr(), directives.clone(), variants) {
+                        match Enum::convert(enum_name.clone(), item.get_repr(), annotations.clone(), variants) {
                             Ok(en) => {
                                 info!("take {}::{}", mod_name, &item.ident);
                                 library.enums.insert(enum_name, en);
@@ -215,7 +215,7 @@ impl<'a> Library<'a> {
                             Err(msg) => {
                                 info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
                                 library.opaque_structs.insert(enum_name.clone(),
-                                                              OpaqueStruct::new(enum_name, directives));
+                                                              OpaqueStruct::new(enum_name, annotations));
                             }
                         }
                     }
@@ -228,15 +228,15 @@ impl<'a> Library<'a> {
                         }
 
                         let alias_name = item.ident.to_string();
-                        let directives = match DirectiveSet::parse(item.get_doc_attr()) {
+                        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
                             Ok(x) => x,
                             Err(msg) => {
                                 warn!("{}", msg);
-                                DirectiveSet::new()
+                                AnnotationSet::new()
                             }
                         };
 
-                        let fail1 = match Specialization::convert(alias_name.clone(), directives.clone(), ty) {
+                        let fail1 = match Specialization::convert(alias_name.clone(), annotations.clone(), ty) {
                             Ok(spec) => {
                                 info!("take {}::{}", mod_name, &item.ident);
                                 library.specializations.insert(alias_name, spec);
@@ -244,7 +244,7 @@ impl<'a> Library<'a> {
                             }
                             Err(msg) => msg,
                         };
-                        let fail2 = match Typedef::convert(alias_name.clone(), directives, ty) {
+                        let fail2 = match Typedef::convert(alias_name.clone(), annotations, ty) {
                             Ok(typedef) => {
                                 info!("take {}::{}", mod_name, &item.ident);
                                 library.typedefs.insert(alias_name, typedef);

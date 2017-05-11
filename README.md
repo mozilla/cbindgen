@@ -11,7 +11,7 @@ This project can be used to generate C bindings for Rust code. It is currently b
 
   * Builds bindings for a crate, its mods, its dependent crates, and their mods
   * Only the necessary types for exposed functions are given bindings
-  * Can specify directives for controlling some aspects of binding
+  * Can specify annotations for controlling some aspects of binding
   * Generic structs can be exposed using `type IntFoo = Foo<i32>;`
   * Customizable formatting, can be used in C or C++ projects
 

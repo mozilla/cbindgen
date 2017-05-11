@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use toml;
 
-pub use bindgen::directive::*;
+pub use bindgen::annotation::*;
 pub use bindgen::rename::*;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -246,15 +246,15 @@ impl Config {
 }
 
 impl FunctionConfig {
-    pub fn prefix(&self, directives: &DirectiveSet) -> Option<String> {
-        if let Some(x) = directives.atom("prefix") {
+    pub fn prefix(&self, annotations: &AnnotationSet) -> Option<String> {
+        if let Some(x) = annotations.atom("prefix") {
             return x;
         }
         self.prefix.clone()
     }
 
-    pub fn postfix(&self, directives: &DirectiveSet) -> Option<String> {
-        if let Some(x) = directives.atom("postfix") {
+    pub fn postfix(&self, annotations: &AnnotationSet) -> Option<String> {
+        if let Some(x) = annotations.atom("postfix") {
             return x;
         }
         self.postfix.clone()
@@ -262,38 +262,38 @@ impl FunctionConfig {
 }
 
 impl StructConfig {
-    pub fn derive_eq(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("derive-eq") {
+    pub fn derive_eq(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-eq") {
             return x;
         }
         self.derive_eq
     }
-    pub fn derive_neq(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("derive-neq") {
+    pub fn derive_neq(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-neq") {
             return x;
         }
         self.derive_neq
     }
-    pub fn derive_lt(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("derive-lt") {
+    pub fn derive_lt(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-lt") {
             return x;
         }
         self.derive_lt
     }
-    pub fn derive_lte(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("derive-lte") {
+    pub fn derive_lte(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-lte") {
             return x;
         }
         self.derive_lte
     }
-    pub fn derive_gt(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("derive-gt") {
+    pub fn derive_gt(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-gt") {
             return x;
         }
         self.derive_gt
     }
-    pub fn derive_gte(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("derive-gte") {
+    pub fn derive_gte(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-gte") {
             return x;
         }
         self.derive_gte
@@ -301,8 +301,8 @@ impl StructConfig {
 }
 
 impl EnumConfig {
-    pub fn add_sentinel(&self, directives: &DirectiveSet) -> bool {
-        if let Some(x) = directives.bool("add-sentinel") {
+    pub fn add_sentinel(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("add-sentinel") {
             return x;
         }
         self.add_sentinel

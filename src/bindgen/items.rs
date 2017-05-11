@@ -5,7 +5,7 @@ use syn::*;
 
 use bindgen::cdecl;
 use bindgen::config::{Config, Language, Layout};
-use bindgen::directive::*;
+use bindgen::annotation::*;
 use bindgen::library::*;
 use bindgen::rename::*;
 use bindgen::syn_helpers::*;
@@ -273,7 +273,7 @@ impl Type {
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
-    pub directives: DirectiveSet,
+    pub annotations: AnnotationSet,
     pub ret: Option<Type>,
     pub args: Vec<(String, Type)>,
     pub extern_decl: bool,
@@ -281,7 +281,7 @@ pub struct Function {
 
 impl Function {
     pub fn convert(name: String,
-                   directives: DirectiveSet,
+                   annotations: AnnotationSet,
                    decl: &FnDecl,
                    extern_decl: bool) -> ConvertResult<Function>
     {
@@ -291,7 +291,7 @@ impl Function {
 
         Ok(Function {
             name: name,
-            directives: directives,
+            annotations: annotations,
             ret: ret,
             args: args,
             extern_decl: extern_decl,
@@ -299,7 +299,7 @@ impl Function {
     }
 
     pub fn resolve(&mut self, config: &Config) {
-        let rules = [self.directives.parse_atom::<RenameRule>("rename-all"),
+        let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.function.rename_args];
 
         // TODO, cleanup
@@ -338,14 +338,14 @@ impl Function {
         //                  ... )
         //       POSTFIX ;
 
-        let prefix = config.function.prefix(&self.directives);
+        let prefix = config.function.prefix(&self.annotations);
         let ret = match self.ret.as_ref() {
             Some(ret) => ret.to_string(),
             None => format!("void"),
         };
         let name = &self.name;
         let args = self.args.iter().map(|x| x.1.to_string_with_ident(&x.0)).collect::<Vec<_>>();
-        let postfix = config.function.postfix(&self.directives);
+        let postfix = config.function.postfix(&self.annotations);
 
         let option_1: usize = prefix.as_ref().map_or(0, |x| x.len()) +
                               ret.len() +
@@ -419,14 +419,14 @@ impl Function {
 #[derive(Debug, Clone)]
 pub struct Struct {
     pub name: String,
-    pub directives: DirectiveSet,
+    pub annotations: AnnotationSet,
     pub fields: Vec<(String, Type)>,
     pub generic_params: Vec<PathRef>,
 }
 
 impl Struct {
     pub fn convert(name: String,
-                   directives: DirectiveSet,
+                   annotations: AnnotationSet,
                    decl: &VariantData,
                    generics: &Generics) -> ConvertResult<Struct>
     {
@@ -456,14 +456,14 @@ impl Struct {
 
         Ok(Struct {
             name: name,
-            directives: directives,
+            annotations: annotations,
             fields: fields,
             generic_params: generic_params,
         })
     }
 
     pub fn resolve(&mut self, config: &Config) {
-        let rules = [self.directives.parse_atom::<RenameRule>("rename-all"),
+        let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.structure.rename_fields];
 
         // TODO, cleanup
@@ -473,7 +473,7 @@ impl Struct {
             rules[1]
         };
 
-        if let Some(o) = self.directives.list("field-names") {
+        if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();
 
             for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
@@ -546,27 +546,27 @@ impl Struct {
                 out.close_brace(false);
             };
 
-            if config.structure.derive_eq(&self.directives) &&
+            if config.structure.derive_eq(&self.annotations) &&
                !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq()) {
                 emit_op("==", "&&");
             }
-            if config.structure.derive_neq(&self.directives) &&
+            if config.structure.derive_neq(&self.annotations) &&
                !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq()) {
                 emit_op("!=", "||");
             }
-            if config.structure.derive_lt(&self.directives) &&
+            if config.structure.derive_lt(&self.annotations) &&
                self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
                 emit_op("<", "&&");
             }
-            if config.structure.derive_lte(&self.directives) &&
+            if config.structure.derive_lte(&self.annotations) &&
                self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
                 emit_op("<=", "&&");
             }
-            if config.structure.derive_gt(&self.directives) &&
+            if config.structure.derive_gt(&self.annotations) &&
                self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
                 emit_op(">", "&&");
             }
-            if config.structure.derive_gte(&self.directives) &&
+            if config.structure.derive_gte(&self.annotations) &&
                self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
                 emit_op(">=", "&&");
             }
@@ -584,15 +584,15 @@ impl Struct {
 #[derive(Debug, Clone)]
 pub struct OpaqueStruct {
     pub name: PathRef,
-    pub directives: DirectiveSet,
+    pub annotations: AnnotationSet,
 }
 
 impl OpaqueStruct {
-    pub fn new(name: String, directives: DirectiveSet) -> OpaqueStruct
+    pub fn new(name: String, annotations: AnnotationSet) -> OpaqueStruct
     {
         OpaqueStruct {
             name: name,
-            directives: directives,
+            annotations: annotations,
         }
     }
 
@@ -611,14 +611,14 @@ impl OpaqueStruct {
 pub struct Enum {
     pub name: String,
     pub repr: Repr,
-    pub directives: DirectiveSet,
+    pub annotations: AnnotationSet,
     pub values: Vec<(String, u64)>,
 }
 
 impl Enum {
     pub fn convert(name: String,
                    repr: Repr,
-                   directives: DirectiveSet,
+                   annotations: AnnotationSet,
                    variants: &Vec<Variant>) -> ConvertResult<Enum>
     {
         if repr != Repr::U32 &&
@@ -656,7 +656,7 @@ impl Enum {
             }
         }
 
-        if let Some(variants) = directives.list("enum-trailing-values") {
+        if let Some(variants) = annotations.list("enum-trailing-values") {
             for variant in variants {
                 values.push((variant, current));
                 current = current + 1;
@@ -666,13 +666,13 @@ impl Enum {
         Ok(Enum {
             name: name,
             repr: repr,
-            directives: directives,
+            annotations: annotations,
             values: values,
         })
     }
 
     pub fn resolve(&mut self, config: &Config) {
-        let rules = [self.directives.parse_atom::<RenameRule>("rename-all"),
+        let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.enumeration.rename_variants];
 
         // TODO, cleanup
@@ -711,7 +711,7 @@ impl Enum {
             }
             out.write(&format!("{} = {},", value.0, value.1));
         }
-        if config.enumeration.add_sentinel(&self.directives) {
+        if config.enumeration.add_sentinel(&self.annotations) {
             out.new_line();
             out.new_line();
             out.write("Sentinel /* this must be last for serialization purposes. */");
@@ -728,14 +728,14 @@ impl Enum {
 #[derive(Debug, Clone)]
 pub struct Specialization {
     pub name: String,
-    pub directives: DirectiveSet,
+    pub annotations: AnnotationSet,
     pub aliased: PathRef,
     pub generic_values: Vec<Type>,
 }
 
 impl Specialization {
     pub fn convert(name: String,
-                   directives: DirectiveSet,
+                   annotations: AnnotationSet,
                    ty: &Ty) -> ConvertResult<Specialization>
     {
         match ty {
@@ -748,7 +748,7 @@ impl Specialization {
 
                 Ok(Specialization {
                     name: name,
-                    directives: directives,
+                    annotations: annotations,
                     aliased: path,
                     generic_values: generics,
                 })
@@ -773,7 +773,7 @@ impl Specialization {
                     PathValue::OpaqueStruct(_) => {
                         Ok(PathValue::OpaqueStruct(OpaqueStruct {
                             name: self.name.clone(),
-                            directives: self.directives.clone(),
+                            annotations: self.annotations.clone(),
                         }))
                     }
                     PathValue::Struct(aliased) => {
@@ -788,7 +788,7 @@ impl Specialization {
 
                         Ok(PathValue::Struct(Struct {
                             name: self.name.clone(),
-                            directives: self.directives.clone(),
+                            annotations: self.annotations.clone(),
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
                                                   .collect(),
@@ -799,21 +799,21 @@ impl Specialization {
                         Ok(PathValue::Enum(Enum {
                             name: self.name.clone(),
                             repr: aliased.repr.clone(),
-                            directives: self.directives.clone(),
+                            annotations: self.annotations.clone(),
                             values: aliased.values.clone(),
                         }))
                     }
                     PathValue::Typedef(aliased) => {
                         Ok(PathValue::Typedef(Typedef {
                             name: self.name.clone(),
-                            directives: self.directives.clone(),
+                            annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
                         }))
                     }
                     PathValue::Specialization(aliased) => {
                         Specialization {
                             name: self.name.clone(),
-                            directives: self.directives.clone(),
+                            annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
                             generic_values: aliased.generic_values.clone(),
                         }.specialize(config, library)
@@ -830,17 +830,17 @@ impl Specialization {
 #[derive(Debug, Clone)]
 pub struct Typedef {
     pub name: String,
-    pub directives: DirectiveSet,
+    pub annotations: AnnotationSet,
     pub aliased: Type,
 }
 
 impl Typedef {
     pub fn convert(name: String,
-                   directives: DirectiveSet,
+                   annotations: AnnotationSet,
                    ty: &Ty) -> ConvertResult<Typedef> {
         Ok(Typedef {
             name: name,
-            directives: directives,
+            annotations: annotations,
             aliased: try!(Type::convert(ty)),
         })
     }
