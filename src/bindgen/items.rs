@@ -312,7 +312,7 @@ impl Function {
         if let Some(r) = rule {
             self.args = self.args.iter()
                                  .map(|x| (r.apply_to_snake_case(&x.0,
-                                                                 RenameContext::FunctionArg),
+                                                                 IdentifierType::FunctionArg),
                                            x.1.clone()))
                                   .collect()
         }
@@ -488,7 +488,7 @@ impl Struct {
         } else if let Some(r) = rule {
             self.fields = self.fields.iter()
                                      .map(|x| (r.apply_to_snake_case(&x.0,
-                                                                     RenameContext::StructMember),
+                                                                     IdentifierType::StructMember),
                                                x.1.clone()))
                                      .collect();
         }
@@ -522,7 +522,7 @@ impl Struct {
             let mut wrote_start_newline = false;
 
             let other = if let Some(r) = config.function.rename_args {
-                r.apply_to_snake_case("other", RenameContext::FunctionArg)
+                r.apply_to_snake_case("other", IdentifierType::FunctionArg)
             } else {
                 String::from("other")
             };
@@ -685,7 +685,7 @@ impl Enum {
         if let Some(r) = rule {
             self.values = self.values.iter()
                                      .map(|x| (r.apply_to_pascal_case(&x.0,
-                                                                      RenameContext::EnumVariant),
+                                                                      IdentifierType::EnumVariant),
                                                x.1.clone()))
                                      .collect();
         }

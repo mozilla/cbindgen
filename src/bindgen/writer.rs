@@ -1,6 +1,7 @@
 use bindgen::config::{Config, Braces};
 use std::io::Write;
 
+/// A utility writer for generating code easier.
 pub struct Writer<'a, 'f, F: 'f + Write> {
     out: &'f mut F,
     config: &'a Config,

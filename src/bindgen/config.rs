@@ -12,16 +12,21 @@ pub use bindgen::rename::*;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
+/// A language type to generate bindings for.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Language {
     Cxx,
     C,
 }
+
+// A style of braces to use for generating code.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Braces {
     SameLine,
     NextLine,
 }
+
+// A type of layout to use when generating long lines of code.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Layout {
     Horizontal,
@@ -81,6 +86,7 @@ deserialize_enum_str!(Language);
 deserialize_enum_str!(Braces);
 deserialize_enum_str!(Layout);
 
+/// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
@@ -134,6 +140,7 @@ impl Default for Config {
     }
 }
 
+/// Settings to apply to generated functions.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
@@ -160,6 +167,7 @@ impl Default for FunctionConfig {
     }
 }
 
+/// Settings to apply to generated structs.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
@@ -195,6 +203,7 @@ impl Default for StructConfig {
     }
 }
 
+/// Settings to apply to generated enums.
 #[derive( Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]

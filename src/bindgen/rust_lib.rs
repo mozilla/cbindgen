@@ -4,15 +4,13 @@ use std::path::PathBuf;
 
 use syn;
 
-/*
- * Recursively parses a rust library starting at the root crate's directory.
- *
- * Inside a crate, `mod` and `extern crate` declarations are followed
- * and parsed. To find an external crate, the parser looks in the
- * parent directory of the root crate. This could be improved
- * to read the crate's Cargo.toml to find the crate, but it works well
- * enough to find the crates that matter for creating bindings.
- */
+/// Recursively parses a rust library starting at the root crate's directory.
+///
+/// Inside a crate, `mod` and `extern crate` declarations are followed
+/// and parsed. To find an external crate, the parser looks in the
+/// parent directory of the root crate. This could be improved
+/// to read the crate's Cargo.toml to find the crate, but it works well
+/// enough to find the crates that matter for creating bindings.
 pub fn parse<F>(crate_or_src: &str,
                 items_callback: &mut F)
     where F: FnMut(String, &Vec<syn::Item>)

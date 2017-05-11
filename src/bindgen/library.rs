@@ -64,10 +64,7 @@ impl PathValue {
     }
 }
 
-/// A library collects all of the information needed to generate
-/// bindings for a specified rust library. It is turned into a
-/// GeneratedLibrary, and in the process filters out unneeded information
-/// and in the future will do validation.
+/// A library contains all of the information needed to generate bindings for a rust library.
 #[derive(Debug, Clone)]
 pub struct Library<'a> {
     config: &'a Config,
@@ -93,6 +90,7 @@ impl<'a> Library<'a> {
         }
     }
 
+    /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
     pub fn load(crate_or_src: &str, config: &'a Config) -> Library<'a>
     {
         let mut library = Library::blank(config);
@@ -302,8 +300,9 @@ impl<'a> Library<'a> {
         }
     }
 
-    pub fn generate(self) -> GenerateResult<GeneratedLibrary<'a>> {
-        let mut result = GeneratedLibrary::blank(self.config);
+    /// Build a bindings file from this rust library.
+    pub fn generate(self) -> GenerateResult<BuiltBindings<'a>> {
+        let mut result = BuiltBindings::blank(self.config);
 
         // Gather only the items that we need for this
         // `extern "c"` interface
@@ -313,7 +312,7 @@ impl<'a> Library<'a> {
         }
 
         // Copy the binding items in dependencies order
-        // into the GeneratedLibrary, specializing any type
+        // into the BuiltBindings, specializing any type
         // aliases we encounter
         for dep in deps {
             match &dep {
@@ -371,18 +370,18 @@ impl<'a> Library<'a> {
     }
 }
 
-/// A GeneratedLibrary represents a completed bindings file ready to be printed.
+/// A BuiltBindings is a completed bindings file ready to be written.
 #[derive(Debug, Clone)]
-pub struct GeneratedLibrary<'a> {
+pub struct BuiltBindings<'a> {
     config: &'a Config,
 
     items: Vec<PathValue>,
     functions: Vec<Function>,
 }
 
-impl<'a> GeneratedLibrary<'a> {
-    fn blank(config: &'a Config) -> GeneratedLibrary<'a> {
-        GeneratedLibrary {
+impl<'a> BuiltBindings<'a> {
+    fn blank(config: &'a Config) -> BuiltBindings<'a> {
+        BuiltBindings {
             config: config,
             items: Vec::new(),
             functions: Vec::new(),

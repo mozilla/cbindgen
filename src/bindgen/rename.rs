@@ -1,35 +1,46 @@
 use std::str::FromStr;
 
+/// The type of identifier to be renamed.
 #[derive(Debug, Clone, Copy)]
-pub enum RenameContext {
+pub enum IdentifierType {
     StructMember,
     EnumVariant,
     FunctionArg,
 }
-impl RenameContext {
+impl IdentifierType {
     fn to_str(&self) -> &'static str {
         match *self {
-            RenameContext::StructMember => "m",
-            RenameContext::EnumVariant => "",
-            RenameContext::FunctionArg => "a",
+            IdentifierType::StructMember => "m",
+            IdentifierType::EnumVariant => "",
+            IdentifierType::FunctionArg => "a",
         }
     }
 }
 
+/// A rule to apply to an identifier when generating bindings.
 #[derive(Debug, Clone, Copy)]
 pub enum RenameRule {
+    /// Do not apply any renaming. The default.
     None,
+    /// Converts the identifier to PascalCase and adds a prefix based on where the identifier is used.
     GeckoCase,
+    /// Converts the identifier to lower case.
     LowerCase,
+    /// Converts the identifier to upper case.
     UpperCase,
+    /// Converts the identifier to PascalCase.
     PascalCase,
+    /// Converts the identifier to camelCase.
     CamelCase,
+    /// Converts the identifier to snake_case.
     SnakeCase,
+    /// Converts the identifier to SCREAMING_SNAKE_CASE.
     ScreamingSnakeCase,
 }
 
 impl RenameRule {
-    pub fn apply_to_pascal_case(&self, text: &str, context: RenameContext) -> String {
+    /// Applies the rename rule to a string that is formatted in PascalCase.
+    pub fn apply_to_pascal_case(&self, text: &str, context: IdentifierType) -> String {
         if text.len() == 0 {
             return String::new();
         }
@@ -71,7 +82,8 @@ impl RenameRule {
         }
     }
 
-    pub fn apply_to_snake_case(&self, mut text: &str, context: RenameContext) -> String {
+    /// Applies the rename rule to a string that is formatted in snake_case.
+    pub fn apply_to_snake_case(&self, mut text: &str, context: IdentifierType) -> String {
         if text.len() == 0 {
             return String::new();
         }
