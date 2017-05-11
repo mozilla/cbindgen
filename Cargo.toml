@@ -1,11 +1,11 @@
 [package]
 name = "cbindgen"
 description = "A tool for generating C bindings to Rust code."
+authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>", "Kartikaya Gupta <kats@mozilla.com>", "Ryan Hunt <rhunt@eqrion.net>"]
 license = "MPL-2.0"
 version = "0.1.8"
-authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>", "Kartikaya Gupta <kats@mozilla.com>", "Ryan Hunt <rhunt@eqrion.net>"]
+exclude = ["compile-tests"]
 repository = "https://github.com/rlhunt/cbindgen/"
-exclude = ["samples/**"]
 
 [dependencies]
 clap = "2"
