@@ -19,14 +19,14 @@ pub enum Language {
     C,
 }
 
-// A style of braces to use for generating code.
+/// A style of braces to use for generating code.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Braces {
     SameLine,
     NextLine,
 }
 
-// A type of layout to use when generating long lines of code.
+/// A type of layout to use when generating long lines of code.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Layout {
     Horizontal,
