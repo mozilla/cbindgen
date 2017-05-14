@@ -55,10 +55,10 @@ impl PathValue {
         }
     }
 
-    pub fn resolve(&mut self, config: &Config) {
+    pub fn apply_renaming(&mut self, config: &Config) {
         match self {
-            &mut PathValue::Enum(ref mut x) => { x.resolve(config); },
-            &mut PathValue::Struct(ref mut x) => { x.resolve(config); },
+            &mut PathValue::Enum(ref mut x) => { x.apply_renaming(config); },
+            &mut PathValue::Struct(ref mut x) => { x.apply_renaming(config); },
             _ => { },
         }
     }
@@ -357,13 +357,12 @@ impl<'a> Library<'a> {
                                          .map(|(_, function)| function.clone())
                                          .collect::<Vec<_>>();
 
-        // Do one last pass to resolve all the items, this performs any renaming
-        // before we write to output
+        // Do one last pass to do renaming for all the items
         for item in &mut result.items {
-            item.resolve(self.config);
+            item.apply_renaming(self.config);
         }
         for func in &mut result.functions {
-            func.resolve(self.config);
+            func.apply_renaming(self.config);
         }
 
         Ok(result)

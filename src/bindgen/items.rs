@@ -298,7 +298,7 @@ impl Function {
         })
     }
 
-    pub fn resolve(&mut self, config: &Config) {
+    pub fn apply_renaming(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.function.rename_args];
 
@@ -455,7 +455,7 @@ impl Struct {
         })
     }
 
-    pub fn resolve(&mut self, config: &Config) {
+    pub fn apply_renaming(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.structure.rename_fields];
 
@@ -657,7 +657,7 @@ impl Enum {
         })
     }
 
-    pub fn resolve(&mut self, config: &Config) {
+    pub fn apply_renaming(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.enumeration.rename_variants];
 
