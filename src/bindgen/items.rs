@@ -1,7 +1,7 @@
 use std::io::Write;
 use std::fmt;
 
-use syn::*;
+use syn;
 
 use bindgen::cdecl;
 use bindgen::config::{Config, Language, Layout};
@@ -125,25 +125,25 @@ pub enum Type {
     FuncPtr(Option<Box<Type>>, Vec<Type>),
 }
 impl Type {
-    pub fn convert(ty: &Ty) -> ConvertResult<Type> {
+    pub fn convert(ty: &syn::Ty) -> ConvertResult<Type> {
         match ty {
-            &Ty::Rptr(_, ref mut_ty) => {
+            &syn::Ty::Rptr(_, ref mut_ty) => {
                 let converted = try!(Type::convert(&mut_ty.ty));
 
                 Ok(match mut_ty.mutability {
-                    Mutability::Mutable => Type::Ptr(Box::new(converted)),
-                    Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
+                    syn::Mutability::Mutable => Type::Ptr(Box::new(converted)),
+                    syn::Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
                 })
             }
-            &Ty::Ptr(ref mut_ty) => {
+            &syn::Ty::Ptr(ref mut_ty) => {
                 let converted = try!(Type::convert(&mut_ty.ty));
 
                 Ok(match mut_ty.mutability {
-                    Mutability::Mutable => Type::Ptr(Box::new(converted)),
-                    Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
+                    syn::Mutability::Mutable => Type::Ptr(Box::new(converted)),
+                    syn::Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
                 })
             }
-            &Ty::Path(_, ref p) => {
+            &syn::Ty::Path(_, ref p) => {
                 let p = try!(p.convert_to_simple_single_segment());
 
                 if let Some(prim) = PrimitiveType::maybe(&p) {
@@ -152,12 +152,12 @@ impl Type {
                     Ok(Type::Path(p))
                 }
             }
-            &Ty::Array(ref ty, ConstExpr::Lit(Lit::Int(sz, _))) => {
+            &syn::Ty::Array(ref ty, syn::ConstExpr::Lit(syn::Lit::Int(sz, _))) => {
                 let converted = try!(Type::convert(ty));
 
                 Ok(Type::Array(Box::new(converted), sz))
             },
-            &Ty::BareFn(ref f) => {
+            &syn::Ty::BareFn(ref f) => {
                 let args = try!(f.inputs.iter()
                                         .try_map(|x| Type::convert(&x.ty)));
                 let ret = try!(f.output.as_type());
@@ -282,7 +282,7 @@ pub struct Function {
 impl Function {
     pub fn convert(name: String,
                    annotations: AnnotationSet,
-                   decl: &FnDecl,
+                   decl: &syn::FnDecl,
                    extern_decl: bool) -> ConvertResult<Function>
     {
         let args = try!(decl.inputs.iter()
@@ -420,15 +420,15 @@ pub struct Struct {
 impl Struct {
     pub fn convert(name: String,
                    annotations: AnnotationSet,
-                   decl: &VariantData,
-                   generics: &Generics) -> ConvertResult<Struct>
+                   decl: &syn::VariantData,
+                   generics: &syn::Generics) -> ConvertResult<Struct>
     {
         let fields = match decl {
-            &VariantData::Struct(ref fields) => {
+            &syn::VariantData::Struct(ref fields) => {
                 try!(fields.iter()
                            .try_map(|x| x.as_ident_and_type()))
             }
-            &VariantData::Tuple(ref fields) => {
+            &syn::VariantData::Tuple(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields {
@@ -438,7 +438,7 @@ impl Struct {
                 }
                 out
             }
-            &VariantData::Unit => {
+            &syn::VariantData::Unit => {
                 vec![]
             }
         };
@@ -605,7 +605,7 @@ impl Enum {
     pub fn convert(name: String,
                    repr: Repr,
                    annotations: AnnotationSet,
-                   variants: &Vec<Variant>) -> ConvertResult<Enum>
+                   variants: &Vec<syn::Variant>) -> ConvertResult<Enum>
     {
         if repr != Repr::U32 &&
            repr != Repr::U16 &&
@@ -622,9 +622,9 @@ impl Enum {
 
         for variant in variants {
             match variant.data {
-                VariantData::Unit => {
+                syn::VariantData::Unit => {
                     match variant.discriminant {
-                        Some(ConstExpr::Lit(Lit::Int(i, _))) => {
+                        Some(syn::ConstExpr::Lit(syn::Lit::Int(i, _))) => {
                             current = i;
                         }
                         Some(_) => {
@@ -715,10 +715,10 @@ pub struct Specialization {
 impl Specialization {
     pub fn convert(name: String,
                    annotations: AnnotationSet,
-                   ty: &Ty) -> ConvertResult<Specialization>
+                   ty: &syn::Ty) -> ConvertResult<Specialization>
     {
         match ty {
-            &Ty::Path(ref _q, ref p) => {
+            &syn::Ty::Path(ref _q, ref p) => {
                 let (path, generics) = try!(p.convert_to_generic_single_segment());
 
                 if PrimitiveType::maybe(&path).is_some() {
@@ -816,7 +816,7 @@ pub struct Typedef {
 impl Typedef {
     pub fn convert(name: String,
                    annotations: AnnotationSet,
-                   ty: &Ty) -> ConvertResult<Typedef> {
+                   ty: &syn::Ty) -> ConvertResult<Typedef> {
         Ok(Typedef {
             name: name,
             annotations: annotations,

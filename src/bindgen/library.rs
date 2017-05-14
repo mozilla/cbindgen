@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use std::cmp::Ordering;
 use std::fs::File;
 
-use syn::*;
+use syn;
 
 use bindgen::config;
 use bindgen::config::{Config, Language};
@@ -98,7 +98,7 @@ impl<'a> Library<'a> {
         rust_lib::parse(crate_or_src, &mut |mod_name, items| {
             for item in items {
                 match item.node {
-                    ItemKind::ForeignMod(ref block) => {
+                    syn::ItemKind::ForeignMod(ref block) => {
                         if !block.abi.is_c() {
                             info!("skip {}::{} - non c abi extern block", mod_name, &item.ident);
                             continue;
@@ -106,8 +106,8 @@ impl<'a> Library<'a> {
 
                         for foreign_item in &block.items {
                             match foreign_item.node {
-                                ForeignItemKind::Fn(ref decl,
-                                                    ref _generic) => {
+                                syn::ForeignItemKind::Fn(ref decl,
+                                                         ref _generic) => {
                                     let annotations = match AnnotationSet::parse(foreign_item.get_doc_attr()) {
                                         Ok(x) => x,
                                         Err(msg) => {
@@ -131,12 +131,12 @@ impl<'a> Library<'a> {
                             }
                         }
                     }
-                    ItemKind::Fn(ref decl,
-                                 ref _unsafe,
-                                 ref _const,
-                                 ref abi,
-                                 ref _generic,
-                                 ref _block) => {
+                    syn::ItemKind::Fn(ref decl,
+                                      ref _unsafe,
+                                      ref _const,
+                                      ref abi,
+                                      ref _generic,
+                                      ref _block) => {
                         if item.is_no_mangle() && abi.is_c() {
                             let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
                                 Ok(x) => x,
@@ -158,8 +158,8 @@ impl<'a> Library<'a> {
                             }
                         }
                     }
-                    ItemKind::Struct(ref variant,
-                                     ref generics) => {
+                    syn::ItemKind::Struct(ref variant,
+                                          ref generics) => {
                         let struct_name = item.ident.to_string();
                         let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
                             Ok(x) => x,
@@ -188,7 +188,7 @@ impl<'a> Library<'a> {
                                                           OpaqueStruct::new(struct_name, annotations));
                         }
                     }
-                    ItemKind::Enum(ref variants, ref generics) => {
+                    syn::ItemKind::Enum(ref variants, ref generics) => {
                         if !generics.lifetimes.is_empty() ||
                            !generics.ty_params.is_empty() ||
                            !generics.where_clause.predicates.is_empty() {
@@ -217,7 +217,7 @@ impl<'a> Library<'a> {
                             }
                         }
                     }
-                    ItemKind::Ty(ref ty, ref generics) => {
+                    syn::ItemKind::Ty(ref ty, ref generics) => {
                         if !generics.lifetimes.is_empty() ||
                            !generics.ty_params.is_empty() ||
                            !generics.where_clause.predicates.is_empty() {
