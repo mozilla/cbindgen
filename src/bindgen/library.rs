@@ -90,171 +90,175 @@ impl<'a> Library<'a> {
         }
     }
 
+    fn parse_crate_mod(&mut self, mod_name: &str, items: &Vec<syn::Item>) {
+        for item in items {
+            match item.node {
+                syn::ItemKind::ForeignMod(ref block) => {
+                    if !block.abi.is_c() {
+                        info!("skip {}::{} - non c abi extern block", mod_name, &item.ident);
+                        continue;
+                    }
+
+                    for foreign_item in &block.items {
+                        match foreign_item.node {
+                            syn::ForeignItemKind::Fn(ref decl,
+                                                     ref _generic) => {
+                                let annotations = match AnnotationSet::parse(foreign_item.get_doc_attr()) {
+                                    Ok(x) => x,
+                                    Err(msg) => {
+                                        warn!("{}", msg);
+                                        AnnotationSet::new()
+                                    }
+                                };
+
+                                match Function::convert(foreign_item.ident.to_string(), annotations, decl, true) {
+                                    Ok(func) => {
+                                        info!("take {}::{}", mod_name, &foreign_item.ident);
+
+                                        self.functions.insert(func.name.clone(), func);
+                                    }
+                                    Err(msg) => {
+                                        info!("skip {}::{} - ({})", mod_name, &foreign_item.ident, msg);
+                                    },
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                syn::ItemKind::Fn(ref decl,
+                                  ref _unsafe,
+                                  ref _const,
+                                  ref abi,
+                                  ref _generic,
+                                  ref _block) => {
+                    if item.is_no_mangle() && abi.is_c() {
+                        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+                            Ok(x) => x,
+                            Err(msg) => {
+                                warn!("{}", msg);
+                                AnnotationSet::new()
+                            }
+                        };
+
+                        match Function::convert(item.ident.to_string(), annotations, decl, false) {
+                            Ok(func) => {
+                                info!("take {}::{}", mod_name, &item.ident);
+
+                                self.functions.insert(func.name.clone(), func);
+                            }
+                            Err(msg) => {
+                                info!("skip {}::{} - ({})", mod_name, &item.ident, msg);
+                            },
+                        }
+                    }
+                }
+                syn::ItemKind::Struct(ref variant,
+                                      ref generics) => {
+                    let struct_name = item.ident.to_string();
+                    let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+                        Ok(x) => x,
+                        Err(msg) => {
+                            warn!("{}", msg);
+                            AnnotationSet::new()
+                        }
+                    };
+
+                    if item.is_repr_c() {
+                        match Struct::convert(struct_name.clone(), annotations.clone(), variant, generics) {
+                            Ok(st) => {
+                                info!("take {}::{}", mod_name, &item.ident);
+                                self.structs.insert(struct_name,
+                                                    st);
+                            }
+                            Err(msg) => {
+                                info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
+                                self.opaque_structs.insert(struct_name.clone(),
+                                                           OpaqueStruct::new(struct_name, annotations));
+                            }
+                        }
+                    } else {
+                        info!("take {}::{} - opaque (not marked as repr(C))", mod_name, &item.ident);
+                        self.opaque_structs.insert(struct_name.clone(),
+                                                   OpaqueStruct::new(struct_name, annotations));
+                    }
+                }
+                syn::ItemKind::Enum(ref variants, ref generics) => {
+                    if !generics.lifetimes.is_empty() ||
+                       !generics.ty_params.is_empty() ||
+                       !generics.where_clause.predicates.is_empty() {
+                        info!("skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident);
+                        continue;
+                    }
+
+                    let enum_name = item.ident.to_string();
+                    let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+                        Ok(x) => x,
+                        Err(msg) => {
+                            warn!("{}", msg);
+                            AnnotationSet::new()
+                        }
+                    };
+
+                    match Enum::convert(enum_name.clone(), item.get_repr(), annotations.clone(), variants) {
+                        Ok(en) => {
+                            info!("take {}::{}", mod_name, &item.ident);
+                            self.enums.insert(enum_name, en);
+                        }
+                        Err(msg) => {
+                            info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
+                            self.opaque_structs.insert(enum_name.clone(),
+                                                       OpaqueStruct::new(enum_name, annotations));
+                        }
+                    }
+                }
+                syn::ItemKind::Ty(ref ty, ref generics) => {
+                    if !generics.lifetimes.is_empty() ||
+                       !generics.ty_params.is_empty() ||
+                       !generics.where_clause.predicates.is_empty() {
+                        info!("skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident);
+                        continue;
+                    }
+
+                    let alias_name = item.ident.to_string();
+                    let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+                        Ok(x) => x,
+                        Err(msg) => {
+                            warn!("{}", msg);
+                            AnnotationSet::new()
+                        }
+                    };
+
+                    let fail1 = match Specialization::convert(alias_name.clone(), annotations.clone(), ty) {
+                        Ok(spec) => {
+                            info!("take {}::{}", mod_name, &item.ident);
+                            self.specializations.insert(alias_name, spec);
+                            continue;
+                        }
+                        Err(msg) => msg,
+                    };
+                    let fail2 = match Typedef::convert(alias_name.clone(), annotations, ty) {
+                        Ok(typedef) => {
+                            info!("take {}::{}", mod_name, &item.ident);
+                            self.typedefs.insert(alias_name, typedef);
+                            continue;
+                        }
+                        Err(msg) => msg,
+                    };
+                    info!("skip {}::{} - ({} and {})", mod_name, &item.ident, fail1, fail2);
+                }
+                _ => {}
+            }
+        }
+    }
+
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
     pub fn load(crate_or_src: &str, config: &'a Config) -> Library<'a>
     {
         let mut library = Library::blank(config);
 
         rust_lib::parse(crate_or_src, &mut |mod_name, items| {
-            for item in items {
-                match item.node {
-                    syn::ItemKind::ForeignMod(ref block) => {
-                        if !block.abi.is_c() {
-                            info!("skip {}::{} - non c abi extern block", mod_name, &item.ident);
-                            continue;
-                        }
-
-                        for foreign_item in &block.items {
-                            match foreign_item.node {
-                                syn::ForeignItemKind::Fn(ref decl,
-                                                         ref _generic) => {
-                                    let annotations = match AnnotationSet::parse(foreign_item.get_doc_attr()) {
-                                        Ok(x) => x,
-                                        Err(msg) => {
-                                            warn!("{}", msg);
-                                            AnnotationSet::new()
-                                        }
-                                    };
-
-                                    match Function::convert(foreign_item.ident.to_string(), annotations, decl, true) {
-                                        Ok(func) => {
-                                            info!("take {}::{}", mod_name, &foreign_item.ident);
-
-                                            library.functions.insert(func.name.clone(), func);
-                                        }
-                                        Err(msg) => {
-                                            info!("skip {}::{} - ({})", mod_name, &foreign_item.ident, msg);
-                                        },
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    syn::ItemKind::Fn(ref decl,
-                                      ref _unsafe,
-                                      ref _const,
-                                      ref abi,
-                                      ref _generic,
-                                      ref _block) => {
-                        if item.is_no_mangle() && abi.is_c() {
-                            let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-                                Ok(x) => x,
-                                Err(msg) => {
-                                    warn!("{}", msg);
-                                    AnnotationSet::new()
-                                }
-                            };
-
-                            match Function::convert(item.ident.to_string(), annotations, decl, false) {
-                                Ok(func) => {
-                                    info!("take {}::{}", mod_name, &item.ident);
-
-                                    library.functions.insert(func.name.clone(), func);
-                                }
-                                Err(msg) => {
-                                    info!("skip {}::{} - ({})", mod_name, &item.ident, msg);
-                                },
-                            }
-                        }
-                    }
-                    syn::ItemKind::Struct(ref variant,
-                                          ref generics) => {
-                        let struct_name = item.ident.to_string();
-                        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-                            Ok(x) => x,
-                            Err(msg) => {
-                                warn!("{}", msg);
-                                AnnotationSet::new()
-                            }
-                        };
-
-                        if item.is_repr_c() {
-                            match Struct::convert(struct_name.clone(), annotations.clone(), variant, generics) {
-                                Ok(st) => {
-                                    info!("take {}::{}", mod_name, &item.ident);
-                                    library.structs.insert(struct_name,
-                                                           st);
-                                }
-                                Err(msg) => {
-                                    info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
-                                    library.opaque_structs.insert(struct_name.clone(),
-                                                                  OpaqueStruct::new(struct_name, annotations));
-                                }
-                            }
-                        } else {
-                            info!("take {}::{} - opaque (not marked as repr(C))", mod_name, &item.ident);
-                            library.opaque_structs.insert(struct_name.clone(),
-                                                          OpaqueStruct::new(struct_name, annotations));
-                        }
-                    }
-                    syn::ItemKind::Enum(ref variants, ref generics) => {
-                        if !generics.lifetimes.is_empty() ||
-                           !generics.ty_params.is_empty() ||
-                           !generics.where_clause.predicates.is_empty() {
-                            info!("skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident);
-                            continue;
-                        }
-
-                        let enum_name = item.ident.to_string();
-                        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-                            Ok(x) => x,
-                            Err(msg) => {
-                                warn!("{}", msg);
-                                AnnotationSet::new()
-                            }
-                        };
-
-                        match Enum::convert(enum_name.clone(), item.get_repr(), annotations.clone(), variants) {
-                            Ok(en) => {
-                                info!("take {}::{}", mod_name, &item.ident);
-                                library.enums.insert(enum_name, en);
-                            }
-                            Err(msg) => {
-                                info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
-                                library.opaque_structs.insert(enum_name.clone(),
-                                                              OpaqueStruct::new(enum_name, annotations));
-                            }
-                        }
-                    }
-                    syn::ItemKind::Ty(ref ty, ref generics) => {
-                        if !generics.lifetimes.is_empty() ||
-                           !generics.ty_params.is_empty() ||
-                           !generics.where_clause.predicates.is_empty() {
-                            info!("skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident);
-                            continue;
-                        }
-
-                        let alias_name = item.ident.to_string();
-                        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-                            Ok(x) => x,
-                            Err(msg) => {
-                                warn!("{}", msg);
-                                AnnotationSet::new()
-                            }
-                        };
-
-                        let fail1 = match Specialization::convert(alias_name.clone(), annotations.clone(), ty) {
-                            Ok(spec) => {
-                                info!("take {}::{}", mod_name, &item.ident);
-                                library.specializations.insert(alias_name, spec);
-                                continue;
-                            }
-                            Err(msg) => msg,
-                        };
-                        let fail2 = match Typedef::convert(alias_name.clone(), annotations, ty) {
-                            Ok(typedef) => {
-                                info!("take {}::{}", mod_name, &item.ident);
-                                library.typedefs.insert(alias_name, typedef);
-                                continue;
-                            }
-                            Err(msg) => msg,
-                        };
-                        info!("skip {}::{} - ({} and {})", mod_name, &item.ident, fail1, fail2);
-                    }
-                    _ => {}
-                }
-            }
+            library.parse_crate_mod(&mod_name, items);
         });
 
         library
@@ -339,7 +343,7 @@ impl<'a> Library<'a> {
 
         // Sort enums and opaque structs into their own layers because they don't
         // depend on each other or anything else.
-        result.items.sort_by(|a, b| {
+        let ordering = |a: &PathValue, b: &PathValue| {
             match (a, b) {
                 (&PathValue::Enum(ref e1), &PathValue::Enum(ref e2)) => e1.name.cmp(&e2.name),
                 (&PathValue::Enum(_), _) => Ordering::Less,
@@ -351,7 +355,8 @@ impl<'a> Library<'a> {
 
                 _ => Ordering::Equal,
             }
-        });
+        };
+        result.items.sort_by(ordering);
 
         result.functions = self.functions.iter()
                                          .map(|(_, function)| function.clone())
