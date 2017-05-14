@@ -13,16 +13,18 @@ pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
 }
 
 pub trait IterHelpers : Iterator {
-    fn try_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
-        where F: FnMut(&Self::Item) -> Result<T, E>;
+    fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
+        where F: FnMut(&Self::Item) -> Result<Option<T>, E>;
 }
 impl<I> IterHelpers for I where I: Iterator {
-    fn try_map<F, T, E>(&mut self, mut f: F) -> Result<Vec<T>, E>
-        where F: FnMut(&Self::Item) -> Result<T, E>
+    fn try_skip_map<F, T, E>(&mut self, mut f: F) -> Result<Vec<T>, E>
+        where F: FnMut(&Self::Item) -> Result<Option<T>, E>
     {
         let mut out = Vec::new();
         while let Some(item) = self.next() {
-            out.push(try!(f(&item)));
+            if let Some(x) = try!(f(&item)) {
+                out.push(x);
+            }
         }
         Ok(out)
     }
@@ -129,19 +131,29 @@ impl SynFnRetTyHelpers for FunctionRetTy {
     fn as_type(&self) -> ConvertResult<Option<Type>> {
         match self {
             &FunctionRetTy::Default => Ok(None),
-            &FunctionRetTy::Ty(ref t) => Ok(Some(try!(Type::convert(t)))),
+            &FunctionRetTy::Ty(ref t) => {
+                if let Some(x) = try!(Type::convert(t)) {
+                    Ok(Some(x))
+                } else {
+                    Ok(None)
+                }
+            },
         }
     }
 }
 
 pub trait SynFnArgHelpers {
-    fn as_ident_and_type(&self) -> ConvertResult<(String, Type)>;
+    fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>>;
 }
 impl SynFnArgHelpers for FnArg {
-    fn as_ident_and_type(&self) -> ConvertResult<(String, Type)> {
+    fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>> {
         match self {
             &FnArg::Captured(Pat::Ident(_, ref ident, _), ref ty) => {
-                Ok((ident.to_string(), try!(Type::convert(ty))))
+                if let Some(x) = try!(Type::convert(ty)) {
+                    Ok(Some((ident.to_string(), x)))
+                } else {
+                    Ok(None)
+                }
             }
             _ => Err(format!("unexpected param type")),
         }
@@ -149,14 +161,18 @@ impl SynFnArgHelpers for FnArg {
 }
 
 pub trait SynFieldHelpers {
-    fn as_ident_and_type(&self) -> ConvertResult<(String, Type)>;
+    fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>>;
 }
 impl SynFieldHelpers for Field {
-    fn as_ident_and_type(&self) -> ConvertResult<(String, Type)> {
+    fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>> {
         let ident = try!(self.ident.as_ref().ok_or(format!("missing ident"))).clone();
         let converted_ty = try!(Type::convert(&self.ty));
 
-        Ok((ident.to_string(), converted_ty))
+        if let Some(x) = converted_ty {
+            Ok(Some((ident.to_string(), x)))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -200,11 +216,8 @@ impl SynPathHelpers for Path {
                     return Err(format!("Generic parameter contains bindings, or lifetimes"));
                 }
 
-                let mut generics = Vec::new();
-                for ty in &d.types {
-                    generics.push(try!(Type::convert(ty)));
-                }
-                generics
+                try!(d.types.iter()
+                            .try_skip_map(|x| Type::convert(x)))
             }
             &PathParameters::Parenthesized(_) => {
                 return Err(format!("Path contains parentheses"));

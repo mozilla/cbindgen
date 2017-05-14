@@ -125,50 +125,79 @@ pub enum Type {
     FuncPtr(Option<Box<Type>>, Vec<Type>),
 }
 impl Type {
-    pub fn convert(ty: &syn::Ty) -> ConvertResult<Type> {
-        match ty {
+    pub fn convert(ty: &syn::Ty) -> ConvertResult<Option<Type>> {
+        let converted = match ty {
             &syn::Ty::Rptr(_, ref mut_ty) => {
                 let converted = try!(Type::convert(&mut_ty.ty));
 
-                Ok(match mut_ty.mutability {
+                let converted = match converted {
+                    Some(converted) => converted,
+                    None => return Err(format!("cannot have a pointer to a zero sized type")),
+                };
+
+                match mut_ty.mutability {
                     syn::Mutability::Mutable => Type::Ptr(Box::new(converted)),
                     syn::Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
-                })
+                }
             }
             &syn::Ty::Ptr(ref mut_ty) => {
                 let converted = try!(Type::convert(&mut_ty.ty));
 
-                Ok(match mut_ty.mutability {
+                let converted = match converted {
+                    Some(converted) => converted,
+                    None => return Err(format!("cannot have a pointer to a zero sized type")),
+                };
+
+                match mut_ty.mutability {
                     syn::Mutability::Mutable => Type::Ptr(Box::new(converted)),
                     syn::Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
-                })
+                }
             }
             &syn::Ty::Path(_, ref p) => {
-                let p = try!(p.convert_to_simple_single_segment());
+                let (name, generics) = try!(p.convert_to_generic_single_segment());
 
-                if let Some(prim) = PrimitiveType::maybe(&p) {
-                    Ok(Type::Primitive(prim))
+                if name == "PhantomData" && generics.len() == 1 {
+                    return Ok(None);
+                } else if generics.len() != 0 {
+                    return Err(format!("cannot have a type with generics"));
                 } else {
-                    Ok(Type::Path(p))
+                    if let Some(prim) = PrimitiveType::maybe(&name) {
+                        Type::Primitive(prim)
+                    } else {
+                        Type::Path(name)
+                    }
                 }
             }
             &syn::Ty::Array(ref ty, syn::ConstExpr::Lit(syn::Lit::Int(sz, _))) => {
                 let converted = try!(Type::convert(ty));
 
-                Ok(Type::Array(Box::new(converted), sz))
+                let converted = match converted {
+                    Some(converted) => converted,
+                    None => return Err(format!("cannot have an array of zero sized types")),
+                };
+
+                Type::Array(Box::new(converted), sz)
             },
             &syn::Ty::BareFn(ref f) => {
                 let args = try!(f.inputs.iter()
-                                        .try_map(|x| Type::convert(&x.ty)));
+                                        .try_skip_map(|x| Type::convert(&x.ty)));
                 let ret = try!(f.output.as_type());
 
-                Ok(Type::FuncPtr(
+                Type::FuncPtr(
                     ret.map(|x| Box::new(x)),
                     args,
-                ))
+                )
+            },
+            &syn::Ty::Tup(ref tys) => {
+                if tys.len() == 0 {
+                    return Ok(None);
+                }
+                return Err(format!("tuples are not supported as types"))
             }
-            _ => Err(format!("unexpected type")),
-        }
+            _ => return Err(format!("unexpected type")),
+        };
+
+        return Ok(Some(converted));
     }
 
     pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut Vec<PathValue>) {
@@ -286,7 +315,7 @@ impl Function {
                    extern_decl: bool) -> ConvertResult<Function>
     {
         let args = try!(decl.inputs.iter()
-                                   .try_map(|x| x.as_ident_and_type()));
+                                   .try_skip_map(|x| x.as_ident_and_type()));
         let ret = try!(decl.output.as_type());
 
         Ok(Function {
@@ -426,15 +455,16 @@ impl Struct {
         let fields = match decl {
             &syn::VariantData::Struct(ref fields) => {
                 try!(fields.iter()
-                           .try_map(|x| x.as_ident_and_type()))
+                           .try_skip_map(|x| x.as_ident_and_type()))
             }
             &syn::VariantData::Tuple(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields {
-                    out.push((format!("{}", current),
-                              try!(Type::convert(&field.ty))));
-                    current += 1;
+                    if let Some(x) = try!(Type::convert(&field.ty)) {
+                        out.push((format!("{}", current), x));
+                        current += 1;
+                    }
                 }
                 out
             }
@@ -817,11 +847,15 @@ impl Typedef {
     pub fn convert(name: String,
                    annotations: AnnotationSet,
                    ty: &syn::Ty) -> ConvertResult<Typedef> {
-        Ok(Typedef {
-            name: name,
-            annotations: annotations,
-            aliased: try!(Type::convert(ty)),
-        })
+        if let Some(x) = try!(Type::convert(ty)) {
+            Ok(Typedef {
+                name: name,
+                annotations: annotations,
+                aliased: x,
+            })
+        } else {
+            Err(format!("cannot have a typedef of a zero sized type"))
+        }
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
