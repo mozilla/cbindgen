@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 struct Opaque {
     x: i32,
     y: f32,
@@ -9,6 +11,14 @@ struct Normal {
     y: f32,
 }
 
+#[repr(C)]
+struct NormalWithZST {
+    x: i32,
+    y: f32,
+    z: (),
+    w: PhantomData<i32>,
+}
+
 /// cbindgen:rename-all=GeckoCase
 #[repr(C)]
 struct TupleRenamed(i32, f32);
@@ -18,8 +28,9 @@ struct TupleRenamed(i32, f32);
 struct TupleNamed(i32, f32);
 
 #[no_mangle]
-extern "C" fn root(x: *mut Opaque,
-                   y: Normal,
-                   z: TupleRenamed,
-                   w: TupleNamed)
+extern "C" fn root(a: *mut Opaque,
+                   b: Normal,
+                   c: NormalWithZST,
+                   d: TupleRenamed,
+                   e: TupleNamed)
 { }
