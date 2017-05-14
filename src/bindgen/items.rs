@@ -302,14 +302,7 @@ impl Function {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.function.rename_args];
 
-        // TODO, cleanup
-        let rule = if rules[0].is_some() {
-            rules[0]
-        } else {
-            rules[1]
-        };
-
-        if let Some(r) = rule {
+        if let Some(r) = find_first_some(&rules) {
             self.args = self.args.iter()
                                  .map(|x| (r.apply_to_snake_case(&x.0,
                                                                  IdentifierType::FunctionArg),
@@ -466,13 +459,6 @@ impl Struct {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.structure.rename_fields];
 
-        // TODO, cleanup
-        let rule = if rules[0].is_some() {
-            rules[0]
-        } else {
-            rules[1]
-        };
-
         if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();
 
@@ -485,7 +471,7 @@ impl Struct {
             }
 
             self.fields = overriden_fields;
-        } else if let Some(r) = rule {
+        } else if let Some(r) = find_first_some(&rules) {
             self.fields = self.fields.iter()
                                      .map(|x| (r.apply_to_snake_case(&x.0,
                                                                      IdentifierType::StructMember),
@@ -675,14 +661,7 @@ impl Enum {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.enumeration.rename_variants];
 
-        // TODO, cleanup
-        let rule = if rules[0].is_some() {
-            rules[0]
-        } else {
-            rules[1]
-        };
-
-        if let Some(r) = rule {
+        if let Some(r) = find_first_some(&rules) {
             self.values = self.values.iter()
                                      .map(|x| (r.apply_to_pascal_case(&x.0,
                                                                       IdentifierType::EnumVariant),

@@ -3,6 +3,15 @@ use syn::*;
 use bindgen::items::*;
 use bindgen::library::*;
 
+pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
+    for x in slice {
+        if let &Some(ref x) = x {
+            return Some(x);
+        }
+    }
+    return None;
+}
+
 pub trait IterHelpers : Iterator {
     fn try_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
         where F: FnMut(&Self::Item) -> Result<T, E>;
