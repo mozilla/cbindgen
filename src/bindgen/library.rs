@@ -10,7 +10,7 @@ use bindgen::config::{Config, Language};
 use bindgen::annotation::*;
 use bindgen::items::*;
 use bindgen::rust_lib;
-use bindgen::syn_helpers::*;
+use bindgen::utilities::*;
 use bindgen::writer::Writer;
 
 pub type ConvertResult<T> = Result<T, String>;

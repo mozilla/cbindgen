@@ -8,7 +8,7 @@ use bindgen::config::{Config, Language, Layout};
 use bindgen::annotation::*;
 use bindgen::library::*;
 use bindgen::rename::*;
-use bindgen::syn_helpers::*;
+use bindgen::utilities::*;
 use bindgen::writer::*;
 
 #[derive(Debug, Clone)]

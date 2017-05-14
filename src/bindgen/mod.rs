@@ -34,7 +34,7 @@ mod items;
 mod library;
 mod rename;
 mod rust_lib;
-mod syn_helpers;
+mod utilities;
 mod writer;
 
 pub use self::config::*;
