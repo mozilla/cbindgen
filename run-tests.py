@@ -5,18 +5,34 @@ import glob
 import subprocess
 import sys
 
-def cbindgen(rust_src, out):
-    subprocess.check_output(["cargo", "run", "--", rust_src, "-o", out])
+def cbindgen(rust_src, out, c):
+    if c:
+        subprocess.check_output(["cargo", "run", "--", "--lang", "c", rust_src, "-o", out])
+    else:
+        subprocess.check_output(["cargo", "run", "--", rust_src, "-o", out])
+
+def gcc(src):
+    subprocess.check_output(["gcc", "-c", src, "-o", "compile-tests/tmp.o"])
+    os.remove("compile-tests/tmp.o")
 
 def gxx(src):
     subprocess.check_output(["g++", "-c", src, "-o", "compile-tests/tmp.o"])
     os.remove("compile-tests/tmp.o")
 
-def run_compile_test(rust_src, leave_output):
-    out = rust_src.replace(".rs", ".cpp")
+def run_compile_test(rust_src, leave_output, c):
+    if c:
+        out = rust_src.replace(".rs", ".c")
+    else:
+        out = rust_src.replace(".rs", ".cpp")
+
     try:
-        cbindgen(rust_src, out)
-        gxx(out)
+        cbindgen(rust_src, out, c)
+
+        if c:
+            gcc(out)
+        else:
+            gxx(out)
+
         if not leave_output:
             os.remove(out)
     except subprocess.CalledProcessError:
@@ -30,13 +46,17 @@ tests = glob.glob("compile-tests/*.rs")
 num_pass = 0
 num_fail = 0
 
+flags = sys.argv[1:]
 leave_output = False
-
-if len(sys.argv) == 2 and sys.argv[1] == "-l":
-    leave_output = True
+c = False
+for flag in flags:
+    if flag == "-l":
+        leave_output = True
+    elif flag == "-c":
+        c = True
 
 for test in tests:
-    if run_compile_test(test, leave_output):
+    if run_compile_test(test, leave_output, c):
         num_pass += 1
         print("Pass - %s" % test)
     else:

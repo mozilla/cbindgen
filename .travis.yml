@@ -14,3 +14,4 @@ script:
   - cargo build --verbose
   - cargo test --verbose
   - python run-tests.py
+  - python run-tests.py -c

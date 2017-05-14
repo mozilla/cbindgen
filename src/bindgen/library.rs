@@ -420,6 +420,10 @@ impl<'a> BuiltBindings<'a> {
 
         out.new_line_if_not_start();
         out.write("#include <stdint.h>");
+        if self.config.language == Language::C {
+            out.new_line();
+            out.write("#include <stdbool.h>");
+        }
         out.new_line();
 
         if self.config.language == Language::Cxx {

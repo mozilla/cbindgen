@@ -679,7 +679,7 @@ impl Enum {
         };
 
         if config.language == Language::C {
-            out.write(&format!("typedef enum"));
+            out.write(&format!("enum {}", self.name));
         } else {
             out.write(&format!("enum class {} : {}", self.name, size));
         }
@@ -695,11 +695,11 @@ impl Enum {
             out.new_line();
             out.write("Sentinel /* this must be last for serialization purposes. */");
         }
+        out.close_brace(true);
+
         if config.language == Language::C {
-            out.close_brace(false);
-            out.write(&format!(" {};", self.name));
-        } else {
-            out.close_brace(true);
+            out.new_line();
+            out.write(&format!("typedef {} {};", size, self.name));
         }
     }
 }

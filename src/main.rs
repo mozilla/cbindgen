@@ -14,20 +14,24 @@ use clap::{Arg, App};
 mod logging;
 mod bindgen;
 
-use bindgen::{Config, Library};
+use bindgen::{Config, Language, Library};
 
 fn main() {
     let matches = App::new("cbindgen")
                     .version(bindgen::VERSION)
                     .about("Generate C bindings for a Rust library")
+                    .arg(Arg::with_name("v")
+                         .short("v")
+                         .help("whether to print verbose logs"))
                     .arg(Arg::with_name("config")
                          .short("c")
                          .long("config")
                          .value_name("CONFIG")
                          .help("the path to the cbindgen.toml config to use"))
-                    .arg(Arg::with_name("v")
-                         .short("v")
-                         .help("whether to print verbose logs"))
+                    .arg(Arg::with_name("lang")
+                         .long("lang")
+                         .value_name("LANGUAGE")
+                         .help("the language to output bindings in: c++ or c, defaults to c++"))
                     .arg(Arg::with_name("INPUT")
                          .help("the crate or source file to generate bindings for")
                          .required(true)
@@ -48,10 +52,21 @@ fn main() {
 
     let input = matches.value_of("INPUT").unwrap();
 
-    let config = match matches.value_of("config") {
+    let mut config = match matches.value_of("config") {
         Some(c) => Config::from_file(c).unwrap(),
         None => Config::from_root_or_default(&input),
     };
+
+    if let Some(lang) = matches.value_of("lang") {
+        config.language = match lang {
+            "c++"=> Language::Cxx,
+            "c"=> Language::C,
+            _ => {
+                error!("unknown language specified");
+                return;
+            }
+        };
+    }
 
     let built = match Library::load(input, &config).generate() {
         Ok(x) => x,

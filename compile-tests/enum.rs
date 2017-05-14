@@ -5,26 +5,26 @@ enum Opaque {
 
 #[repr(u32)]
 enum A {
-    x = 0,
-    y = 2,
-    z,
-    w = 5,
+    a1 = 0,
+    a2 = 2,
+    a3,
+    a4 = 5,
 }
 
 #[repr(u16)]
 enum B {
-    x = 0,
-    y = 2,
-    z,
-    w = 5,
+    b1 = 0,
+    b2 = 2,
+    b3,
+    b4 = 5,
 }
 
 #[repr(u8)]
 enum C {
-    x = 0,
-    y = 2,
-    z,
-    w = 5,
+    c1 = 0,
+    c2 = 2,
+    c3,
+    c4 = 5,
 }
 
 #[no_mangle]
