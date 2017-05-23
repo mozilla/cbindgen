@@ -125,17 +125,17 @@ impl SynAbiHelpers for Abi {
 }
 
 pub trait SynFnRetTyHelpers {
-    fn as_type(&self) -> ConvertResult<Option<Type>>;
+    fn as_type(&self) -> ConvertResult<Type>;
 }
 impl SynFnRetTyHelpers for FunctionRetTy {
-    fn as_type(&self) -> ConvertResult<Option<Type>> {
+    fn as_type(&self) -> ConvertResult<Type> {
         match self {
-            &FunctionRetTy::Default => Ok(None),
+            &FunctionRetTy::Default => Ok(Type::Primitive(PrimitiveType::Void)),
             &FunctionRetTy::Ty(ref t) => {
                 if let Some(x) = try!(Type::convert(t)) {
-                    Ok(Some(x))
+                    Ok(x)
                 } else {
-                    Ok(None)
+                    Ok(Type::Primitive(PrimitiveType::Void))
                 }
             },
         }

@@ -122,7 +122,7 @@ pub enum Type {
     Path(PathRef),
     Primitive(PrimitiveType),
     Array(Box<Type>, u64),
-    FuncPtr(Option<Box<Type>>, Vec<Type>),
+    FuncPtr(Box<Type>, Vec<Type>),
 }
 impl Type {
     pub fn convert(ty: &syn::Ty) -> ConvertResult<Option<Type>> {
@@ -183,10 +183,7 @@ impl Type {
                                         .try_skip_map(|x| Type::convert(&x.ty)));
                 let ret = try!(f.output.as_type());
 
-                Type::FuncPtr(
-                    ret.map(|x| Box::new(x)),
-                    args,
-                )
+                Type::FuncPtr(Box::new(ret), args)
             },
             &syn::Ty::Tup(ref tys) => {
                 if tys.len() == 0 {
@@ -219,9 +216,7 @@ impl Type {
                 t.add_deps(library, out);
             }
             &Type::FuncPtr(ref ret, ref args) => {
-                if let Some(ref ty) = ret.as_ref() {
-                    ty.add_deps(library, out);
-                }
+                ret.add_deps(library, out);
                 for arg in args {
                     arg.add_deps(library, out);
                 }
@@ -257,7 +252,7 @@ impl Type {
                 Type::Array(Box::new(t.specialize(mappings)), *sz)
             }
             &Type::FuncPtr(ref ret, ref args) => {
-                Type::FuncPtr(ret.as_ref().map(|x| Box::new(x.specialize(mappings))),
+                Type::FuncPtr(Box::new(ret.specialize(mappings)),
                               args.iter()
                                   .map(|x| x.specialize(mappings))
                                   .collect())
@@ -285,17 +280,10 @@ impl Type {
             &Type::FuncPtr(..) => true,
         }
     }
-
-    fn to_string(&self) -> String {
-        cdecl::to_cdecl(self)
-    }
-
-    fn to_string_with_ident(&self, ident: &str) -> String {
-        cdecl::to_cdecl_with_ident(ident.to_owned(), self)
-    }
-
-    fn write_with_ident<F: Write>(&self, ident: &str, out: &mut Writer<F>) {
-        out.write(&self.to_string_with_ident(ident));
+}
+impl Source for (String, Type) {
+    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
+        cdecl::write_type(out, &self.1, &self.0);
     }
 }
 
@@ -303,7 +291,7 @@ impl Type {
 pub struct Function {
     pub name: String,
     pub annotations: AnnotationSet,
-    pub ret: Option<Type>,
+    pub ret: Type,
     pub args: Vec<(String, Type)>,
     pub extern_decl: bool,
 }
@@ -341,99 +329,52 @@ impl Function {
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
-        if let &Some(ref ret) = &self.ret {
-            ret.add_deps(library, out);
-        }
+        self.ret.add_deps(library, out);
         for &(_, ref ty) in &self.args {
             ty.add_deps(library, out);
         }
     }
+}
+impl Source for Function {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        fn write_1<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
+            let prefix = config.function.prefix(&func.annotations);
+            let postfix = config.function.postfix(&func.annotations);
 
-    pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
-        // Try three different ways of formatting, depending on the line length
-        //    1. PREFIX RET NAME ( ARGS ... ) POSTFIX ;
-        //    2. PREFIX
-        //       RET NAME ( ARGS ... )
-        //       POSTFIX ;
-        //    3. PREFIX
-        //       RET NAME ( ARGS
-        //                  ... )
-        //       POSTFIX ;
+            if let Some(ref prefix) = prefix {
+                out.write(prefix);
+                out.write(" ");
+            }
+            cdecl::write_func(out, &func);
+            if let Some(ref postfix) = postfix {
+                out.write(" ");
+                out.write(postfix);
+            }
+            out.write(";");
+        }
+        fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
+            let prefix = config.function.prefix(&func.annotations);
+            let postfix = config.function.postfix(&func.annotations);
 
-        let prefix = config.function.prefix(&self.annotations);
-        let ret = match self.ret.as_ref() {
-            Some(ret) => ret.to_string(),
-            None => format!("void"),
+            if let Some(ref prefix) = prefix {
+                out.write(prefix);
+                out.new_line();
+            }
+            cdecl::write_func(out, &func);
+            if let Some(ref postfix) = postfix {
+                out.new_line();
+                out.write(postfix);
+            }
+            out.write(";");
         };
-        let name = &self.name;
-        let args = self.args.iter().map(|x| x.1.to_string_with_ident(&x.0)).collect::<Vec<_>>();
-        let postfix = config.function.postfix(&self.annotations);
 
-        let option_1: usize = prefix.as_ref().map_or(0, |x| x.len()) +
-                              ret.len() +
-                              name.len() +
-                              args.iter().map(|x| x.len()).sum::<usize>() +
-                              postfix.as_ref().map_or(0, |x| x.len()) + 7;
-
-        let option_2: usize = ret.len() +
-                              name.len() +
-                              args.iter().map(|x| x.len()).sum::<usize>();
+        let option_1 = out.measure(|out| write_1(self, config, out));
 
         if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
-            config.function.args == Layout::Horizontal {
-            // 1. PREFIX RET NAME ( ARGS ... ) POSTFIX ;
-
-            if let Some(ref prefix) = prefix {
-                out.write(prefix);
-                out.write(" ");
-            }
-            out.write(&format!("{} {}({})",
-                      &ret,
-                      name,
-                      args.join(", ")));
-            if let Some(ref postfix) = postfix {
-                out.write(" ");
-                out.write(postfix);
-            }
-            out.write(";");
-        } else if config.function.args == Layout::Auto && option_2 <= config.line_length {
-            // 2. PREFIX
-            //    RET NAME ( ARGS ... )
-            //    POSTFIX ;
-
-            if let Some(ref prefix) = prefix {
-                out.write(prefix);
-                out.new_line();
-            }
-            out.write(&format!("{} {}({})",
-                      &ret,
-                      name,
-                      args.join(", ")));
-            if let Some(ref postfix) = postfix {
-                out.new_line();
-                out.write(postfix);
-            }
-            out.write(";");
+           config.function.args == Layout::Horizontal {
+            write_1(self, config, out);
         } else {
-            // 3. PREFIX
-            //    RET NAME ( ARGS
-            //               ... )
-            //    POSTFIX ;
-
-            if let Some(ref prefix) = prefix {
-                out.write(prefix);
-                out.new_line();
-            }
-            out.write(&format!("{} {}(",
-                      &ret,
-                      name));
-            out.write_aligned_list(args, format!(","));
-            out.write(")");
-            if let Some(ref postfix) = postfix {
-                out.new_line();
-                out.write(postfix);
-            }
-            out.write(";");
+            write_2(self, config, out);
         }
     }
 }
@@ -515,8 +456,9 @@ impl Struct {
             ty.add_deps_with_generics(&self.generic_params, library, out);
         }
     }
-
-    pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
+}
+impl Source for Struct {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         assert!(self.generic_params.is_empty());
 
         if config.language == Language::C {
@@ -526,13 +468,7 @@ impl Struct {
         }
         out.open_brace();
 
-        for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
-            if i != 0 {
-                out.new_line()
-            }
-            ty.write_with_ident(name, out);
-            out.write(";");
-        }
+        out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
 
         if config.language == Language::Cxx {
             let mut wrote_start_newline = false;
@@ -554,10 +490,10 @@ impl Struct {
                 out.write(&format!("bool operator{}(const {}& {}) const", op, self.name, other));
                 out.open_brace();
                 out.write("return ");
-                out.write_aligned_list(self.fields.iter()
-                                                  .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
-                                                  .collect(),
-                                       format!(" {}", conjuc));
+                out.write_vertical_list(&self.fields.iter()
+                                                    .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
+                                                    .collect(),
+                                        ListType::Join(&format!(" {}", conjuc)));
                 out.write(";");
                 out.close_brace(false);
             };
@@ -611,8 +547,9 @@ impl OpaqueStruct {
             annotations: annotations,
         }
     }
-
-    pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
+}
+impl Source for OpaqueStruct {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if config.language == Language::C {
             out.write(&format!("struct {};", self.name));
             out.new_line();
@@ -699,8 +636,9 @@ impl Enum {
                                      .collect();
         }
     }
-
-    pub fn write<F: Write>(&self, config: &Config, out: &mut Writer<F>) {
+}
+impl Source for Enum {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         let size = match self.repr {
             Repr::U32 => "uint32_t",
             Repr::U16 => "uint16_t",
@@ -861,10 +799,11 @@ impl Typedef {
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
         self.aliased.add_deps(library, out);
     }
-
-    pub fn write<F: Write>(&self, out: &mut Writer<F>) {
+}
+impl Source for Typedef {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         out.write("typedef ");
-        self.aliased.write_with_ident(&self.name, out);
+        (self.name.clone(), self.aliased.clone()).write(config, out);
         out.write(";");
     }
 }

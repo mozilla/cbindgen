@@ -11,7 +11,7 @@ use bindgen::annotation::*;
 use bindgen::items::*;
 use bindgen::rust_lib;
 use bindgen::utilities::*;
-use bindgen::writer::Writer;
+use bindgen::writer::{Source, SourceWriter};
 
 pub type ConvertResult<T> = Result<T, String>;
 pub type GenerateResult<T> = Result<T, String>;
@@ -393,11 +393,11 @@ impl<'a> BuiltBindings<'a> {
     }
 
     pub fn write_to_file(&self, path: &str) {
-        self.write(&mut File::create(path).unwrap());
+        self.write(File::create(path).unwrap());
     }
 
-    pub fn write<F: Write>(&self, file: &mut F) {
-        let mut out = Writer::new(file, self.config);
+    pub fn write<F: Write>(&self, file: F) {
+        let mut out = SourceWriter::new(file, self.config);
 
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
@@ -442,7 +442,7 @@ impl<'a> BuiltBindings<'a> {
                 &PathValue::Enum(ref x) => x.write(self.config, &mut out),
                 &PathValue::Struct(ref x) => x.write(self.config, &mut out),
                 &PathValue::OpaqueStruct(ref x) => x.write(self.config, &mut out),
-                &PathValue::Typedef(ref x) => x.write(&mut out),
+                &PathValue::Typedef(ref x) => x.write(self.config, &mut out),
                 &PathValue::Specialization(_) => {
                     panic!("should not encounter a specialization in a built library")
                 }

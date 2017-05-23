@@ -1,34 +1,81 @@
-use bindgen::config::{Config, Braces};
+use std::cmp;
+use std::io;
 use std::io::Write;
 
+use bindgen::config::{Config, Braces};
+
+pub enum ListType<'a> {
+    Join(&'a str),
+    Cap(&'a str),
+}
+
+pub struct NullFile;
+impl Write for NullFile {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 /// A utility writer for generating code easier.
-pub struct Writer<'a, 'f, F: 'f + Write> {
-    out: &'f mut F,
+pub struct SourceWriter<'a, F: Write> {
+    out: F,
     config: &'a Config,
     spaces: Vec<usize>,
     line_started: bool,
     line_length: usize,
     line_number: usize,
+    max_line_length: usize,
 }
+pub type MeasureWriter<'a> = SourceWriter<'a, NullFile>;
 
-impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
-    pub fn new(out: &'f mut F, config: &'a Config) -> Writer<'a, 'f, F> {
-        Writer {
+impl<'a, F: Write> SourceWriter<'a, F> {
+    pub fn new(out: F, config: &'a Config) -> SourceWriter<'a, F> {
+        SourceWriter {
             out: out,
             config: config,
             spaces: vec![0],
             line_started: false,
             line_length: 0,
             line_number: 1,
+            max_line_length: 0,
         }
     }
 
-    fn spaces(&mut self) -> usize {
+    pub fn measure<T>(&self, func: T) -> usize
+        where T: Fn(&mut MeasureWriter)
+    {
+        let mut measurer = SourceWriter {
+            out: NullFile,
+            config: self.config,
+            spaces: self.spaces.clone(),
+            line_started: self.line_started,
+            line_length: self.line_length,
+            line_number: self.line_number,
+            max_line_length: self.line_length,
+        };
+
+        func(&mut measurer);
+
+        measurer.max_line_length
+    }
+
+    fn spaces(&self) -> usize {
         *self.spaces.last().unwrap()
     }
 
     fn push_set_spaces(&mut self, spaces: usize) {
         self.spaces.push(spaces);
+    }
+
+    fn line_length_for_align(&self) -> usize {
+        if self.line_started {
+            self.line_length
+        } else {
+            self.line_length + self.spaces()
+        }
     }
 
     pub fn push_tab(&mut self) {
@@ -93,18 +140,58 @@ impl<'a, 'f, F: Write> Writer<'a, 'f, F> {
 
         write!(self.out, "{}", text).unwrap();
         self.line_length += text.len();
+        self.max_line_length = cmp::max(self.max_line_length, self.line_length);
     }
 
-    pub fn write_aligned_list(&mut self, items: Vec<String>, join: String) {
-        let align_length = self.line_length;
+    pub fn write_vertical_list<'b>(&mut self, items: &Vec<String>, list_type: ListType<'b>) {
+        let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
         for (i, item) in items.iter().enumerate() {
-            self.write(item);
+            self.write(&item);
+
+            match list_type {
+                ListType::Join(text) => {
+                    if i != items.len() - 1 {
+                        self.write(&text);
+                    }
+                }
+                ListType::Cap(text) => {
+                    self.write(&text);
+                }
+            }
+
             if i != items.len() - 1 {
-                self.write(&join);
                 self.new_line();
             }
         }
         self.pop_tab();
     }
+
+    pub fn write_vertical_source_list<'b, S: Source>(&mut self, items: &Vec<S>, list_type: ListType<'b>) {
+        let align_length = self.line_length_for_align();
+        self.push_set_spaces(align_length);
+        for (i, ref item) in items.iter().enumerate() {
+            item.write(self.config, self);
+
+            match list_type {
+                ListType::Join(text) => {
+                    if i != items.len() - 1 {
+                        self.write(&text);
+                    }
+                }
+                ListType::Cap(text) => {
+                    self.write(&text);
+                }
+            }
+
+            if i != items.len() - 1 {
+                self.new_line();
+            }
+        }
+        self.pop_tab();
+    }
+}
+
+pub trait Source {
+    fn write<F: Write>(&self, config: &Config, &mut SourceWriter<F>);
 }

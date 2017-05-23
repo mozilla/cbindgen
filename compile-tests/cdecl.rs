@@ -16,6 +16,10 @@ type M = [fn (i32, i32) -> bool; 16];
 type N = [fn (i32, i32) -> (); 16];
 
 #[no_mangle]
+extern "C" fn O() -> fn ()
+{ }
+
+#[no_mangle]
 extern "C" fn root(a: A,
                    b: B,
                    c: C,

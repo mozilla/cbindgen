@@ -82,7 +82,7 @@ fn main() {
             built.write_to_file(file);
         }
         _ => {
-            built.write(&mut io::stdout());
+            built.write(io::stdout());
         }
     }
 }

@@ -1,4 +1,7 @@
+use std::io::Write;
+
 use bindgen::items::*;
+use bindgen::writer::*;
 
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.
@@ -9,13 +12,13 @@ use bindgen::items::*;
 struct CDecl {
     type_qualifers: String,
     type_name: String,
-    identifier: Option<String>,
     declarators: Vec<CDeclarator>
 }
+
 enum CDeclarator {
     Ptr(bool),
     Array(u64),
-    Func(Vec<CDecl>),
+    Func(Vec<(Option<String>, CDecl)>),
 }
 
 impl CDecl {
@@ -23,31 +26,28 @@ impl CDecl {
         CDecl {
             type_qualifers: String::new(),
             type_name: String::new(),
-            identifier: None,
-            declarators: Vec::new(),
-        }
-    }
-    fn new_with_ident(ident: String) -> CDecl {
-        CDecl {
-            type_qualifers: String::new(),
-            type_name: String::new(),
-            identifier: Some(ident),
             declarators: Vec::new(),
         }
     }
 
     fn from_type(t: &Type) -> CDecl {
         let mut cdecl = CDecl::new();
-        cdecl.build(t, false);
+        cdecl.build_type(t, false);
         cdecl
     }
-    fn from_type_with_ident(ident: String, t: &Type) -> CDecl {
-        let mut cdecl = CDecl::new_with_ident(ident);
-        cdecl.build(t, false);
+    fn from_func(f: &Function) -> CDecl {
+        let mut cdecl = CDecl::new();
+        cdecl.build_func(f);
         cdecl
     }
 
-    fn build(&mut self, t: &Type, is_const: bool) {
+    fn build_func(&mut self, f: &Function) {
+        let args = f.args.iter().map(|&(ref arg_name, ref arg_ty)| (Some(arg_name.clone()), CDecl::from_type(arg_ty))).collect();
+        self.declarators.push(CDeclarator::Func(args));
+        self.build_type(&f.ret, false);
+    }
+
+    fn build_type(&mut self, t: &Type, is_const: bool) {
         match t {
             &Type::Path(ref p) => {
                 if is_const {
@@ -70,35 +70,32 @@ impl CDecl {
 
             &Type::ConstPtr(ref t)  => {
                 self.declarators.push(CDeclarator::Ptr(is_const));
-                self.build(t, true);
+                self.build_type(t, true);
             }
             &Type::Ptr(ref t) => {
                 self.declarators.push(CDeclarator::Ptr(is_const));
-                self.build(t, false);
+                self.build_type(t, false);
             }
             &Type::Array(ref t, sz) => {
                 self.declarators.push(CDeclarator::Array(sz));
-                self.build(t, false);
+                self.build_type(t, false);
             }
             &Type::FuncPtr(ref ret, ref args) => {
-                let args = args.iter().map(|x| CDecl::from_type(x)).collect();
+                let args = args.iter().map(|x| (None, CDecl::from_type(x))).collect();
                 self.declarators.push(CDeclarator::Ptr(false));
                 self.declarators.push(CDeclarator::Func(args));
-                if let &Some(ref ret) = ret {
-                    self.build(ret, false);
-                } else {
-                    self.build(&Type::Primitive(PrimitiveType::Void), false);
-                }
+                self.build_type(ret, false);
             }
         }
     }
 
-    fn to_string(&self) -> String {
+    fn to_string(&self, ident: Option<&str>) -> String
+    {
         // Build the left side (the type-specifier and type-qualifier),
         // and then build the right side (the declarators), and then
         // merge the result.
 
-        let left = if self.type_qualifers.len() != 0 {
+        let type_and_qualifier = if self.type_qualifers.len() != 0 {
             format!("{} {}",
                     self.type_qualifers,
                     self.type_name)
@@ -107,63 +104,76 @@ impl CDecl {
                     self.type_name)
         };
 
-        let mut right = if let Some(ref ident) = self.identifier {
-            ident.to_owned()
-        } else {
-            String::new()
-        };
-
+        let mut left_declarators = String::new();
+        let mut right_declarators = String::new();
         let mut last_was_pointer = false;
         for declarator in &self.declarators {
             match declarator {
                 &CDeclarator::Ptr(ref is_const) => {
                     if *is_const {
-                        right.insert_str(0, "*const ");
+                        left_declarators.insert_str(0, "*const ");
                     } else {
-                        right.insert_str(0, "*");
+                        left_declarators.insert_str(0, "*");
                     }
 
                     last_was_pointer = true;
                 },
                 &CDeclarator::Array(sz) => {
                     if last_was_pointer {
-                        right.insert_str(0, "(");
-                        right.push_str(")");
+                        left_declarators.insert_str(0, "(");
+                        right_declarators.push_str(")");
                     }
-                    right.push_str(&format!("[{}]", sz));
+                    right_declarators.push_str(&format!("[{}]", sz));
 
                     last_was_pointer = false;
                 },
                 &CDeclarator::Func(ref args) => {
                     if last_was_pointer {
-                        right.insert_str(0, "(");
-                        right.push_str(")");
+                        left_declarators.insert_str(0, "(");
+                        right_declarators.push_str(")");
                     }
 
-                    let args = args.iter()
-                                   .map(|x| x.to_string())
-                                   .collect::<Vec<_>>()
-                                   .join(", ");
-                    right.push_str(&format!("({})", args));
+                    right_declarators.push_str("(");
+                    for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
+                        if i != 0 {
+                            right_declarators.push_str(", ");
+                        }
+
+                        // This is gross, but needed to convert &Option<String> to Option<&str>
+                        let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
+
+                        right_declarators.push_str(&arg_ty.to_string(arg_ident));
+                    }
+                    right_declarators.push_str(")");
 
                     last_was_pointer = true;
                 },
             }
         }
 
-        if right.len() == 0 {
-            return left;
-        } else if !self.identifier.is_some() {
-            return format!("{}{}", left, right);
-        } else {
-            return format!("{} {}", left, right);
+        match ident {
+            Some(ident) => {
+                format!("{} {}{}{}",
+                        type_and_qualifier,
+                        left_declarators,
+                        ident,
+                        right_declarators)
+            }
+            None => {
+                format!("{}{}{}",
+                        type_and_qualifier,
+                        left_declarators,
+                        right_declarators)
+            }
         }
     }
 }
 
-pub fn to_cdecl(t: &Type) -> String {
-    CDecl::from_type(t).to_string()
+pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function)
+{
+    out.write(&CDecl::from_func(f).to_string(Some(&f.name)));
 }
-pub fn to_cdecl_with_ident(ident: String, t: &Type) -> String {
-    CDecl::from_type_with_ident(ident, t).to_string()
+pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str)
+{
+    out.write(&CDecl::from_type(t).to_string(Some(ident)));
 }
