@@ -27,6 +27,7 @@ macro_rules! deserialize_enum_str {
     }
 }
 
+mod cargo_metadata;
 mod cdecl;
 mod config;
 mod annotation;

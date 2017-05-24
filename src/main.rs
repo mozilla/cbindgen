@@ -1,4 +1,5 @@
 use std::io;
+use std::path::Path;
 
 extern crate clap;
 #[macro_use]
@@ -6,6 +7,7 @@ extern crate log;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 extern crate syn;
 extern crate toml;
 
@@ -36,6 +38,11 @@ fn main() {
                          .help("the crate or source file to generate bindings for")
                          .required(true)
                          .index(1))
+                    .arg(Arg::with_name("crate")
+                         .long("crate")
+                         .value_name("CRATE")
+                         .help("if generating bindings for a crate, the specific crate to create bindings for")
+                         .required(false))
                     .arg(Arg::with_name("out")
                          .short("o")
                          .long("output")
@@ -68,7 +75,16 @@ fn main() {
         };
     }
 
-    let built = match Library::load(input, &config).generate() {
+    let library = if Path::new(&input).is_dir() {
+        let binding_crate = matches.value_of("crate")
+                                   .expect("--crate is required when building bindings for a library crate.");
+
+        Library::load_crate(Path::new(input), &binding_crate, &config)
+    } else {
+        Library::load_src(Path::new(input), &config)
+    };
+
+    let built = match library.generate() {
         Ok(x) => x,
         Err(msg) => {
             error!("{}", msg);

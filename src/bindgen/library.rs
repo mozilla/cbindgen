@@ -2,6 +2,7 @@ use std::io::Write;
 use std::collections::BTreeMap;
 use std::cmp::Ordering;
 use std::fs::File;
+use std::path;
 
 use syn;
 
@@ -253,11 +254,23 @@ impl<'a> Library<'a> {
     }
 
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
-    pub fn load(crate_or_src: &str, config: &'a Config) -> Library<'a>
+    pub fn load_src(src: &path::Path, config: &'a Config) -> Library<'a>
     {
         let mut library = Library::blank(config);
 
-        rust_lib::parse(crate_or_src, &mut |mod_name, items| {
+        rust_lib::parse_src(src, &mut |mod_name, items| {
+            library.parse_crate_mod(&mod_name, items);
+        });
+
+        library
+    }
+
+    /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
+    pub fn load_crate(crate_dir: &path::Path, bindings_crate_name: &str, config: &'a Config) -> Library<'a>
+    {
+        let mut library = Library::blank(config);
+
+        rust_lib::parse_lib(crate_dir, bindings_crate_name, &mut |mod_name, items| {
             library.parse_crate_mod(&mod_name, items);
         });
 
