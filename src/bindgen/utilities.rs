@@ -177,36 +177,18 @@ impl SynFieldHelpers for Field {
 }
 
 pub trait SynPathHelpers {
-    fn convert_to_simple_single_segment(&self) -> ConvertResult<String>;
     fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)>;
 }
 impl SynPathHelpers for Path {
-    fn convert_to_simple_single_segment(&self) -> ConvertResult<String> {
+    fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)> {
         if self.segments.len() != 1 {
             return Err(format!("Path is not a single segment"));
-        }
-
-        match &self.segments[0].parameters {
-            &PathParameters::AngleBracketed(ref d) => {
-                if !d.lifetimes.is_empty() ||
-                   !d.types.is_empty() ||
-                   !d.bindings.is_empty() {
-                    return Err(format!("Path contains generics, bindings, or lifetimes"));
-                }
-            }
-            &PathParameters::Parenthesized(_) => {
-                return Err(format!("Path contains parentheses"));
-            }
         }
 
         let name = self.segments[0].ident.to_string();
 
-        Ok(name)
-    }
-
-    fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)> {
-        if self.segments.len() != 1 {
-            return Err(format!("Path is not a single segment"));
+        if name == "PhantomData" {
+            return Ok((name, Vec::new()));
         }
 
         let generics = match &self.segments[0].parameters {
@@ -223,8 +205,6 @@ impl SynPathHelpers for Path {
                 return Err(format!("Path contains parentheses"));
             }
         };
-
-        let name = self.segments[0].ident.to_string();
 
         Ok((name, generics))
     }

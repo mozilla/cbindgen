@@ -156,7 +156,7 @@ impl Type {
             &syn::Ty::Path(_, ref p) => {
                 let (name, generics) = try!(p.convert_to_generic_single_segment());
 
-                if name == "PhantomData" && generics.len() == 1 {
+                if name == "PhantomData" {
                     return Ok(None);
                 } else if generics.len() != 0 {
                     return Err(format!("cannot have a type with generics"));
