@@ -83,6 +83,7 @@ impl DependencyGraph {
 /// A library contains all of the information needed to generate bindings for a rust library.
 #[derive(Debug, Clone)]
 pub struct Library<'a> {
+    bindings_crate_name: String,
     config: &'a Config,
 
     enums: BTreeMap<String, Enum>,
@@ -94,9 +95,11 @@ pub struct Library<'a> {
 }
 
 impl<'a> Library<'a> {
-    fn blank(config: &'a Config) -> Library<'a> {
+    fn blank(bindings_crate_name: &str, config: &'a Config) -> Library<'a> {
         Library {
+            bindings_crate_name: String::from(bindings_crate_name),
             config: config,
+
             enums: BTreeMap::new(),
             structs: BTreeMap::new(),
             opaque_structs: BTreeMap::new(),
@@ -106,12 +109,12 @@ impl<'a> Library<'a> {
         }
     }
 
-    fn parse_crate_mod(&mut self, mod_name: &str, items: &Vec<syn::Item>) {
+    fn parse_crate_mod(&mut self, crate_name: &str, items: &Vec<syn::Item>) {
         for item in items {
             match item.node {
                 syn::ItemKind::ForeignMod(ref block) => {
                     if !block.abi.is_c() {
-                        info!("skip {}::{} - non c abi extern block", mod_name, &item.ident);
+                        info!("skip {}::{} - non c abi extern block", crate_name, &item.ident);
                         continue;
                     }
 
@@ -119,6 +122,11 @@ impl<'a> Library<'a> {
                         match foreign_item.node {
                             syn::ForeignItemKind::Fn(ref decl,
                                                      ref _generic) => {
+                                if crate_name != self.bindings_crate_name {
+                                    info!("skip {}::{} - (fn's outside of the binding crate are not used)", crate_name, &foreign_item.ident);
+                                    continue;
+                                }
+
                                 let annotations = match AnnotationSet::parse(foreign_item.get_doc_attr()) {
                                     Ok(x) => x,
                                     Err(msg) => {
@@ -129,12 +137,12 @@ impl<'a> Library<'a> {
 
                                 match Function::convert(foreign_item.ident.to_string(), annotations, decl, true) {
                                     Ok(func) => {
-                                        info!("take {}::{}", mod_name, &foreign_item.ident);
+                                        info!("take {}::{}", crate_name, &foreign_item.ident);
 
                                         self.functions.insert(func.name.clone(), func);
                                     }
                                     Err(msg) => {
-                                        info!("skip {}::{} - ({})", mod_name, &foreign_item.ident, msg);
+                                        info!("skip {}::{} - ({})", crate_name, &foreign_item.ident, msg);
                                     },
                                 }
                             }
@@ -148,6 +156,11 @@ impl<'a> Library<'a> {
                                   ref abi,
                                   ref _generic,
                                   ref _block) => {
+                    if crate_name != self.bindings_crate_name {
+                        info!("skip {}::{} - (fn's outside of the binding crate are not used)", crate_name, &item.ident);
+                        continue;
+                    }
+
                     if item.is_no_mangle() && abi.is_c() {
                         let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
                             Ok(x) => x,
@@ -159,13 +172,17 @@ impl<'a> Library<'a> {
 
                         match Function::convert(item.ident.to_string(), annotations, decl, false) {
                             Ok(func) => {
-                                info!("take {}::{}", mod_name, &item.ident);
+                                info!("take {}::{}", crate_name, &item.ident);
 
                                 self.functions.insert(func.name.clone(), func);
                             }
                             Err(msg) => {
-                                info!("skip {}::{} - ({})", mod_name, &item.ident, msg);
+                                info!("skip {}::{} - ({})", crate_name, &item.ident, msg);
                             },
+                        }
+                    } else {
+                        if item.is_no_mangle() != abi.is_c() {
+                            warn!("skipping fn {} because it is not both `no_mangle` and `extern \"C\"`", &item.ident);
                         }
                     }
                 }
@@ -183,18 +200,18 @@ impl<'a> Library<'a> {
                     if item.is_repr_c() {
                         match Struct::convert(struct_name.clone(), annotations.clone(), variant, generics) {
                             Ok(st) => {
-                                info!("take {}::{}", mod_name, &item.ident);
+                                info!("take {}::{}", crate_name, &item.ident);
                                 self.structs.insert(struct_name,
                                                     st);
                             }
                             Err(msg) => {
-                                info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
+                                info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
                                 self.opaque_structs.insert(struct_name.clone(),
                                                            OpaqueStruct::new(struct_name, annotations));
                             }
                         }
                     } else {
-                        info!("take {}::{} - opaque (not marked as repr(C))", mod_name, &item.ident);
+                        info!("take {}::{} - opaque (not marked as repr(C))", crate_name, &item.ident);
                         self.opaque_structs.insert(struct_name.clone(),
                                                    OpaqueStruct::new(struct_name, annotations));
                     }
@@ -203,7 +220,7 @@ impl<'a> Library<'a> {
                     if !generics.lifetimes.is_empty() ||
                        !generics.ty_params.is_empty() ||
                        !generics.where_clause.predicates.is_empty() {
-                        info!("skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident);
+                        info!("skip {}::{} - (has generics or lifetimes or where bounds)", crate_name, &item.ident);
                         continue;
                     }
 
@@ -218,11 +235,11 @@ impl<'a> Library<'a> {
 
                     match Enum::convert(enum_name.clone(), item.get_repr(), annotations.clone(), variants) {
                         Ok(en) => {
-                            info!("take {}::{}", mod_name, &item.ident);
+                            info!("take {}::{}", crate_name, &item.ident);
                             self.enums.insert(enum_name, en);
                         }
                         Err(msg) => {
-                            info!("take {}::{} - opaque ({})", mod_name, &item.ident, msg);
+                            info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
                             self.opaque_structs.insert(enum_name.clone(),
                                                        OpaqueStruct::new(enum_name, annotations));
                         }
@@ -243,7 +260,7 @@ impl<'a> Library<'a> {
                                                               generics,
                                                               ty) {
                         Ok(spec) => {
-                            info!("take {}::{}", mod_name, &item.ident);
+                            info!("take {}::{}", crate_name, &item.ident);
                             self.specializations.insert(alias_name, spec);
                             continue;
                         }
@@ -252,19 +269,19 @@ impl<'a> Library<'a> {
 
                     if !generics.lifetimes.is_empty() ||
                        !generics.ty_params.is_empty() {
-                        info!("skip {}::{} - (typedefs cannot have generics or lifetimes)", mod_name, &item.ident);
+                        info!("skip {}::{} - (typedefs cannot have generics or lifetimes)", crate_name, &item.ident);
                         continue;
                     }
 
                     let fail2 = match Typedef::convert(alias_name.clone(), annotations, ty) {
                         Ok(typedef) => {
-                            info!("take {}::{}", mod_name, &item.ident);
+                            info!("take {}::{}", crate_name, &item.ident);
                             self.typedefs.insert(alias_name, typedef);
                             continue;
                         }
                         Err(msg) => msg,
                     };
-                    info!("skip {}::{} - ({} and {})", mod_name, &item.ident, fail1, fail2);
+                    info!("skip {}::{} - ({} and {})", crate_name, &item.ident, fail1, fail2);
                 }
                 _ => {}
             }
@@ -274,10 +291,10 @@ impl<'a> Library<'a> {
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
     pub fn load_src(src: &path::Path, config: &'a Config) -> Library<'a>
     {
-        let mut library = Library::blank(config);
+        let mut library = Library::blank("", config);
 
-        rust_lib::parse_src(src, &mut |mod_name, items| {
-            library.parse_crate_mod(&mod_name, items);
+        rust_lib::parse_src(src, &mut |crate_name, items| {
+            library.parse_crate_mod(&crate_name, items);
         });
 
         library
@@ -286,10 +303,10 @@ impl<'a> Library<'a> {
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
     pub fn load_crate(crate_dir: &path::Path, bindings_crate_name: &str, config: &'a Config) -> Library<'a>
     {
-        let mut library = Library::blank(config);
+        let mut library = Library::blank(bindings_crate_name, config);
 
-        rust_lib::parse_lib(crate_dir, bindings_crate_name, &mut |mod_name, items| {
-            library.parse_crate_mod(&mod_name, items);
+        rust_lib::parse_lib(crate_dir, bindings_crate_name, &mut |crate_name, items| {
+            library.parse_crate_mod(&crate_name, items);
         });
 
         library

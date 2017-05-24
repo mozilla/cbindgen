@@ -7,6 +7,13 @@ use bindgen::cargo_expand;
 use bindgen::cargo_metadata;
 use syn;
 
+const STD_CRATES: &[&'static str] = &["std",
+                                      "std_unicode",
+                                      "alloc",
+                                      "collections",
+                                      "core",
+                                      "proc_macro"];
+
 /// Parses a single rust source file, not following `mod` or `extern crate`.
 pub fn parse_src<F>(src_file: &Path,
                     items_callback: &mut F)
@@ -84,6 +91,10 @@ impl<F> ParseLibContext<F>
 fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>)
     where F: FnMut(&str, &Vec<syn::Item>)
 {
+    if STD_CRATES.contains(&crate_name) {
+        return;
+    }
+
     let crate_src = context.find_crate_src(crate_name);
 
     match crate_src {
@@ -99,15 +110,26 @@ fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>)
 fn parse_expand_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>)
     where F: FnMut(&str, &Vec<syn::Item>)
 {
+    if STD_CRATES.contains(&crate_name) {
+        return;
+    }
+
     let mod_parsed = {
         let owned_crate_name = crate_name.to_owned();
 
         if !context.cache_expanded_crate.contains_key(&owned_crate_name) {
-            let s = cargo_expand::expand(&context.manifest_path,
-                                         crate_name);
-            let i = syn::parse_crate(&s).unwrap();
-            context.cache_expanded_crate.insert(owned_crate_name.clone(), i.items);
+            match cargo_expand::expand(&context.manifest_path, crate_name) {
+                Ok(crate_src) => {
+                    let i = syn::parse_crate(&crate_src).unwrap();
+                    context.cache_expanded_crate.insert(owned_crate_name.clone(), i.items);
+                },
+                Err(error) => {
+                    warn!("error parsing expanded crate: {}", error);
+                    return;
+                }
+            }
         }
+
         context.cache_expanded_crate.get(&owned_crate_name).unwrap().clone()
     };
 
