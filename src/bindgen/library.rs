@@ -214,13 +214,6 @@ impl<'a> Library<'a> {
                     }
                 }
                 syn::ItemKind::Ty(ref ty, ref generics) => {
-                    if !generics.lifetimes.is_empty() ||
-                       !generics.ty_params.is_empty() ||
-                       !generics.where_clause.predicates.is_empty() {
-                        info!("skip {}::{} - (has generics or lifetimes or where bounds)", mod_name, &item.ident);
-                        continue;
-                    }
-
                     let alias_name = item.ident.to_string();
                     let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
                         Ok(x) => x,
@@ -230,7 +223,10 @@ impl<'a> Library<'a> {
                         }
                     };
 
-                    let fail1 = match Specialization::convert(alias_name.clone(), annotations.clone(), ty) {
+                    let fail1 = match Specialization::convert(alias_name.clone(),
+                                                              annotations.clone(),
+                                                              generics,
+                                                              ty) {
                         Ok(spec) => {
                             info!("take {}::{}", mod_name, &item.ident);
                             self.specializations.insert(alias_name, spec);
@@ -238,6 +234,13 @@ impl<'a> Library<'a> {
                         }
                         Err(msg) => msg,
                     };
+
+                    if !generics.lifetimes.is_empty() ||
+                       !generics.ty_params.is_empty() {
+                        info!("skip {}::{} - (typedefs cannot have generics or lifetimes)", mod_name, &item.ident);
+                        continue;
+                    }
+
                     let fail2 = match Typedef::convert(alias_name.clone(), annotations, ty) {
                         Ok(typedef) => {
                             info!("take {}::{}", mod_name, &item.ident);
@@ -340,9 +343,10 @@ impl<'a> Library<'a> {
                 }
                 &PathValue::Specialization(ref s) => {
                     match s.specialize(self.config, &self) {
-                        Ok(value) => {
+                        Ok(Some(value)) => {
                             result.items.push(value);
                         }
+                        Ok(None) => {},
                         Err(msg) => {
                             warn!("specializing {} failed - ({})", dep.name(), msg);
                         }

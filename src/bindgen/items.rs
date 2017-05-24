@@ -677,17 +677,23 @@ pub struct Specialization {
     pub name: String,
     pub annotations: AnnotationSet,
     pub aliased: PathRef,
+    pub generic_params: Vec<PathRef>,
     pub generic_values: Vec<Type>,
 }
 
 impl Specialization {
     pub fn convert(name: String,
                    annotations: AnnotationSet,
+                   generics: &syn::Generics,
                    ty: &syn::Ty) -> ConvertResult<Specialization>
     {
         match ty {
             &syn::Ty::Path(ref _q, ref p) => {
-                let (path, generics) = try!(p.convert_to_generic_single_segment());
+                let generic_params = generics.ty_params.iter()
+                                                       .map(|x| x.ident.to_string())
+                                                       .collect::<Vec<_>>();
+
+                let (path, generic_values) = try!(p.convert_to_generic_single_segment());
 
                 if PrimitiveType::maybe(&path).is_some() {
                     return Err(format!("can't specialize a primitive"));
@@ -697,7 +703,8 @@ impl Specialization {
                     name: name,
                     annotations: annotations,
                     aliased: path,
-                    generic_values: generics,
+                    generic_params: generic_params,
+                    generic_values: generic_values,
                 })
             }
             _ => {
@@ -709,19 +716,23 @@ impl Specialization {
     pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
         library.add_deps_for_path_deps(&self.aliased, out);
         for value in &self.generic_values {
-            value.add_deps(&library, out);
+            value.add_deps_with_generics(&self.generic_params, &library, out);
         }
     }
 
-    pub fn specialize(&self, config: &Config, library: &Library) -> ConvertResult<PathValue> {
+    pub fn specialize(&self, config: &Config, library: &Library) -> ConvertResult<Option<PathValue>> {
+        if self.generic_params.len() > 0 {
+            return Ok(None);
+        }
+
         match library.resolve_path(&self.aliased) {
             Some(aliased) => {
                 match aliased {
                     PathValue::OpaqueStruct(_) => {
-                        Ok(PathValue::OpaqueStruct(OpaqueStruct {
+                        Ok(Some(PathValue::OpaqueStruct(OpaqueStruct {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
-                        }))
+                        })))
                     }
                     PathValue::Struct(aliased) => {
                         if self.generic_values.len() !=
@@ -733,36 +744,50 @@ impl Specialization {
                                                              .zip(self.generic_values.iter())
                                                              .collect::<Vec<_>>();
 
-                        Ok(PathValue::Struct(Struct {
+                        Ok(Some(PathValue::Struct(Struct {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
                                                   .collect(),
                             generic_params: vec![],
-                        }))
+                        })))
                     }
                     PathValue::Enum(aliased) => {
-                        Ok(PathValue::Enum(Enum {
+                        Ok(Some(PathValue::Enum(Enum {
                             name: self.name.clone(),
                             repr: aliased.repr.clone(),
                             annotations: self.annotations.clone(),
                             values: aliased.values.clone(),
-                        }))
+                        })))
                     }
                     PathValue::Typedef(aliased) => {
-                        Ok(PathValue::Typedef(Typedef {
+                        Ok(Some(PathValue::Typedef(Typedef {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
-                        }))
+                        })))
                     }
                     PathValue::Specialization(aliased) => {
+                        if self.generic_values.len() !=
+                           aliased.generic_params.len() {
+                            return Err(format!("incomplete specialization"));
+                        }
+
+                        let mappings = aliased.generic_params.iter()
+                                                             .zip(self.generic_values.iter())
+                                                             .collect::<Vec<_>>();
+
+                        let generic_values = aliased.generic_values.iter()
+                                                                   .map(|x| x.specialize(&mappings))
+                                                                   .collect();
+
                         Specialization {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
-                            generic_values: aliased.generic_values.clone(),
+                            generic_params: Vec::new(),
+                            generic_values: generic_values,
                         }.specialize(config, library)
                     }
                 }
