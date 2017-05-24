@@ -25,6 +25,9 @@ fn main() {
                     .arg(Arg::with_name("v")
                          .short("v")
                          .help("whether to print verbose logs"))
+                    .arg(Arg::with_name("V")
+                         .short("V")
+                         .help("whether to print trace logs"))
                     .arg(Arg::with_name("config")
                          .short("c")
                          .long("config")
@@ -51,7 +54,9 @@ fn main() {
                          .required(false))
                     .get_matches();
 
-    if matches.is_present("v") {
+    if matches.is_present("V") {
+        logging::TraceLogger::init().unwrap();
+    } else if matches.is_present("v") {
         logging::InfoLogger::init().unwrap();
     } else {
         logging::WarnLogger::init().unwrap();

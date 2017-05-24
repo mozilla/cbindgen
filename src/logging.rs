@@ -4,8 +4,32 @@ use std::io::Write;
 use log;
 use log::*;
 
+pub struct TraceLogger;
 pub struct WarnLogger;
 pub struct InfoLogger;
+
+impl TraceLogger {
+    pub fn init() -> Result<(), SetLoggerError> {
+        log::set_logger(|max_log_level| {
+            max_log_level.set(LogLevelFilter::Trace);
+            Box::new(TraceLogger)
+        })
+    }
+}
+impl log::Log for TraceLogger {
+    fn enabled(&self, metadata: &LogMetadata) -> bool {
+        metadata.level() <= LogLevel::Trace
+    }
+
+    fn log(&self, record: &LogRecord) {
+        if self.enabled(record.metadata()) {
+            writeln!(io::stderr(),
+                   "{}: {}",
+                   record.level(),
+                   record.args()).unwrap();
+        }
+    }
+}
 
 impl WarnLogger {
     pub fn init() -> Result<(), SetLoggerError> {
