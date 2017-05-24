@@ -1,5 +1,6 @@
 use std::io::Write;
 use std::collections::BTreeMap;
+use std::collections::HashSet;
 use std::cmp::Ordering;
 use std::fs::File;
 use std::path;
@@ -46,7 +47,7 @@ impl PathValue {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
         match self {
             &PathValue::Enum(_) => { },
             &PathValue::Struct(ref x) => { x.add_deps(library, out); },
@@ -61,6 +62,20 @@ impl PathValue {
             &mut PathValue::Enum(ref mut x) => { x.apply_renaming(config); },
             &mut PathValue::Struct(ref mut x) => { x.apply_renaming(config); },
             _ => { },
+        }
+    }
+}
+
+/// A dependency graph is used for gathering what order to output the types.
+pub struct DependencyGraph {
+    order: Vec<PathValue>,
+    items: HashSet<PathRef>,
+}
+impl DependencyGraph {
+    fn new() -> DependencyGraph {
+        DependencyGraph {
+            order: Vec::new(),
+            items: HashSet::new(),
         }
     }
 }
@@ -300,19 +315,21 @@ impl<'a> Library<'a> {
         None
     }
 
-    pub fn add_deps_for_path(&self, p: &PathRef, out: &mut Vec<PathValue>) {
+    pub fn add_deps_for_path(&self, p: &PathRef, out: &mut DependencyGraph) {
         if let Some(value) = self.resolve_path(p) {
-            value.add_deps(self, out);
+            if !out.items.contains(p) {
+                out.items.insert(p.clone());
 
-            if !out.iter().any(|x| x.name() == value.name()) {
-                out.push(value);
+                value.add_deps(self, out);
+
+                out.order.push(value);
             }
         } else {
             warn!("can't find {}", p);
         }
     }
 
-    pub fn add_deps_for_path_deps(&self, p: &PathRef, out: &mut Vec<PathValue>) {
+    pub fn add_deps_for_path_deps(&self, p: &PathRef, out: &mut DependencyGraph) {
         if let Some(value) = self.resolve_path(p) {
             value.add_deps(self, out);
         } else {
@@ -326,7 +343,7 @@ impl<'a> Library<'a> {
 
         // Gather only the items that we need for this
         // `extern "c"` interface
-        let mut deps = Vec::new();
+        let mut deps = DependencyGraph::new();
         for (_, function) in &self.functions {
             function.add_deps(&self, &mut deps);
         }
@@ -334,7 +351,7 @@ impl<'a> Library<'a> {
         // Copy the binding items in dependencies order
         // into the BuiltBindings, specializing any type
         // aliases we encounter
-        for dep in deps {
+        for dep in deps.order {
             match &dep {
                 &PathValue::Struct(ref s) => {
                     if !s.generic_params.is_empty() {

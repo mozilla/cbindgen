@@ -197,7 +197,7 @@ impl Type {
         return Ok(Some(converted));
     }
 
-    pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut Vec<PathValue>) {
+    pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut DependencyGraph) {
         match self {
             &Type::ConstPtr(ref t) => {
                 t.add_deps(library, out);
@@ -224,7 +224,7 @@ impl Type {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
         self.add_deps_with_generics(&Vec::new(), library, out)
     }
 
@@ -328,7 +328,7 @@ impl Function {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
         self.ret.add_deps(library, out);
         for &(_, ref ty) in &self.args {
             ty.add_deps(library, out);
@@ -451,7 +451,7 @@ impl Struct {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
         for &(_, ref ty) in &self.fields {
             ty.add_deps_with_generics(&self.generic_params, library, out);
         }
@@ -713,7 +713,7 @@ impl Specialization {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
         library.add_deps_for_path_deps(&self.aliased, out);
         for value in &self.generic_values {
             value.add_deps_with_generics(&self.generic_params, &library, out);
@@ -821,7 +821,7 @@ impl Typedef {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut Vec<PathValue>) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
         self.aliased.add_deps(library, out);
     }
 }
