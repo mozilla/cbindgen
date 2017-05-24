@@ -111,15 +111,22 @@ fn parse_expand_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>)
         context.cache_expanded_crate.get(&owned_crate_name).unwrap().clone()
     };
 
-    (context.items_callback)(crate_name,
-                             &mod_parsed);
+    process_expanded_mod(crate_name, &mod_parsed, context);
+}
 
-    for item in &mod_parsed {
+fn process_expanded_mod<F>(crate_name: &str,
+                           items: &Vec<syn::Item>,
+                           context: &mut ParseLibContext<F>)
+    where F: FnMut(&str, &Vec<syn::Item>)
+{
+    (context.items_callback)(crate_name,
+                             items);
+
+    for item in items {
         match item.node {
             syn::ItemKind::Mod(ref inline_items) => {
                 if let &Some(ref inline_items) = inline_items {
-                    (context.items_callback)(crate_name,
-                                             &inline_items);
+                    process_expanded_mod(crate_name, inline_items, context);
                     continue;
                 }
 
@@ -139,8 +146,6 @@ fn parse_mod<F>(crate_name: &str,
                 context: &mut ParseLibContext<F>)
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    let mod_dir = mod_path.parent().unwrap().to_path_buf();
-
     let mod_parsed = {
         let owned_mod_path = mod_path.to_path_buf();
 
@@ -154,17 +159,33 @@ fn parse_mod<F>(crate_name: &str,
         context.cache_src.get(&owned_mod_path).unwrap().clone()
     };
 
-    (context.items_callback)(crate_name,
-                             &mod_parsed);
+    let mod_dir = mod_path.parent().unwrap();
 
-    for item in &mod_parsed {
+    process_mod(crate_name,
+                mod_dir,
+                &mod_parsed,
+                context);
+}
+
+fn process_mod<F>(crate_name: &str,
+                  mod_dir: &Path,
+                  items: &Vec<syn::Item>,
+                  context: &mut ParseLibContext<F>)
+    where F: FnMut(&str, &Vec<syn::Item>)
+{
+    (context.items_callback)(crate_name,
+                             items);
+
+    for item in items {
         match item.node {
             syn::ItemKind::Mod(ref inline_items) => {
                 let next_mod_name = item.ident.to_string();
 
                 if let &Some(ref inline_items) = inline_items {
-                    (context.items_callback)(crate_name,
-                                             &inline_items);
+                    process_mod(crate_name,
+                                mod_dir,
+                                inline_items,
+                                context);
                     continue;
                 }
 
