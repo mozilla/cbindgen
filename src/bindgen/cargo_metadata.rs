@@ -110,10 +110,12 @@ impl From<serde_json::Error> for Error {
 pub fn metadata(manifest_path_arg: Option<&str>) -> Result<Metadata, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
-    cmd.arg("metadata").arg("--all-features");
+    cmd.arg("metadata");
+    cmd.arg("--all-features");
     cmd.arg("--format-version").arg("1");
     if let Some(mani) = manifest_path_arg {
-        cmd.arg("--manifest-path").arg(mani);
+        cmd.arg("--manifest-path");
+        cmd.arg(mani);
     }
     let output = cmd.output()?;
     let stdout = from_utf8(&output.stdout)?;
