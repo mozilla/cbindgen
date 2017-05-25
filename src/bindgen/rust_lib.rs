@@ -36,6 +36,7 @@ pub fn parse_src<F>(src_file: &Path,
 /// command to find the location of dependencies.
 pub fn parse_lib<F>(crate_path: &Path,
                     binding_crate_name: &str,
+                    expand: &[String],
                     items_callback: &mut F)
     where F: FnMut(&str, &Vec<syn::Item>)
 {
@@ -50,6 +51,7 @@ pub fn parse_lib<F>(crate_path: &Path,
     let mut context = ParseLibContext {
       manifest_path: manifest_path,
       metadata: metadata,
+      expand: expand.to_owned(),
       cache_src: HashMap::new(),
       cache_expanded_crate: HashMap::new(),
       items_callback: items_callback,
@@ -63,6 +65,7 @@ struct ParseLibContext<F>
 {
   manifest_path: PathBuf,
   metadata: cargo_metadata::Metadata,
+  expand: Vec<String>,
   cache_src: HashMap<PathBuf, Vec<syn::Item>>,
   cache_expanded_crate: HashMap<String, Vec<syn::Item>>,
 
@@ -93,6 +96,11 @@ fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>)
 {
     if STD_CRATES.contains(&crate_name) {
         return;
+    }
+
+    if context.expand.contains(&crate_name.to_owned()) {
+      parse_expand_crate(crate_name, context);
+      return;
     }
 
     let crate_src = context.find_crate_src(crate_name);
@@ -155,8 +163,8 @@ fn process_expanded_mod<F>(crate_name: &str,
                 warn!("external mod found in expanded source");
             }
             syn::ItemKind::ExternCrate(_) => {
-                parse_expand_crate(&item.ident.to_string(),
-                                   context);
+                parse_crate(&item.ident.to_string(),
+                            context);
             }
             _ => {}
         }
@@ -227,8 +235,8 @@ fn process_mod<F>(crate_name: &str,
                 }
             }
             syn::ItemKind::ExternCrate(_) => {
-                parse_expand_crate(&item.ident.to_string(),
-                                   context);
+                parse_crate(&item.ident.to_string(),
+                            context);
             }
             _ => {}
         }

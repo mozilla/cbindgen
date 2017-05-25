@@ -305,7 +305,10 @@ impl<'a> Library<'a> {
     {
         let mut library = Library::blank(bindings_crate_name, config);
 
-        rust_lib::parse_lib(crate_dir, bindings_crate_name, &mut |crate_name, items| {
+        rust_lib::parse_lib(crate_dir,
+                            bindings_crate_name,
+                            &config.expand,
+                            &mut |crate_name, items| {
             library.parse_crate_mod(&crate_name, items);
         });
 

@@ -110,6 +110,8 @@ pub struct Config {
     pub tab_width: usize,
     /// The language to output bindings for
     pub language: Language,
+    /// The names of crates to parse with `rustc --pretty=expanded`
+    pub expand: Vec<String>,
     /// The configuration options for functions
     #[serde(rename = "fn")]
     pub function: FunctionConfig,
@@ -133,6 +135,7 @@ impl Default for Config {
             line_length: 100,
             tab_width: 2,
             language: Language::Cxx,
+            expand: Vec::new(),
             function: FunctionConfig::default(),
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),
