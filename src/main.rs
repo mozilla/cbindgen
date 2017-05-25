@@ -77,8 +77,23 @@ fn main() {
     }
 
     let library = if Path::new(&input).is_dir() {
-        let binding_crate = matches.value_of("crate")
-                                   .expect("--crate is required when building bindings for a library crate.");
+        let binding_crate = match matches.value_of("crate") {
+            Some(binding_crate) => binding_crate,
+            None => {
+                // Try and guess the root crate name by looking
+                // at the directory name, it would be better to
+                // look at the Cargo.toml for this
+                match Path::new(input).parent()
+                                      .and_then(|x| x.file_name())
+                                      .and_then(|x| x.to_str()) {
+                    Some(name) => name,
+                    None => {
+                        error!("cannot infer the name of the bindings crate. specify it with --crate");
+                        return;
+                    }
+                }
+            }
+        };
 
         Library::load_crate(Path::new(input), &binding_crate, &config)
     } else {
