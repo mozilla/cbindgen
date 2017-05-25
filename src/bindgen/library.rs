@@ -15,6 +15,7 @@ use bindgen::rust_lib;
 use bindgen::utilities::*;
 use bindgen::writer::{Source, SourceWriter};
 
+pub type ParseResult<'a> = Result<Library<'a>, String>;
 pub type ConvertResult<T> = Result<T, String>;
 pub type GenerateResult<T> = Result<T, String>;
 
@@ -107,6 +108,33 @@ impl<'a> Library<'a> {
             specializations: BTreeMap::new(),
             functions: BTreeMap::new(),
         }
+    }
+
+    /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
+    pub fn load_src(src: &path::Path, config: &'a Config) -> ParseResult<'a>
+    {
+        let mut library = Library::blank("", config);
+
+        rust_lib::parse_src(src, &mut |crate_name, items| {
+            library.parse_crate_mod(&crate_name, items);
+        })?;
+
+        Ok(library)
+    }
+
+    /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
+    pub fn load_crate(crate_dir: &path::Path, bindings_crate_name: &str, config: &'a Config) -> ParseResult<'a>
+    {
+        let mut library = Library::blank(bindings_crate_name, config);
+
+        rust_lib::parse_lib(crate_dir,
+                            bindings_crate_name,
+                            &config.expand,
+                            &mut |crate_name, items| {
+            library.parse_crate_mod(&crate_name, items);
+        })?;
+
+        Ok(library)
     }
 
     fn parse_crate_mod(&mut self, crate_name: &str, items: &Vec<syn::Item>) {
@@ -286,33 +314,6 @@ impl<'a> Library<'a> {
                 _ => {}
             }
         }
-    }
-
-    /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
-    pub fn load_src(src: &path::Path, config: &'a Config) -> Library<'a>
-    {
-        let mut library = Library::blank("", config);
-
-        rust_lib::parse_src(src, &mut |crate_name, items| {
-            library.parse_crate_mod(&crate_name, items);
-        });
-
-        library
-    }
-
-    /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
-    pub fn load_crate(crate_dir: &path::Path, bindings_crate_name: &str, config: &'a Config) -> Library<'a>
-    {
-        let mut library = Library::blank(bindings_crate_name, config);
-
-        rust_lib::parse_lib(crate_dir,
-                            bindings_crate_name,
-                            &config.expand,
-                            &mut |crate_name, items| {
-            library.parse_crate_mod(&crate_name, items);
-        });
-
-        library
     }
 
     pub fn resolve_path(&self, p: &PathRef) -> Option<PathValue> {

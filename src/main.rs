@@ -24,10 +24,8 @@ fn main() {
                     .about("Generate C bindings for a Rust library")
                     .arg(Arg::with_name("v")
                          .short("v")
+                         .multiple(true)
                          .help("whether to print verbose logs"))
-                    .arg(Arg::with_name("V")
-                         .short("V")
-                         .help("whether to print trace logs"))
                     .arg(Arg::with_name("config")
                          .short("c")
                          .long("config")
@@ -54,12 +52,10 @@ fn main() {
                          .required(false))
                     .get_matches();
 
-    if matches.is_present("V") {
-        logging::TraceLogger::init().unwrap();
-    } else if matches.is_present("v") {
-        logging::InfoLogger::init().unwrap();
-    } else {
-        logging::WarnLogger::init().unwrap();
+    match matches.occurrences_of("v") {
+        0 => logging::WarnLogger::init().unwrap(),
+        1 => logging::InfoLogger::init().unwrap(),
+        _ => logging::TraceLogger::init().unwrap(),
     }
 
     let input = matches.value_of("INPUT").unwrap();
@@ -87,6 +83,15 @@ fn main() {
         Library::load_crate(Path::new(input), &binding_crate, &config)
     } else {
         Library::load_src(Path::new(input), &config)
+    };
+
+    let library = match library {
+        Ok(library) => library,
+        Err(msg) => {
+            error!("{}", msg);
+            error!("could not generate bindings for {}", input);
+            return;
+        }
     };
 
     let built = match library.generate() {

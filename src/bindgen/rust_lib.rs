@@ -14,19 +14,23 @@ const STD_CRATES: &[&'static str] = &["std",
                                       "core",
                                       "proc_macro"];
 
+type ParseResult = Result<(), String>;
+
 /// Parses a single rust source file, not following `mod` or `extern crate`.
 pub fn parse_src<F>(src_file: &Path,
-                    items_callback: &mut F)
+                    items_callback: &mut F) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
     let src_parsed = {
         let mut s = String::new();
-        let mut f = File::open(src_file).unwrap();
-        f.read_to_string(&mut s).unwrap();
-        syn::parse_crate(&s).unwrap()
+        let mut f = File::open(src_file).map_err(|_| format!("parsing: cannot open file `{:?}`", src_file))?;
+        f.read_to_string(&mut s).map_err(|_| format!("parsing: cannot open file `{:?}`", src_file))?;
+        syn::parse_crate(&s).map_err(|msg| format!("parsing:\n{}", msg))?
     };
 
     items_callback("", &src_parsed.items);
+
+    Ok(())
 }
 
 /// Recursively parses a rust library starting at the root crate's directory.
@@ -37,39 +41,40 @@ pub fn parse_src<F>(src_file: &Path,
 pub fn parse_lib<F>(crate_path: &Path,
                     binding_crate_name: &str,
                     expand: &[String],
-                    items_callback: &mut F)
+                    items_callback: &mut F) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
     let manifest_path = crate_path.join("Cargo.toml");
+
     let metadata = match cargo_metadata::metadata(Some(manifest_path.to_str().unwrap())) {
-        Result::Ok(metadata) => metadata,
-        Result::Err(err) => {
-            panic!("error executing `cargo metadata`: {:?}", err);
+        Ok(metadata) => metadata,
+        Err(msg) => {
+            return Err(format!("executing `cargo metadata`: {:?}", msg));
         }
     };
 
     let mut context = ParseLibContext {
-      manifest_path: manifest_path,
-      metadata: metadata,
-      expand: expand.to_owned(),
-      cache_src: HashMap::new(),
-      cache_expanded_crate: HashMap::new(),
-      items_callback: items_callback,
+        manifest_path: manifest_path,
+        metadata: metadata,
+        expand: expand.to_owned(),
+        cache_src: HashMap::new(),
+        cache_expanded_crate: HashMap::new(),
+        items_callback: items_callback,
     };
 
-    parse_crate(binding_crate_name, &mut context);
+    parse_crate(binding_crate_name, &mut context)
 }
 
 struct ParseLibContext<F>
   where F: FnMut(&str, &Vec<syn::Item>)
 {
-  manifest_path: PathBuf,
-  metadata: cargo_metadata::Metadata,
-  expand: Vec<String>,
-  cache_src: HashMap<PathBuf, Vec<syn::Item>>,
-  cache_expanded_crate: HashMap<String, Vec<syn::Item>>,
+    manifest_path: PathBuf,
+    metadata: cargo_metadata::Metadata,
+    expand: Vec<String>,
+    cache_src: HashMap<PathBuf, Vec<syn::Item>>,
+    cache_expanded_crate: HashMap<String, Vec<syn::Item>>,
 
-  items_callback: F,
+    items_callback: F,
 }
 
 impl<F> ParseLibContext<F>
@@ -91,89 +96,79 @@ impl<F> ParseLibContext<F>
   }
 }
 
-fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>)
+fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
     if STD_CRATES.contains(&crate_name) {
-        return;
+        return Ok(());
     }
 
     if context.expand.contains(&crate_name.to_owned()) {
-      parse_expand_crate(crate_name, context);
-      return;
+        return parse_expand_crate(crate_name, context);
     }
 
     let crate_src = context.find_crate_src(crate_name);
 
     match crate_src {
         Some(crate_src) => {
-            parse_mod(crate_name,
-                      crate_src.as_path(),
-                      context);
-        }
-        None => info!("can't find crate {}", crate_name),
+            parse_mod(crate_name, crate_src.as_path(), context)
+        },
+        None => {
+            // This should be an error, but is common enough to just elicit a warning
+            warn!("parsing crate `{}`: can't find lib.rs with `cargo metadata`", crate_name);
+            Ok(())
+        },
     }
 }
 
-fn parse_expand_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>)
+fn parse_expand_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    if STD_CRATES.contains(&crate_name) {
-        return;
-    }
-
     let mod_parsed = {
         let owned_crate_name = crate_name.to_owned();
 
         if !context.cache_expanded_crate.contains_key(&owned_crate_name) {
-            match cargo_expand::expand(&context.manifest_path, crate_name) {
-                Ok(crate_src) => {
-                    let i = syn::parse_crate(&crate_src).unwrap();
-                    context.cache_expanded_crate.insert(owned_crate_name.clone(), i.items);
-                },
-                Err(error) => {
-                    warn!("error parsing expanded crate: {}", error);
-                    return;
-                }
-            }
+            let s = cargo_expand::expand(&context.manifest_path, crate_name)?;
+            let i = syn::parse_crate(&s).map_err(|msg| format!("parsing crate `{}`:\n{}", crate_name, msg))?;
+            context.cache_expanded_crate.insert(owned_crate_name.clone(), i.items);
         }
 
         context.cache_expanded_crate.get(&owned_crate_name).unwrap().clone()
     };
 
-    process_expanded_mod(crate_name, &mod_parsed, context);
+    process_expanded_mod(crate_name, &mod_parsed, context)
 }
 
 fn process_expanded_mod<F>(crate_name: &str,
                            items: &Vec<syn::Item>,
-                           context: &mut ParseLibContext<F>)
+                           context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    (context.items_callback)(crate_name,
-                             items);
+    (context.items_callback)(crate_name, items);
 
     for item in items {
         match item.node {
             syn::ItemKind::Mod(ref inline_items) => {
                 if let &Some(ref inline_items) = inline_items {
-                    process_expanded_mod(crate_name, inline_items, context);
+                    process_expanded_mod(crate_name, inline_items, context)?;
                     continue;
                 }
 
-                warn!("external mod found in expanded source");
+                return Err(format!("parsing crate `{}`: external mod found in expanded source", crate_name));
             }
             syn::ItemKind::ExternCrate(_) => {
-                parse_crate(&item.ident.to_string(),
-                            context);
+                parse_crate(&item.ident.to_string(), context)?;
             }
             _ => {}
         }
     }
+
+    Ok(())
 }
 
 fn parse_mod<F>(crate_name: &str,
                 mod_path: &Path,
-                context: &mut ParseLibContext<F>)
+                context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
     let mod_parsed = {
@@ -181,11 +176,12 @@ fn parse_mod<F>(crate_name: &str,
 
         if !context.cache_src.contains_key(&owned_mod_path) {
             let mut s = String::new();
-            let mut f = File::open(mod_path).unwrap();
-            f.read_to_string(&mut s).unwrap();
-            let i = syn::parse_crate(&s).unwrap();
+            let mut f = File::open(mod_path).map_err(|_| format!("parsing crate `{}`: cannot open file `{:?}`", crate_name, mod_path))?;
+            f.read_to_string(&mut s).map_err(|_| format!("parsing crate `{}`: cannot open file `{:?}`", crate_name, mod_path))?;
+            let i = syn::parse_crate(&s).map_err(|msg| format!("parsing crate `{}`:\n{}", crate_name, msg))?;
             context.cache_src.insert(owned_mod_path.clone(), i.items);
         }
+
         context.cache_src.get(&owned_mod_path).unwrap().clone()
     };
 
@@ -194,17 +190,16 @@ fn parse_mod<F>(crate_name: &str,
     process_mod(crate_name,
                 mod_dir,
                 &mod_parsed,
-                context);
+                context)
 }
 
 fn process_mod<F>(crate_name: &str,
                   mod_dir: &Path,
                   items: &Vec<syn::Item>,
-                  context: &mut ParseLibContext<F>)
+                  context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    (context.items_callback)(crate_name,
-                             items);
+    (context.items_callback)(crate_name, items);
 
     for item in items {
         match item.node {
@@ -215,7 +210,7 @@ fn process_mod<F>(crate_name: &str,
                     process_mod(crate_name,
                                 mod_dir,
                                 inline_items,
-                                context);
+                                context)?;
                     continue;
                 }
 
@@ -225,20 +220,22 @@ fn process_mod<F>(crate_name: &str,
                 if next_mod_path1.exists() {
                     parse_mod(crate_name,
                               next_mod_path1.as_path(),
-                              context);
+                              context)?;
                 } else if next_mod_path2.exists() {
                     parse_mod(crate_name,
                               next_mod_path2.as_path(),
-                              context);
+                              context)?;
                 } else {
-                    info!("can't find mod {} in crate {}", next_mod_name, crate_name);
+                    // This should be an error, but is common enough to just elicit a warning
+                    warn!("parsing crate `{}`: can't find mod {}`", crate_name, next_mod_name);
                 }
             }
             syn::ItemKind::ExternCrate(_) => {
-                parse_crate(&item.ident.to_string(),
-                            context);
+                parse_crate(&item.ident.to_string(), context)?;
             }
             _ => {}
         }
     }
+
+    Ok(())
 }

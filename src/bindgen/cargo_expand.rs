@@ -3,7 +3,9 @@ use std::path::Path;
 use std::process::Command;
 use std::str::from_utf8;
 
-pub fn expand(manifest_path: &Path, crate_name: &str) -> Result<String, String> {
+type ExpandResult = Result<String, String>;
+
+pub fn expand(manifest_path: &Path, crate_name: &str) -> ExpandResult {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
     cmd.arg("rustc");
