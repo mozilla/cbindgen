@@ -1,12 +1,6 @@
 #![deny(missing_docs)]
 //! Structured access to the output of `cargo metadata`
 //! Usually used from within a `cargo-*` executable
-//!
-//! ```rust
-//! # extern crate cargo_metadata;
-//! let manifest_path_arg = std::env::args().skip(2).find(|val| val.starts_with("--manifest-path="));
-//! let metadata = cargo_metadata::metadata(manifest_path_arg.as_ref().map(AsRef::as_ref)).unwrap();
-//! ```
 
 // Forked from `https://github.com/oli-obk/cargo_metadata`
 // Modifications:
