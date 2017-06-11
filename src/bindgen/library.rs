@@ -142,7 +142,7 @@ impl<'a> Library<'a> {
             match item.node {
                 syn::ItemKind::ForeignMod(ref block) => {
                     if !block.abi.is_c() {
-                        info!("skip {}::{} - non c abi extern block", crate_name, &item.ident);
+                        info!("skip {}::{} - (extern block must be extern C)", crate_name, &item.ident);
                         continue;
                     }
 
@@ -210,7 +210,7 @@ impl<'a> Library<'a> {
                         }
                     } else {
                         if item.is_no_mangle() != abi.is_c() {
-                            warn!("skipping fn {} because it is not both `no_mangle` and `extern \"C\"`", &item.ident);
+                            warn!("skip {}::{} - (not both `no_mangle` and `extern \"C\"`)", crate_name, &item.ident);
                         }
                     }
                 }

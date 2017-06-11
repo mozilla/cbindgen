@@ -155,7 +155,7 @@ impl SynFnArgHelpers for FnArg {
                     Ok(None)
                 }
             }
-            _ => Err(format!("unexpected param type")),
+            _ => Err(format!("parameter has unexpected type")),
         }
     }
 }
@@ -165,7 +165,7 @@ pub trait SynFieldHelpers {
 }
 impl SynFieldHelpers for Field {
     fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>> {
-        let ident = try!(self.ident.as_ref().ok_or(format!("missing ident"))).clone();
+        let ident = try!(self.ident.as_ref().ok_or(format!("field is missing identifier"))).clone();
         let converted_ty = try!(Type::convert(&self.ty));
 
         if let Some(x) = converted_ty {
@@ -182,7 +182,7 @@ pub trait SynPathHelpers {
 impl SynPathHelpers for Path {
     fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)> {
         if self.segments.len() != 1 {
-            return Err(format!("Path is not a single segment"));
+            return Err(format!("path contains more than one segment"));
         }
 
         let name = self.segments[0].ident.to_string();
@@ -195,14 +195,14 @@ impl SynPathHelpers for Path {
             &PathParameters::AngleBracketed(ref d) => {
                 if !d.lifetimes.is_empty() ||
                    !d.bindings.is_empty() {
-                    return Err(format!("Generic parameter contains bindings, or lifetimes"));
+                    return Err(format!("path generic parameter contains bindings, or lifetimes"));
                 }
 
                 try!(d.types.iter()
                             .try_skip_map(|x| Type::convert(x)))
             }
             &PathParameters::Parenthesized(_) => {
-                return Err(format!("Path contains parentheses"));
+                return Err(format!("path contains parentheses"));
             }
         };
 
