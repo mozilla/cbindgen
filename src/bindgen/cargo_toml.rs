@@ -1,0 +1,44 @@
+use std::io;
+use std::io::Read;
+use std::fs::File;
+use std::path::Path;
+
+use toml;
+
+#[derive(Debug)]
+/// Possible errors that can occur during Cargo.toml parsing.
+pub enum Error {
+    /// Error during reading of Cargo.toml
+    Io(io::Error),
+    /// Deserialization error
+    Toml(toml::de::Error),
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::Io(err)
+    }
+}
+impl From<toml::de::Error> for Error {
+    fn from(err: toml::de::Error) -> Self {
+        Error::Toml(err)
+    }
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct Manifest {
+    pub package: Package,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct Package {
+    pub name: String,
+}
+
+pub fn manifest(manifest_path: &Path) -> Result<Manifest, Error> {
+    let mut s = String::new();
+    let mut f = File::open(manifest_path)?;
+    f.read_to_string(&mut s)?;
+
+    toml::from_str::<Manifest>(&s).map_err(|x| x.into())
+}

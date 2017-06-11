@@ -78,17 +78,13 @@ fn main() {
 
     let library = if Path::new(&input).is_dir() {
         let binding_crate = match matches.value_of("crate") {
-            Some(binding_crate) => binding_crate,
+            Some(binding_crate) => String::from(binding_crate),
             None => {
-                // Try and guess the root crate name by looking
-                // at the directory name, it would be better to
-                // look at the Cargo.toml for this
-                match Path::new(input).parent()
-                                      .and_then(|x| x.file_name())
-                                      .and_then(|x| x.to_str()) {
-                    Some(name) => name,
-                    None => {
-                        error!("cannot infer the name of the bindings crate. specify it with --crate");
+                // Parse the Cargo.toml to find the root package name
+                match bindgen::manifest(&Path::new(&input).join("Cargo.toml")) {
+                    Ok(manifest) => manifest.package.name,
+                    Err(_) => {
+                        error!("cannot parse Cargo.toml to find package name");
                         return;
                     }
                 }

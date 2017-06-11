@@ -29,6 +29,7 @@ macro_rules! deserialize_enum_str {
 
 mod cargo_expand;
 mod cargo_metadata;
+mod cargo_toml;
 mod cdecl;
 mod config;
 mod annotation;
@@ -41,3 +42,4 @@ mod writer;
 
 pub use self::config::*;
 pub use self::library::Library;
+pub use self::cargo_toml::manifest;
