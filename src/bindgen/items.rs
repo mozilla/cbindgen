@@ -631,7 +631,7 @@ impl Enum {
         if let Some(r) = find_first_some(&rules) {
             self.values = self.values.iter()
                                      .map(|x| (r.apply_to_pascal_case(&x.0,
-                                                                      IdentifierType::EnumVariant),
+                                                                      IdentifierType::EnumVariant(self)),
                                                x.1.clone()))
                                      .collect();
         }
