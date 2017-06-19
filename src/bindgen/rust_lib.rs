@@ -7,12 +7,12 @@ use bindgen::cargo_expand;
 use bindgen::cargo_metadata;
 use syn;
 
-const STD_CRATES: &[&'static str] = &["std",
-                                      "std_unicode",
-                                      "alloc",
-                                      "collections",
-                                      "core",
-                                      "proc_macro"];
+const STD_CRATES: &'static [&'static str] = &["std",
+                                              "std_unicode",
+                                              "alloc",
+                                              "collections",
+                                              "core",
+                                              "proc_macro"];
 
 type ParseResult = Result<(), String>;
 

@@ -1,18 +1,22 @@
 use std::str::FromStr;
 
+use bindgen::items::Enum;
+
 /// The type of identifier to be renamed.
 #[derive(Debug, Clone, Copy)]
-pub enum IdentifierType {
+pub enum IdentifierType<'a> {
     StructMember,
-    EnumVariant,
+    EnumVariant(&'a Enum),
     FunctionArg,
+    Enum,
 }
-impl IdentifierType {
-    fn to_str(&self) -> &'static str {
+impl<'a> IdentifierType<'a> {
+    fn to_str(&'a self) -> &'static str {
         match *self {
             IdentifierType::StructMember => "m",
-            IdentifierType::EnumVariant => "",
+            IdentifierType::EnumVariant(..) => "",
             IdentifierType::FunctionArg => "a",
+            IdentifierType::Enum => "",
         }
     }
 }
@@ -36,6 +40,9 @@ pub enum RenameRule {
     SnakeCase,
     /// Converts the identifier to SCREAMING_SNAKE_CASE.
     ScreamingSnakeCase,
+    /// Converts the identifier to SCREAMING_SNAKE_CASE and prefixes enum variants
+    /// with the enum name.
+    QualifiedScreamingSnakeCase,
 }
 
 impl RenameRule {
@@ -77,6 +84,21 @@ impl RenameRule {
                         result.push(x);
                     }
                 }
+                result
+            }
+            RenameRule::QualifiedScreamingSnakeCase => {
+                let mut result = String::new();
+
+                if let IdentifierType::EnumVariant(e) = context {
+                    if let &RenameRule::QualifiedScreamingSnakeCase = self {
+                        result.push_str(&RenameRule::ScreamingSnakeCase.apply_to_pascal_case(
+                            &e.name, IdentifierType::Enum));
+                        result.push_str("_");
+                    }
+                }
+
+                result.push_str(&RenameRule::SnakeCase.apply_to_pascal_case(
+                    &text, context));
                 result
             }
         }
@@ -143,6 +165,21 @@ impl RenameRule {
             }
             RenameRule::SnakeCase => text.to_owned(),
             RenameRule::ScreamingSnakeCase => text.to_owned().to_uppercase(),
+            RenameRule::QualifiedScreamingSnakeCase => {
+                let mut result = String::new();
+
+                if let IdentifierType::EnumVariant(e) = context {
+                    if let &RenameRule::QualifiedScreamingSnakeCase = self {
+                        result.push_str(&RenameRule::ScreamingSnakeCase.apply_to_snake_case(
+                            &e.name, IdentifierType::Enum));
+                        result.push_str("_");
+                    }
+                }
+
+                result.push_str(&RenameRule::SnakeCase.apply_to_snake_case(
+                    &text, context));
+                result
+            }
         }
     }
 }
@@ -186,6 +223,10 @@ impl FromStr for RenameRule {
             "SCREAMING_SNAKE_CASE" => Ok(RenameRule::ScreamingSnakeCase),
             "ScreamingSnakeCase" => Ok(RenameRule::ScreamingSnakeCase),
             "screaming_snake_case" => Ok(RenameRule::ScreamingSnakeCase),
+
+            "QUALIFIED_SCREAMING_SNAKE_CASE" => Ok(RenameRule::QualifiedScreamingSnakeCase),
+            "QualifiedScreamingSnakeCase" => Ok(RenameRule::QualifiedScreamingSnakeCase),
+            "qualified_screaming_snake_case" => Ok(RenameRule::QualifiedScreamingSnakeCase),
 
             _ => Err(format!("unrecognized RenameRule: '{}'", s)),
         }
