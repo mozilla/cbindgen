@@ -44,8 +44,9 @@ pub fn parse_src<F>(src_file: &Path,
 /// command to find the location of dependencies.
 pub fn parse_lib<F>(crate_path: &Path,
                     binding_crate_name: &str,
-                    exclude: &[String],
-                    expand: &[String],
+                    include: &Option<Vec<String>>,
+                    exclude: &Vec<String>,
+                    expand: &Vec<String>,
                     items_callback: &mut F) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
@@ -61,8 +62,9 @@ pub fn parse_lib<F>(crate_path: &Path,
     let mut context = ParseLibContext {
         manifest_path: manifest_path,
         metadata: metadata,
-        exclude: exclude.to_owned(),
-        expand: expand.to_owned(),
+        include: include.clone(),
+        exclude: exclude.clone(),
+        expand: expand.clone(),
         cache_src: HashMap::new(),
         cache_expanded_crate: HashMap::new(),
         items_callback: items_callback,
@@ -76,6 +78,7 @@ struct ParseLibContext<F>
 {
     manifest_path: PathBuf,
     metadata: cargo_metadata::Metadata,
+    include: Option<Vec<String>>,
     exclude: Vec<String>,
     expand: Vec<String>,
     cache_src: HashMap<PathBuf, Vec<syn::Item>>,
@@ -106,15 +109,25 @@ impl<F> ParseLibContext<F>
 fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
+    // Check the white list
+    if let Some(ref include) = context.include {
+        if !include.contains(&crate_name.to_owned()) {
+            return Ok(());
+        }
+    }
+
+    // Check the black list
     if STD_CRATES.contains(&crate_name) ||
        context.exclude.contains(&crate_name.to_owned()) {
         return Ok(());
     }
 
+    // Check if we should use cargo expand
     if context.expand.contains(&crate_name.to_owned()) {
         return parse_expand_crate(crate_name, context);
     }
 
+    // Otherwise do our normal parse
     let crate_src = context.find_crate_src(crate_name);
 
     match crate_src {

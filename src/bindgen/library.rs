@@ -128,6 +128,7 @@ impl<'a> Library<'a> {
 
         rust_lib::parse_lib(crate_dir,
                             bindings_crate_name,
+                            &config.include,
                             &config.exclude,
                             &config.expand,
                             &mut |crate_name, items| {

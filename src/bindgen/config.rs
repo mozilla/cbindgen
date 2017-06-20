@@ -267,6 +267,8 @@ pub struct Config {
     pub tab_width: usize,
     /// The language to output bindings for
     pub language: Language,
+    /// An optional whitelist of names of crates to parse
+    pub include: Option<Vec<String>>,
     /// The names of crates to not parse
     pub exclude: Vec<String>,
     /// The names of crates to parse with `rustc --pretty=expanded`
@@ -294,6 +296,7 @@ impl Default for Config {
             line_length: 100,
             tab_width: 2,
             language: Language::Cxx,
+            include: None,
             exclude: Vec::new(),
             expand: Vec::new(),
             function: FunctionConfig::default(),
