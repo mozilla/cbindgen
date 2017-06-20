@@ -44,6 +44,7 @@ pub fn parse_src<F>(src_file: &Path,
 /// command to find the location of dependencies.
 pub fn parse_lib<F>(crate_path: &Path,
                     binding_crate_name: &str,
+                    exclude: &[String],
                     expand: &[String],
                     items_callback: &mut F) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
@@ -60,6 +61,7 @@ pub fn parse_lib<F>(crate_path: &Path,
     let mut context = ParseLibContext {
         manifest_path: manifest_path,
         metadata: metadata,
+        exclude: exclude.to_owned(),
         expand: expand.to_owned(),
         cache_src: HashMap::new(),
         cache_expanded_crate: HashMap::new(),
@@ -74,6 +76,7 @@ struct ParseLibContext<F>
 {
     manifest_path: PathBuf,
     metadata: cargo_metadata::Metadata,
+    exclude: Vec<String>,
     expand: Vec<String>,
     cache_src: HashMap<PathBuf, Vec<syn::Item>>,
     cache_expanded_crate: HashMap<String, Vec<syn::Item>>,
@@ -103,7 +106,8 @@ impl<F> ParseLibContext<F>
 fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    if STD_CRATES.contains(&crate_name) {
+    if STD_CRATES.contains(&crate_name) ||
+       context.exclude.contains(&crate_name.to_owned()) {
         return Ok(());
     }
 
