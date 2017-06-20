@@ -15,20 +15,10 @@ use bindgen::rust_lib;
 use bindgen::utilities::*;
 use bindgen::writer::{Source, SourceWriter};
 
-pub type ParseResult<'a> = Result<Library<'a>, String>;
-pub type ConvertResult<T> = Result<T, String>;
-pub type GenerateResult<T> = Result<T, String>;
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Repr {
-    None,
-    C,
-    U8,
-    U16,
-    U32,
-}
-
+/// A path ref is used to reference a path value
 pub type PathRef = String;
+
+/// A path value is any type of rust item besides a function
 #[derive(Debug, Clone)]
 pub enum PathValue {
     Enum(Enum),
@@ -37,6 +27,7 @@ pub enum PathValue {
     Typedef(Typedef),
     Specialization(Specialization),
 }
+
 impl PathValue {
     pub fn name(&self) -> &String {
         match self {
@@ -72,6 +63,7 @@ pub struct DependencyGraph {
     order: Vec<PathValue>,
     items: HashSet<PathRef>,
 }
+
 impl DependencyGraph {
     fn new() -> DependencyGraph {
         DependencyGraph {
@@ -111,19 +103,22 @@ impl<'a> Library<'a> {
     }
 
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
-    pub fn load_src(src: &path::Path, config: &'a Config) -> ParseResult<'a>
+    pub fn load_src(src: &path::Path,
+                    config: &'a Config) -> Result<Library<'a>, String>
     {
         let mut library = Library::blank("", config);
 
         rust_lib::parse_src(src, &mut |crate_name, items| {
-            library.parse_crate_mod(&crate_name, items);
+            library.load_from_crate_mod(&crate_name, items);
         })?;
 
         Ok(library)
     }
 
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
-    pub fn load_crate(crate_dir: &path::Path, bindings_crate_name: &str, config: &'a Config) -> ParseResult<'a>
+    pub fn load_crate(crate_dir: &path::Path,
+                      bindings_crate_name: &str,
+                      config: &'a Config) -> Result<Library<'a>, String>
     {
         let mut library = Library::blank(bindings_crate_name, config);
 
@@ -131,13 +126,13 @@ impl<'a> Library<'a> {
                             bindings_crate_name,
                             &config.expand,
                             &mut |crate_name, items| {
-            library.parse_crate_mod(&crate_name, items);
+            library.load_from_crate_mod(&crate_name, items);
         })?;
 
         Ok(library)
     }
 
-    fn parse_crate_mod(&mut self, crate_name: &str, items: &Vec<syn::Item>) {
+    fn load_from_crate_mod(&mut self, crate_name: &str, items: &Vec<syn::Item>) {
         for item in items {
             match item.node {
                 syn::ItemKind::ForeignMod(ref block) => {
@@ -163,7 +158,7 @@ impl<'a> Library<'a> {
                                     }
                                 };
 
-                                match Function::convert(foreign_item.ident.to_string(), annotations, decl, true) {
+                                match Function::load(foreign_item.ident.to_string(), annotations, decl, true) {
                                     Ok(func) => {
                                         info!("take {}::{}", crate_name, &foreign_item.ident);
 
@@ -198,7 +193,7 @@ impl<'a> Library<'a> {
                             }
                         };
 
-                        match Function::convert(item.ident.to_string(), annotations, decl, false) {
+                        match Function::load(item.ident.to_string(), annotations, decl, false) {
                             Ok(func) => {
                                 info!("take {}::{}", crate_name, &item.ident);
 
@@ -226,7 +221,7 @@ impl<'a> Library<'a> {
                     };
 
                     if item.is_repr_c() {
-                        match Struct::convert(struct_name.clone(), annotations.clone(), variant, generics) {
+                        match Struct::load(struct_name.clone(), annotations.clone(), variant, generics) {
                             Ok(st) => {
                                 info!("take {}::{}", crate_name, &item.ident);
                                 self.structs.insert(struct_name,
@@ -261,7 +256,7 @@ impl<'a> Library<'a> {
                         }
                     };
 
-                    match Enum::convert(enum_name.clone(), item.get_repr(), annotations.clone(), variants) {
+                    match Enum::load(enum_name.clone(), item.get_repr(), annotations.clone(), variants) {
                         Ok(en) => {
                             info!("take {}::{}", crate_name, &item.ident);
                             self.enums.insert(enum_name, en);
@@ -283,10 +278,10 @@ impl<'a> Library<'a> {
                         }
                     };
 
-                    let fail1 = match Specialization::convert(alias_name.clone(),
-                                                              annotations.clone(),
-                                                              generics,
-                                                              ty) {
+                    let fail1 = match Specialization::load(alias_name.clone(),
+                                                           annotations.clone(),
+                                                           generics,
+                                                           ty) {
                         Ok(spec) => {
                             info!("take {}::{}", crate_name, &item.ident);
                             self.specializations.insert(alias_name, spec);
@@ -301,7 +296,7 @@ impl<'a> Library<'a> {
                         continue;
                     }
 
-                    let fail2 = match Typedef::convert(alias_name.clone(), annotations, ty) {
+                    let fail2 = match Typedef::load(alias_name.clone(), annotations, ty) {
                         Ok(typedef) => {
                             info!("take {}::{}", crate_name, &item.ident);
                             self.typedefs.insert(alias_name, typedef);
@@ -359,8 +354,8 @@ impl<'a> Library<'a> {
     }
 
     /// Build a bindings file from this rust library.
-    pub fn generate(self) -> GenerateResult<BuiltBindings<'a>> {
-        let mut result = BuiltBindings::blank(self.config);
+    pub fn generate(self) -> Result<GeneratedBindings<'a>, String> {
+        let mut result = GeneratedBindings::blank(self.config);
 
         // Gather only the items that we need for this
         // `extern "c"` interface
@@ -370,7 +365,7 @@ impl<'a> Library<'a> {
         }
 
         // Copy the binding items in dependencies order
-        // into the BuiltBindings, specializing any type
+        // into the GeneratedBindings, specializing any type
         // aliases we encounter
         for dep in deps.order {
             match &dep {
@@ -429,18 +424,18 @@ impl<'a> Library<'a> {
     }
 }
 
-/// A BuiltBindings is a completed bindings file ready to be written.
+/// A GeneratedBindings is a completed bindings file ready to be written.
 #[derive(Debug, Clone)]
-pub struct BuiltBindings<'a> {
+pub struct GeneratedBindings<'a> {
     config: &'a Config,
 
     items: Vec<PathValue>,
     functions: Vec<Function>,
 }
 
-impl<'a> BuiltBindings<'a> {
-    fn blank(config: &'a Config) -> BuiltBindings<'a> {
-        BuiltBindings {
+impl<'a> GeneratedBindings<'a> {
+    fn blank(config: &'a Config) -> GeneratedBindings<'a> {
+        GeneratedBindings {
             config: config,
             items: Vec::new(),
             functions: Vec::new(),

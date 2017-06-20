@@ -38,7 +38,9 @@ fn main() {
     let root = env::var("CARGO_MANIFEST_DIR").unwrap();
     let config = Config::from_root_or_default(&root);
 
-    Library::load(&root, &config)
+    Library::load_crate(Path::new(root),
+                        "CRATE_NAME",
+                        &config)
         .generate().unwrap()
         .write_to_file("bindings.h");
 }
@@ -59,8 +61,6 @@ See `compile-tests/` for some examples of rust source that can be handled.
 
 ## Future work
 
-1. Add a validation step to catch common issues
-2. Better support for types with fully specified names
-3. Better support for finding dependencies managed by Cargo
-4. Support for generating a FFI interface for a Struct+Impl
-5. ...
+1. Better support for types with fully specified names
+2. Support for generating a FFI interface for a Struct+Impl
+3. ...

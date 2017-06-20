@@ -4,11 +4,16 @@ use std::io::Write;
 
 use bindgen::config::{Config, Braces};
 
+/// A type of way to format a list.
 pub enum ListType<'a> {
+    /// Join each adjacent item with a str.
     Join(&'a str),
+    /// End each item with a str.
     Cap(&'a str),
 }
 
+/// An empty file used for creating a null source writer and measuring line
+/// metrics for various code layouts.
 pub struct NullFile;
 impl Write for NullFile {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
@@ -44,6 +49,8 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
     }
 
+    /// Takes a function that writes source and returns the maximum line length
+    /// written.
     pub fn measure<T>(&self, func: T) -> usize
         where T: Fn(&mut MeasureWriter)
     {

@@ -38,11 +38,17 @@ impl AnnotationSet {
     pub fn parse(text: String) -> Result<AnnotationSet, String> {
         let mut annotations = HashMap::new();
 
+        // Look at each line for an annotation
         for line in text.lines().map(|x| x.trim_left_matches("///").trim()) {
+            // Skip lines that don't start with cbindgen
             if !line.starts_with("cbindgen:") {
                 continue;
             }
+
+            // Remove the "cbingen:" prefix
             let annotation = &line[9..];
+
+            // Split the annotation in two
             let parts: Vec<&str> = annotation.split("=")
                                             .map(|x| x.trim())
                                             .collect();
@@ -51,13 +57,16 @@ impl AnnotationSet {
                 return Err(format!("couldn't parse {}", line));
             }
 
+            // Grab the name that this annotation is modifying
             let name = parts[0];
 
+            // If the annotation only has a name, assume it's setting a bool flag
             if parts.len() == 1 {
                 annotations.insert(name.to_string(), AnnotationValue::Bool(true));
                 continue;
             }
 
+            // Parse the value we're setting the name to
             let value = parts[1];
 
             if let Some(x) = parse_list(value) {
@@ -111,6 +120,7 @@ impl AnnotationSet {
     }
 }
 
+/// Parse lists like "[x, y, z]". This is not implemented efficiently or well.
 fn parse_list(list: &str) -> Option<Vec<String>> {
     if list.len() < 2 {
         return None;

@@ -39,6 +39,7 @@ pub enum PrimitiveType {
     Float,
     Double,
 }
+
 impl PrimitiveType {
     fn maybe(path: &str) -> Option<PrimitiveType> {
         match path {
@@ -83,6 +84,7 @@ impl PrimitiveType {
         true
     }
 }
+
 impl fmt::Display for PrimitiveType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -124,11 +126,12 @@ pub enum Type {
     Array(Box<Type>, u64),
     FuncPtr(Box<Type>, Vec<Type>),
 }
+
 impl Type {
-    pub fn convert(ty: &syn::Ty) -> ConvertResult<Option<Type>> {
+    pub fn load(ty: &syn::Ty) -> Result<Option<Type>, String> {
         let converted = match ty {
             &syn::Ty::Rptr(_, ref mut_ty) => {
-                let converted = try!(Type::convert(&mut_ty.ty));
+                let converted = Type::load(&mut_ty.ty)?;
 
                 let converted = match converted {
                     Some(converted) => converted,
@@ -141,7 +144,7 @@ impl Type {
                 }
             }
             &syn::Ty::Ptr(ref mut_ty) => {
-                let converted = try!(Type::convert(&mut_ty.ty));
+                let converted = Type::load(&mut_ty.ty)?;
 
                 let converted = match converted {
                     Some(converted) => converted,
@@ -154,7 +157,7 @@ impl Type {
                 }
             }
             &syn::Ty::Path(_, ref p) => {
-                let (name, generics) = try!(p.convert_to_generic_single_segment());
+                let (name, generics) = p.convert_to_generic_single_segment()?;
 
                 if name == "PhantomData" {
                     return Ok(None);
@@ -169,7 +172,7 @@ impl Type {
                 }
             }
             &syn::Ty::Array(ref ty, syn::ConstExpr::Lit(syn::Lit::Int(sz, _))) => {
-                let converted = try!(Type::convert(ty));
+                let converted = Type::load(ty)?;
 
                 let converted = match converted {
                     Some(converted) => converted,
@@ -179,9 +182,9 @@ impl Type {
                 Type::Array(Box::new(converted), sz)
             },
             &syn::Ty::BareFn(ref f) => {
-                let args = try!(f.inputs.iter()
-                                        .try_skip_map(|x| Type::convert(&x.ty)));
-                let ret = try!(f.output.as_type());
+                let args = f.inputs.iter()
+                                   .try_skip_map(|x| Type::load(&x.ty))?;
+                let ret = f.output.as_type()?;
 
                 Type::FuncPtr(Box::new(ret), args)
             },
@@ -281,6 +284,7 @@ impl Type {
         }
     }
 }
+
 impl Source for (String, Type) {
     fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
         cdecl::write_type(out, &self.1, &self.0);
@@ -297,14 +301,14 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn convert(name: String,
-                   annotations: AnnotationSet,
-                   decl: &syn::FnDecl,
-                   extern_decl: bool) -> ConvertResult<Function>
+    pub fn load(name: String,
+                annotations: AnnotationSet,
+                decl: &syn::FnDecl,
+                extern_decl: bool) -> Result<Function, String>
     {
-        let args = try!(decl.inputs.iter()
-                                   .try_skip_map(|x| x.as_ident_and_type()));
-        let ret = try!(decl.output.as_type());
+        let args = decl.inputs.iter()
+                              .try_skip_map(|x| x.as_ident_and_type())?;
+        let ret = decl.output.as_type()?;
 
         Ok(Function {
             name: name,
@@ -335,6 +339,7 @@ impl Function {
         }
     }
 }
+
 impl Source for Function {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         fn write_1<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
@@ -352,6 +357,7 @@ impl Source for Function {
             }
             out.write(";");
         }
+
         fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
@@ -388,21 +394,21 @@ pub struct Struct {
 }
 
 impl Struct {
-    pub fn convert(name: String,
-                   annotations: AnnotationSet,
-                   decl: &syn::VariantData,
-                   generics: &syn::Generics) -> ConvertResult<Struct>
+    pub fn load(name: String,
+                annotations: AnnotationSet,
+                decl: &syn::VariantData,
+                generics: &syn::Generics) -> Result<Struct, String>
     {
         let fields = match decl {
             &syn::VariantData::Struct(ref fields) => {
-                try!(fields.iter()
-                           .try_skip_map(|x| x.as_ident_and_type()))
+                fields.iter()
+                      .try_skip_map(|x| x.as_ident_and_type())?
             }
             &syn::VariantData::Tuple(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields {
-                    if let Some(x) = try!(Type::convert(&field.ty)) {
+                    if let Some(x) = Type::load(&field.ty)? {
                         out.push((format!("{}", current), x));
                         current += 1;
                     }
@@ -457,6 +463,7 @@ impl Struct {
         }
     }
 }
+
 impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         assert!(self.generic_params.is_empty());
@@ -548,6 +555,7 @@ impl OpaqueStruct {
         }
     }
 }
+
 impl Source for OpaqueStruct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if config.language == Language::C {
@@ -560,6 +568,15 @@ impl Source for OpaqueStruct {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Repr {
+    None,
+    C,
+    U8,
+    U16,
+    U32,
+}
+
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub name: String,
@@ -569,10 +586,10 @@ pub struct Enum {
 }
 
 impl Enum {
-    pub fn convert(name: String,
-                   repr: Repr,
-                   annotations: AnnotationSet,
-                   variants: &Vec<syn::Variant>) -> ConvertResult<Enum>
+    pub fn load(name: String,
+                repr: Repr,
+                annotations: AnnotationSet,
+                variants: &Vec<syn::Variant>) -> Result<Enum, String>
     {
         if repr != Repr::U32 &&
            repr != Repr::U16 &&
@@ -637,6 +654,7 @@ impl Enum {
         }
     }
 }
+
 impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         let size = match self.repr {
@@ -672,6 +690,9 @@ impl Source for Enum {
     }
 }
 
+/// A type alias that generates a copy of its aliasee with a new name. If the type
+/// alias has generic values, it monomorphosizes its aliasee. This is useful for
+/// presenting an interface that includes generic types.
 #[derive(Debug, Clone)]
 pub struct Specialization {
     pub name: String,
@@ -682,10 +703,10 @@ pub struct Specialization {
 }
 
 impl Specialization {
-    pub fn convert(name: String,
-                   annotations: AnnotationSet,
-                   generics: &syn::Generics,
-                   ty: &syn::Ty) -> ConvertResult<Specialization>
+    pub fn load(name: String,
+                annotations: AnnotationSet,
+                generics: &syn::Generics,
+                ty: &syn::Ty) -> Result<Specialization, String>
     {
         match ty {
             &syn::Ty::Path(ref _q, ref p) => {
@@ -693,7 +714,7 @@ impl Specialization {
                                                        .map(|x| x.ident.to_string())
                                                        .collect::<Vec<_>>();
 
-                let (path, generic_values) = try!(p.convert_to_generic_single_segment());
+                let (path, generic_values) = p.convert_to_generic_single_segment()?;
 
                 if PrimitiveType::maybe(&path).is_some() {
                     return Err(format!("can't specialize a primitive"));
@@ -720,7 +741,9 @@ impl Specialization {
         }
     }
 
-    pub fn specialize(&self, config: &Config, library: &Library) -> ConvertResult<Option<PathValue>> {
+    pub fn specialize(&self,
+                      config: &Config,
+                      library: &Library) -> Result<Option<PathValue>, String> {
         if self.generic_params.len() > 0 {
             return Ok(None);
         }
@@ -799,6 +822,7 @@ impl Specialization {
     }
 }
 
+/// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]
 pub struct Typedef {
     pub name: String,
@@ -807,10 +831,10 @@ pub struct Typedef {
 }
 
 impl Typedef {
-    pub fn convert(name: String,
-                   annotations: AnnotationSet,
-                   ty: &syn::Ty) -> ConvertResult<Typedef> {
-        if let Some(x) = try!(Type::convert(ty)) {
+    pub fn load(name: String,
+                annotations: AnnotationSet,
+                ty: &syn::Ty) -> Result<Typedef, String> {
+        if let Some(x) = Type::load(ty)? {
             Ok(Typedef {
                 name: name,
                 annotations: annotations,
@@ -825,6 +849,7 @@ impl Typedef {
         self.aliased.add_deps(library, out);
     }
 }
+
 impl Source for Typedef {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         out.write("typedef ");

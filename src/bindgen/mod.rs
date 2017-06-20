@@ -1,3 +1,6 @@
+/// A helper macro for deriving deserialize for an enum to be used in toml-rs.
+/// This macro works be relying on an existing FromStr implementation for the
+/// desired type.
 macro_rules! deserialize_enum_str {
     ($name:ident) => {
         impl ::serde::Deserialize for $name {

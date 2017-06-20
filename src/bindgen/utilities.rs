@@ -1,8 +1,28 @@
 use syn::*;
 
 use bindgen::items::*;
-use bindgen::library::*;
 
+/// Helper functions for dealing with iterators
+pub trait IterHelpers : Iterator {
+    fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
+        where F: FnMut(&Self::Item) -> Result<Option<T>, E>;
+}
+
+impl<I> IterHelpers for I where I: Iterator {
+    fn try_skip_map<F, T, E>(&mut self, mut f: F) -> Result<Vec<T>, E>
+        where F: FnMut(&Self::Item) -> Result<Option<T>, E>
+    {
+        let mut out = Vec::new();
+        while let Some(item) = self.next() {
+            if let Some(x) = f(&item)? {
+                out.push(x);
+            }
+        }
+        Ok(out)
+    }
+}
+
+/// I'd like this to be in IterHelpers, but my generic foo isn't strong enough
 pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
     for x in slice {
         if let &Some(ref x) = x {
@@ -12,24 +32,7 @@ pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
     return None;
 }
 
-pub trait IterHelpers : Iterator {
-    fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
-        where F: FnMut(&Self::Item) -> Result<Option<T>, E>;
-}
-impl<I> IterHelpers for I where I: Iterator {
-    fn try_skip_map<F, T, E>(&mut self, mut f: F) -> Result<Vec<T>, E>
-        where F: FnMut(&Self::Item) -> Result<Option<T>, E>
-    {
-        let mut out = Vec::new();
-        while let Some(item) = self.next() {
-            if let Some(x) = try!(f(&item)) {
-                out.push(x);
-            }
-        }
-        Ok(out)
-    }
-}
-
+/// Helper functions for getting attribute information from syn::{ForeignItem, Item}
 pub trait SynItemHelpers {
     fn has_attr(&self, target: MetaItem) -> bool;
     fn get_doc_attr(&self) -> String;
@@ -69,6 +72,7 @@ pub trait SynItemHelpers {
         Repr::None
     }
 }
+
 impl SynItemHelpers for Item {
     fn has_attr(&self, target: MetaItem) -> bool {
         return self.attrs
@@ -89,6 +93,7 @@ impl SynItemHelpers for Item {
         doc
     }
 }
+
 impl SynItemHelpers for ForeignItem {
     fn has_attr(&self, target: MetaItem) -> bool {
         return self.attrs
@@ -110,29 +115,34 @@ impl SynItemHelpers for ForeignItem {
     }
 }
 
+/// Helper function for accessing Abi information
 pub trait SynAbiHelpers {
     fn is_c(&self) -> bool;
 }
+
 impl SynAbiHelpers for Option<Abi> {
     fn is_c(&self) -> bool {
         self == &Some(Abi::Named(String::from("C")))
     }
 }
+
 impl SynAbiHelpers for Abi {
     fn is_c(&self) -> bool {
         self == &Abi::Named(String::from("C"))
     }
 }
 
+/// Helper function for loading a type from a syn::FnRetTy
 pub trait SynFnRetTyHelpers {
-    fn as_type(&self) -> ConvertResult<Type>;
+    fn as_type(&self) -> Result<Type, String>;
 }
+
 impl SynFnRetTyHelpers for FunctionRetTy {
-    fn as_type(&self) -> ConvertResult<Type> {
+    fn as_type(&self) -> Result<Type, String> {
         match self {
             &FunctionRetTy::Default => Ok(Type::Primitive(PrimitiveType::Void)),
             &FunctionRetTy::Ty(ref t) => {
-                if let Some(x) = try!(Type::convert(t)) {
+                if let Some(x) = Type::load(t)? {
                     Ok(x)
                 } else {
                     Ok(Type::Primitive(PrimitiveType::Void))
@@ -142,14 +152,16 @@ impl SynFnRetTyHelpers for FunctionRetTy {
     }
 }
 
+/// Helper function for loading an ident and type from a syn::FnArg
 pub trait SynFnArgHelpers {
-    fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>>;
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String>;
 }
+
 impl SynFnArgHelpers for FnArg {
-    fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>> {
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
         match self {
             &FnArg::Captured(Pat::Ident(_, ref ident, _), ref ty) => {
-                if let Some(x) = try!(Type::convert(ty)) {
+                if let Some(x) = Type::load(ty)? {
                     Ok(Some((ident.to_string(), x)))
                 } else {
                     Ok(None)
@@ -160,13 +172,15 @@ impl SynFnArgHelpers for FnArg {
     }
 }
 
+/// Helper function for loading an ident and type from a syn::Field
 pub trait SynFieldHelpers {
-    fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>>;
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String>;
 }
+
 impl SynFieldHelpers for Field {
-    fn as_ident_and_type(&self) -> ConvertResult<Option<(String, Type)>> {
-        let ident = try!(self.ident.as_ref().ok_or(format!("field is missing identifier"))).clone();
-        let converted_ty = try!(Type::convert(&self.ty));
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
+        let ident = self.ident.as_ref().ok_or(format!("field is missing identifier"))?.clone();
+        let converted_ty = Type::load(&self.ty)?;
 
         if let Some(x) = converted_ty {
             Ok(Some((ident.to_string(), x)))
@@ -176,11 +190,13 @@ impl SynFieldHelpers for Field {
     }
 }
 
+/// Helper function for loading a Path and generics from a syn::Path
 pub trait SynPathHelpers {
-    fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)>;
+    fn convert_to_generic_single_segment(&self) -> Result<(String, Vec<Type>), String>;
 }
+
 impl SynPathHelpers for Path {
-    fn convert_to_generic_single_segment(&self) -> ConvertResult<(String, Vec<Type>)> {
+    fn convert_to_generic_single_segment(&self) -> Result<(String, Vec<Type>), String> {
         if self.segments.len() != 1 {
             return Err(format!("path contains more than one segment"));
         }
@@ -198,8 +214,8 @@ impl SynPathHelpers for Path {
                     return Err(format!("path generic parameter contains bindings, or lifetimes"));
                 }
 
-                try!(d.types.iter()
-                            .try_skip_map(|x| Type::convert(x)))
+                d.types.iter()
+                       .try_skip_map(|x| Type::load(x))?
             }
             &PathParameters::Parenthesized(_) => {
                 return Err(format!("path contains parentheses"));

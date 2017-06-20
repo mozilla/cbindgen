@@ -35,6 +35,7 @@ pub struct Package {
     pub name: String,
 }
 
+/// Parse the Cargo.toml for a given path
 pub fn manifest(manifest_path: &Path) -> Result<Manifest, Error> {
     let mut s = String::new();
     let mut f = File::open(manifest_path)?;

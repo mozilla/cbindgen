@@ -19,21 +19,6 @@ pub enum Language {
     C,
 }
 
-/// A style of braces to use for generating code.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Braces {
-    SameLine,
-    NextLine,
-}
-
-/// A type of layout to use when generating long lines of code.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Layout {
-    Horizontal,
-    Vertical,
-    Auto,
-}
-
 impl FromStr for Language {
     type Err = String;
 
@@ -53,6 +38,16 @@ impl FromStr for Language {
         }
     }
 }
+
+deserialize_enum_str!(Language);
+
+/// A style of braces to use for generating code.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Braces {
+    SameLine,
+    NextLine,
+}
+
 impl FromStr for Braces {
     type Err = String;
 
@@ -66,6 +61,17 @@ impl FromStr for Braces {
         }
     }
 }
+
+deserialize_enum_str!(Braces);
+
+/// A type of layout to use when generating long lines of code.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Layout {
+    Horizontal,
+    Vertical,
+    Auto,
+}
+
 impl FromStr for Layout {
     type Err = String;
 
@@ -82,9 +88,156 @@ impl FromStr for Layout {
     }
 }
 
-deserialize_enum_str!(Language);
-deserialize_enum_str!(Braces);
 deserialize_enum_str!(Layout);
+
+/// Settings to apply to generated functions.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct FunctionConfig {
+    /// Optional text to output before each function declaration
+    pub prefix: Option<String>,
+    /// Optional text to output after each function declaration
+    pub postfix: Option<String>,
+    /// The style to layout the args
+    pub args: Layout,
+    /// The rename rule to apply to function args
+    pub rename_args: Option<RenameRule>,
+}
+
+impl Default for FunctionConfig {
+    fn default() -> FunctionConfig {
+        FunctionConfig {
+            prefix: None,
+            postfix: None,
+            args: Layout::Auto,
+            rename_args: None,
+        }
+    }
+}
+
+impl FunctionConfig {
+    pub fn prefix(&self, annotations: &AnnotationSet) -> Option<String> {
+        if let Some(x) = annotations.atom("prefix") {
+            return x;
+        }
+        self.prefix.clone()
+    }
+
+    pub fn postfix(&self, annotations: &AnnotationSet) -> Option<String> {
+        if let Some(x) = annotations.atom("postfix") {
+            return x;
+        }
+        self.postfix.clone()
+    }
+}
+
+/// Settings to apply to generated structs.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct StructConfig {
+    /// The rename rule to apply to the name of struct fields
+    pub rename_fields: Option<RenameRule>,
+    /// Whether to generate a piecewise equality operator
+    pub derive_eq: bool,
+    /// Whether to generate a piecewise inequality operator
+    pub derive_neq: bool,
+    /// Whether to generate a less than operator on structs with one field
+    pub derive_lt: bool,
+    /// Whether to generate a less than or equal to operator on structs with one field
+    pub derive_lte: bool,
+    /// Whether to generate a greater than operator on structs with one field
+    pub derive_gt: bool,
+    /// Whether to generate a greater than or equal to operator on structs with one field
+    pub derive_gte: bool,
+}
+
+impl Default for StructConfig {
+    fn default() -> StructConfig {
+        StructConfig {
+            rename_fields: None,
+            derive_eq: false,
+            derive_neq: false,
+            derive_lt: false,
+            derive_lte: false,
+            derive_gt: false,
+            derive_gte: false,
+        }
+    }
+}
+
+impl StructConfig {
+    pub fn derive_eq(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-eq") {
+            return x;
+        }
+        self.derive_eq
+    }
+    pub fn derive_neq(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-neq") {
+            return x;
+        }
+        self.derive_neq
+    }
+    pub fn derive_lt(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-lt") {
+            return x;
+        }
+        self.derive_lt
+    }
+    pub fn derive_lte(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-lte") {
+            return x;
+        }
+        self.derive_lte
+    }
+    pub fn derive_gt(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-gt") {
+            return x;
+        }
+        self.derive_gt
+    }
+    pub fn derive_gte(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-gte") {
+            return x;
+        }
+        self.derive_gte
+    }
+}
+
+/// Settings to apply to generated enums.
+#[derive( Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct EnumConfig {
+    /// The rename rule to apply to the name of enum variants
+    pub rename_variants: Option<RenameRule>,
+    /// Whether to add a `Sentinel` value at the end of every enum
+    /// This is useful in Gecko for IPC serialization
+    pub add_sentinel: bool,
+}
+
+impl Default for EnumConfig {
+    fn default() -> EnumConfig {
+        EnumConfig {
+            rename_variants: None,
+            add_sentinel: false,
+        }
+    }
+}
+
+impl EnumConfig {
+    pub fn add_sentinel(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("add-sentinel") {
+            return x;
+        }
+        self.add_sentinel
+    }
+}
 
 /// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
@@ -143,91 +296,6 @@ impl Default for Config {
     }
 }
 
-/// Settings to apply to generated functions.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[serde(deny_unknown_fields)]
-#[serde(default)]
-pub struct FunctionConfig {
-    /// Optional text to output before each function declaration
-    pub prefix: Option<String>,
-    /// Optional text to output after each function declaration
-    pub postfix: Option<String>,
-    /// The style to layout the args
-    pub args: Layout,
-    /// The rename rule to apply to function args
-    pub rename_args: Option<RenameRule>,
-}
-
-impl Default for FunctionConfig {
-    fn default() -> FunctionConfig {
-        FunctionConfig {
-            prefix: None,
-            postfix: None,
-            args: Layout::Auto,
-            rename_args: None,
-        }
-    }
-}
-
-/// Settings to apply to generated structs.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[serde(deny_unknown_fields)]
-#[serde(default)]
-pub struct StructConfig {
-    /// The rename rule to apply to the name of struct fields
-    pub rename_fields: Option<RenameRule>,
-    /// Whether to generate a piecewise equality operator
-    pub derive_eq: bool,
-    /// Whether to generate a piecewise inequality operator
-    pub derive_neq: bool,
-    /// Whether to generate a less than operator on structs with one field
-    pub derive_lt: bool,
-    /// Whether to generate a less than or equal to operator on structs with one field
-    pub derive_lte: bool,
-    /// Whether to generate a greater than operator on structs with one field
-    pub derive_gt: bool,
-    /// Whether to generate a greater than or equal to operator on structs with one field
-    pub derive_gte: bool,
-}
-
-impl Default for StructConfig {
-    fn default() -> StructConfig {
-        StructConfig {
-            rename_fields: None,
-            derive_eq: false,
-            derive_neq: false,
-            derive_lt: false,
-            derive_lte: false,
-            derive_gt: false,
-            derive_gte: false,
-        }
-    }
-}
-
-/// Settings to apply to generated enums.
-#[derive( Debug, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[serde(deny_unknown_fields)]
-#[serde(default)]
-pub struct EnumConfig {
-    /// The rename rule to apply to the name of enum variants
-    pub rename_variants: Option<RenameRule>,
-    /// Whether to add a `Sentinel` value at the end of every enum
-    /// This is useful in Gecko for IPC serialization
-    pub add_sentinel: bool,
-}
-
-impl Default for EnumConfig {
-    fn default() -> EnumConfig {
-        EnumConfig {
-            rename_variants: None,
-            add_sentinel: false,
-        }
-    }
-}
-
 impl Config {
     pub fn from_file(file_name: &str) -> Result<Config, String> {
         fn read(file_name: &str) -> io::Result<String> {
@@ -254,69 +322,5 @@ impl Config {
         } else {
             Config::default()
         }
-    }
-}
-
-impl FunctionConfig {
-    pub fn prefix(&self, annotations: &AnnotationSet) -> Option<String> {
-        if let Some(x) = annotations.atom("prefix") {
-            return x;
-        }
-        self.prefix.clone()
-    }
-
-    pub fn postfix(&self, annotations: &AnnotationSet) -> Option<String> {
-        if let Some(x) = annotations.atom("postfix") {
-            return x;
-        }
-        self.postfix.clone()
-    }
-}
-
-impl StructConfig {
-    pub fn derive_eq(&self, annotations: &AnnotationSet) -> bool {
-        if let Some(x) = annotations.bool("derive-eq") {
-            return x;
-        }
-        self.derive_eq
-    }
-    pub fn derive_neq(&self, annotations: &AnnotationSet) -> bool {
-        if let Some(x) = annotations.bool("derive-neq") {
-            return x;
-        }
-        self.derive_neq
-    }
-    pub fn derive_lt(&self, annotations: &AnnotationSet) -> bool {
-        if let Some(x) = annotations.bool("derive-lt") {
-            return x;
-        }
-        self.derive_lt
-    }
-    pub fn derive_lte(&self, annotations: &AnnotationSet) -> bool {
-        if let Some(x) = annotations.bool("derive-lte") {
-            return x;
-        }
-        self.derive_lte
-    }
-    pub fn derive_gt(&self, annotations: &AnnotationSet) -> bool {
-        if let Some(x) = annotations.bool("derive-gt") {
-            return x;
-        }
-        self.derive_gt
-    }
-    pub fn derive_gte(&self, annotations: &AnnotationSet) -> bool {
-        if let Some(x) = annotations.bool("derive-gte") {
-            return x;
-        }
-        self.derive_gte
-    }
-}
-
-impl EnumConfig {
-    pub fn add_sentinel(&self, annotations: &AnnotationSet) -> bool {
-        if let Some(x) = annotations.bool("add-sentinel") {
-            return x;
-        }
-        self.add_sentinel
     }
 }

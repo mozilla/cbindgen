@@ -52,19 +52,24 @@ fn main() {
                          .required(false))
                     .get_matches();
 
+    // Initialize logging
     match matches.occurrences_of("v") {
         0 => logging::WarnLogger::init().unwrap(),
         1 => logging::InfoLogger::init().unwrap(),
         _ => logging::TraceLogger::init().unwrap(),
     }
 
+    // Find the input directory
     let input = matches.value_of("INPUT").unwrap();
 
+    // Load any config specified or search in the input directory
     let mut config = match matches.value_of("config") {
         Some(c) => Config::from_file(c).unwrap(),
         None => Config::from_root_or_default(&input),
     };
 
+    // We allow specifying a language to override the config default. This is
+    // used by compile-tests.
     if let Some(lang) = matches.value_of("lang") {
         config.language = match lang {
             "c++"=> Language::Cxx,
@@ -76,6 +81,7 @@ fn main() {
         };
     }
 
+    // Load the library into memory
     let library = if Path::new(&input).is_dir() {
         let binding_crate = match matches.value_of("crate") {
             Some(binding_crate) => String::from(binding_crate),
@@ -105,6 +111,7 @@ fn main() {
         }
     };
 
+    // Generate a bindings file
     let built = match library.generate() {
         Ok(x) => x,
         Err(msg) => {
@@ -114,6 +121,7 @@ fn main() {
         },
     };
 
+    // Write the bindings file
     match matches.value_of("out") {
         Some(file) => {
             built.write_to_file(file);

@@ -89,8 +89,7 @@ impl CDecl {
         }
     }
 
-    fn to_string(&self, ident: Option<&str>) -> String
-    {
+    fn to_string(&self, ident: Option<&str>) -> String {
         // Build the left side (the type-specifier and type-qualifier),
         // and then build the right side (the declarators), and then
         // merge the result.
@@ -169,11 +168,9 @@ impl CDecl {
     }
 }
 
-pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function)
-{
+pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function) {
     out.write(&CDecl::from_func(f).to_string(Some(&f.name)));
 }
-pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str)
-{
+pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
     out.write(&CDecl::from_type(t).to_string(Some(ident)));
 }
