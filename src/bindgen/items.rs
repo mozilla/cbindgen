@@ -739,15 +739,19 @@ impl Specialization {
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
-        library.add_deps_for_path_deps(&self.aliased, out);
-        for value in &self.generic_values {
-            value.add_deps_with_generics(&self.generic_params, &library, out);
+        // By specializing before adding dependencies we can avoid adding dependencies
+        // for intermediate generic parameters that don't make it into the final item
+        let specialized = self.specialize(library).ok();
+
+        // TODO: flatten
+        if let Some(specialized) = specialized {
+            if let Some(specialized) = specialized {
+                specialized.add_deps(library, out);
+            }
         }
     }
 
-    pub fn specialize(&self,
-                      config: &Config,
-                      library: &Library) -> Result<Option<PathValue>, String> {
+    pub fn specialize(&self, library: &Library) -> Result<Option<PathValue>, String> {
         if self.generic_params.len() > 0 {
             return Ok(None);
         }
@@ -815,7 +819,7 @@ impl Specialization {
                             aliased: aliased.aliased.clone(),
                             generic_params: Vec::new(),
                             generic_values: generic_values,
-                        }.specialize(config, library)
+                        }.specialize(library)
                     }
                 }
             }

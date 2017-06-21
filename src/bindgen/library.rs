@@ -350,14 +350,6 @@ impl Library {
         }
     }
 
-    pub fn add_deps_for_path_deps(&self, p: &PathRef, out: &mut DependencyGraph) {
-        if let Some(value) = self.resolve_path(p) {
-            value.add_deps(self, out);
-        } else {
-            warn!("can't find {}", p);
-        }
-    }
-
     /// Build a bindings file from this rust library.
     pub fn generate(self) -> Result<GeneratedBindings, String> {
         let mut result = GeneratedBindings::blank(&self.config);
@@ -380,7 +372,7 @@ impl Library {
                     }
                 }
                 &PathValue::Specialization(ref s) => {
-                    match s.specialize(&self.config, &self) {
+                    match s.specialize(&self) {
                         Ok(Some(value)) => {
                             result.items.push(value);
                         }
