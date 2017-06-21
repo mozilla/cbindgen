@@ -127,6 +127,7 @@ impl Library {
                                          config);
 
         rust_lib::parse_lib(lib,
+                            config.parse_deps,
                             &config.include,
                             &config.exclude,
                             &config.expand,

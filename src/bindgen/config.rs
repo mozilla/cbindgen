@@ -267,6 +267,15 @@ pub struct Config {
     pub tab_width: usize,
     /// The language to output bindings for
     pub language: Language,
+    /// Whether to parse dependencies when generating bindings. When this is true,
+    /// each dependent crate is found using a combination of `cargo metadata` and
+    /// `Cargo.lock`. To further control this behavior, crates can be whitelisted or
+    /// blacklisted using `include` and `exclude` respectively. Additionally in cases
+    /// where crates have types to expose in bindings hidden in macros, a crate can
+    /// be marked in `expand` and `cargo expand` will be used to expand the macros
+    /// before parsing. A crate marked in `expand` doesn't need to be added to any
+    /// whitelist.
+    pub parse_deps: bool,
     /// An optional whitelist of names of crates to parse
     pub include: Option<Vec<String>>,
     /// The names of crates to not parse
@@ -296,6 +305,7 @@ impl Default for Config {
             line_length: 100,
             tab_width: 2,
             language: Language::Cxx,
+            parse_deps: false,
             include: None,
             exclude: Vec::new(),
             expand: Vec::new(),

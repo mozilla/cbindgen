@@ -35,6 +35,10 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
             }
         };
     }
+
+    if matches.is_present("d") {
+        config.parse_deps = true;
+    }
 }
 
 fn load_library<'a>(input: &str, matches: &ArgMatches<'a>) -> Result<Library, String> {
@@ -93,6 +97,10 @@ fn main() {
                          .long("lang")
                          .value_name("LANGUAGE")
                          .help("the language to output bindings in: c++ or c, defaults to c++"))
+                    .arg(Arg::with_name("d")
+                         .short("d")
+                         .long("parse-dependencies")
+                         .help("whether to parse dependencies when generating bindings"))
                     .arg(Arg::with_name("INPUT")
                          .help("the crate or source file to generate bindings for")
                          .required(true)

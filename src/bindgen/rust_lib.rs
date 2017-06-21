@@ -42,6 +42,7 @@ pub fn parse_src<F>(src_file: &Path,
 /// and parsed. To find an external crate, the parser uses the `cargo metadata`
 /// command to find the location of dependencies.
 pub fn parse_lib<F>(lib: Cargo,
+                    parse_deps: bool,
                     include: &Option<Vec<String>>,
                     exclude: &Vec<String>,
                     expand: &Vec<String>,
@@ -50,6 +51,7 @@ pub fn parse_lib<F>(lib: Cargo,
 {
     let mut context = ParseLibContext {
         lib: lib,
+        parse_deps: parse_deps,
         include: include.clone(),
         exclude: exclude.clone(),
         expand: expand.clone(),
@@ -65,6 +67,7 @@ struct ParseLibContext<F>
     where F: FnMut(&str, &Vec<syn::Item>)
 {
     lib: Cargo,
+    parse_deps: bool,
     include: Option<Vec<String>>,
     exclude: Vec<String>,
     expand: Vec<String>,
@@ -77,7 +80,11 @@ struct ParseLibContext<F>
 impl<F> ParseLibContext<F>
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    fn should_parse_crate(&self, pkg_name: &String) -> bool {
+    fn should_parse_dependency(&self, pkg_name: &String) -> bool {
+        if !self.parse_deps {
+            return false;
+        }
+
         // Skip any whitelist or blacklist for expand
         if self.expand.contains(&pkg_name) {
             return true;
@@ -155,7 +162,7 @@ fn process_expanded_mod<F>(pkg: &PackageRef,
             syn::ItemKind::ExternCrate(_) => {
                 let dep_pkg_name = item.ident.to_string();
 
-                if context.should_parse_crate(&dep_pkg_name) {
+                if context.should_parse_dependency(&dep_pkg_name) {
                     let dep_pkg_ref = context.lib.find_dep_ref(pkg, &dep_pkg_name);
 
                     if let Some(dep_pkg_ref) = dep_pkg_ref {
@@ -239,7 +246,7 @@ fn process_mod<F>(pkg: &PackageRef,
             syn::ItemKind::ExternCrate(_) => {
                 let dep_pkg_name = item.ident.to_string();
 
-                if context.should_parse_crate(&dep_pkg_name) {
+                if context.should_parse_dependency(&dep_pkg_name) {
                     let dep_pkg_ref = context.lib.find_dep_ref(pkg, &dep_pkg_name);
 
                     if let Some(dep_pkg_ref) = dep_pkg_ref {
