@@ -32,17 +32,13 @@ Here's an example build.rs script:
 extern crate cbindgen;
 
 use std::env;
-use cbindgen::{Config, Library};
 
 fn main() {
-    let root = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let config = Config::from_root_or_default(&root);
+    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
 
-    Library::load_crate(Path::new(root),
-                        "CRATE_NAME",
-                        &config)
-        .generate().unwrap()
-        .write_to_file("bindings.h");
+    cbindgen::generate(crate_dir)
+      .unwrap()
+      .write_to_file("bindings.h");
 }
 
 ```

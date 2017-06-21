@@ -51,5 +51,5 @@ mod writer;
 
 pub use self::cargo::*;
 pub use self::config::*;
-pub use self::library::Library;
+pub use self::library::{GeneratedBindings, Library};
 pub use self::cargo_toml::manifest;
