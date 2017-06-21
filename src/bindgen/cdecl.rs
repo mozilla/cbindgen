@@ -13,16 +13,26 @@ use bindgen::writer::*;
 // This code can be done in a single recursive function, but it's
 // not pretty and not worth it.
 
+enum CDeclarator {
+    Ptr(bool),
+    Array(u64),
+    Func(Vec<(Option<String>, CDecl)>, bool),
+}
+
+impl CDeclarator {
+    fn is_ptr(&self) -> bool {
+        match self {
+            &CDeclarator::Ptr(..) => true,
+            &CDeclarator::Func(..) => true,
+            _ => false,
+        }
+    }
+}
+
 struct CDecl {
     type_qualifers: String,
     type_name: String,
     declarators: Vec<CDeclarator>
-}
-
-enum CDeclarator {
-    Ptr(bool),
-    Array(u64),
-    Func(Vec<(Option<String>, CDecl)>),
 }
 
 impl CDecl {
@@ -39,15 +49,15 @@ impl CDecl {
         cdecl.build_type(t, false);
         cdecl
     }
-    fn from_func(f: &Function) -> CDecl {
+    fn from_func(f: &Function, layout_vertical: bool) -> CDecl {
         let mut cdecl = CDecl::new();
-        cdecl.build_func(f);
+        cdecl.build_func(f, layout_vertical);
         cdecl
     }
 
-    fn build_func(&mut self, f: &Function) {
+    fn build_func(&mut self, f: &Function, layout_vertical: bool) {
         let args = f.args.iter().map(|&(ref arg_name, ref arg_ty)| (Some(arg_name.clone()), CDecl::from_type(arg_ty))).collect();
-        self.declarators.push(CDeclarator::Func(args));
+        self.declarators.push(CDeclarator::Func(args, layout_vertical));
         self.build_type(&f.ret, false);
     }
 
@@ -87,94 +97,124 @@ impl CDecl {
             &Type::FuncPtr(ref ret, ref args) => {
                 let args = args.iter().map(|x| (None, CDecl::from_type(x))).collect();
                 self.declarators.push(CDeclarator::Ptr(false));
-                self.declarators.push(CDeclarator::Func(args));
+                self.declarators.push(CDeclarator::Func(args, false));
                 self.build_type(ret, false);
             }
         }
     }
 
-    fn to_string(&self, ident: Option<&str>) -> String {
-        // Build the left side (the type-specifier and type-qualifier),
-        // and then build the right side (the declarators), and then
-        // merge the result.
-
-        let type_and_qualifier = if self.type_qualifers.len() != 0 {
-            format!("{} {}",
-                    self.type_qualifers,
-                    self.type_name)
+    fn write<F: Write>(&self, out: &mut SourceWriter<F>, ident: Option<&str>) {
+        // Write the type-specifier and type-qualifier first
+        if self.type_qualifers.len() != 0 {
+            out.write(&self.type_qualifers);
+            out.write(" ");
+            out.write(&self.type_name);
         } else {
-            format!("{}",
-                    self.type_name)
+            out.write(&self.type_name);
         };
 
-        let mut left_declarators = String::new();
-        let mut right_declarators = String::new();
-        let mut last_was_pointer = false;
-        for declarator in &self.declarators {
+        // When we have an identifier, put a space between the type and the declarators
+        if ident.is_some() {
+            out.write(" ");
+        }
+
+        // Write the left part of declarators before the identifier
+        let mut iter_rev = self.declarators.iter()
+                                       .rev()
+                                       .peekable();
+
+        while let Some(declarator) = iter_rev.next() {
+            let next_is_pointer = iter_rev.peek().map_or(false, |x| x.is_ptr());
+
             match declarator {
                 &CDeclarator::Ptr(ref is_const) => {
                     if *is_const {
-                        left_declarators.insert_str(0, "*const ");
+                        out.write("*const ");
                     } else {
-                        left_declarators.insert_str(0, "*");
+                        out.write("*");
                     }
-
-                    last_was_pointer = true;
                 },
-                &CDeclarator::Array(sz) => {
-                    if last_was_pointer {
-                        left_declarators.insert_str(0, "(");
-                        right_declarators.push_str(")");
+                &CDeclarator::Array(..) => {
+                    if next_is_pointer {
+                        out.write("(");
                     }
-                    right_declarators.push_str(&format!("[{}]", sz));
-
-                    last_was_pointer = false;
                 },
-                &CDeclarator::Func(ref args) => {
-                    if last_was_pointer {
-                        left_declarators.insert_str(0, "(");
-                        right_declarators.push_str(")");
+                &CDeclarator::Func(..) => {
+                    if next_is_pointer {
+                        out.write("(");
                     }
-
-                    right_declarators.push_str("(");
-                    for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
-                        if i != 0 {
-                            right_declarators.push_str(", ");
-                        }
-
-                        // This is gross, but needed to convert &Option<String> to Option<&str>
-                        let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
-
-                        right_declarators.push_str(&arg_ty.to_string(arg_ident));
-                    }
-                    right_declarators.push_str(")");
-
-                    last_was_pointer = true;
                 },
             }
         }
 
-        match ident {
-            Some(ident) => {
-                format!("{} {}{}{}",
-                        type_and_qualifier,
-                        left_declarators,
-                        ident,
-                        right_declarators)
-            }
-            None => {
-                format!("{}{}{}",
-                        type_and_qualifier,
-                        left_declarators,
-                        right_declarators)
+        // Write the identifier
+        if let Some(ident) = ident {
+            out.write(ident);
+        }
+
+        // Write the right part of declarators after the identifier
+        let mut iter = self.declarators.iter();
+        let mut last_was_pointer = false;
+
+        while let Some(declarator) = iter.next() {
+            match declarator {
+                &CDeclarator::Ptr(..) => {
+                    last_was_pointer = true;
+                },
+                &CDeclarator::Array(sz) => {
+                    if last_was_pointer {
+                        out.write(")");
+                    }
+                    out.write(&format!("[{}]", sz));
+
+                    last_was_pointer = false;
+                },
+                &CDeclarator::Func(ref args, layout_vertical) => {
+                    if last_was_pointer {
+                        out.write(")");
+                    }
+
+                    out.write("(");
+                    if layout_vertical {
+                        let align_length = out.line_length_for_align();
+                        out.push_set_spaces(align_length);
+                        for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
+                            if i != 0 {
+                                out.write(",");
+                                out.new_line();
+                            }
+
+                            // This is gross, but needed to convert &Option<String> to Option<&str>
+                            let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
+
+                            arg_ty.write(out, arg_ident);
+                        }
+                        out.pop_tab();
+                    } else {
+                        for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
+                            if i != 0 {
+                                out.write(", ");
+                            }
+
+                            // This is gross, but needed to convert &Option<String> to Option<&str>
+                            let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
+
+                            arg_ty.write(out, arg_ident);
+                        }
+                    }
+                    out.write(")");
+
+                    last_was_pointer = true;
+                },
             }
         }
     }
 }
 
-pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function) {
-    out.write(&CDecl::from_func(f).to_string(Some(&f.name)));
+pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function, layout_vertical: bool) {
+    &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name));
 }
+
 pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
-    out.write(&CDecl::from_type(t).to_string(Some(ident)));
+    &CDecl::from_type(t).write(out, Some(ident));
 }

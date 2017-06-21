@@ -77,11 +77,11 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         *self.spaces.last().unwrap()
     }
 
-    fn push_set_spaces(&mut self, spaces: usize) {
+    pub fn push_set_spaces(&mut self, spaces: usize) {
         self.spaces.push(spaces);
     }
 
-    fn line_length_for_align(&self) -> usize {
+    pub fn line_length_for_align(&self) -> usize {
         if self.line_started {
             self.line_length
         } else {

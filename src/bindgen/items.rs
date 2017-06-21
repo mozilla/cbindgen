@@ -354,7 +354,7 @@ impl Source for Function {
                 out.write(prefix);
                 out.write(" ");
             }
-            cdecl::write_func(out, &func);
+            cdecl::write_func(out, &func, false);
             if let Some(ref postfix) = postfix {
                 out.write(" ");
                 out.write(postfix);
@@ -370,7 +370,7 @@ impl Source for Function {
                 out.write(prefix);
                 out.new_line();
             }
-            cdecl::write_func(out, &func);
+            cdecl::write_func(out, &func, true);
             if let Some(ref postfix) = postfix {
                 out.new_line();
                 out.write(postfix);
