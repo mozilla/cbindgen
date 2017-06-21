@@ -482,6 +482,14 @@ impl GeneratedBindings {
             out.new_line_if_not_start();
             out.write("extern \"C\" {");
             out.new_line();
+
+            if let Some(ref namespace) = self.config.namespace {
+                out.new_line();
+                out.write("namespace ");
+                out.write(namespace);
+                out.write(" {");
+                out.new_line();
+            }
         }
 
         for item in &self.items {
@@ -515,6 +523,13 @@ impl GeneratedBindings {
         }
 
         if self.config.language == Language::Cxx {
+            if let Some(ref namespace) = self.config.namespace {
+                out.new_line_if_not_start();
+                out.write("} // namespace ");
+                out.write(namespace);
+                out.new_line();
+            }
+
             out.new_line_if_not_start();
             out.write("} // extern \"C\"");
             out.new_line();

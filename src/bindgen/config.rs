@@ -259,6 +259,8 @@ pub struct Config {
     pub autogen_warning: Option<String>,
     /// Include a comment with the version of cbindgen used to generate the file
     pub include_version: bool,
+    /// An optional name for the root namespace. Only applicable when language="C++"
+    pub namespace: Option<String>,
     /// The style to use for braces
     pub braces: Braces,
     /// The preferred length of a line, used for auto breaking function arguments
@@ -301,6 +303,7 @@ impl Default for Config {
             include_guard: None,
             autogen_warning: None,
             include_version: true,
+            namespace: None,
             braces: Braces::SameLine,
             line_length: 100,
             tab_width: 2,
