@@ -4,10 +4,10 @@
 
 use std::path::{Path, PathBuf};
 
-use bindgen::cargo_expand;
-use bindgen::cargo_lock::{self, Lock};
-use bindgen::cargo_metadata::{self, Metadata};
-use bindgen::cargo_toml;
+use bindgen::cargo::cargo_expand;
+use bindgen::cargo::cargo_lock::{self, Lock};
+use bindgen::cargo::cargo_metadata::{self, Metadata};
+use bindgen::cargo::cargo_toml;
 
 fn parse_dep_string(dep_string: &str) -> (&str, &str) {
     let split: Vec<&str> = dep_string.split_whitespace().collect();
