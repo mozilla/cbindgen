@@ -27,6 +27,6 @@ pub fn generate(crate_dir: &str) -> Result<GeneratedBindings, String> {
 
 /// A utility function for build scripts to generate bindings for a crate with a
 /// custom config.
-pub fn generate_config(crate_dir: &str, config: &Config) -> Result<GeneratedBindings, String> {
+pub fn generate_with_config(crate_dir: &str, config: &Config) -> Result<GeneratedBindings, String> {
     Library::load_crate(Cargo::load(Path::new(crate_dir), None)?, config)?.generate()
 }

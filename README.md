@@ -43,6 +43,27 @@ fn main() {
 
 ```
 
+## Configuration
+
+There are a lot of configurable options for binding generation. Options can be specified by creating a `cbindgen.toml` with the options in the binding crate root. Alternatively, build scripts can specify options using `cbindgen::generate_with_config`.
+
+Some useful options:
+
+1. `header` - Optional text to output at the beginning of the file
+2. `trailer` - Optional text to output at the end of the file
+3. `include_guard` - Optional name to use for an include guard
+4. `autogen_warning` - Optional text to output at major sections to deter manual editing
+5. `include_version` - Whether to include a comment with the version of cbindgen used to generate the file
+6. `braces` - The style to use for braces (can be either SameLine or NextLine)
+7. `line_length` - The preferred length of a line, used when auto breaking function arguments
+8. `tab_width` - The amount of spaces in an indentation
+9. `language` - The language to generate bindings in (can be either C++ or C)
+10. `parse_deps` - Whether to parse dependent crates
+11. `include` - An optional whitelist to use when parsing dependent crates
+12. `exclude` - An optional blacklist to use when parsing dependent crates
+
+A full listing of options can be found in `src/bindgen/config.rs`
+
 ## Examples
 
 See `compile-tests/` for some examples of rust source that can be handled.

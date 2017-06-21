@@ -253,7 +253,7 @@ pub struct Config {
     pub header: Option<String>,
     /// Optional text to output at the end of the file
     pub trailer: Option<String>,
-    /// Option name to use for an include guard
+    /// Optional name to use for an include guard
     pub include_guard: Option<String>,
     /// Optional text to output at major sections to deter manual editing
     pub autogen_warning: Option<String>,
