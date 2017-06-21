@@ -60,7 +60,7 @@ fn load_library<'a>(input: &str, matches: &ArgMatches<'a>) -> Result<Library, St
     let mut config = match matches.value_of("config") {
         Some(c) => Config::from_file(c).unwrap(),
         None => {
-            let binding_crate_dir = lib.find_crate_dir(lib.binding_crate_name());
+            let binding_crate_dir = lib.find_crate_dir(&lib.binding_crate_ref());
 
             if let Some(binding_crate_dir) = binding_crate_dir {
                 Config::from_root_or_default(&binding_crate_dir)

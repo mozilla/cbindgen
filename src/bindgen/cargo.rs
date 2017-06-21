@@ -9,6 +9,17 @@ use bindgen::cargo_lock::{self, Lock};
 use bindgen::cargo_metadata::{self, Metadata};
 use bindgen::cargo_toml;
 
+fn parse_dep_string(dep_string: &str) -> (&str, &str) {
+    let split: Vec<&str> = dep_string.split_whitespace().collect();
+
+    (split[0], split[1])
+}
+
+pub struct PackageRef {
+    pub name: String,
+    pub version: String,
+}
+
 pub struct Cargo {
     manifest_path: PathBuf,
     binding_crate_name: String,
@@ -45,22 +56,61 @@ impl Cargo {
     pub fn binding_crate_name(&self) -> &str {
         &self.binding_crate_name
     }
+    pub fn binding_crate_ref(&self) -> PackageRef {
+        self.find_pkg_ref(&self.binding_crate_name).unwrap()
+    }
 
-    pub fn find_crate_dir(&self, package_name: &str) -> Option<PathBuf> {
+    fn find_pkg_ref(&self, package_name: &str) -> Option<PackageRef> {
         for package in &self.metadata.packages {
             if package.name == package_name {
-                return Path::new(&package.manifest_path).parent()
-                                                        .map(|x| x.to_owned());
+                return Some(PackageRef {
+                    name: package_name.to_owned(),
+                    version: package.version.clone(),
+                });
             }
         }
         None
     }
 
-    pub fn find_crate_src(&self, package_name: &str) -> Option<PathBuf> {
+    pub fn find_dep_ref(&self, package: &PackageRef, dependency_name: &str) -> Option<PackageRef> {
+        for lock_package in &self.lock.package {
+            if lock_package.name == package.name &&
+               lock_package.version == package.version {
+                if let Some(ref deps) = lock_package.dependencies {
+                    for dep in deps {
+                        let (name, version) = parse_dep_string(dep);
+
+                        if name == dependency_name {
+                            return Some(PackageRef {
+                                name: name.to_owned(),
+                                version: version.to_owned(),
+                            });
+                        }
+                    }
+                }
+                return None;
+            }
+        }
+        None
+    }
+
+    pub fn find_crate_dir(&self, package: &PackageRef) -> Option<PathBuf> {
+        for meta_package in &self.metadata.packages {
+            if meta_package.name == package.name &&
+               meta_package.version == package.version {
+                return Path::new(&meta_package.manifest_path).parent()
+                                                             .map(|x| x.to_owned());
+            }
+        }
+        None
+    }
+
+    pub fn find_crate_src(&self, package: &PackageRef) -> Option<PathBuf> {
         let kind_lib = String::from("lib");
-        for package in &self.metadata.packages {
-            if package.name == package_name {
-                for target in &package.targets {
+        for meta_package in &self.metadata.packages {
+            if meta_package.name == package.name &&
+               meta_package.version == package.version {
+                for target in &meta_package.targets {
                     if target.kind.contains(&kind_lib) {
                         return Some(PathBuf::from(&target.src_path));
                     }
@@ -71,7 +121,7 @@ impl Cargo {
         None
     }
 
-    pub fn expand_crate(&self, crate_name: &str) -> Result<String, String> {
-        cargo_expand::expand(&self.manifest_path, crate_name)
+    pub fn expand_crate(&self, package: &PackageRef) -> Result<String, String> {
+        cargo_expand::expand(&self.manifest_path, &package.name, &package.version)
     }
 }

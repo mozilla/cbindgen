@@ -31,12 +31,7 @@ impl From<toml::de::Error> for Error {
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct Lock {
-    pub root: Root,
     pub package: Vec<Package>,
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct Root {
 }
 
 #[derive(Clone, Deserialize, Debug)]

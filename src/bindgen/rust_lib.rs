@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use bindgen::cargo::Cargo;
+use bindgen::cargo::{Cargo, PackageRef};
 use syn;
 
 const STD_CRATES: &'static [&'static str] = &["std",
@@ -48,8 +48,6 @@ pub fn parse_lib<F>(lib: Cargo,
                     items_callback: &mut F) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    let start_crate = lib.binding_crate_name().to_owned();
-
     let mut context = ParseLibContext {
         lib: lib,
         include: include.clone(),
@@ -60,11 +58,11 @@ pub fn parse_lib<F>(lib: Cargo,
         items_callback: items_callback,
     };
 
-    parse_crate(&start_crate, &mut context)
+    parse_crate(&context.lib.binding_crate_ref(), &mut context)
 }
 
 struct ParseLibContext<F>
-  where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &Vec<syn::Item>)
 {
     lib: Cargo,
     include: Option<Vec<String>>,
@@ -76,80 +74,96 @@ struct ParseLibContext<F>
     items_callback: F,
 }
 
-fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseResult
+impl<F> ParseLibContext<F>
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    // Check if we should use cargo expand, this skips the whitelist
-    // and blacklist because expand is manually specified
-    if context.expand.contains(&crate_name.to_owned()) {
-        return parse_expand_crate(crate_name, context);
-    }
-
-    // Check the whitelist
-    if let Some(ref include) = context.include {
-        if !include.contains(&crate_name.to_owned()) {
-            return Ok(());
+    fn should_parse_crate(&self, pkg_name: &String) -> bool {
+        // Skip any whitelist or blacklist for expand
+        if self.expand.contains(&pkg_name) {
+            return true;
         }
-    }
 
-    // Check the blacklist
-    if STD_CRATES.contains(&crate_name) ||
-       context.exclude.contains(&crate_name.to_owned()) {
-        return Ok(());
+        // If we have a whitelist, check it
+        if let Some(ref include) = self.include {
+            if !include.contains(&pkg_name) {
+                return false;
+            }
+        }
+
+        // Check the blacklist
+        return !STD_CRATES.contains(&pkg_name.as_ref()) &&
+               !self.exclude.contains(&pkg_name);
+    }
+}
+
+fn parse_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseResult
+    where F: FnMut(&str, &Vec<syn::Item>)
+{
+    // Check if we should use cargo expand for this crate
+    if context.expand.contains(&pkg.name) {
+        return parse_expand_crate(pkg, context);
     }
 
     // Otherwise do our normal parse
-    let crate_src = context.lib.find_crate_src(crate_name);
+    let crate_src = context.lib.find_crate_src(pkg);
 
     match crate_src {
         Some(crate_src) => {
-            parse_mod(crate_name, crate_src.as_path(), context)
+            parse_mod(pkg, crate_src.as_path(), context)
         },
         None => {
             // This should be an error, but is common enough to just elicit a warning
-            warn!("parsing crate `{}`: can't find lib.rs with `cargo metadata`", crate_name);
+            warn!("parsing crate `{}`: can't find lib.rs with `cargo metadata`", pkg.name);
             Ok(())
         },
     }
 }
 
-fn parse_expand_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseResult
+fn parse_expand_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
     let mod_parsed = {
-        let owned_crate_name = crate_name.to_owned();
-
-        if !context.cache_expanded_crate.contains_key(&owned_crate_name) {
-            let s = context.lib.expand_crate(crate_name)?;
-            let i = syn::parse_crate(&s).map_err(|msg| format!("parsing crate `{}`:\n{}", crate_name, msg))?;
-            context.cache_expanded_crate.insert(owned_crate_name.clone(), i.items);
+        if !context.cache_expanded_crate.contains_key(&pkg.name) {
+            let s = context.lib.expand_crate(pkg)?;
+            let i = syn::parse_crate(&s).map_err(|msg| format!("parsing crate `{}`:\n{}", pkg.name, msg))?;
+            context.cache_expanded_crate.insert(pkg.name.clone(), i.items);
         }
 
-        context.cache_expanded_crate.get(&owned_crate_name).unwrap().clone()
+        context.cache_expanded_crate.get(&pkg.name).unwrap().clone()
     };
 
-    process_expanded_mod(crate_name, &mod_parsed, context)
+    process_expanded_mod(pkg, &mod_parsed, context)
 }
 
-fn process_expanded_mod<F>(crate_name: &str,
+fn process_expanded_mod<F>(pkg: &PackageRef,
                            items: &Vec<syn::Item>,
                            context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    (context.items_callback)(crate_name, items);
+    (context.items_callback)(&pkg.name, items);
 
     for item in items {
         match item.node {
             syn::ItemKind::Mod(ref inline_items) => {
                 if let &Some(ref inline_items) = inline_items {
-                    process_expanded_mod(crate_name, inline_items, context)?;
+                    process_expanded_mod(pkg, inline_items, context)?;
                     continue;
                 }
 
-                return Err(format!("parsing crate `{}`: external mod found in expanded source", crate_name));
+                return Err(format!("parsing crate `{}`: external mod found in expanded source", pkg.name));
             }
             syn::ItemKind::ExternCrate(_) => {
-                parse_crate(&item.ident.to_string(), context)?;
+                let dep_pkg_name = item.ident.to_string();
+
+                if context.should_parse_crate(&dep_pkg_name) {
+                    let dep_pkg_ref = context.lib.find_dep_ref(pkg, &dep_pkg_name);
+
+                    if let Some(dep_pkg_ref) = dep_pkg_ref {
+                        parse_crate(&dep_pkg_ref, context)?;
+                    } else {
+                        error!("parsing crate `{}`: can't find dependency version for {}`", pkg.name, dep_pkg_name);
+                    }
+                }
             }
             _ => {}
         }
@@ -158,7 +172,7 @@ fn process_expanded_mod<F>(crate_name: &str,
     Ok(())
 }
 
-fn parse_mod<F>(crate_name: &str,
+fn parse_mod<F>(pkg: &PackageRef,
                 mod_path: &Path,
                 context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
@@ -168,9 +182,9 @@ fn parse_mod<F>(crate_name: &str,
 
         if !context.cache_src.contains_key(&owned_mod_path) {
             let mut s = String::new();
-            let mut f = File::open(mod_path).map_err(|_| format!("parsing crate `{}`: cannot open file `{:?}`", crate_name, mod_path))?;
-            f.read_to_string(&mut s).map_err(|_| format!("parsing crate `{}`: cannot open file `{:?}`", crate_name, mod_path))?;
-            let i = syn::parse_crate(&s).map_err(|msg| format!("parsing crate `{}`:\n{}", crate_name, msg))?;
+            let mut f = File::open(mod_path).map_err(|_| format!("parsing crate `{}`: cannot open file `{:?}`", pkg.name, mod_path))?;
+            f.read_to_string(&mut s).map_err(|_| format!("parsing crate `{}`: cannot open file `{:?}`", pkg.name, mod_path))?;
+            let i = syn::parse_crate(&s).map_err(|msg| format!("parsing crate `{}`:\n{}", pkg.name, msg))?;
             context.cache_src.insert(owned_mod_path.clone(), i.items);
         }
 
@@ -179,19 +193,19 @@ fn parse_mod<F>(crate_name: &str,
 
     let mod_dir = mod_path.parent().unwrap();
 
-    process_mod(crate_name,
+    process_mod(pkg,
                 mod_dir,
                 &mod_parsed,
                 context)
 }
 
-fn process_mod<F>(crate_name: &str,
+fn process_mod<F>(pkg: &PackageRef,
                   mod_dir: &Path,
                   items: &Vec<syn::Item>,
                   context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    (context.items_callback)(crate_name, items);
+    (context.items_callback)(&pkg.name, items);
 
     for item in items {
         match item.node {
@@ -199,7 +213,7 @@ fn process_mod<F>(crate_name: &str,
                 let next_mod_name = item.ident.to_string();
 
                 if let &Some(ref inline_items) = inline_items {
-                    process_mod(crate_name,
+                    process_mod(pkg,
                                 mod_dir,
                                 inline_items,
                                 context)?;
@@ -210,20 +224,30 @@ fn process_mod<F>(crate_name: &str,
                 let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
 
                 if next_mod_path1.exists() {
-                    parse_mod(crate_name,
+                    parse_mod(pkg,
                               next_mod_path1.as_path(),
                               context)?;
                 } else if next_mod_path2.exists() {
-                    parse_mod(crate_name,
+                    parse_mod(pkg,
                               next_mod_path2.as_path(),
                               context)?;
                 } else {
                     // This should be an error, but is common enough to just elicit a warning
-                    warn!("parsing crate `{}`: can't find mod {}`", crate_name, next_mod_name);
+                    warn!("parsing crate `{}`: can't find mod {}`", pkg.name, next_mod_name);
                 }
             }
             syn::ItemKind::ExternCrate(_) => {
-                parse_crate(&item.ident.to_string(), context)?;
+                let dep_pkg_name = item.ident.to_string();
+
+                if context.should_parse_crate(&dep_pkg_name) {
+                    let dep_pkg_ref = context.lib.find_dep_ref(pkg, &dep_pkg_name);
+
+                    if let Some(dep_pkg_ref) = dep_pkg_ref {
+                        parse_crate(&dep_pkg_ref, context)?;
+                    } else {
+                        error!("parsing crate `{}`: can't find dependency version for {}`", pkg.name, dep_pkg_name);
+                    }
+                }
             }
             _ => {}
         }
