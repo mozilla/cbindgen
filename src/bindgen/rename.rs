@@ -14,6 +14,7 @@ pub enum IdentifierType<'a> {
     FunctionArg,
     Enum,
 }
+
 impl<'a> IdentifierType<'a> {
     fn to_str(&'a self) -> &'static str {
         match *self {
@@ -236,4 +237,5 @@ impl FromStr for RenameRule {
         }
     }
 }
+
 deserialize_enum_str!(RenameRule);
