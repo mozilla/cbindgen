@@ -6,7 +6,7 @@ use std::default::Default;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-use std::path::PathBuf;
+use std::path::Path;
 use std::str::FromStr;
 
 use toml;
@@ -324,8 +324,8 @@ impl Config {
         }
     }
 
-    pub fn from_root_or_default(root: &str) -> Config {
-        let c = PathBuf::from(root).join("cbindgen.toml");
+    pub fn from_root_or_default(root: &Path) -> Config {
+        let c = root.join("cbindgen.toml");
 
         if c.exists() {
             Config::from_file(c.to_str().unwrap()).unwrap()

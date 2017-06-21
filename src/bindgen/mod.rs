@@ -34,7 +34,9 @@ macro_rules! deserialize_enum_str {
     }
 }
 
+mod cargo;
 mod cargo_expand;
+mod cargo_lock;
 mod cargo_metadata;
 mod cargo_toml;
 mod cdecl;
@@ -47,6 +49,7 @@ mod rust_lib;
 mod utilities;
 mod writer;
 
+pub use self::cargo::*;
 pub use self::config::*;
 pub use self::library::Library;
 pub use self::cargo_toml::manifest;

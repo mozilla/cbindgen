@@ -15,12 +15,66 @@ extern crate serde_json;
 extern crate syn;
 extern crate toml;
 
-use clap::{Arg, App};
+use clap::{Arg, ArgMatches, App};
 
 mod logging;
 mod bindgen;
 
-use bindgen::{Config, Language, Library};
+use bindgen::{Cargo, Config, Language, Library};
+
+fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
+    // We allow specifying a language to override the config default. This is
+    // used by compile-tests.
+    if let Some(lang) = matches.value_of("lang") {
+        config.language = match lang {
+            "c++"=> Language::Cxx,
+            "c"=> Language::C,
+            _ => {
+                error!("unknown language specified");
+                return;
+            }
+        };
+    }
+}
+
+fn load_library<'a>(input: &str, matches: &ArgMatches<'a>) -> Result<Library, String> {
+    let input = Path::new(input);
+
+    // If a file is specified then we load it as a single source
+    if !input.is_dir() {
+        // Load any config specified or search in the input directory
+        let mut config = match matches.value_of("config") {
+            Some(c) => Config::from_file(c).unwrap(),
+            None => Config::from_root_or_default(input),
+        };
+
+        apply_config_overrides(&mut config, &matches);
+
+        return Library::load_src(input, &config);
+    }
+
+    // We have to load a whole crate, so we use cargo to gather metadata
+    let lib = Cargo::load(input, matches.value_of("crate"))?;
+
+    // Load any config specified or search in the binding crate directory
+    let mut config = match matches.value_of("config") {
+        Some(c) => Config::from_file(c).unwrap(),
+        None => {
+            let binding_crate_dir = lib.find_crate_dir(lib.binding_crate_name());
+
+            if let Some(binding_crate_dir) = binding_crate_dir {
+                Config::from_root_or_default(&binding_crate_dir)
+            } else {
+                // This shouldn't happen
+                Config::from_root_or_default(input)
+            }
+        }
+    };
+
+    apply_config_overrides(&mut config, &matches);
+
+    Library::load_crate(lib, &config)
+}
 
 fn main() {
     let matches = App::new("cbindgen")
@@ -66,51 +120,11 @@ fn main() {
     // Find the input directory
     let input = matches.value_of("INPUT").unwrap();
 
-    // Load any config specified or search in the input directory
-    let mut config = match matches.value_of("config") {
-        Some(c) => Config::from_file(c).unwrap(),
-        None => Config::from_root_or_default(&input),
-    };
-
-    // We allow specifying a language to override the config default. This is
-    // used by compile-tests.
-    if let Some(lang) = matches.value_of("lang") {
-        config.language = match lang {
-            "c++"=> Language::Cxx,
-            "c"=> Language::C,
-            _ => {
-                error!("unknown language specified");
-                return;
-            }
-        };
-    }
-
-    // Load the library into memory
-    let library = if Path::new(&input).is_dir() {
-        let binding_crate = match matches.value_of("crate") {
-            Some(binding_crate) => String::from(binding_crate),
-            None => {
-                // Parse the Cargo.toml to find the root package name
-                match bindgen::manifest(&Path::new(&input).join("Cargo.toml")) {
-                    Ok(manifest) => manifest.package.name,
-                    Err(_) => {
-                        error!("cannot parse Cargo.toml to find package name");
-                        return;
-                    }
-                }
-            }
-        };
-
-        Library::load_crate(Path::new(input), &binding_crate, &config)
-    } else {
-        Library::load_src(Path::new(input), &config)
-    };
-
-    let library = match library {
+    let library = match load_library(input, &matches) {
         Ok(library) => library,
         Err(msg) => {
             error!("{}", msg);
-            error!("could not generate bindings for {}", input);
+            error!("couldn't generate bindings for {}", input);
             return;
         }
     };
@@ -120,7 +134,7 @@ fn main() {
         Ok(x) => x,
         Err(msg) => {
             error!("{}", msg);
-            error!("could not generate bindings for {}", input);
+            error!("couldn't generate bindings for {}", input);
             return;
         },
     };

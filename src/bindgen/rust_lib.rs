@@ -7,8 +7,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use bindgen::cargo_expand;
-use bindgen::cargo_metadata;
+use bindgen::cargo::Cargo;
 use syn;
 
 const STD_CRATES: &'static [&'static str] = &["std",
@@ -42,26 +41,17 @@ pub fn parse_src<F>(src_file: &Path,
 /// Inside a crate, `mod` and `extern crate` declarations are followed
 /// and parsed. To find an external crate, the parser uses the `cargo metadata`
 /// command to find the location of dependencies.
-pub fn parse_lib<F>(crate_path: &Path,
-                    binding_crate_name: &str,
+pub fn parse_lib<F>(lib: Cargo,
                     include: &Option<Vec<String>>,
                     exclude: &Vec<String>,
                     expand: &Vec<String>,
                     items_callback: &mut F) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    let manifest_path = crate_path.join("Cargo.toml");
-
-    let metadata = match cargo_metadata::metadata(Some(manifest_path.to_str().unwrap())) {
-        Ok(metadata) => metadata,
-        Err(msg) => {
-            return Err(format!("executing `cargo metadata`: {:?}", msg));
-        }
-    };
+    let start_crate = lib.binding_crate_name().to_owned();
 
     let mut context = ParseLibContext {
-        manifest_path: manifest_path,
-        metadata: metadata,
+        lib: lib,
         include: include.clone(),
         exclude: exclude.clone(),
         expand: expand.clone(),
@@ -70,14 +60,13 @@ pub fn parse_lib<F>(crate_path: &Path,
         items_callback: items_callback,
     };
 
-    parse_crate(binding_crate_name, &mut context)
+    parse_crate(&start_crate, &mut context)
 }
 
 struct ParseLibContext<F>
   where F: FnMut(&str, &Vec<syn::Item>)
 {
-    manifest_path: PathBuf,
-    metadata: cargo_metadata::Metadata,
+    lib: Cargo,
     include: Option<Vec<String>>,
     exclude: Vec<String>,
     expand: Vec<String>,
@@ -85,25 +74,6 @@ struct ParseLibContext<F>
     cache_expanded_crate: HashMap<String, Vec<syn::Item>>,
 
     items_callback: F,
-}
-
-impl<F> ParseLibContext<F>
-  where F: FnMut(&str, &Vec<syn::Item>)
-{
-  fn find_crate_src(&self, package_name: &str) -> Option<PathBuf> {
-      let kind_lib = String::from("lib");
-      for package in &self.metadata.packages {
-          if package.name == package_name {
-              for target in &package.targets {
-                  if target.kind.contains(&kind_lib) {
-                      return Some(PathBuf::from(&target.src_path));
-                  }
-              }
-              break;
-          }
-      }
-      None
-  }
 }
 
 fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseResult
@@ -128,7 +98,7 @@ fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseRe
     }
 
     // Otherwise do our normal parse
-    let crate_src = context.find_crate_src(crate_name);
+    let crate_src = context.lib.find_crate_src(crate_name);
 
     match crate_src {
         Some(crate_src) => {
@@ -149,7 +119,7 @@ fn parse_expand_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> 
         let owned_crate_name = crate_name.to_owned();
 
         if !context.cache_expanded_crate.contains_key(&owned_crate_name) {
-            let s = cargo_expand::expand(&context.manifest_path, crate_name)?;
+            let s = context.lib.expand_crate(crate_name)?;
             let i = syn::parse_crate(&s).map_err(|msg| format!("parsing crate `{}`:\n{}", crate_name, msg))?;
             context.cache_expanded_crate.insert(owned_crate_name.clone(), i.items);
         }

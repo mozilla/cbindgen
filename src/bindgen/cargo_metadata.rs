@@ -14,6 +14,7 @@ use std::env;
 use std::process::Command;
 use std::str::{from_utf8, Utf8Error};
 use std::io;
+use std::path::Path;
 
 use serde_json;
 
@@ -101,16 +102,14 @@ impl From<serde_json::Error> for Error {
 }
 
 /// The main entry point to obtaining metadata
-pub fn metadata(manifest_path_arg: Option<&str>) -> Result<Metadata, Error> {
+pub fn metadata(manifest_path: &Path) -> Result<Metadata, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
     cmd.arg("metadata");
     cmd.arg("--all-features");
     cmd.arg("--format-version").arg("1");
-    if let Some(mani) = manifest_path_arg {
-        cmd.arg("--manifest-path");
-        cmd.arg(mani);
-    }
+    cmd.arg("--manifest-path");
+    cmd.arg(manifest_path.to_str().unwrap());
     let output = cmd.output()?;
     let stdout = from_utf8(&output.stdout)?;
     let meta: Metadata = serde_json::from_str(stdout)?;

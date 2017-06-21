@@ -11,8 +11,8 @@ use std::path;
 
 use syn;
 
-use bindgen::config;
-use bindgen::config::{Config, Language};
+use bindgen::cargo::Cargo;
+use bindgen::config::{self, Config, Language};
 use bindgen::annotation::*;
 use bindgen::items::*;
 use bindgen::rust_lib;
@@ -79,9 +79,9 @@ impl DependencyGraph {
 
 /// A library contains all of the information needed to generate bindings for a rust library.
 #[derive(Debug, Clone)]
-pub struct Library<'a> {
+pub struct Library {
     bindings_crate_name: String,
-    config: &'a Config,
+    config: Config,
 
     enums: BTreeMap<String, Enum>,
     structs: BTreeMap<String, Struct>,
@@ -91,11 +91,11 @@ pub struct Library<'a> {
     functions: BTreeMap<String, Function>,
 }
 
-impl<'a> Library<'a> {
-    fn blank(bindings_crate_name: &str, config: &'a Config) -> Library<'a> {
+impl Library {
+    fn blank(bindings_crate_name: &str, config: &Config) -> Library {
         Library {
             bindings_crate_name: String::from(bindings_crate_name),
-            config: config,
+            config: config.clone(),
 
             enums: BTreeMap::new(),
             structs: BTreeMap::new(),
@@ -108,7 +108,7 @@ impl<'a> Library<'a> {
 
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
     pub fn load_src(src: &path::Path,
-                    config: &'a Config) -> Result<Library<'a>, String>
+                    config: &Config) -> Result<Library, String>
     {
         let mut library = Library::blank("", config);
 
@@ -120,14 +120,13 @@ impl<'a> Library<'a> {
     }
 
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
-    pub fn load_crate(crate_dir: &path::Path,
-                      bindings_crate_name: &str,
-                      config: &'a Config) -> Result<Library<'a>, String>
+    pub fn load_crate(lib: Cargo,
+                      config: &Config) -> Result<Library, String>
     {
-        let mut library = Library::blank(bindings_crate_name, config);
+        let mut library = Library::blank(lib.binding_crate_name(),
+                                         config);
 
-        rust_lib::parse_lib(crate_dir,
-                            bindings_crate_name,
+        rust_lib::parse_lib(lib,
                             &config.include,
                             &config.exclude,
                             &config.expand,
@@ -360,8 +359,8 @@ impl<'a> Library<'a> {
     }
 
     /// Build a bindings file from this rust library.
-    pub fn generate(self) -> Result<GeneratedBindings<'a>, String> {
-        let mut result = GeneratedBindings::blank(self.config);
+    pub fn generate(self) -> Result<GeneratedBindings, String> {
+        let mut result = GeneratedBindings::blank(&self.config);
 
         // Gather only the items that we need for this
         // `extern "c"` interface
@@ -381,7 +380,7 @@ impl<'a> Library<'a> {
                     }
                 }
                 &PathValue::Specialization(ref s) => {
-                    match s.specialize(self.config, &self) {
+                    match s.specialize(&self.config, &self) {
                         Ok(Some(value)) => {
                             result.items.push(value);
                         }
@@ -420,10 +419,10 @@ impl<'a> Library<'a> {
 
         // Do one last pass to do renaming for all the items
         for item in &mut result.items {
-            item.apply_renaming(self.config);
+            item.apply_renaming(&self.config);
         }
         for func in &mut result.functions {
-            func.apply_renaming(self.config);
+            func.apply_renaming(&self.config);
         }
 
         Ok(result)
@@ -432,17 +431,17 @@ impl<'a> Library<'a> {
 
 /// A GeneratedBindings is a completed bindings file ready to be written.
 #[derive(Debug, Clone)]
-pub struct GeneratedBindings<'a> {
-    config: &'a Config,
+pub struct GeneratedBindings {
+    config: Config,
 
     items: Vec<PathValue>,
     functions: Vec<Function>,
 }
 
-impl<'a> GeneratedBindings<'a> {
-    fn blank(config: &'a Config) -> GeneratedBindings<'a> {
+impl GeneratedBindings {
+    fn blank(config: &Config) -> GeneratedBindings {
         GeneratedBindings {
-            config: config,
+            config: config.clone(),
             items: Vec::new(),
             functions: Vec::new(),
         }
@@ -453,7 +452,7 @@ impl<'a> GeneratedBindings<'a> {
     }
 
     pub fn write<F: Write>(&self, file: F) {
-        let mut out = SourceWriter::new(file, self.config);
+        let mut out = SourceWriter::new(file, &self.config);
 
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
@@ -495,10 +494,10 @@ impl<'a> GeneratedBindings<'a> {
         for item in &self.items {
             out.new_line_if_not_start();
             match item {
-                &PathValue::Enum(ref x) => x.write(self.config, &mut out),
-                &PathValue::Struct(ref x) => x.write(self.config, &mut out),
-                &PathValue::OpaqueStruct(ref x) => x.write(self.config, &mut out),
-                &PathValue::Typedef(ref x) => x.write(self.config, &mut out),
+                &PathValue::Enum(ref x) => x.write(&self.config, &mut out),
+                &PathValue::Struct(ref x) => x.write(&self.config, &mut out),
+                &PathValue::OpaqueStruct(ref x) => x.write(&self.config, &mut out),
+                &PathValue::Typedef(ref x) => x.write(&self.config, &mut out),
                 &PathValue::Specialization(_) => {
                     panic!("should not encounter a specialization in a built library")
                 }
@@ -518,7 +517,7 @@ impl<'a> GeneratedBindings<'a> {
             }
 
             out.new_line_if_not_start();
-            function.write(self.config, &mut out);
+            function.write(&self.config, &mut out);
             out.new_line();
         }
 
