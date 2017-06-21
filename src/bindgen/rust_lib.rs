@@ -79,22 +79,23 @@ struct ParseLibContext<F>
 fn parse_crate<F>(crate_name: &str, context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &Vec<syn::Item>)
 {
-    // Check the white list
+    // Check if we should use cargo expand, this skips the whitelist
+    // and blacklist because expand is manually specified
+    if context.expand.contains(&crate_name.to_owned()) {
+        return parse_expand_crate(crate_name, context);
+    }
+
+    // Check the whitelist
     if let Some(ref include) = context.include {
         if !include.contains(&crate_name.to_owned()) {
             return Ok(());
         }
     }
 
-    // Check the black list
+    // Check the blacklist
     if STD_CRATES.contains(&crate_name) ||
        context.exclude.contains(&crate_name.to_owned()) {
         return Ok(());
-    }
-
-    // Check if we should use cargo expand
-    if context.expand.contains(&crate_name.to_owned()) {
-        return parse_expand_crate(crate_name, context);
     }
 
     // Otherwise do our normal parse
