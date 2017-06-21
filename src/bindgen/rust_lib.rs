@@ -214,7 +214,7 @@ fn process_mod<F>(pkg: &PackageRef,
 
                 if let &Some(ref inline_items) = inline_items {
                     process_mod(pkg,
-                                mod_dir,
+                                &mod_dir.join(&next_mod_name),
                                 inline_items,
                                 context)?;
                     continue;
