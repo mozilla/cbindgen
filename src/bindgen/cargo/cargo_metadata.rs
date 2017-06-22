@@ -106,6 +106,7 @@ pub fn metadata(manifest_path: &Path) -> Result<Metadata, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
     cmd.arg("metadata");
+    cmd.arg("--frozen");
     cmd.arg("--all-features");
     cmd.arg("--format-version").arg("1");
     cmd.arg("--manifest-path");
