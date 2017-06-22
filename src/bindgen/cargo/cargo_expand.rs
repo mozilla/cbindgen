@@ -7,6 +7,9 @@ use std::path::Path;
 use std::process::Command;
 use std::str::from_utf8;
 
+extern crate tempdir;
+use self::tempdir::TempDir;
+
 /// Use rustc to expand and pretty print the crate into a single file,
 /// removing any macros in the process.
 pub fn expand(manifest_path: &Path,
@@ -14,7 +17,13 @@ pub fn expand(manifest_path: &Path,
               version: &str) -> Result<String, String> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
 
+    // Create a temp directory to use as a target dir for cargo expand, for
+    // hygenic purposes.
+    let target_dir = TempDir::new("cbindgen-expand")
+                             .map_err(|_| format!("couldn't create a temp target directory"))?;
+
     let mut cmd = Command::new(cargo);
+    cmd.env("CARGO_TARGET_DIR", target_dir.path());
     cmd.arg("rustc");
     cmd.arg("--frozen");
     cmd.arg("--manifest-path");
