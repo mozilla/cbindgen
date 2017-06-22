@@ -27,7 +27,9 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // used by compile-tests.
     if let Some(lang) = matches.value_of("lang") {
         config.language = match lang {
+            "C++"=> Language::Cxx,
             "c++"=> Language::Cxx,
+            "C"=> Language::C,
             "c"=> Language::C,
             _ => {
                 error!("unknown language specified");
@@ -98,8 +100,7 @@ fn main() {
                          .long("lang")
                          .value_name("LANGUAGE")
                          .help("Specify the language to output bindings in")
-                         .possible_values(&["C++", "C"])
-                         .default_value("C++"))
+                         .possible_values(&["C++", "C"]))
                     .arg(Arg::with_name("d")
                          .short("d")
                          .long("parse-dependencies")
