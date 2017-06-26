@@ -127,10 +127,10 @@ impl Library {
                                          config);
 
         rust_lib::parse_lib(lib,
-                            config.parse_deps,
-                            &config.include,
-                            &config.exclude,
-                            &config.expand,
+                            config.parse.parse_deps,
+                            &config.parse.include,
+                            &config.parse.exclude,
+                            &config.parse.expand,
                             &mut |crate_name, items| {
             library.load_from_crate_mod(&crate_name, items);
         })?;

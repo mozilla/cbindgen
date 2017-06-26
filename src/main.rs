@@ -39,7 +39,7 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     }
 
     if matches.is_present("d") {
-        config.parse_deps = true;
+        config.parse.parse_deps = true;
     }
 }
 
