@@ -25,7 +25,6 @@ pub fn expand(manifest_path: &Path,
     let mut cmd = Command::new(cargo);
     cmd.env("CARGO_TARGET_DIR", target_dir.path());
     cmd.arg("rustc");
-    cmd.arg("--frozen");
     cmd.arg("--manifest-path");
     cmd.arg(manifest_path);
     cmd.arg("--all-features");
