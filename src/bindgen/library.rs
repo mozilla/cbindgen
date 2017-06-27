@@ -483,11 +483,25 @@ impl GeneratedBindings {
             out.write("extern \"C\" {");
             out.new_line();
 
+            let mut wrote_namespace: bool = false;
             if let Some(ref namespace) = self.config.namespace {
+                wrote_namespace = true;
+
                 out.new_line();
                 out.write("namespace ");
                 out.write(namespace);
                 out.write(" {");
+            }
+            if let Some(ref namespaces) = self.config.namespaces {
+                wrote_namespace = true;
+                for namespace in namespaces {
+                    out.new_line();
+                    out.write("namespace ");
+                    out.write(namespace);
+                    out.write(" {");
+                }
+            }
+            if wrote_namespace {
                 out.new_line();
             }
         }
@@ -523,10 +537,24 @@ impl GeneratedBindings {
         }
 
         if self.config.language == Language::Cxx {
+            let mut wrote_namespace: bool = false;
+            if let Some(ref namespaces) = self.config.namespaces {
+                wrote_namespace = true;
+
+                for namespace in namespaces.iter().rev() {
+                    out.new_line_if_not_start();
+                    out.write("} // namespace ");
+                    out.write(namespace);
+                }
+            }
             if let Some(ref namespace) = self.config.namespace {
+                wrote_namespace = true;
+
                 out.new_line_if_not_start();
                 out.write("} // namespace ");
                 out.write(namespace);
+            }
+            if wrote_namespace {
                 out.new_line();
             }
 

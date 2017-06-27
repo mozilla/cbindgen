@@ -295,6 +295,8 @@ pub struct Config {
     pub include_version: bool,
     /// An optional name for the root namespace. Only applicable when language="C++"
     pub namespace: Option<String>,
+    /// An optional list of namespaces. Only applicable when language="C++"
+    pub namespaces: Option<Vec<String>>,
     /// The style to use for braces
     pub braces: Braces,
     /// The preferred length of a line, used for auto breaking function arguments
@@ -325,6 +327,7 @@ impl Default for Config {
             autogen_warning: None,
             include_version: true,
             namespace: None,
+            namespaces: None,
             braces: Braces::SameLine,
             line_length: 100,
             tab_width: 2,
