@@ -93,7 +93,7 @@ prefix = "string"
 # An optional postfix to put after any function declaration
 postfix = "string"
 # How to format function arguments
-args = "Auto|Vertical|Horizontal"
+args = "[Auto|Vertical|Horizontal]"
 # A rule to use to rename function argument names
 rename_args = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
 
