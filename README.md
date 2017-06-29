@@ -95,11 +95,11 @@ postfix = "string"
 # How to format function arguments
 args = "Auto|Vertical|Horizontal"
 # A rule to use to rename function argument names
-rename_args = "None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase"
+rename_args = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
 
 [struct]
 # A rule to use to rename field names
-rename_fields = "None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase"
+rename_fields = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
 # Whether to derive an operator== for all structs
 derive_eq = false
 # Whether to derive an operator!= for all structs
@@ -115,7 +115,7 @@ derive_gte = false
 
 [enum]
 # A rule to use to rename enum variants
-rename_variants = "None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase"
+rename_variants = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
 
 ```
 
