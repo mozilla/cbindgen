@@ -471,10 +471,16 @@ impl GeneratedBindings {
         }
 
         out.new_line_if_not_start();
-        out.write("#include <stdint.h>");
         if self.config.language == Language::C {
+            out.write("#include <stdint.h>");
+            out.new_line();
+            out.write("#include <stdlib.h>");
             out.new_line();
             out.write("#include <stdbool.h>");
+        } else {
+            out.write("#include <cstdint>");
+            out.new_line();
+            out.write("#include <cstdlib>");
         }
         out.new_line();
 
