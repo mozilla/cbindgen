@@ -1,11 +1,15 @@
 [package]
 name = "cbindgen"
-description = "A tool for generating C bindings to Rust code."
-authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>", "Kartikaya Gupta <kats@mozilla.com>", "Ryan Hunt <rhunt@eqrion.net>"]
-license = "MPL-2.0"
 version = "0.1.13"
-exclude = ["compile-tests/**"]
+authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>",
+           "Kartikaya Gupta <kats@mozilla.com>",
+           "Ryan Hunt <rhunt@eqrion.net>"]
+license = "MPL-2.0"
+description = "A tool for generating C bindings to Rust code."
+keywords = ["bindings", "ffi", "code-generation"]
+categories = ["external-ffi-bindings", "development-tools::ffi"]
 repository = "https://github.com/rlhunt/cbindgen/"
+exclude = ["run-tests.py", "compile-tests/**"]
 
 [badges]
 travis-ci = { repository = "rlhunt/cbindgen" }
