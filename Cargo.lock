@@ -1,6 +1,6 @@
 [root]
 name = "cbindgen"
-version = "0.1.13"
+version = "0.1.14"
 dependencies = [
  "clap 2.24.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
