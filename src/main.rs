@@ -60,7 +60,9 @@ fn load_library<'a>(input: &str, matches: &ArgMatches<'a>) -> Result<Library, St
     }
 
     // We have to load a whole crate, so we use cargo to gather metadata
-    let lib = Cargo::load(input, matches.value_of("crate"))?;
+    let lib = Cargo::load(input,
+                          matches.value_of("crate"),
+                          true)?;
 
     // Load any config specified or search in the binding crate directory
     let mut config = match matches.value_of("config") {

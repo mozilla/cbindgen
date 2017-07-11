@@ -24,17 +24,23 @@ pub struct Cargo {
     manifest_path: PathBuf,
     binding_crate_name: String,
 
-    lock: Lock,
+    lock: Option<Lock>,
     metadata: Metadata,
 }
 
 impl Cargo {
-    pub fn load(crate_dir: &Path, binding_crate_name: Option<&str>) -> Result<Cargo, String> {
+    pub fn load(crate_dir: &Path,
+                binding_crate_name: Option<&str>,
+                use_cargo_lock: bool) -> Result<Cargo, String> {
         let toml_path = crate_dir.join("Cargo.toml");
         let lock_path = crate_dir.join("Cargo.lock");
 
-        let lock = cargo_lock::lock(&lock_path)
-                              .map_err(|x| format!("couldn't load {:?}: {:?}", lock_path, x))?;
+        let lock = if use_cargo_lock {
+            Some(cargo_lock::lock(&lock_path)
+                            .map_err(|x| format!("couldn't load {:?}: {:?}", lock_path, x))?)
+        } else {
+            None
+        };
         let metadata = cargo_metadata::metadata(&toml_path)
                                       .map_err(|_| format!("couldn't execute `cargo metadata` with manifest {:?}.", toml_path))?;
 
@@ -73,7 +79,11 @@ impl Cargo {
     }
 
     pub fn find_dep_ref(&self, package: &PackageRef, dependency_name: &str) -> Option<PackageRef> {
-        for lock_package in &self.lock.package {
+        if self.lock.is_none() {
+            return None;
+        }
+
+        for lock_package in &self.lock.as_ref().unwrap().package {
             if lock_package.name == package.name &&
                lock_package.version == package.version {
                 if let Some(ref deps) = lock_package.dependencies {
