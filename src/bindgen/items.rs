@@ -394,7 +394,7 @@ pub struct Struct {
     pub name: String,
     pub annotations: AnnotationSet,
     pub fields: Vec<(String, Type)>,
-    pub generic_params: Vec<PathRef>,
+    pub generic_params: Vec<String>,
 }
 
 impl Struct {
@@ -702,7 +702,7 @@ pub struct Specialization {
     pub name: String,
     pub annotations: AnnotationSet,
     pub aliased: PathRef,
-    pub generic_params: Vec<PathRef>,
+    pub generic_params: Vec<String>,
     pub generic_values: Vec<Type>,
 }
 
