@@ -63,14 +63,16 @@ impl CDecl {
 
     fn build_type(&mut self, t: &Type, is_const: bool) {
         match t {
-            &Type::Path(ref p) => {
+            &Type::Path(ref path, ref generic_values) => {
+                assert!(generic_values.len() == 0);
+
                 if is_const {
                     assert!(self.type_qualifers.len() == 0);
                     self.type_qualifers = "const".to_owned();
                 }
 
                 assert!(self.type_name.len() == 0);
-                self.type_name = p.clone();
+                self.type_name = path.clone();
             }
             &Type::Primitive(ref p) => {
                 if is_const {
@@ -215,6 +217,10 @@ pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function, layout_vert
     &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name));
 }
 
-pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
+pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
     &CDecl::from_type(t).write(out, Some(ident));
+}
+
+pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type) {
+    &CDecl::from_type(t).write(out, None);
 }

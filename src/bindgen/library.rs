@@ -4,6 +4,7 @@
 
 use std::io::Write;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::cmp::Ordering;
 use std::fs::File;
@@ -17,7 +18,7 @@ use bindgen::annotation::*;
 use bindgen::items::*;
 use bindgen::rust_lib;
 use bindgen::utilities::*;
-use bindgen::writer::{Source, SourceWriter};
+use bindgen::writer::{ListType, Source, SourceWriter};
 
 /// A path ref is used to reference a path value
 pub type PathRef = String;
@@ -33,44 +34,59 @@ pub enum PathValue {
 }
 
 impl PathValue {
-    pub fn name(&self) -> &String {
-        match self {
-            &PathValue::Enum(ref x) => { &x.name },
-            &PathValue::Struct(ref x) => { &x.name },
-            &PathValue::OpaqueStruct(ref x) => { &x.name },
-            &PathValue::Typedef(ref x) => { &x.name },
-            &PathValue::Specialization(ref x) => { &x.name },
-        }
-    }
-
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
         match self {
             &PathValue::Enum(_) => { },
-            &PathValue::Struct(ref x) => { x.add_deps(library, out); },
+            &PathValue::Struct(ref x) => {
+                x.add_deps(library, out);
+            },
             &PathValue::OpaqueStruct(_) => { },
-            &PathValue::Typedef(ref x) => { x.add_deps(library, out); },
-            &PathValue::Specialization(ref x) => { x.add_deps(library, out); },
+            &PathValue::Typedef(ref x) => {
+                x.add_deps(library, out);
+            },
+            &PathValue::Specialization(..) => {
+                unreachable!();
+            },
         }
     }
 
-    pub fn apply_renaming(&mut self, config: &Config) {
+    pub fn rename_fields(&mut self, config: &Config) {
         match self {
-            &mut PathValue::Enum(ref mut x) => { x.apply_renaming(config); },
-            &mut PathValue::Struct(ref mut x) => { x.apply_renaming(config); },
+            &mut PathValue::Enum(ref mut x) => { x.rename_fields(config); },
+            &mut PathValue::Struct(ref mut x) => { x.rename_fields(config); },
             _ => { },
+        }
+    }
+
+    pub fn mangle_paths(&mut self, monomorphs: &HashMap<PathRef, HashMap<Vec<Type>, Struct>>) {
+        match self {
+            &mut PathValue::Enum(_) => { },
+            &mut PathValue::Struct(ref mut x) => {
+                x.mangle_paths(monomorphs);
+            },
+            &mut PathValue::OpaqueStruct(_) => { },
+            &mut PathValue::Typedef(ref mut x) => {
+                x.mangle_paths(monomorphs);
+            },
+            &mut PathValue::Specialization(..) => {
+                unreachable!();
+            },
         }
     }
 }
 
+pub type MonomorphList = HashMap<Vec<Type>, Struct>;
+pub type Monomorphs = HashMap<PathRef, MonomorphList>;
+
 /// A dependency graph is used for gathering what order to output the types.
-pub struct DependencyGraph {
+pub struct DependencyList {
     order: Vec<PathValue>,
     items: HashSet<PathRef>,
 }
 
-impl DependencyGraph {
-    fn new() -> DependencyGraph {
-        DependencyGraph {
+impl DependencyList {
+    fn new() -> DependencyList {
+        DependencyList {
             order: Vec::new(),
             items: HashSet::new(),
         }
@@ -116,6 +132,8 @@ impl Library {
             library.load_from_crate_mod(&crate_name, items);
         })?;
 
+        library.specialize();
+
         Ok(library)
     }
 
@@ -134,6 +152,8 @@ impl Library {
                             &mut |crate_name, items| {
             library.load_from_crate_mod(&crate_name, items);
         })?;
+
+        library.specialize();
 
         Ok(library)
     }
@@ -284,8 +304,24 @@ impl Library {
                         }
                     };
 
-                    let fail1 = match Specialization::load(alias_name.clone(),
-                                                           annotations.clone(),
+                    let fail1 = if generics.lifetimes.is_empty() &&
+                                   generics.ty_params.is_empty() {
+                        match Typedef::load(alias_name.clone(),
+                                            annotations.clone(),
+                                            ty) {
+                            Ok(typedef) => {
+                                info!("take {}::{}", crate_name, &item.ident);
+                                self.typedefs.insert(alias_name, typedef);
+                                continue;
+                            }
+                            Err(msg) => msg,
+                        }
+                    } else {
+                        format!("cannot have generics in typedef")
+                    };
+
+                    let fail2 = match Specialization::load(alias_name.clone(),
+                                                           annotations,
                                                            generics,
                                                            ty) {
                         Ok(spec) => {
@@ -296,25 +332,38 @@ impl Library {
                         Err(msg) => msg,
                     };
 
-                    if !generics.lifetimes.is_empty() ||
-                       !generics.ty_params.is_empty() {
-                        info!("skip {}::{} - (typedefs cannot have generics or lifetimes)", crate_name, &item.ident);
-                        continue;
-                    }
-
-                    let fail2 = match Typedef::load(alias_name.clone(), annotations, ty) {
-                        Ok(typedef) => {
-                            info!("take {}::{}", crate_name, &item.ident);
-                            self.typedefs.insert(alias_name, typedef);
-                            continue;
-                        }
-                        Err(msg) => msg,
-                    };
                     info!("skip {}::{} - ({} and {})", crate_name, &item.ident, fail1, fail2);
                 }
                 _ => {}
             }
         }
+    }
+
+    fn specialize(&mut self) {
+        for (name, specialization) in &self.specializations {
+            match specialization.specialize(self) {
+                Ok(Some(PathValue::Struct(x))) => {
+                    self.structs.insert(name.clone(), x);
+                }
+                Ok(Some(PathValue::OpaqueStruct(x))) => {
+                    self.opaque_structs.insert(name.clone(), x);
+                }
+                Ok(Some(PathValue::Enum(x))) => {
+                    self.enums.insert(name.clone(), x);
+                }
+                Ok(Some(PathValue::Typedef(x))) => {
+                    self.typedefs.insert(name.clone(), x);
+                }
+                Ok(Some(PathValue::Specialization(..))) => {
+                    unreachable!();
+                }
+                Ok(None) => { }
+                Err(msg) => {
+                    warn!("specializing {} failed - ({})", name, msg);
+                }
+            }
+        }
+        self.specializations.clear();
     }
 
     pub fn resolve_path(&self, p: &PathRef) -> Option<PathValue> {
@@ -337,7 +386,7 @@ impl Library {
         None
     }
 
-    pub fn add_deps_for_path(&self, p: &PathRef, out: &mut DependencyGraph) {
+    pub fn add_deps_for_path(&self, p: &PathRef, out: &mut DependencyList) {
         if let Some(value) = self.resolve_path(p) {
             if !out.items.contains(p) {
                 out.items.insert(p.clone());
@@ -357,9 +406,14 @@ impl Library {
 
         // Gather only the items that we need for this
         // `extern "c"` interface
-        let mut deps = DependencyGraph::new();
+        let mut deps = DependencyList::new();
         for (_, function) in &self.functions {
             function.add_deps(&self, &mut deps);
+        }
+
+        let mut monomorphs = Monomorphs::new();
+        for (_, function) in &self.functions {
+            function.add_monomorphs(&self, &mut monomorphs);
         }
 
         // Copy the binding items in dependencies order
@@ -368,21 +422,16 @@ impl Library {
         for dep in deps.order {
             match &dep {
                 &PathValue::Struct(ref s) => {
-                    if !s.generic_params.is_empty() {
+                    if s.generic_params.len() != 0 {
+                        if let Some(monomorphs) = monomorphs.get(&s.name) {
+                            for (_, monomorph) in monomorphs {
+                                result.items.push(PathValue::Struct(monomorph.clone()));
+                            }
+                        }
                         continue;
+                    } else {
+                        debug_assert!(!monomorphs.contains_key(&s.name));
                     }
-                }
-                &PathValue::Specialization(ref s) => {
-                    match s.specialize(&self) {
-                        Ok(Some(value)) => {
-                            result.items.push(value);
-                        }
-                        Ok(None) => {},
-                        Err(msg) => {
-                            warn!("specializing {} failed - ({})", dep.name(), msg);
-                        }
-                    }
-                    continue;
                 }
                 _ => { }
             }
@@ -410,13 +459,21 @@ impl Library {
                                          .map(|(_, function)| function.clone())
                                          .collect::<Vec<_>>();
 
-        // Do one last pass to do renaming for all the items
+        // Rename all the fields according to their rules and mangle any
+        // paths that refer to generic structs that have been monomorph'ed.
         for item in &mut result.items {
-            item.apply_renaming(&self.config);
+            item.mangle_paths(&monomorphs);
+            item.rename_fields(&self.config);
         }
+
+        // Rename all the arguments according to their rules and mangle any
+        // paths that refer to generic structs that have been monomorph'ed.
         for func in &mut result.functions {
-            func.apply_renaming(&self.config);
+            func.mangle_paths(&monomorphs);
+            func.rename_args(&self.config);
         }
+
+        result.monomorphs = monomorphs;
 
         Ok(result)
     }
@@ -427,6 +484,7 @@ impl Library {
 pub struct GeneratedBindings {
     config: Config,
 
+    monomorphs: Monomorphs,
     items: Vec<PathValue>,
     functions: Vec<Function>,
 }
@@ -435,6 +493,7 @@ impl GeneratedBindings {
     fn blank(config: &Config) -> GeneratedBindings {
         GeneratedBindings {
             config: config.clone(),
+            monomorphs: Monomorphs::new(),
             items: Vec::new(),
             functions: Vec::new(),
         }
@@ -520,7 +579,7 @@ impl GeneratedBindings {
                 &PathValue::OpaqueStruct(ref x) => x.write(&self.config, &mut out),
                 &PathValue::Typedef(ref x) => x.write(&self.config, &mut out),
                 &PathValue::Specialization(_) => {
-                    panic!("should not encounter a specialization in a built library")
+                    unreachable!("should not encounter a specialization in a generated library")
                 }
             }
             out.new_line();
@@ -567,6 +626,50 @@ impl GeneratedBindings {
             out.new_line_if_not_start();
             out.write("} // extern \"C\"");
             out.new_line();
+        }
+
+        if self.config.language == Language::Cxx {
+            for (path, monomorph_sets) in &self.monomorphs {
+                if monomorph_sets.len() == 0 {
+                    continue;
+                }
+
+                let generics_count = monomorph_sets.iter().next().unwrap().0.len();
+                let generics_names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+                                      "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
+
+                if generics_count > 26 {
+                    continue;
+                }
+
+                out.new_line_if_not_start();
+                out.write("template<");
+                for i in 0..generics_count {
+                    if i != 0 {
+                        out.write(", ")
+                    }
+                    out.write("typename ");
+                    out.write(generics_names[i]);
+                }
+                out.write(">");
+                out.new_line();
+                out.write(&format!("struct {}", path));
+                out.open_brace();
+                out.close_brace(true);
+                out.new_line();
+
+                for (generic_values, monomorphed_struct) in monomorph_sets {
+                    out.new_line();
+                    out.write("template<>");
+                    out.new_line();
+                    out.write(&format!("struct {}<", path));
+                    out.write_horizontal_source_list(generic_values, ListType::Join(","));
+                    out.write(&format!("> : {}", monomorphed_struct.name));
+                    out.open_brace();
+                    out.close_brace(true);
+                    out.new_line();
+                }
+            }
         }
 
         if let Some(ref f) = self.config.autogen_warning {

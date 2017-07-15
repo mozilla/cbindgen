@@ -34,12 +34,13 @@ macro_rules! deserialize_enum_str {
     }
 }
 
+mod annotation;
 mod cargo;
 mod cdecl;
 mod config;
-mod annotation;
 mod items;
 mod library;
+mod mangle;
 mod rename;
 mod rust_lib;
 mod utilities;

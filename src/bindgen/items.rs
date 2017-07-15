@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashMap;
 use std::io::Write;
 use std::fmt;
 
@@ -11,11 +12,12 @@ use bindgen::cdecl;
 use bindgen::config::{Config, Language, Layout};
 use bindgen::annotation::*;
 use bindgen::library::*;
+use bindgen::mangle::*;
 use bindgen::rename::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PrimitiveType {
     Void,
     Bool,
@@ -78,12 +80,73 @@ impl PrimitiveType {
         }
     }
 
+    pub fn to_repr_rust(&self) -> &'static str {
+        match self {
+            &PrimitiveType::Void => "c_void",
+            &PrimitiveType::Char => "c_char",
+            &PrimitiveType::SChar => "c_schar",
+            &PrimitiveType::UChar => "c_uchar",
+            &PrimitiveType::Short => "c_short",
+            &PrimitiveType::Int => "c_int",
+            &PrimitiveType::Long => "c_long",
+            &PrimitiveType::LongLong => "c_longlong",
+            &PrimitiveType::UShort => "c_ushort",
+            &PrimitiveType::UInt => "c_uint",
+            &PrimitiveType::ULong => "c_ulong",
+            &PrimitiveType::ULongLong => "c_ulonglong",
+            &PrimitiveType::WChar => "char",
+            &PrimitiveType::Bool => "bool",
+            &PrimitiveType::USize => "usize",
+            &PrimitiveType::UInt8 => "u8",
+            &PrimitiveType::UInt16 => "u16",
+            &PrimitiveType::UInt32 => "u32",
+            &PrimitiveType::UInt64 => "u64",
+            &PrimitiveType::Int8 => "i8",
+            &PrimitiveType::Int16 => "i16",
+            &PrimitiveType::Int32 => "i32",
+            &PrimitiveType::Int64 => "i64",
+            &PrimitiveType::Float => "f32",
+            &PrimitiveType::Double => "f64",
+        }
+    }
+
+    pub fn to_repr_c(&self) -> &'static str {
+        match self {
+            &PrimitiveType::Void => "void",
+            &PrimitiveType::Bool => "bool",
+            &PrimitiveType::Char => "char",
+            &PrimitiveType::WChar => "wchar_t",
+            &PrimitiveType::SChar => "signed char",
+            &PrimitiveType::UChar => "unsigned char",
+            &PrimitiveType::Short => "short",
+            &PrimitiveType::Int => "int",
+            &PrimitiveType::Long => "long",
+            &PrimitiveType::LongLong => "long long",
+            &PrimitiveType::UShort => "unsigned short",
+            &PrimitiveType::UInt => "unsigned int",
+            &PrimitiveType::ULong => "unsigned long",
+            &PrimitiveType::ULongLong => "unsigned long long",
+            &PrimitiveType::USize => "size_t",
+            &PrimitiveType::UInt8 => "uint8_t",
+            &PrimitiveType::UInt16 => "uint16_t",
+            &PrimitiveType::UInt32 => "uint32_t",
+            &PrimitiveType::UInt64 => "uint64_t",
+            &PrimitiveType::Int8 => "int8_t",
+            &PrimitiveType::Int16 => "int16_t",
+            &PrimitiveType::Int32 => "int32_t",
+            &PrimitiveType::Int64 => "int64_t",
+            &PrimitiveType::Float => "float",
+            &PrimitiveType::Double => "double",
+        }
+    }
+
     fn can_cmp_order(&self) -> bool {
         match self {
             &PrimitiveType::Bool => false,
             _ => true,
         }
     }
+
     fn can_cmp_eq(&self) -> bool {
         true
     }
@@ -91,41 +154,15 @@ impl PrimitiveType {
 
 impl fmt::Display for PrimitiveType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &PrimitiveType::Void => write!(f, "void"),
-            &PrimitiveType::Bool => write!(f, "bool"),
-            &PrimitiveType::Char => write!(f, "char"),
-            &PrimitiveType::WChar => write!(f, "wchar_t"),
-            &PrimitiveType::SChar => write!(f, "signed char"),
-            &PrimitiveType::UChar => write!(f, "unsigned char"),
-            &PrimitiveType::Short => write!(f, "short"),
-            &PrimitiveType::Int => write!(f, "int"),
-            &PrimitiveType::Long => write!(f, "long"),
-            &PrimitiveType::LongLong => write!(f, "long long"),
-            &PrimitiveType::UShort => write!(f, "unsigned short"),
-            &PrimitiveType::UInt => write!(f, "unsigned int"),
-            &PrimitiveType::ULong => write!(f, "unsigned long"),
-            &PrimitiveType::ULongLong => write!(f, "unsigned long long"),
-            &PrimitiveType::USize => write!(f, "size_t"),
-            &PrimitiveType::UInt8 => write!(f, "uint8_t"),
-            &PrimitiveType::UInt16 => write!(f, "uint16_t"),
-            &PrimitiveType::UInt32 => write!(f, "uint32_t"),
-            &PrimitiveType::UInt64 => write!(f, "uint64_t"),
-            &PrimitiveType::Int8 => write!(f, "int8_t"),
-            &PrimitiveType::Int16 => write!(f, "int16_t"),
-            &PrimitiveType::Int32 => write!(f, "int32_t"),
-            &PrimitiveType::Int64 => write!(f, "int64_t"),
-            &PrimitiveType::Float => write!(f, "float"),
-            &PrimitiveType::Double => write!(f, "double")
-        }
+        write!(f, "{}", self.to_repr_c())
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     ConstPtr(Box<Type>),
     Ptr(Box<Type>),
-    Path(PathRef),
+    Path(PathRef, Vec<Type>),
     Primitive(PrimitiveType),
     Array(Box<Type>, u64),
     FuncPtr(Box<Type>, Vec<Type>),
@@ -160,22 +197,23 @@ impl Type {
                     syn::Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
                 }
             }
-            &syn::Ty::Path(_, ref p) => {
-                let (name, generics) = p.convert_to_generic_single_segment()?;
+            &syn::Ty::Path(_, ref path) => {
+                let (name, generics) = path.convert_to_generic_single_segment()?;
 
                 if name == "PhantomData" {
                     return Ok(None);
-                } else if generics.len() != 0 {
-                    return Err(format!("cannot have a type with generics"));
-                } else {
-                    if let Some(prim) = PrimitiveType::maybe(&name) {
-                        Type::Primitive(prim)
-                    } else {
-                        Type::Path(name)
+                }
+
+                if let Some(prim) = PrimitiveType::maybe(&name) {
+                    if generics.len() > 0 {
+                        return Err(format!("primitive has generics"));
                     }
+                    Type::Primitive(prim)
+                } else {
+                    Type::Path(name, generics)
                 }
             }
-            &syn::Ty::Array(ref ty, syn::ConstExpr::Lit(syn::Lit::Int(sz, _))) => {
+            &syn::Ty::Array(ref ty, syn::ConstExpr::Lit(syn::Lit::Int(size, _))) => {
                 let converted = Type::load(ty)?;
 
                 let converted = match converted {
@@ -183,17 +221,17 @@ impl Type {
                     None => return Err(format!("cannot have an array of zero sized types")),
                 };
 
-                Type::Array(Box::new(converted), sz)
+                Type::Array(Box::new(converted), size)
             },
-            &syn::Ty::BareFn(ref f) => {
-                let args = f.inputs.iter()
-                                   .try_skip_map(|x| Type::load(&x.ty))?;
-                let ret = f.output.as_type()?;
+            &syn::Ty::BareFn(ref function) => {
+                let args = function.inputs.iter()
+                                          .try_skip_map(|x| Type::load(&x.ty))?;
+                let ret = function.output.as_type()?;
 
                 Type::FuncPtr(Box::new(ret), args)
             },
-            &syn::Ty::Tup(ref tys) => {
-                if tys.len() == 0 {
+            &syn::Ty::Tup(ref fields) => {
+                if fields.len() == 0 {
                     return Ok(None);
                 }
                 return Err(format!("tuples are not supported as types"))
@@ -204,23 +242,60 @@ impl Type {
         return Ok(Some(converted));
     }
 
-    pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut DependencyGraph) {
+    pub fn specialize(&self, mappings: &Vec<(&String, &Type)>) -> Type {
         match self {
-            &Type::ConstPtr(ref t) => {
-                t.add_deps(library, out);
+            &Type::ConstPtr(ref ty) => {
+                Type::ConstPtr(Box::new(ty.specialize(mappings)))
             }
-            &Type::Ptr(ref t) => {
-                t.add_deps(library, out);
+            &Type::Ptr(ref ty) => {
+                Type::Ptr(Box::new(ty.specialize(mappings)))
             }
-            &Type::Path(ref p) => {
-                if generic_params.contains(p) {
-                    return;
+            &Type::Path(ref path, ref generic_values) => {
+                for &(param, value) in mappings {
+                    if *path == *param {
+                        return value.clone();
+                    }
                 }
-                library.add_deps_for_path(p, out);
+
+                Type::Path(path.clone(),
+                           generic_values.iter()
+                                         .map(|x| x.specialize(mappings))
+                                         .collect())
+            }
+            &Type::Primitive(ref primitive) => {
+                Type::Primitive(primitive.clone())
+            }
+            &Type::Array(ref ty, ref size) => {
+                Type::Array(Box::new(ty.specialize(mappings)), *size)
+            }
+            &Type::FuncPtr(ref ret, ref args) => {
+                Type::FuncPtr(Box::new(ret.specialize(mappings)),
+                              args.iter()
+                                  .map(|x| x.specialize(mappings))
+                                  .collect())
+            }
+        }
+    }
+
+    pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut DependencyList) {
+        match self {
+            &Type::ConstPtr(ref ty) => {
+                ty.add_deps(library, out);
+            }
+            &Type::Ptr(ref ty) => {
+                ty.add_deps(library, out);
+            }
+            &Type::Path(ref path, ref generic_values) => {
+                if !generic_params.contains(path) {
+                    library.add_deps_for_path(path, out);
+                }
+                for generic_value in generic_values {
+                    generic_value.add_deps_with_generics(generic_params, library, out);
+                }
             }
             &Type::Primitive(_) => { }
-            &Type::Array(ref t, _) => {
-                t.add_deps(library, out);
+            &Type::Array(ref ty, _) => {
+                ty.add_deps(library, out);
             }
             &Type::FuncPtr(ref ret, ref args) => {
                 ret.add_deps(library, out);
@@ -231,38 +306,82 @@ impl Type {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyList)
+    {
         self.add_deps_with_generics(&Vec::new(), library, out)
     }
 
-    pub fn specialize(&self, mappings: &Vec<(&String, &Type)>) -> Type {
+    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs)
+    {
         match self {
-            &Type::ConstPtr(ref t) => {
-                Type::ConstPtr(Box::new(t.specialize(mappings)))
+            &Type::ConstPtr(ref ty) => {
+                ty.add_monomorphs(library, out);
             }
-            &Type::Ptr(ref t) => {
-                Type::Ptr(Box::new(t.specialize(mappings)))
+            &Type::Ptr(ref ty) => {
+                ty.add_monomorphs(library, out);
             }
-            &Type::Path(ref p) => {
-                for &(param, value) in mappings {
-                    if *p == *param {
-                        return value.clone();
+            &Type::Path(ref path, ref generic_values) => {
+                let item = library.resolve_path(path);
+                if let Some(item) = item {
+                    match item {
+                        PathValue::Struct(ref x) => {
+                            x.add_monomorphs(library, generic_values, out);
+                        },
+                        PathValue::Typedef(ref x) => {
+                            assert!(generic_values.len() == 0);
+                            x.add_monomorphs(library, out);
+                        },
+                        PathValue::Specialization(..) => { unreachable!() },
+                        _ => { }
                     }
                 }
-
-                Type::Path(p.clone())
             }
-            &Type::Primitive(ref p) => {
-                Type::Primitive(p.clone())
-            }
-            &Type::Array(ref t, ref sz) => {
-                Type::Array(Box::new(t.specialize(mappings)), *sz)
+            &Type::Primitive(_) => { }
+            &Type::Array(ref ty, _) => {
+                ty.add_monomorphs(library, out);
             }
             &Type::FuncPtr(ref ret, ref args) => {
-                Type::FuncPtr(Box::new(ret.specialize(mappings)),
-                              args.iter()
-                                  .map(|x| x.specialize(mappings))
-                                  .collect())
+                ret.add_monomorphs(library, out);
+                for arg in args {
+                    arg.add_monomorphs(library, out);
+                }
+            }
+        }
+    }
+
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs)
+    {
+        match self {
+            &mut Type::ConstPtr(ref mut ty) => {
+                ty.mangle_paths(monomorphs);
+            }
+            &mut Type::Ptr(ref mut ty) => {
+                ty.mangle_paths(monomorphs);
+            }
+            &mut Type::Path(ref mut path, ref mut generic_values) => {
+                // TODO: simplify
+                if generic_values.len() != 0 {
+                    if let Some(monomorph_list) = monomorphs.get(path) {
+                        if let Some(monomorph) = monomorph_list.get(generic_values) {
+                            *path = monomorph.name.clone();
+                            *generic_values = Vec::new();
+                        } else {
+                            warn!("cannot find a monomorph for {}::{:?}", path, generic_values);
+                        }
+                    } else {
+                        warn!("cannot find a monomorph for {}::{:?}", path, generic_values);
+                    }
+                }
+            }
+            &mut Type::Primitive(_) => { }
+            &mut Type::Array(ref mut ty, _) => {
+                ty.mangle_paths(monomorphs);
+            }
+            &mut Type::FuncPtr(ref mut ret, ref mut args) => {
+                ret.mangle_paths(monomorphs);
+                for arg in args {
+                    arg.mangle_paths(monomorphs);
+                }
             }
         }
     }
@@ -277,6 +396,7 @@ impl Type {
             &Type::FuncPtr(..) => false,
         }
     }
+
     fn can_cmp_eq(&self) -> bool {
         match self {
             &Type::ConstPtr(..) => true,
@@ -289,9 +409,15 @@ impl Type {
     }
 }
 
+impl Source for Type {
+    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
+        cdecl::write_type(out, &self);
+    }
+}
+
 impl Source for (String, Type) {
     fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_type(out, &self.1, &self.0);
+        cdecl::write_field(out, &self.1, &self.0);
     }
 }
 
@@ -323,7 +449,20 @@ impl Function {
         })
     }
 
-    pub fn apply_renaming(&mut self, config: &Config) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
+        self.ret.add_deps(library, out);
+        for &(_, ref ty) in &self.args {
+            ty.add_deps(library, out);
+        }
+    }
+
+    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
+        for &(_, ref ty) in &self.args {
+            ty.add_monomorphs(library, out);
+        }
+    }
+
+    pub fn rename_args(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.function.rename_args];
 
@@ -336,10 +475,9 @@ impl Function {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
-        self.ret.add_deps(library, out);
-        for &(_, ref ty) in &self.args {
-            ty.add_deps(library, out);
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+        for &mut (_, ref mut ty) in &mut self.args {
+            ty.mangle_paths(monomorphs);
         }
     }
 }
@@ -436,7 +574,46 @@ impl Struct {
         })
     }
 
-    pub fn apply_renaming(&mut self, config: &Config) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
+        for &(_, ref ty) in &self.fields {
+            ty.add_deps_with_generics(&self.generic_params, library, out);
+        }
+    }
+
+    pub fn add_monomorphs(&self, library: &Library, generic_values: &Vec<Type>, out: &mut Monomorphs) {
+        assert!(self.generic_params.len() == generic_values.len());
+
+        if self.generic_params.len() == 0 {
+            for &(_, ref ty) in &self.fields {
+                ty.add_monomorphs(library, out);
+            }
+            return;
+        }
+
+        let mappings = self.generic_params.iter()
+                                          .zip(generic_values.iter())
+                                          .collect::<Vec<_>>();
+
+        let monomorph = Struct {
+            name: mangle_path(&self.name, generic_values),
+            annotations: self.annotations.clone(),
+            fields: self.fields.iter()
+                               .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
+                               .collect(),
+            generic_params: vec![],
+        };
+
+        for &(_, ref ty) in &monomorph.fields {
+            ty.add_monomorphs(library, out);
+        }
+
+        if !out.contains_key(&self.name) {
+            out.insert(self.name.clone(), HashMap::new());
+        }
+        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), monomorph);
+    }
+
+    pub fn rename_fields(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.structure.rename_fields];
 
@@ -461,9 +638,9 @@ impl Struct {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
-        for &(_, ref ty) in &self.fields {
-            ty.add_deps_with_generics(&self.generic_params, library, out);
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+        for &mut (_, ref mut ty) in &mut self.fields {
+            ty.mangle_paths(monomorphs);
         }
     }
 }
@@ -551,8 +728,7 @@ pub struct OpaqueStruct {
 }
 
 impl OpaqueStruct {
-    pub fn new(name: String, annotations: AnnotationSet) -> OpaqueStruct
-    {
+    pub fn new(name: String, annotations: AnnotationSet) -> OpaqueStruct {
         OpaqueStruct {
             name: name,
             annotations: annotations,
@@ -645,7 +821,7 @@ impl Enum {
         })
     }
 
-    pub fn apply_renaming(&mut self, config: &Config) {
+    pub fn rename_fields(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.enumeration.rename_variants];
 
@@ -734,19 +910,6 @@ impl Specialization {
             }
             _ => {
                 Err(format!("not a path"))
-            }
-        }
-    }
-
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
-        // By specializing before adding dependencies we can avoid adding dependencies
-        // for intermediate generic parameters that don't make it into the final item
-        let specialized = self.specialize(library).ok();
-
-        // TODO: flatten
-        if let Some(specialized) = specialized {
-            if let Some(specialized) = specialized {
-                specialized.add_deps(library, out);
             }
         }
     }
@@ -853,8 +1016,16 @@ impl Typedef {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyGraph) {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
         self.aliased.add_deps(library, out);
+    }
+
+    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
+        self.aliased.add_monomorphs(library, out);
+    }
+
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+        self.aliased.mangle_paths(monomorphs);
     }
 }
 
