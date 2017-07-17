@@ -168,10 +168,6 @@ impl<'a, F: Write> SourceWriter<'a, F> {
                     self.write(&text);
                 }
             }
-
-            if i != items.len() - 1 {
-                self.new_line();
-            }
         }
     }
 

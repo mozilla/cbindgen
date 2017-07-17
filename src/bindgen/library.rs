@@ -634,6 +634,7 @@ impl GeneratedBindings {
                     continue;
                 }
 
+                // TODO
                 let generics_count = monomorph_sets.iter().next().unwrap().0.len();
                 let generics_names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
                                       "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
@@ -663,7 +664,7 @@ impl GeneratedBindings {
                     out.write("template<>");
                     out.new_line();
                     out.write(&format!("struct {}<", path));
-                    out.write_horizontal_source_list(generic_values, ListType::Join(","));
+                    out.write_horizontal_source_list(generic_values, ListType::Join(", "));
                     out.write(&format!("> : {}", monomorphed_struct.name));
                     out.open_brace();
                     out.close_brace(true);

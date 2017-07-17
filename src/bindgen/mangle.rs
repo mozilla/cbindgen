@@ -9,7 +9,10 @@ pub fn mangle_path(name: &str, generic_values: &Vec<Type>) -> String {
 
     let mut out = String::from(name);
     out.push_str("_");
-    for ty in generic_values {
+    for (i, ty) in generic_values.iter().enumerate() {
+        if i != 0 {
+            out.push_str("__"); // ,
+        }
         append_type(ty, &mut out);
     }
     out
@@ -19,14 +22,16 @@ fn append_type(ty: &Type, out: &mut String) {
     match ty {
         &Type::Path(ref path, ref generic_values) => {
             out.push_str(path);
-            out.push_str("_"); // <
-            for (i, generic) in generic_values.iter().enumerate() {
-                if i != 0 {
-                    out.push_str("__"); // ,
+            if generic_values.len() != 0 {
+                out.push_str("_"); // <
+                for (i, generic) in generic_values.iter().enumerate() {
+                    if i != 0 {
+                        out.push_str("__"); // ,
+                    }
+                    append_type(generic, out);
                 }
-                append_type(generic, out);
+                out.push_str("___"); // >
             }
-            out.push_str("___"); // >
         }
         &Type::Primitive(ref primitive) => {
             out.push_str(primitive.to_repr_rust());
