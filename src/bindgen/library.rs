@@ -191,7 +191,7 @@ impl Library {
                                         self.functions.insert(func.name.clone(), func);
                                     }
                                     Err(msg) => {
-                                        info!("skip {}::{} - ({})", crate_name, &foreign_item.ident, msg);
+                                        error!("Cannot use fn {}::{} ({})", crate_name, &foreign_item.ident, msg);
                                     },
                                 }
                             }
@@ -226,7 +226,7 @@ impl Library {
                                 self.functions.insert(func.name.clone(), func);
                             }
                             Err(msg) => {
-                                info!("skip {}::{} - ({})", crate_name, &item.ident, msg);
+                                error!("Cannot use fn {}::{} ({})", crate_name, &item.ident, msg);
                             },
                         }
                     } else {
