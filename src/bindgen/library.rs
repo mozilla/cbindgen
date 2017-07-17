@@ -304,29 +304,31 @@ impl Library {
                         }
                     };
 
-                    let fail1 = if generics.lifetimes.is_empty() &&
-                                   generics.ty_params.is_empty() {
-                        match Typedef::load(alias_name.clone(),
-                                            annotations.clone(),
-                                            ty) {
-                            Ok(typedef) => {
-                                info!("take {}::{}", crate_name, &item.ident);
-                                self.typedefs.insert(alias_name, typedef);
-                                continue;
-                            }
-                            Err(msg) => msg,
-                        }
-                    } else {
-                        format!("cannot have generics in typedef")
-                    };
-
-                    let fail2 = match Specialization::load(alias_name.clone(),
-                                                           annotations,
+                    let fail1 = match Specialization::load(alias_name.clone(),
+                                                           annotations.clone(),
                                                            generics,
                                                            ty) {
                         Ok(spec) => {
                             info!("take {}::{}", crate_name, &item.ident);
                             self.specializations.insert(alias_name, spec);
+                            continue;
+                        }
+                        Err(msg) => msg,
+                    };
+
+                    if !generics.lifetimes.is_empty() ||
+                       !generics.ty_params.is_empty() {
+                        info!("skip {}::{} - (cannot have generics in typedef)", crate_name, &item.ident);
+                        continue;
+                    }
+
+                    let fail2 = match Typedef::load(alias_name.clone(),
+                                            annotations,
+                                            ty)
+                    {
+                        Ok(typedef) => {
+                            info!("take {}::{}", crate_name, &item.ident);
+                            self.typedefs.insert(alias_name, typedef);
                             continue;
                         }
                         Err(msg) => msg,
