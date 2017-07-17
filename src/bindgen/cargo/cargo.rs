@@ -83,6 +83,24 @@ impl Cargo {
             return None;
         }
 
+        // TODO
+        if self.lock.as_ref().unwrap().root.name == package.name &&
+           self.lock.as_ref().unwrap().root.version == package.version {
+            if let Some(ref deps) = self.lock.as_ref().unwrap().root.dependencies {
+                for dep in deps {
+                    let (name, version) = parse_dep_string(dep);
+
+                    if name == dependency_name {
+                        return Some(PackageRef {
+                            name: name.to_owned(),
+                            version: version.to_owned(),
+                        });
+                    }
+                }
+            }
+            return None;
+        }
+
         for lock_package in &self.lock.as_ref().unwrap().package {
             if lock_package.name == package.name &&
                lock_package.version == package.version {
