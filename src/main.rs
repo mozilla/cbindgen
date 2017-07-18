@@ -102,7 +102,7 @@ fn main() {
                          .long("lang")
                          .value_name("LANGUAGE")
                          .help("Specify the language to output bindings in")
-                         .possible_values(&["C++", "C"]))
+                         .possible_values(&["c++", "C++", "c", "C"]))
                     .arg(Arg::with_name("d")
                          .short("d")
                          .long("parse-dependencies")
