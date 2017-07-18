@@ -149,6 +149,8 @@ impl Library {
     {
         let mut library = Library::blank("", config);
 
+        library.add_std_types();
+
         rust_lib::parse_src(src, &mut |crate_name, items| {
             library.load_from_crate_mod(&crate_name, items);
         })?;
@@ -165,6 +167,8 @@ impl Library {
         let mut library = Library::blank(lib.binding_crate_name(),
                                          config);
 
+        library.add_std_types();
+
         rust_lib::parse_lib(lib,
                             config.parse.parse_deps,
                             &config.parse.include,
@@ -177,6 +181,90 @@ impl Library {
         library.specialize();
 
         Ok(library)
+    }
+
+    fn add_std_types(&mut self) {
+        // TODO
+        self.opaque_structs.insert("String".to_owned(), OpaqueStruct {
+            name: "String".to_owned(),
+            generic_params: vec![],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("Box".to_owned(), OpaqueStruct {
+            name: "Box".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("Rc".to_owned(), OpaqueStruct {
+            name: "Rc".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("Arc".to_owned(), OpaqueStruct {
+            name: "Arc".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("Result".to_owned(), OpaqueStruct {
+            name: "Result".to_owned(),
+            generic_params: vec!["T".to_owned(),
+                                 "E".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("Option".to_owned(), OpaqueStruct {
+            name: "Option".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("Vec".to_owned(), OpaqueStruct {
+            name: "Vec".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("HashMap".to_owned(), OpaqueStruct {
+            name: "HashMap".to_owned(),
+            generic_params: vec!["K".to_owned(),
+                                 "V".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("BTreeMap".to_owned(), OpaqueStruct {
+            name: "BTreeMap".to_owned(),
+            generic_params: vec!["K".to_owned(),
+                                 "V".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("HashSet".to_owned(), OpaqueStruct {
+            name: "HashSet".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("BTreeSet".to_owned(), OpaqueStruct {
+            name: "BTreeSet".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("LinkedList".to_owned(), OpaqueStruct {
+            name: "LinkedList".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
+
+        self.opaque_structs.insert("VecDeque".to_owned(), OpaqueStruct {
+            name: "VecDeque".to_owned(),
+            generic_params: vec!["T".to_owned()],
+            annotations: AnnotationSet::new(),
+        });
     }
 
     fn load_from_crate_mod(&mut self, crate_name: &str, items: &Vec<syn::Item>) {

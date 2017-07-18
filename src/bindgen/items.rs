@@ -734,8 +734,8 @@ pub struct OpaqueStruct {
 
 impl OpaqueStruct {
     pub fn new(name: String,
-                generics: &syn::Generics,
-                annotations: AnnotationSet) -> OpaqueStruct {
+               generics: &syn::Generics,
+               annotations: AnnotationSet) -> OpaqueStruct {
         let generic_params = generics.ty_params.iter()
                                                .map(|x| x.ident.to_string())
                                                .collect::<Vec<_>>();
