@@ -9,7 +9,7 @@ matrix:
 addons:
     apt:
       packages:
-        - g++
+        - g++-4.8
 script:
   - cargo build --verbose
   - cargo test --verbose
