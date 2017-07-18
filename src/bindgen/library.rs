@@ -776,7 +776,8 @@ impl GeneratedBindings {
             out.new_line();
         }
 
-        if self.config.language == Language::Cxx {
+        if self.config.structure.generic_template_specialization &&
+           self.config.language == Language::Cxx {
             for (path, monomorph_sets) in &self.monomorphs {
                 if monomorph_sets.len() == 0 {
                     continue;

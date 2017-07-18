@@ -100,6 +100,8 @@ rename_args = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCas
 [struct]
 # A rule to use to rename field names
 rename_fields = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
+# Whether to generate helper template specialization for generics
+generic_template_specialization = true,
 # Whether to derive an operator== for all structs
 derive_eq = false
 # Whether to derive an operator!= for all structs

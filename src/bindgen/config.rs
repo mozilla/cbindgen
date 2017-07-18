@@ -145,6 +145,8 @@ impl FunctionConfig {
 pub struct StructConfig {
     /// The rename rule to apply to the name of struct fields
     pub rename_fields: Option<RenameRule>,
+    /// Whether to generate helper template specialization for generics
+    pub generic_template_specialization: bool,
     /// Whether to generate a piecewise equality operator
     pub derive_eq: bool,
     /// Whether to generate a piecewise inequality operator
@@ -163,6 +165,7 @@ impl Default for StructConfig {
     fn default() -> StructConfig {
         StructConfig {
             rename_fields: None,
+            generic_template_specialization: true,
             derive_eq: false,
             derive_neq: false,
             derive_lt: false,
