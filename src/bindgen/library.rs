@@ -857,7 +857,7 @@ impl GeneratedBindings {
                     out.new_line();
                     out.write(&format!("struct {}<", path));
                     out.write_horizontal_source_list(generic_values, ListType::Join(", "));
-                    out.write(&format!("> : {}", monomorph.name()));
+                    out.write(&format!("> : public {}", monomorph.name()));
                     out.open_brace();
                     out.close_brace(true);
                     out.new_line();
