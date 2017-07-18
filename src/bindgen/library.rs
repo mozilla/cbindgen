@@ -34,19 +34,43 @@ pub enum PathValue {
 }
 
 impl PathValue {
+    pub fn name(&self) -> &str {
+        match self {
+            &PathValue::Enum(ref x) => { &x.name },
+            &PathValue::Struct(ref x) => { &x.name },
+            &PathValue::OpaqueItem(ref x) => { &x.name },
+            &PathValue::Typedef(ref x) => { &x.name },
+            &PathValue::Specialization(ref x) => { &x.name },
+        }
+    }
+
     pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
         match self {
-            &PathValue::Enum(_) => { },
             &PathValue::Struct(ref x) => {
                 x.add_deps(library, out);
             },
-            &PathValue::OpaqueItem(_) => { },
             &PathValue::Typedef(ref x) => {
                 x.add_deps(library, out);
             },
             &PathValue::Specialization(..) => {
                 unreachable!();
             },
+            _ => { }
+        }
+    }
+
+    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+        match self {
+            &PathValue::Struct(ref x) => {
+                x.add_specializations(library, out);
+            },
+            &PathValue::Typedef(ref x) => {
+                x.add_specializations(library, out);
+            },
+            &PathValue::Specialization(ref x) => {
+                x.add_specializations(library, out);
+            },
+            _ => { }
         }
     }
 
@@ -114,6 +138,23 @@ impl DependencyList {
     }
 }
 
+/// A specialization list is used for gathering what order to output the types.
+pub struct SpecializationList {
+    pub order: Vec<PathValue>,
+    pub items: HashSet<PathRef>,
+    pub errors: Vec<(String, String)>,
+}
+
+impl SpecializationList {
+    fn new() -> SpecializationList {
+        SpecializationList {
+            order: Vec::new(),
+            items: HashSet::new(),
+            errors: Vec::new(),
+        }
+    }
+}
+
 /// A library contains all of the information needed to generate bindings for a rust library.
 #[derive(Debug, Clone)]
 pub struct Library {
@@ -155,8 +196,6 @@ impl Library {
             library.load_from_crate_mod(&crate_name, items);
         })?;
 
-        library.specialize();
-
         Ok(library)
     }
 
@@ -177,8 +216,6 @@ impl Library {
                             &mut |crate_name, items| {
             library.load_from_crate_mod(&crate_name, items);
         })?;
-
-        library.specialize();
 
         Ok(library)
     }
@@ -456,33 +493,6 @@ impl Library {
         }
     }
 
-    fn specialize(&mut self) {
-        for (name, specialization) in &self.specializations {
-            match specialization.specialize(self) {
-                Ok(Some(PathValue::Struct(x))) => {
-                    self.structs.insert(name.clone(), x);
-                }
-                Ok(Some(PathValue::OpaqueItem(x))) => {
-                    self.opaque_items.insert(name.clone(), x);
-                }
-                Ok(Some(PathValue::Enum(x))) => {
-                    self.enums.insert(name.clone(), x);
-                }
-                Ok(Some(PathValue::Typedef(x))) => {
-                    self.typedefs.insert(name.clone(), x);
-                }
-                Ok(Some(PathValue::Specialization(..))) => {
-                    unreachable!();
-                }
-                Ok(None) => { }
-                Err(msg) => {
-                    warn!("specializing {} failed - ({})", name, msg);
-                }
-            }
-        }
-        self.specializations.clear();
-    }
-
     pub fn resolve_path(&self, p: &PathRef) -> Option<PathValue> {
         if let Some(x) = self.enums.get(p) {
             return Some(PathValue::Enum(x.clone()));
@@ -504,8 +514,40 @@ impl Library {
     }
 
     /// Build a bindings file from this rust library.
-    pub fn generate(self) -> Result<GeneratedBindings, String> {
+    pub fn generate(mut self) -> Result<GeneratedBindings, String> {
         let mut result = GeneratedBindings::blank(&self.config);
+
+        // Specialize types into new types and remove all the specializations
+        // that are left behind
+        let mut specializations = SpecializationList::new();
+        for (_, function) in &self.functions {
+            function.add_specializations(&self, &mut specializations);
+        }
+        self.specializations.clear();
+
+        for specialization in specializations.order {
+            let name = specialization.name().to_owned();
+            match specialization {
+                PathValue::Struct(x) => {
+                    self.structs.insert(name, x);
+                }
+                PathValue::OpaqueItem(x) => {
+                    self.opaque_items.insert(name, x);
+                }
+                PathValue::Enum(x) => {
+                    self.enums.insert(name, x);
+                }
+                PathValue::Typedef(x) => {
+                    self.typedefs.insert(name, x);
+                }
+                PathValue::Specialization(..) => {
+                    unreachable!();
+                }
+            }
+        }
+        for (path, error) in specializations.errors {
+            warn!("specializing {} failed - ({})", path, error);
+        }
 
         // Gather only the items that we need for this
         // `extern "c"` interface

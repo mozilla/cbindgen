@@ -316,13 +316,11 @@ impl Type {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyList)
-    {
+    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
         self.add_deps_with_generics(&Vec::new(), library, out)
     }
 
-    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs)
-    {
+    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         match self {
             &Type::ConstPtr(ref ty) => {
                 ty.add_monomorphs(library, out);
@@ -357,6 +355,45 @@ impl Type {
                 ret.add_monomorphs(library, out);
                 for arg in args {
                     arg.add_monomorphs(library, out);
+                }
+            }
+        }
+    }
+
+    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+        match self {
+            &Type::ConstPtr(ref ty) => {
+                ty.add_specializations(library, out);
+            }
+            &Type::Ptr(ref ty) => {
+                ty.add_specializations(library, out);
+            }
+            &Type::Path(ref path, ref generic_values) => {
+                let item = library.resolve_path(path);
+                if let Some(item) = item {
+                    match item {
+                        PathValue::Struct(ref x) => {
+                            x.add_specializations(library, out);
+                        },
+                        PathValue::Typedef(ref x) => {
+                            assert!(generic_values.len() == 0);
+                            x.add_specializations(library, out);
+                        },
+                        PathValue::Specialization(ref x) => {
+                            x.add_specializations(library, out);
+                        },
+                        _ => { }
+                    }
+                }
+            }
+            &Type::Primitive(_) => { }
+            &Type::Array(ref ty, _) => {
+                ty.add_specializations(library, out);
+            }
+            &Type::FuncPtr(ref ret, ref args) => {
+                ret.add_specializations(library, out);
+                for arg in args {
+                    arg.add_specializations(library, out);
                 }
             }
         }
@@ -472,6 +509,13 @@ impl Function {
         self.ret.add_monomorphs(library, out);
         for &(_, ref ty) in &self.args {
             ty.add_monomorphs(library, out);
+        }
+    }
+
+    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+        self.ret.add_specializations(library, out);
+        for &(_, ref ty) in &self.args {
+            ty.add_specializations(library, out);
         }
     }
 
@@ -625,6 +669,12 @@ impl Struct {
         }
         out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
                                                 Monomorph::Struct(monomorph));
+    }
+
+    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+        for &(_, ref ty) in &self.fields {
+            ty.add_specializations(library, out);
+        }
     }
 
     pub fn rename_fields(&mut self, config: &Config) {
@@ -956,6 +1006,24 @@ impl Specialization {
         }
     }
 
+    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+        match self.specialize(library) {
+            Ok(Some(specialization)) => {
+                if !out.items.contains(specialization.name()) {
+                    out.items.insert(specialization.name().to_owned());
+
+                    specialization.add_specializations(library, out);
+
+                    out.order.push(specialization);
+                }
+            }
+            Ok(None) => { }
+            Err(msg) => {
+                out.errors.push((self.name.clone(), msg));
+            }
+        }
+    }
+
     pub fn specialize(&self, library: &Library) -> Result<Option<PathValue>, String> {
         if self.generic_params.len() > 0 {
             return Ok(None);
@@ -1070,6 +1138,10 @@ impl Typedef {
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         self.aliased.add_monomorphs(library, out);
+    }
+
+    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+        self.aliased.add_specializations(library, out);
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
