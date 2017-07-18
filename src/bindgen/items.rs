@@ -280,10 +280,10 @@ impl Type {
     pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut DependencyList) {
         match self {
             &Type::ConstPtr(ref ty) => {
-                ty.add_deps(library, out);
+                ty.add_deps_with_generics(generic_params, library, out);
             }
             &Type::Ptr(ref ty) => {
-                ty.add_deps(library, out);
+                ty.add_deps_with_generics(generic_params, library, out);
             }
             &Type::Path(ref path, ref generic_values) => {
                 if !generic_params.contains(path) {
@@ -295,12 +295,12 @@ impl Type {
             }
             &Type::Primitive(_) => { }
             &Type::Array(ref ty, _) => {
-                ty.add_deps(library, out);
+                ty.add_deps_with_generics(generic_params, library, out);
             }
             &Type::FuncPtr(ref ret, ref args) => {
-                ret.add_deps(library, out);
+                ret.add_deps_with_generics(generic_params, library, out);
                 for arg in args {
-                    arg.add_deps(library, out);
+                    arg.add_deps_with_generics(generic_params, library, out);
                 }
             }
         }
