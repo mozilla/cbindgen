@@ -327,6 +327,9 @@ impl Type {
                         PathValue::Struct(ref x) => {
                             x.add_monomorphs(library, generic_values, out);
                         },
+                        PathValue::OpaqueStruct(ref x) => {
+                            x.add_monomorphs(generic_values, out);
+                        },
                         PathValue::Typedef(ref x) => {
                             assert!(generic_values.len() == 0);
                             x.add_monomorphs(library, out);
@@ -363,7 +366,7 @@ impl Type {
                 if generic_values.len() != 0 {
                     if let Some(monomorph_list) = monomorphs.get(path) {
                         if let Some(monomorph) = monomorph_list.get(generic_values) {
-                            *path = monomorph.name.clone();
+                            *path = monomorph.name().to_owned();
                             *generic_values = Vec::new();
                         } else {
                             warn!("cannot find a monomorph for {}::{:?}", path, generic_values);
@@ -610,7 +613,8 @@ impl Struct {
         if !out.contains_key(&self.name) {
             out.insert(self.name.clone(), HashMap::new());
         }
-        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), monomorph);
+        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
+                                                Monomorph::Struct(monomorph));
     }
 
     pub fn rename_fields(&mut self, config: &Config) {
@@ -724,15 +728,43 @@ impl Source for Struct {
 #[derive(Debug, Clone)]
 pub struct OpaqueStruct {
     pub name: PathRef,
+    pub generic_params: Vec<String>,
     pub annotations: AnnotationSet,
 }
 
 impl OpaqueStruct {
-    pub fn new(name: String, annotations: AnnotationSet) -> OpaqueStruct {
+    pub fn new(name: String,
+                generics: &syn::Generics,
+                annotations: AnnotationSet) -> OpaqueStruct {
+        let generic_params = generics.ty_params.iter()
+                                               .map(|x| x.ident.to_string())
+                                               .collect::<Vec<_>>();
+
         OpaqueStruct {
             name: name,
+            generic_params: generic_params,
             annotations: annotations,
         }
+    }
+
+    pub fn add_monomorphs(&self, generic_values: &Vec<Type>, out: &mut Monomorphs) {
+        assert!(self.generic_params.len() == generic_values.len());
+
+        if self.generic_params.len() == 0 {
+            return;
+        }
+
+        let monomorph = OpaqueStruct {
+            name: mangle_path(&self.name, generic_values),
+            generic_params: vec![],
+            annotations: self.annotations.clone(),
+        };
+
+        if !out.contains_key(&self.name) {
+            out.insert(self.name.clone(), HashMap::new());
+        }
+        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
+                                                Monomorph::OpaqueStruct(monomorph));
     }
 }
 
@@ -922,9 +954,15 @@ impl Specialization {
         match library.resolve_path(&self.aliased) {
             Some(aliased) => {
                 match aliased {
-                    PathValue::OpaqueStruct(_) => {
+                    PathValue::OpaqueStruct(ref aliased) => {
+                        if self.generic_values.len() !=
+                           aliased.generic_params.len() {
+                            return Err(format!("incomplete specialization"));
+                        }
+
                         Ok(Some(PathValue::OpaqueStruct(OpaqueStruct {
                             name: self.name.clone(),
+                            generic_params: Vec::new(),
                             annotations: self.annotations.clone(),
                         })))
                     }
@@ -944,7 +982,7 @@ impl Specialization {
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
                                                   .collect(),
-                            generic_params: vec![],
+                            generic_params: Vec::new(),
                         })))
                     }
                     PathValue::Enum(aliased) => {

@@ -58,7 +58,7 @@ impl PathValue {
         }
     }
 
-    pub fn mangle_paths(&mut self, monomorphs: &HashMap<PathRef, HashMap<Vec<Type>, Struct>>) {
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         match self {
             &mut PathValue::Enum(_) => { },
             &mut PathValue::Struct(ref mut x) => {
@@ -75,7 +75,28 @@ impl PathValue {
     }
 }
 
-pub type MonomorphList = HashMap<Vec<Type>, Struct>;
+#[derive(Clone, Debug)]
+pub enum Monomorph {
+    Struct(Struct),
+    OpaqueStruct(OpaqueStruct),
+}
+impl Monomorph {
+    pub fn name(&self) -> &str {
+        match self {
+            &Monomorph::Struct(ref x) => &x.name,
+            &Monomorph::OpaqueStruct(ref x) => &x.name,
+        }
+    }
+
+    pub fn is_opaque(&self) -> bool {
+        match self {
+            &Monomorph::Struct(_) => false,
+            &Monomorph::OpaqueStruct(_) => true,
+        }
+    }
+}
+
+pub type MonomorphList = HashMap<Vec<Type>, Monomorph>;
 pub type Monomorphs = HashMap<PathRef, MonomorphList>;
 
 /// A dependency graph is used for gathering what order to output the types.
@@ -256,13 +277,17 @@ impl Library {
                             Err(msg) => {
                                 info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
                                 self.opaque_structs.insert(struct_name.clone(),
-                                                           OpaqueStruct::new(struct_name, annotations));
+                                                           OpaqueStruct::new(struct_name,
+                                                                             generics,
+                                                                             annotations));
                             }
                         }
                     } else {
                         info!("take {}::{} - opaque (not marked as repr(C))", crate_name, &item.ident);
                         self.opaque_structs.insert(struct_name.clone(),
-                                                   OpaqueStruct::new(struct_name, annotations));
+                                                   OpaqueStruct::new(struct_name,
+                                                                     generics,
+                                                                     annotations));
                     }
                 }
                 syn::ItemKind::Enum(ref variants, ref generics) => {
@@ -290,7 +315,9 @@ impl Library {
                         Err(msg) => {
                             info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
                             self.opaque_structs.insert(enum_name.clone(),
-                                                       OpaqueStruct::new(enum_name, annotations));
+                                                       OpaqueStruct::new(enum_name,
+                                                                         generics,
+                                                                         annotations));
                         }
                     }
                 }
@@ -427,7 +454,33 @@ impl Library {
                     if s.generic_params.len() != 0 {
                         if let Some(monomorphs) = monomorphs.get(&s.name) {
                             for (_, monomorph) in monomorphs {
-                                result.items.push(PathValue::Struct(monomorph.clone()));
+                                result.items.push(match monomorph {
+                                    &Monomorph::Struct(ref x) => {
+                                        PathValue::Struct(x.clone())
+                                    }
+                                    &Monomorph::OpaqueStruct(ref x) => {
+                                        PathValue::OpaqueStruct(x.clone())
+                                    }
+                                });
+                            }
+                        }
+                        continue;
+                    } else {
+                        debug_assert!(!monomorphs.contains_key(&s.name));
+                    }
+                }
+                &PathValue::OpaqueStruct(ref s) => {
+                    if s.generic_params.len() != 0 {
+                        if let Some(monomorphs) = monomorphs.get(&s.name) {
+                            for (_, monomorph) in monomorphs {
+                                result.items.push(match monomorph {
+                                    &Monomorph::Struct(ref x) => {
+                                        PathValue::Struct(x.clone())
+                                    }
+                                    &Monomorph::OpaqueStruct(ref x) => {
+                                        PathValue::OpaqueStruct(x.clone())
+                                    }
+                                });
                             }
                         }
                         continue;
@@ -637,11 +690,12 @@ impl GeneratedBindings {
                 }
 
                 // TODO
+                let is_opaque = monomorph_sets.iter().next().unwrap().1.is_opaque();
                 let generics_count = monomorph_sets.iter().next().unwrap().0.len();
                 let generics_names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
                                       "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
-                if generics_count > 26 {
+                if is_opaque || generics_count > 26 {
                     continue;
                 }
 
@@ -661,13 +715,13 @@ impl GeneratedBindings {
                 out.close_brace(true);
                 out.new_line();
 
-                for (generic_values, monomorphed_struct) in monomorph_sets {
+                for (generic_values, monomorph) in monomorph_sets {
                     out.new_line();
                     out.write("template<>");
                     out.new_line();
                     out.write(&format!("struct {}<", path));
                     out.write_horizontal_source_list(generic_values, ListType::Join(", "));
-                    out.write(&format!("> : {}", monomorphed_struct.name));
+                    out.write(&format!("> : {}", monomorph.name()));
                     out.open_brace();
                     out.close_brace(true);
                     out.new_line();
