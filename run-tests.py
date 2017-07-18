@@ -16,7 +16,7 @@ def gcc(src):
     os.remove("compile-tests/tmp.o")
 
 def gxx(src):
-    subprocess.check_output(["g++", "-c", src, "-o", "compile-tests/tmp.o"])
+    subprocess.check_output(["g++", "--std=c++11", "-c", src, "-o", "compile-tests/tmp.o"])
     os.remove("compile-tests/tmp.o")
 
 def run_compile_test(rust_src, leave_output, c):
