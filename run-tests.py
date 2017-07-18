@@ -24,7 +24,7 @@ def gxx(src):
     if gxx_bin == None:
         gxx_bin = 'g++'
 
-    subprocess.check_output([gxx_bin, "--std=c++11", "-c", src, "-o", "compile-tests/tmp.o"])
+    subprocess.check_output([gxx_bin, "-c", src, "-o", "compile-tests/tmp.o"])
     os.remove("compile-tests/tmp.o")
 
 def run_compile_test(rust_src, leave_output, c):
