@@ -469,6 +469,7 @@ impl Function {
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
+        self.ret.add_monomorphs(library, out);
         for &(_, ref ty) in &self.args {
             ty.add_monomorphs(library, out);
         }
