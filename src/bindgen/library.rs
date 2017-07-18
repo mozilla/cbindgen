@@ -603,7 +603,7 @@ impl Library {
                                          .collect::<Vec<_>>();
 
         // Rename all the fields according to their rules and mangle any
-        // paths that refer to generic structs that have been monomorph'ed.
+        // paths that refer to generic structs that have been monomorphed.
         for item in &mut result.items {
             item.mangle_paths(&monomorphs);
             item.rename_fields(&self.config);
@@ -616,7 +616,25 @@ impl Library {
             func.rename_args(&self.config);
         }
 
-        result.monomorphs = monomorphs;
+        // The bindings writing code uses information about the monomorphs
+        // to write out utility template specializations. We ideally should
+        // send a different data structure. Currently we reuse the existing one,
+        // but unfortunately the generic values have types that are not
+        // mangled and need to be. So we build a copy and mangle along the way.
+        // TODO
+        let mut new_monomorphs = Monomorphs::new();
+        for (path, monomorph_set) in monomorphs.iter() {
+            let mut new_monomorph_set = HashMap::new();
+            for (generic_values, monomorph) in monomorph_set.iter() {
+                let mut new_generic_values = generic_values.clone();
+                for generic_value in &mut new_generic_values {
+                    generic_value.mangle_paths(&monomorphs);
+                }
+                new_monomorph_set.insert(new_generic_values, monomorph.clone());
+            }
+            new_monomorphs.insert(path.clone(), new_monomorph_set);
+        }
+        result.monomorphs = new_monomorphs;
 
         Ok(result)
     }
