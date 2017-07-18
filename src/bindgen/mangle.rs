@@ -55,11 +55,11 @@ fn append_type(ty: &Type, out: &mut String) {
 fn mangle_test() {
     assert_eq!(mangle_path("Foo",
                            &vec![Type::Primitive(PrimitiveType::Float)]),
-               "Foo_float");
+               "Foo_f32");
 
     assert_eq!(mangle_path("Foo",
                            &vec![Type::Path("Bar".to_owned(),
                                             vec![Type::Primitive(PrimitiveType::Float)])
                            ]),
-               "Foo_Bar_float___");
+               "Foo_Bar_f32___");
 }
