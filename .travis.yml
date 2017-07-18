@@ -7,9 +7,14 @@ matrix:
   allow_failures:
   - rust: nightly
 addons:
+    sources:
+      - ubuntu-toolchain-r-test
     apt:
       packages:
-        - g++-4.8
+        - gcc-4.9
+        - g++-4.9
+env:
+  - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
 script:
   - cargo build --verbose
   - cargo test --verbose

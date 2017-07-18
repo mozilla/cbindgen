@@ -12,11 +12,19 @@ def cbindgen(rust_src, out, c):
         subprocess.check_output(["cargo", "run", "--", rust_src, "-o", out])
 
 def gcc(src):
-    subprocess.check_output(["gcc", "-c", src, "-o", "compile-tests/tmp.o"])
+    gcc_bin = os.environ.get('CC')
+    if gcc_bin == None:
+        gcc_bin = 'gcc'
+
+    subprocess.check_output([gcc_bin, "-c", src, "-o", "compile-tests/tmp.o"])
     os.remove("compile-tests/tmp.o")
 
 def gxx(src):
-    subprocess.check_output(["g++", "--std=c++11", "-c", src, "-o", "compile-tests/tmp.o"])
+    gxx_bin = os.environ.get('CXX')
+    if gxx_bin == None:
+        gxx_bin = 'g++'
+
+    subprocess.check_output([gxx_bin, "--std=c++11", "-c", src, "-o", "compile-tests/tmp.o"])
     os.remove("compile-tests/tmp.o")
 
 def run_compile_test(rust_src, leave_output, c):
