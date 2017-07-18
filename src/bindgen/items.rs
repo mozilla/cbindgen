@@ -1025,10 +1025,6 @@ impl Specialization {
     }
 
     pub fn specialize(&self, library: &Library) -> Result<Option<PathValue>, String> {
-        if self.generic_params.len() > 0 {
-            return Ok(None);
-        }
-
         match library.resolve_path(&self.aliased) {
             Some(aliased) => {
                 match aliased {
@@ -1040,7 +1036,7 @@ impl Specialization {
 
                         Ok(Some(PathValue::OpaqueItem(OpaqueItem {
                             name: self.name.clone(),
-                            generic_params: Vec::new(),
+                            generic_params: self.generic_params.clone(),
                             annotations: self.annotations.clone(),
                         })))
                     }
@@ -1060,7 +1056,7 @@ impl Specialization {
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
                                                   .collect(),
-                            generic_params: Vec::new(),
+                            generic_params: self.generic_params.clone(),
                         })))
                     }
                     PathValue::Enum(aliased) => {
@@ -1096,7 +1092,7 @@ impl Specialization {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
-                            generic_params: Vec::new(),
+                            generic_params: self.generic_params.clone(),
                             generic_values: generic_values,
                         }.specialize(library)
                     }
