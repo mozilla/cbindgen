@@ -28,7 +28,7 @@ pub type PathRef = String;
 pub enum PathValue {
     Enum(Enum),
     Struct(Struct),
-    OpaqueStruct(OpaqueStruct),
+    OpaqueItem(OpaqueItem),
     Typedef(Typedef),
     Specialization(Specialization),
 }
@@ -40,7 +40,7 @@ impl PathValue {
             &PathValue::Struct(ref x) => {
                 x.add_deps(library, out);
             },
-            &PathValue::OpaqueStruct(_) => { },
+            &PathValue::OpaqueItem(_) => { },
             &PathValue::Typedef(ref x) => {
                 x.add_deps(library, out);
             },
@@ -64,7 +64,7 @@ impl PathValue {
             &mut PathValue::Struct(ref mut x) => {
                 x.mangle_paths(monomorphs);
             },
-            &mut PathValue::OpaqueStruct(_) => { },
+            &mut PathValue::OpaqueItem(_) => { },
             &mut PathValue::Typedef(ref mut x) => {
                 x.mangle_paths(monomorphs);
             },
@@ -78,20 +78,20 @@ impl PathValue {
 #[derive(Clone, Debug)]
 pub enum Monomorph {
     Struct(Struct),
-    OpaqueStruct(OpaqueStruct),
+    OpaqueItem(OpaqueItem),
 }
 impl Monomorph {
     pub fn name(&self) -> &str {
         match self {
             &Monomorph::Struct(ref x) => &x.name,
-            &Monomorph::OpaqueStruct(ref x) => &x.name,
+            &Monomorph::OpaqueItem(ref x) => &x.name,
         }
     }
 
     pub fn is_opaque(&self) -> bool {
         match self {
             &Monomorph::Struct(_) => false,
-            &Monomorph::OpaqueStruct(_) => true,
+            &Monomorph::OpaqueItem(_) => true,
         }
     }
 }
@@ -99,10 +99,10 @@ impl Monomorph {
 pub type MonomorphList = HashMap<Vec<Type>, Monomorph>;
 pub type Monomorphs = HashMap<PathRef, MonomorphList>;
 
-/// A dependency graph is used for gathering what order to output the types.
+/// A dependency list is used for gathering what order to output the types.
 pub struct DependencyList {
-    order: Vec<PathValue>,
-    items: HashSet<PathRef>,
+    pub order: Vec<PathValue>,
+    pub items: HashSet<PathRef>,
 }
 
 impl DependencyList {
@@ -122,7 +122,7 @@ pub struct Library {
 
     enums: BTreeMap<String, Enum>,
     structs: BTreeMap<String, Struct>,
-    opaque_structs: BTreeMap<String, OpaqueStruct>,
+    opaque_items: BTreeMap<String, OpaqueItem>,
     typedefs: BTreeMap<String, Typedef>,
     specializations: BTreeMap<String, Specialization>,
     functions: BTreeMap<String, Function>,
@@ -136,7 +136,7 @@ impl Library {
 
             enums: BTreeMap::new(),
             structs: BTreeMap::new(),
-            opaque_structs: BTreeMap::new(),
+            opaque_items: BTreeMap::new(),
             typedefs: BTreeMap::new(),
             specializations: BTreeMap::new(),
             functions: BTreeMap::new(),
@@ -185,82 +185,82 @@ impl Library {
 
     fn add_std_types(&mut self) {
         // TODO
-        self.opaque_structs.insert("String".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("String".to_owned(), OpaqueItem {
             name: "String".to_owned(),
             generic_params: vec![],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("Box".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("Box".to_owned(), OpaqueItem {
             name: "Box".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("Rc".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("Rc".to_owned(), OpaqueItem {
             name: "Rc".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("Arc".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("Arc".to_owned(), OpaqueItem {
             name: "Arc".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("Result".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("Result".to_owned(), OpaqueItem {
             name: "Result".to_owned(),
             generic_params: vec!["T".to_owned(),
                                  "E".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("Option".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("Option".to_owned(), OpaqueItem {
             name: "Option".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("Vec".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("Vec".to_owned(), OpaqueItem {
             name: "Vec".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("HashMap".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("HashMap".to_owned(), OpaqueItem {
             name: "HashMap".to_owned(),
             generic_params: vec!["K".to_owned(),
                                  "V".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("BTreeMap".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("BTreeMap".to_owned(), OpaqueItem {
             name: "BTreeMap".to_owned(),
             generic_params: vec!["K".to_owned(),
                                  "V".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("HashSet".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("HashSet".to_owned(), OpaqueItem {
             name: "HashSet".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("BTreeSet".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("BTreeSet".to_owned(), OpaqueItem {
             name: "BTreeSet".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("LinkedList".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("LinkedList".to_owned(), OpaqueItem {
             name: "LinkedList".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
         });
 
-        self.opaque_structs.insert("VecDeque".to_owned(), OpaqueStruct {
+        self.opaque_items.insert("VecDeque".to_owned(), OpaqueItem {
             name: "VecDeque".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
@@ -364,16 +364,16 @@ impl Library {
                             }
                             Err(msg) => {
                                 info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
-                                self.opaque_structs.insert(struct_name.clone(),
-                                                           OpaqueStruct::new(struct_name,
+                                self.opaque_items.insert(struct_name.clone(),
+                                                           OpaqueItem::new(struct_name,
                                                                              generics,
                                                                              annotations));
                             }
                         }
                     } else {
                         info!("take {}::{} - opaque (not marked as repr(C))", crate_name, &item.ident);
-                        self.opaque_structs.insert(struct_name.clone(),
-                                                   OpaqueStruct::new(struct_name,
+                        self.opaque_items.insert(struct_name.clone(),
+                                                   OpaqueItem::new(struct_name,
                                                                      generics,
                                                                      annotations));
                     }
@@ -402,8 +402,8 @@ impl Library {
                         }
                         Err(msg) => {
                             info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
-                            self.opaque_structs.insert(enum_name.clone(),
-                                                       OpaqueStruct::new(enum_name,
+                            self.opaque_items.insert(enum_name.clone(),
+                                                       OpaqueItem::new(enum_name,
                                                                          generics,
                                                                          annotations));
                         }
@@ -462,8 +462,8 @@ impl Library {
                 Ok(Some(PathValue::Struct(x))) => {
                     self.structs.insert(name.clone(), x);
                 }
-                Ok(Some(PathValue::OpaqueStruct(x))) => {
-                    self.opaque_structs.insert(name.clone(), x);
+                Ok(Some(PathValue::OpaqueItem(x))) => {
+                    self.opaque_items.insert(name.clone(), x);
                 }
                 Ok(Some(PathValue::Enum(x))) => {
                     self.enums.insert(name.clone(), x);
@@ -490,8 +490,8 @@ impl Library {
         if let Some(x) = self.structs.get(p) {
             return Some(PathValue::Struct(x.clone()));
         }
-        if let Some(x) = self.opaque_structs.get(p) {
-            return Some(PathValue::OpaqueStruct(x.clone()));
+        if let Some(x) = self.opaque_items.get(p) {
+            return Some(PathValue::OpaqueItem(x.clone()));
         }
         if let Some(x) = self.typedefs.get(p) {
             return Some(PathValue::Typedef(x.clone()));
@@ -501,20 +501,6 @@ impl Library {
         }
 
         None
-    }
-
-    pub fn add_deps_for_path(&self, p: &PathRef, out: &mut DependencyList) {
-        if let Some(value) = self.resolve_path(p) {
-            if !out.items.contains(p) {
-                out.items.insert(p.clone());
-
-                value.add_deps(self, out);
-
-                out.order.push(value);
-            }
-        } else {
-            warn!("can't find {}", p);
-        }
     }
 
     /// Build a bindings file from this rust library.
@@ -528,14 +514,15 @@ impl Library {
             function.add_deps(&self, &mut deps);
         }
 
+        // Gather a list of all the instantiations of generic structs
+        // TODO - monomorphs of a single type are not sorted by dependencies
         let mut monomorphs = Monomorphs::new();
         for (_, function) in &self.functions {
             function.add_monomorphs(&self, &mut monomorphs);
         }
 
-        // Copy the binding items in dependencies order
-        // into the GeneratedBindings, specializing any type
-        // aliases we encounter
+        // Copy the binding items in dependencies order into the generated bindings,
+        // adding any instantiations of generic structs along the way.
         for dep in deps.order {
             match &dep {
                 &PathValue::Struct(ref s) => {
@@ -546,8 +533,8 @@ impl Library {
                                     &Monomorph::Struct(ref x) => {
                                         PathValue::Struct(x.clone())
                                     }
-                                    &Monomorph::OpaqueStruct(ref x) => {
-                                        PathValue::OpaqueStruct(x.clone())
+                                    &Monomorph::OpaqueItem(ref x) => {
+                                        PathValue::OpaqueItem(x.clone())
                                     }
                                 });
                             }
@@ -557,7 +544,7 @@ impl Library {
                         debug_assert!(!monomorphs.contains_key(&s.name));
                     }
                 }
-                &PathValue::OpaqueStruct(ref s) => {
+                &PathValue::OpaqueItem(ref s) => {
                     if s.generic_params.len() != 0 {
                         if let Some(monomorphs) = monomorphs.get(&s.name) {
                             for (_, monomorph) in monomorphs {
@@ -565,8 +552,8 @@ impl Library {
                                     &Monomorph::Struct(ref x) => {
                                         PathValue::Struct(x.clone())
                                     }
-                                    &Monomorph::OpaqueStruct(ref x) => {
-                                        PathValue::OpaqueStruct(x.clone())
+                                    &Monomorph::OpaqueItem(ref x) => {
+                                        PathValue::OpaqueItem(x.clone())
                                     }
                                 });
                             }
@@ -589,9 +576,9 @@ impl Library {
                 (&PathValue::Enum(_), _) => Ordering::Less,
                 (_, &PathValue::Enum(_)) => Ordering::Greater,
 
-                (&PathValue::OpaqueStruct(ref o1), &PathValue::OpaqueStruct(ref o2)) => o1.name.cmp(&o2.name),
-                (&PathValue::OpaqueStruct(_), _) => Ordering::Less,
-                (_, &PathValue::OpaqueStruct(_)) => Ordering::Greater,
+                (&PathValue::OpaqueItem(ref o1), &PathValue::OpaqueItem(ref o2)) => o1.name.cmp(&o2.name),
+                (&PathValue::OpaqueItem(_), _) => Ordering::Less,
+                (_, &PathValue::OpaqueItem(_)) => Ordering::Greater,
 
                 _ => Ordering::Equal,
             }
@@ -737,7 +724,7 @@ impl GeneratedBindings {
             match item {
                 &PathValue::Enum(ref x) => x.write(&self.config, &mut out),
                 &PathValue::Struct(ref x) => x.write(&self.config, &mut out),
-                &PathValue::OpaqueStruct(ref x) => x.write(&self.config, &mut out),
+                &PathValue::OpaqueItem(ref x) => x.write(&self.config, &mut out),
                 &PathValue::Typedef(ref x) => x.write(&self.config, &mut out),
                 &PathValue::Specialization(_) => {
                     unreachable!("should not encounter a specialization in a generated library")

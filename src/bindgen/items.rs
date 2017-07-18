@@ -287,7 +287,17 @@ impl Type {
             }
             &Type::Path(ref path, ref generic_values) => {
                 if !generic_params.contains(path) {
-                    library.add_deps_for_path(path, out);
+                    if let Some(value) = library.resolve_path(path) {
+                        if !out.items.contains(path) {
+                            out.items.insert(path.clone());
+
+                            value.add_deps(library, out);
+
+                            out.order.push(value);
+                        }
+                    } else {
+                        warn!("can't find {}", path);
+                    }
                 }
                 for generic_value in generic_values {
                     generic_value.add_deps_with_generics(generic_params, library, out);
@@ -327,7 +337,7 @@ impl Type {
                         PathValue::Struct(ref x) => {
                             x.add_monomorphs(library, generic_values, out);
                         },
-                        PathValue::OpaqueStruct(ref x) => {
+                        PathValue::OpaqueItem(ref x) => {
                             x.add_monomorphs(generic_values, out);
                         },
                         PathValue::Typedef(ref x) => {
@@ -352,8 +362,7 @@ impl Type {
         }
     }
 
-    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs)
-    {
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         match self {
             &mut Type::ConstPtr(ref mut ty) => {
                 ty.mangle_paths(monomorphs);
@@ -726,21 +735,21 @@ impl Source for Struct {
 }
 
 #[derive(Debug, Clone)]
-pub struct OpaqueStruct {
+pub struct OpaqueItem {
     pub name: PathRef,
     pub generic_params: Vec<String>,
     pub annotations: AnnotationSet,
 }
 
-impl OpaqueStruct {
+impl OpaqueItem {
     pub fn new(name: String,
                generics: &syn::Generics,
-               annotations: AnnotationSet) -> OpaqueStruct {
+               annotations: AnnotationSet) -> OpaqueItem {
         let generic_params = generics.ty_params.iter()
                                                .map(|x| x.ident.to_string())
                                                .collect::<Vec<_>>();
 
-        OpaqueStruct {
+        OpaqueItem {
             name: name,
             generic_params: generic_params,
             annotations: annotations,
@@ -754,7 +763,7 @@ impl OpaqueStruct {
             return;
         }
 
-        let monomorph = OpaqueStruct {
+        let monomorph = OpaqueItem {
             name: mangle_path(&self.name, generic_values),
             generic_params: vec![],
             annotations: self.annotations.clone(),
@@ -764,11 +773,11 @@ impl OpaqueStruct {
             out.insert(self.name.clone(), HashMap::new());
         }
         out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
-                                                Monomorph::OpaqueStruct(monomorph));
+                                                Monomorph::OpaqueItem(monomorph));
     }
 }
 
-impl Source for OpaqueStruct {
+impl Source for OpaqueItem {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if config.language == Language::C {
             out.write(&format!("struct {};", self.name));
@@ -954,13 +963,13 @@ impl Specialization {
         match library.resolve_path(&self.aliased) {
             Some(aliased) => {
                 match aliased {
-                    PathValue::OpaqueStruct(ref aliased) => {
+                    PathValue::OpaqueItem(ref aliased) => {
                         if self.generic_values.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));
                         }
 
-                        Ok(Some(PathValue::OpaqueStruct(OpaqueStruct {
+                        Ok(Some(PathValue::OpaqueItem(OpaqueItem {
                             name: self.name.clone(),
                             generic_params: Vec::new(),
                             annotations: self.annotations.clone(),
