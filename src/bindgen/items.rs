@@ -71,7 +71,12 @@ impl PrimitiveType {
             "u16" => Some(PrimitiveType::UInt16),
             "u32" => Some(PrimitiveType::UInt32),
             "u64" => Some(PrimitiveType::UInt64),
-            "isize" => Some(PrimitiveType::ISize),
+            "isize" => {
+                #[cfg(not(target_os="linux"))] {
+                    warn!("ssize_t isn't supported on all platforms.");
+                }
+                Some(PrimitiveType::ISize)
+            }
             "i8" => Some(PrimitiveType::Int8),
             "i16" => Some(PrimitiveType::Int16),
             "i32" => Some(PrimitiveType::Int32),
