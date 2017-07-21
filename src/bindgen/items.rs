@@ -246,6 +246,29 @@ impl Type {
         return Ok(Some(converted));
     }
 
+    pub fn get_root_path(&self) -> Option<PathRef> {
+        let mut current = self;
+
+        loop {
+            match current {
+                &Type::ConstPtr(ref ty) => { current = ty },
+                &Type::Ptr(ref ty) => { current = ty },
+                &Type::Path(ref path, ..) => {
+                    return Some(path.clone());
+                },
+                &Type::Primitive(..) => {
+                    return None;
+                },
+                &Type::Array(..) => {
+                    return None;
+                },
+                &Type::FuncPtr(..) => {
+                    return None;
+                },
+            };
+        };
+    }
+
     pub fn specialize(&self, mappings: &Vec<(&String, &Type)>) -> Type {
         match self {
             &Type::ConstPtr(ref ty) => {
@@ -1044,7 +1067,7 @@ impl Specialization {
                             annotations: self.annotations.clone(),
                         })))
                     }
-                    PathValue::Struct(aliased) => {
+                    PathValue::Struct(ref aliased) => {
                         if self.generic_values.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));
@@ -1063,7 +1086,7 @@ impl Specialization {
                             generic_params: self.generic_params.clone(),
                         })))
                     }
-                    PathValue::Enum(aliased) => {
+                    PathValue::Enum(ref aliased) => {
                         Ok(Some(PathValue::Enum(Enum {
                             name: self.name.clone(),
                             repr: aliased.repr.clone(),
@@ -1071,14 +1094,14 @@ impl Specialization {
                             values: aliased.values.clone(),
                         })))
                     }
-                    PathValue::Typedef(aliased) => {
+                    PathValue::Typedef(ref aliased) => {
                         Ok(Some(PathValue::Typedef(Typedef {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
                         })))
                     }
-                    PathValue::Specialization(aliased) => {
+                    PathValue::Specialization(ref aliased) => {
                         if self.generic_values.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));
@@ -1129,6 +1152,26 @@ impl Typedef {
             })
         } else {
             Err(format!("cannot have a typedef of a zero sized type"))
+        }
+    }
+
+    pub fn transfer_annotations(&mut self, out: &mut HashMap<PathRef, AnnotationSet>) {
+        if self.annotations.is_empty() {
+            return;
+        }
+
+        match self.aliased.get_root_path() {
+            Some(alias_path) => {
+                if out.contains_key(&alias_path) {
+                    warn!("multiple typedef's with annotations for {}. ignoring annotations from {}.",
+                          alias_path, self.name);
+                    return;
+                }
+
+                out.insert(alias_path, self.annotations.clone());
+                self.annotations = AnnotationSet::new();
+            }
+            None => { }
         }
     }
 

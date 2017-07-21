@@ -39,6 +39,10 @@ impl AnnotationSet {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.annotations.is_empty()
+    }
+
     pub fn parse(text: String) -> Result<AnnotationSet, String> {
         let mut annotations = HashMap::new();
 
