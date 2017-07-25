@@ -15,7 +15,7 @@ use syn;
 use bindgen::cargo::Cargo;
 use bindgen::config::{self, Config, Language};
 use bindgen::annotation::*;
-use bindgen::items::*;
+use bindgen::ir::*;
 use bindgen::rust_lib;
 use bindgen::utilities::*;
 use bindgen::writer::{ListType, Source, SourceWriter};

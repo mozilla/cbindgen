@@ -4,7 +4,7 @@
 
 use syn::*;
 
-use bindgen::items::*;
+use bindgen::ir::*;
 
 /// Helper functions for dealing with iterators
 pub trait IterHelpers : Iterator {

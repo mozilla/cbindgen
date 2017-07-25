@@ -38,7 +38,7 @@ mod annotation;
 mod cargo;
 mod cdecl;
 mod config;
-mod items;
+mod ir;
 mod library;
 mod mangle;
 mod rename;

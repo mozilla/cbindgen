@@ -4,7 +4,7 @@
 
 use std::str::FromStr;
 
-use bindgen::items::Enum;
+use bindgen::ir::Enum;
 
 /// The type of identifier to be renamed.
 #[derive(Debug, Clone, Copy)]

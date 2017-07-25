@@ -4,7 +4,7 @@
 
 use std::io::Write;
 
-use bindgen::items::*;
+use bindgen::ir::*;
 use bindgen::writer::*;
 
 // This code is for translating Rust types into C declarations.
