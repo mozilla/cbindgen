@@ -128,3 +128,22 @@ impl Source for Function {
         }
     }
 }
+
+pub trait SynFnArgHelpers {
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String>;
+}
+
+impl SynFnArgHelpers for syn::FnArg {
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
+        match self {
+            &syn::FnArg::Captured(syn::Pat::Ident(_, ref ident, _), ref ty) => {
+                if let Some(x) = Type::load(ty)? {
+                    Ok(Some((ident.to_string(), x)))
+                } else {
+                    Ok(None)
+                }
+            }
+            _ => Err(format!("parameter has unexpected type")),
+        }
+    }
+}

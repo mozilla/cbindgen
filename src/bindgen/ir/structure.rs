@@ -216,3 +216,20 @@ impl Source for Struct {
         }
     }
 }
+
+pub trait SynFieldHelpers {
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String>;
+}
+
+impl SynFieldHelpers for syn::Field {
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
+        let ident = self.ident.as_ref().ok_or(format!("field is missing identifier"))?.clone();
+        let converted_ty = Type::load(&self.ty)?;
+
+        if let Some(x) = converted_ty {
+            Ok(Some((ident.to_string(), x)))
+        } else {
+            Ok(None)
+        }
+    }
+}

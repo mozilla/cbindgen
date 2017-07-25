@@ -492,3 +492,22 @@ impl Source for (String, Type) {
         cdecl::write_field(out, &self.1, &self.0);
     }
 }
+
+pub trait SynFnRetTyHelpers {
+    fn as_type(&self) -> Result<Type, String>;
+}
+
+impl SynFnRetTyHelpers for syn::FunctionRetTy {
+    fn as_type(&self) -> Result<Type, String> {
+        match self {
+            &syn::FunctionRetTy::Default => Ok(Type::Primitive(PrimitiveType::Void)),
+            &syn::FunctionRetTy::Ty(ref t) => {
+                if let Some(x) = Type::load(t)? {
+                    Ok(x)
+                } else {
+                    Ok(Type::Primitive(PrimitiveType::Void))
+                }
+            },
+        }
+    }
+}
