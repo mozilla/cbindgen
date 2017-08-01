@@ -13,7 +13,7 @@ use bindgen::library::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrimitiveType {
     Void,
     Bool,
@@ -158,7 +158,7 @@ impl fmt::Display for PrimitiveType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Type {
     ConstPtr(Box<Type>),
     Ptr(Box<Type>),

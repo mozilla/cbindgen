@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::io::Write;
 
 use syn;
@@ -50,7 +50,7 @@ impl OpaqueItem {
         };
 
         if !out.contains_key(&self.name) {
-            out.insert(self.name.clone(), HashMap::new());
+            out.insert(self.name.clone(), BTreeMap::new());
         }
         out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
                                                 Monomorph::OpaqueItem(monomorph));

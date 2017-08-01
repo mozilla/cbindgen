@@ -120,8 +120,8 @@ impl Monomorph {
     }
 }
 
-pub type MonomorphList = HashMap<Vec<Type>, Monomorph>;
-pub type Monomorphs = HashMap<PathRef, MonomorphList>;
+pub type MonomorphList = BTreeMap<Vec<Type>, Monomorph>;
+pub type Monomorphs = BTreeMap<PathRef, MonomorphList>;
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct DependencyList {
@@ -708,7 +708,7 @@ impl Library {
         // TODO
         let mut new_monomorphs = Monomorphs::new();
         for (path, monomorph_set) in monomorphs.iter() {
-            let mut new_monomorph_set = HashMap::new();
+            let mut new_monomorph_set = BTreeMap::new();
             for (generic_values, monomorph) in monomorph_set.iter() {
                 let mut new_generic_values = generic_values.clone();
                 for generic_value in &mut new_generic_values {
