@@ -226,24 +226,28 @@ impl Library {
             name: "String".to_owned(),
             generic_params: vec![],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("Box".to_owned(), OpaqueItem {
             name: "Box".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("Rc".to_owned(), OpaqueItem {
             name: "Rc".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("Arc".to_owned(), OpaqueItem {
             name: "Arc".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("Result".to_owned(), OpaqueItem {
@@ -251,18 +255,21 @@ impl Library {
             generic_params: vec!["T".to_owned(),
                                  "E".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("Option".to_owned(), OpaqueItem {
             name: "Option".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("Vec".to_owned(), OpaqueItem {
             name: "Vec".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("HashMap".to_owned(), OpaqueItem {
@@ -270,6 +277,7 @@ impl Library {
             generic_params: vec!["K".to_owned(),
                                  "V".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("BTreeMap".to_owned(), OpaqueItem {
@@ -277,30 +285,35 @@ impl Library {
             generic_params: vec!["K".to_owned(),
                                  "V".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("HashSet".to_owned(), OpaqueItem {
             name: "HashSet".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("BTreeSet".to_owned(), OpaqueItem {
             name: "BTreeSet".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("LinkedList".to_owned(), OpaqueItem {
             name: "LinkedList".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
 
         self.opaque_items.insert("VecDeque".to_owned(), OpaqueItem {
             name: "VecDeque".to_owned(),
             generic_params: vec!["T".to_owned()],
             annotations: AnnotationSet::new(),
+            documentation: Documentation::none(),
         });
     }
 
@@ -330,7 +343,11 @@ impl Library {
                                     }
                                 };
 
-                                match Function::load(foreign_item.ident.to_string(), annotations, decl, true) {
+                                match Function::load(foreign_item.ident.to_string(),
+                                                     annotations,
+                                                     decl,
+                                                     true,
+                                                     foreign_item.get_doc_attr()) {
                                     Ok(func) => {
                                         info!("take {}::{}", crate_name, &foreign_item.ident);
 
@@ -365,7 +382,11 @@ impl Library {
                             }
                         };
 
-                        match Function::load(item.ident.to_string(), annotations, decl, false) {
+                        match Function::load(item.ident.to_string(),
+                                             annotations,
+                                             decl,
+                                             false,
+                                             item.get_doc_attr()) {
                             Ok(func) => {
                                 info!("take {}::{}", crate_name, &item.ident);
 
@@ -393,7 +414,7 @@ impl Library {
                     };
 
                     if item.is_repr_c() {
-                        match Struct::load(struct_name.clone(), annotations.clone(), variant, generics) {
+                        match Struct::load(struct_name.clone(), annotations.clone(), variant, generics, item.get_doc_attr()) {
                             Ok(st) => {
                                 info!("take {}::{}", crate_name, &item.ident);
                                 self.structs.insert(struct_name,
@@ -404,7 +425,8 @@ impl Library {
                                 self.opaque_items.insert(struct_name.clone(),
                                                            OpaqueItem::new(struct_name,
                                                                              generics,
-                                                                             annotations));
+                                                                             annotations,
+                                                                             item.get_doc_attr()));
                             }
                         }
                     } else {
@@ -412,7 +434,8 @@ impl Library {
                         self.opaque_items.insert(struct_name.clone(),
                                                    OpaqueItem::new(struct_name,
                                                                      generics,
-                                                                     annotations));
+                                                                     annotations,
+                                                                     item.get_doc_attr()));
                     }
                 }
                 syn::ItemKind::Enum(ref variants, ref generics) => {
@@ -432,7 +455,7 @@ impl Library {
                         }
                     };
 
-                    match Enum::load(enum_name.clone(), item.get_repr(), annotations.clone(), variants) {
+                    match Enum::load(enum_name.clone(), item.get_repr(), annotations.clone(), variants, item.get_doc_attr()) {
                         Ok(en) => {
                             info!("take {}::{}", crate_name, &item.ident);
                             self.enums.insert(enum_name, en);
@@ -442,7 +465,8 @@ impl Library {
                             self.opaque_items.insert(enum_name.clone(),
                                                        OpaqueItem::new(enum_name,
                                                                          generics,
-                                                                         annotations));
+                                                                         annotations,
+                                                                         item.get_doc_attr()));
                         }
                     }
                 }
@@ -462,7 +486,8 @@ impl Library {
                     {
                         match Typedef::load(alias_name.clone(),
                                             annotations.clone(),
-                                            ty)
+                                            ty,
+                                            item.get_doc_attr())
                         {
                             Ok(typedef) => {
                                 info!("take {}::{}", crate_name, &item.ident);
@@ -478,7 +503,8 @@ impl Library {
                     let fail2 = match Specialization::load(alias_name.clone(),
                                                            annotations.clone(),
                                                            generics,
-                                                           ty) {
+                                                           ty,
+                                                           item.get_doc_attr()) {
                         Ok(spec) => {
                             info!("take {}::{}", crate_name, &item.ident);
                             self.specializations.insert(alias_name, spec);

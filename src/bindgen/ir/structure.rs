@@ -20,15 +20,17 @@ use bindgen::writer::*;
 pub struct Struct {
     pub name: String,
     pub annotations: AnnotationSet,
-    pub fields: Vec<(String, Type)>,
+    pub fields: Vec<(String, Type, Documentation)>,
     pub generic_params: Vec<String>,
+    pub documentation: Documentation,
 }
 
 impl Struct {
     pub fn load(name: String,
                 annotations: AnnotationSet,
                 decl: &syn::VariantData,
-                generics: &syn::Generics) -> Result<Struct, String>
+                generics: &syn::Generics,
+                doc: String) -> Result<Struct, String>
     {
         let fields = match decl {
             &syn::VariantData::Struct(ref fields) => {
@@ -40,7 +42,7 @@ impl Struct {
                 let mut current = 0;
                 for field in fields {
                     if let Some(x) = Type::load(&field.ty)? {
-                        out.push((format!("{}", current), x));
+                        out.push((format!("{}", current), x, Documentation::load(field.get_doc_attr())));
                         current += 1;
                     }
                 }
@@ -60,11 +62,12 @@ impl Struct {
             annotations: annotations,
             fields: fields,
             generic_params: generic_params,
+            documentation: Documentation::load(doc),
         })
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
-        for &(_, ref ty) in &self.fields {
+        for &(_, ref ty, _) in &self.fields {
             ty.add_deps_with_generics(&self.generic_params, library, out);
         }
     }
@@ -73,7 +76,7 @@ impl Struct {
         assert!(self.generic_params.len() == generic_values.len());
 
         if self.generic_params.len() == 0 {
-            for &(_, ref ty) in &self.fields {
+            for &(_, ref ty, _) in &self.fields {
                 ty.add_monomorphs(library, out);
             }
             return;
@@ -87,12 +90,13 @@ impl Struct {
             name: mangle_path(&self.name, generic_values),
             annotations: self.annotations.clone(),
             fields: self.fields.iter()
-                               .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
+                               .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                                .collect(),
             generic_params: vec![],
+            documentation: self.documentation.clone(),
         };
 
-        for &(_, ref ty) in &monomorph.fields {
+        for &(_, ref ty, _) in &monomorph.fields {
             ty.add_monomorphs(library, out);
         }
 
@@ -104,7 +108,7 @@ impl Struct {
     }
 
     pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        for &(_, ref ty) in &self.fields {
+        for &(_, ref ty, _) in &self.fields {
             ty.add_specializations(library, out);
         }
     }
@@ -116,11 +120,11 @@ impl Struct {
         if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();
 
-            for (i, &(ref name, ref ty)) in self.fields.iter().enumerate() {
+            for (i, &(ref name, ref ty, ref doc)) in self.fields.iter().enumerate() {
                 if i >= o.len() {
-                    overriden_fields.push((name.clone(), ty.clone()));
+                    overriden_fields.push((name.clone(), ty.clone(), doc.clone()));
                 } else {
-                    overriden_fields.push((o[i].clone(), ty.clone()));
+                    overriden_fields.push((o[i].clone(), ty.clone(), doc.clone()));
                 }
             }
 
@@ -129,13 +133,14 @@ impl Struct {
             self.fields = self.fields.iter()
                                      .map(|x| (r.apply_to_snake_case(&x.0,
                                                                      IdentifierType::StructMember),
-                                               x.1.clone()))
+                                               x.1.clone(),
+                                               x.2.clone()))
                                      .collect();
         }
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        for &mut (_, ref mut ty) in &mut self.fields {
+        for &mut (_, ref mut ty, _) in &mut self.fields {
             ty.mangle_paths(monomorphs);
         }
     }
@@ -144,7 +149,9 @@ impl Struct {
 impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         assert!(self.generic_params.is_empty());
-
+        if config.documentation {
+            self.documentation.write(out);
+        }
         if config.language == Language::C {
             out.write("typedef struct");
         } else {
@@ -152,7 +159,14 @@ impl Source for Struct {
         }
         out.open_brace();
 
-        out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
+        if config.documentation {
+            out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
+        } else {
+            out.write_vertical_source_list(&self.fields.iter()
+                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
+                .collect(),
+                ListType::Cap(";"));
+        }
 
         if config.language == Language::Cxx {
             let mut wrote_start_newline = false;
@@ -218,16 +232,16 @@ impl Source for Struct {
 }
 
 pub trait SynFieldHelpers {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String>;
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type, Documentation)>, String>;
 }
 
 impl SynFieldHelpers for syn::Field {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type, Documentation)>, String> {
         let ident = self.ident.as_ref().ok_or(format!("field is missing identifier"))?.clone();
         let converted_ty = Type::load(&self.ty)?;
 
         if let Some(x) = converted_ty {
-            Ok(Some((ident.to_string(), x)))
+            Ok(Some((ident.to_string(), x, Documentation::load(self.get_doc_attr()))))
         } else {
             Ok(None)
         }

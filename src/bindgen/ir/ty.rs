@@ -12,6 +12,7 @@ use bindgen::config::Config;
 use bindgen::library::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
+use bindgen::ir::Documentation;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrimitiveType {
@@ -489,7 +490,13 @@ impl Source for Type {
 
 impl Source for (String, Type) {
     fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_field(out, &self.1, &self.0);
+        cdecl::write_field(out, &self.1, &self.0, &Documentation::none());
+    }
+}
+
+impl Source for (String, Type, Documentation) {
+    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
+        cdecl::write_field(out, &self.1, &self.0, &self.2);
     }
 }
 

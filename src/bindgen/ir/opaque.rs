@@ -19,12 +19,14 @@ pub struct OpaqueItem {
     pub name: PathRef,
     pub generic_params: Vec<String>,
     pub annotations: AnnotationSet,
+    pub documentation: Documentation,
 }
 
 impl OpaqueItem {
     pub fn new(name: String,
                generics: &syn::Generics,
-               annotations: AnnotationSet) -> OpaqueItem {
+               annotations: AnnotationSet,
+               doc: String) -> OpaqueItem {
         let generic_params = generics.ty_params.iter()
                                                .map(|x| x.ident.to_string())
                                                .collect::<Vec<_>>();
@@ -33,6 +35,7 @@ impl OpaqueItem {
             name: name,
             generic_params: generic_params,
             annotations: annotations,
+            documentation: Documentation::load(doc),
         }
     }
 
@@ -47,6 +50,7 @@ impl OpaqueItem {
             name: mangle_path(&self.name, generic_values),
             generic_params: vec![],
             annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
         };
 
         if !out.contains_key(&self.name) {
@@ -59,6 +63,9 @@ impl OpaqueItem {
 
 impl Source for OpaqueItem {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if config.documentation {
+            self.documentation.write(out);
+        }
         if config.language == Language::C {
             out.write(&format!("struct {};", self.name));
             out.new_line();

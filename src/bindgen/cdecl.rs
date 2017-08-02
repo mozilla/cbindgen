@@ -105,7 +105,9 @@ impl CDecl {
         }
     }
 
-    fn write<F: Write>(&self, out: &mut SourceWriter<F>, ident: Option<&str>) {
+    fn write<F: Write>(&self, out: &mut SourceWriter<F>, ident: Option<&str>, doc: &Documentation) {
+        doc.write(out);
+
         // Write the type-specifier and type-qualifier first
         if self.type_qualifers.len() != 0 {
             out.write(&self.type_qualifers);
@@ -189,7 +191,7 @@ impl CDecl {
                             // This is gross, but needed to convert &Option<String> to Option<&str>
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
-                            arg_ty.write(out, arg_ident);
+                            arg_ty.write(out, arg_ident, &Documentation::none());
                         }
                         out.pop_tab();
                     } else {
@@ -201,7 +203,7 @@ impl CDecl {
                             // This is gross, but needed to convert &Option<String> to Option<&str>
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
-                            arg_ty.write(out, arg_ident);
+                            arg_ty.write(out, arg_ident, &Documentation::none());
                         }
                     }
                     out.write(")");
@@ -213,14 +215,18 @@ impl CDecl {
     }
 }
 
-pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function, layout_vertical: bool) {
-    &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name));
+pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function, layout_vertical: bool, documentation: bool) {
+    if documentation {
+        &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name), &f.doc_comment);
+    } else {
+        &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name), &Documentation::none());
+    }
 }
 
-pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
-    &CDecl::from_type(t).write(out, Some(ident));
+pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str, doc: &Documentation) {
+    &CDecl::from_type(t).write(out, Some(ident), doc);
 }
 
 pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type) {
-    &CDecl::from_type(t).write(out, None);
+    &CDecl::from_type(t).write(out, None, &Documentation::none());
 }

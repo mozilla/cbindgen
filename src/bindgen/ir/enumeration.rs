@@ -11,6 +11,7 @@ use bindgen::config::{Config, Language};
 use bindgen::rename::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
+use bindgen::ir::Documentation;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Repr {
@@ -26,14 +27,16 @@ pub struct Enum {
     pub name: String,
     pub repr: Repr,
     pub annotations: AnnotationSet,
-    pub values: Vec<(String, u64)>,
+    pub values: Vec<(String, u64, Documentation)>,
+    pub documentation: Documentation,
 }
 
 impl Enum {
     pub fn load(name: String,
                 repr: Repr,
                 annotations: AnnotationSet,
-                variants: &Vec<syn::Variant>) -> Result<Enum, String>
+                variants: &Vec<syn::Variant>,
+                doc: String) -> Result<Enum, String>
     {
         if repr != Repr::U32 &&
            repr != Repr::U16 &&
@@ -61,7 +64,7 @@ impl Enum {
                         None => { /* okay, we just use current */ }
                     }
 
-                    values.push((variant.ident.to_string(), current));
+                    values.push((variant.ident.to_string(), current, Documentation::load(variant.get_doc_attr())));
                     current = current + 1;
                 }
                 _ => {
@@ -72,7 +75,7 @@ impl Enum {
 
         if let Some(variants) = annotations.list("enum-trailing-values") {
             for variant in variants {
-                values.push((variant, current));
+                values.push((variant, current, Documentation::none()));
                 current = current + 1;
             }
         }
@@ -82,6 +85,7 @@ impl Enum {
             repr: repr,
             annotations: annotations,
             values: values,
+            documentation: Documentation::load(doc),
         })
     }
 
@@ -93,7 +97,8 @@ impl Enum {
             self.values = self.values.iter()
                                      .map(|x| (r.apply_to_pascal_case(&x.0,
                                                                       IdentifierType::EnumVariant(self)),
-                                               x.1.clone()))
+                                               x.1.clone(),
+                                               x.2.clone()))
                                      .collect();
         }
     }
@@ -107,7 +112,9 @@ impl Source for Enum {
             Repr::U8 => "uint8_t",
             _ => unreachable!(),
         };
-
+        if config.documentation {
+            self.documentation.write(out);
+        }
         if config.language == Language::C {
             out.write(&format!("enum {}", self.name));
         } else {
@@ -117,6 +124,9 @@ impl Source for Enum {
         for (i, value) in self.values.iter().enumerate() {
             if i != 0 {
                 out.new_line()
+            }
+            if config.documentation {
+                value.2.write(out);
             }
             out.write(&format!("{} = {},", value.0, value.1));
         }

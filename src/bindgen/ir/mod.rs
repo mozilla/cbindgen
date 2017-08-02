@@ -8,6 +8,7 @@ pub mod function;
 pub mod opaque;
 pub mod structure;
 pub mod ty;
+pub mod documentation;
 
 pub use self::alias::*;
 pub use self::enumeration::*;
@@ -15,3 +16,4 @@ pub use self::function::*;
 pub use self::opaque::*;
 pub use self::structure::*;
 pub use self::ty::*;
+pub use self::documentation::Documentation;

@@ -22,13 +22,15 @@ pub struct Function {
     pub ret: Type,
     pub args: Vec<(String, Type)>,
     pub extern_decl: bool,
+    pub doc_comment: Documentation,
 }
 
 impl Function {
     pub fn load(name: String,
                 annotations: AnnotationSet,
                 decl: &syn::FnDecl,
-                extern_decl: bool) -> Result<Function, String>
+                extern_decl: bool,
+                doc: String) -> Result<Function, String>
     {
         let args = decl.inputs.iter()
                               .try_skip_map(|x| x.as_ident_and_type())?;
@@ -40,6 +42,7 @@ impl Function {
             ret: ret,
             args: args,
             extern_decl: extern_decl,
+            doc_comment: Documentation::load(doc),
         })
     }
 
@@ -94,7 +97,7 @@ impl Source for Function {
                 out.write(prefix);
                 out.write(" ");
             }
-            cdecl::write_func(out, &func, false);
+            cdecl::write_func(out, &func, false, config.documentation);
             if let Some(ref postfix) = postfix {
                 out.write(" ");
                 out.write(postfix);
@@ -110,7 +113,7 @@ impl Source for Function {
                 out.write(prefix);
                 out.new_line();
             }
-            cdecl::write_func(out, &func, true);
+            cdecl::write_func(out, &func, true, config.documentation);
             if let Some(ref postfix) = postfix {
                 out.new_line();
                 out.write(postfix);

@@ -319,6 +319,8 @@ pub struct Config {
     /// The configuration options for enums
     #[serde(rename = "enum")]
     pub enumeration: EnumConfig,
+    /// Include doc comments from rust as documentation
+    pub documentation: bool,
 }
 
 impl Default for Config {
@@ -339,6 +341,7 @@ impl Default for Config {
             function: FunctionConfig::default(),
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),
+            documentation: true,
         }
     }
 }
