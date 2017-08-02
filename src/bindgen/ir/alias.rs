@@ -24,13 +24,15 @@ pub struct Specialization {
     pub aliased: PathRef,
     pub generic_params: Vec<String>,
     pub generic_values: Vec<Type>,
+    pub documentation: Documentation,
 }
 
 impl Specialization {
     pub fn load(name: String,
                 annotations: AnnotationSet,
                 generics: &syn::Generics,
-                ty: &syn::Ty) -> Result<Specialization, String>
+                ty: &syn::Ty,
+                doc: String) -> Result<Specialization, String>
     {
         match ty {
             &syn::Ty::Path(ref _q, ref p) => {
@@ -50,6 +52,7 @@ impl Specialization {
                     aliased: path,
                     generic_params: generic_params,
                     generic_values: generic_values,
+                    documentation: Documentation::load(doc),
                 })
             }
             _ => {
@@ -90,6 +93,7 @@ impl Specialization {
                             name: self.name.clone(),
                             generic_params: self.generic_params.clone(),
                             annotations: self.annotations.clone(),
+                            documentation: self.documentation.clone(),
                         })))
                     }
                     PathValue::Struct(ref aliased) => {
@@ -106,9 +110,10 @@ impl Specialization {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             fields: aliased.fields.iter()
-                                                  .map(|x| (x.0.clone(), x.1.specialize(&mappings)))
+                                                  .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                                                   .collect(),
                             generic_params: self.generic_params.clone(),
+                            documentation: aliased.documentation.clone(),
                         })))
                     }
                     PathValue::Enum(ref aliased) => {
@@ -117,6 +122,7 @@ impl Specialization {
                             repr: aliased.repr.clone(),
                             annotations: self.annotations.clone(),
                             values: aliased.values.clone(),
+                            documentation: aliased.documentation.clone(),
                         })))
                     }
                     PathValue::Typedef(ref aliased) => {
@@ -124,6 +130,7 @@ impl Specialization {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
+                            documentation: self.documentation.clone(),
                         })))
                     }
                     PathValue::Specialization(ref aliased) => {
@@ -146,6 +153,7 @@ impl Specialization {
                             aliased: aliased.aliased.clone(),
                             generic_params: self.generic_params.clone(),
                             generic_values: generic_values,
+                            documentation: self.documentation.clone(),
                         }.specialize(library)
                     }
                 }
@@ -163,17 +171,20 @@ pub struct Typedef {
     pub name: String,
     pub annotations: AnnotationSet,
     pub aliased: Type,
+    pub documentation: Documentation,
 }
 
 impl Typedef {
     pub fn load(name: String,
                 annotations: AnnotationSet,
-                ty: &syn::Ty) -> Result<Typedef, String> {
+                ty: &syn::Ty,
+                doc: String) -> Result<Typedef, String> {
         if let Some(x) = Type::load(ty)? {
             Ok(Typedef {
                 name: name,
                 annotations: annotations,
                 aliased: x,
+                documentation: Documentation::load(doc),
             })
         } else {
             Err(format!("cannot have a typedef of a zero sized type"))
@@ -219,6 +230,9 @@ impl Typedef {
 
 impl Source for Typedef {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if config.documentation {
+            self.documentation.write(out);
+        }
         out.write("typedef ");
         (self.name.clone(), self.aliased.clone()).write(config, out);
         out.write(";");

@@ -122,6 +122,50 @@ impl SynItemHelpers for ForeignItem {
     }
 }
 
+impl SynItemHelpers for Variant {
+    fn has_attr(&self, target: MetaItem) -> bool {
+        return self.attrs
+                   .iter()
+                   .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
+    }
+
+    fn get_doc_attr(&self) -> String {
+        let mut doc = String::new();
+        for attr in &self.attrs {
+            if attr.style == AttrStyle::Outer &&
+               attr.is_sugared_doc {
+                if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                    doc.push_str(&comment);
+                    doc.push('\n');
+                }
+            }
+        }
+        doc
+    }
+}
+
+impl SynItemHelpers for Field {
+    fn has_attr(&self, target: MetaItem) -> bool {
+        return self.attrs
+                   .iter()
+                   .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
+    }
+
+    fn get_doc_attr(&self) -> String {
+        let mut doc = String::new();
+        for attr in &self.attrs {
+            if attr.style == AttrStyle::Outer &&
+               attr.is_sugared_doc {
+                if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                    doc.push_str(&comment);
+                    doc.push('\n');
+                }
+            }
+        }
+        doc
+    }
+}
+
 /// Helper function for accessing Abi information
 pub trait SynAbiHelpers {
     fn is_c(&self) -> bool;
