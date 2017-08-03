@@ -112,9 +112,7 @@ impl Source for Enum {
             Repr::U8 => "uint8_t",
             _ => unreachable!(),
         };
-        if config.documentation {
-            self.documentation.write(out);
-        }
+        self.documentation.write(config, out);
         if config.language == Language::C {
             out.write(&format!("enum {}", self.name));
         } else {
@@ -125,9 +123,7 @@ impl Source for Enum {
             if i != 0 {
                 out.new_line()
             }
-            if config.documentation {
-                value.2.write(out);
-            }
+            value.2.write(config, out);
             out.write(&format!("{} = {},", value.0, value.1));
         }
         if config.enumeration.add_sentinel(&self.annotations) {

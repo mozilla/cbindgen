@@ -149,9 +149,8 @@ impl Struct {
 impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         assert!(self.generic_params.is_empty());
-        if config.documentation {
-            self.documentation.write(out);
-        }
+
+        self.documentation.write(config, out);
         if config.language == Language::C {
             out.write("typedef struct");
         } else {

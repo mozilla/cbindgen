@@ -22,7 +22,7 @@ pub struct Function {
     pub ret: Type,
     pub args: Vec<(String, Type)>,
     pub extern_decl: bool,
-    pub doc_comment: Documentation,
+    pub documentation: Documentation,
 }
 
 impl Function {
@@ -42,7 +42,7 @@ impl Function {
             ret: ret,
             args: args,
             extern_decl: extern_decl,
-            doc_comment: Documentation::load(doc),
+            documentation: Documentation::load(doc),
         })
     }
 
@@ -97,7 +97,8 @@ impl Source for Function {
                 out.write(prefix);
                 out.write(" ");
             }
-            cdecl::write_func(out, &func, false, config.documentation);
+            func.documentation.write(config, out);
+            cdecl::write_func(out, &func, false);
             if let Some(ref postfix) = postfix {
                 out.write(" ");
                 out.write(postfix);
@@ -113,7 +114,8 @@ impl Source for Function {
                 out.write(prefix);
                 out.new_line();
             }
-            cdecl::write_func(out, &func, true, config.documentation);
+            func.documentation.write(config, out);
+            cdecl::write_func(out, &func, true);
             if let Some(ref postfix) = postfix {
                 out.new_line();
                 out.write(postfix);

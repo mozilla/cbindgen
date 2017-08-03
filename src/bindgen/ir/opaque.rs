@@ -63,9 +63,7 @@ impl OpaqueItem {
 
 impl Source for OpaqueItem {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if config.documentation {
-            self.documentation.write(out);
-        }
+        self.documentation.write(config, out);
         if config.language == Language::C {
             out.write(&format!("struct {};", self.name));
             out.new_line();
