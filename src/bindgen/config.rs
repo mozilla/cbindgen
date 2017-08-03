@@ -227,7 +227,7 @@ pub struct EnumConfig {
     /// This is useful in Gecko for IPC serialization
     pub add_sentinel: bool,
     /// Whether the enum variants should be prefixed with the enum name
-    pub prefix_with_enum_name: bool,
+    pub prefix_with_name: bool,
 }
 
 impl Default for EnumConfig {
@@ -235,7 +235,7 @@ impl Default for EnumConfig {
         EnumConfig {
             rename_variants: None,
             add_sentinel: false,
-            prefix_with_enum_name: false,
+            prefix_with_name: false,
         }
     }
 }
