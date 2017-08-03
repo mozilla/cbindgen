@@ -4,7 +4,8 @@
 
 use std::io::Write;
 
-use bindgen::writer::SourceWriter;
+use bindgen::writer::{Source, SourceWriter};
+use bindgen::config::Config;
 
 #[derive(Debug, Clone)]
 pub struct Documentation {
@@ -31,9 +32,11 @@ impl Documentation {
             doc_comment: Vec::new(),
         }
     }
+}
 
-    pub fn write<F: Write>(&self, out: &mut SourceWriter<F>) {
-        if self.doc_comment.is_empty() {
+impl Source for Documentation {
+    fn write<F: Write>(&self,config: &Config, out: &mut SourceWriter<F>) {
+        if self.doc_comment.is_empty() || !config.documentation {
             return;
         }
         for line in &self.doc_comment {

@@ -490,13 +490,14 @@ impl Source for Type {
 
 impl Source for (String, Type) {
     fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_field(out, &self.1, &self.0, &Documentation::none());
+        cdecl::write_field(out, &self.1, &self.0);
     }
 }
 
 impl Source for (String, Type, Documentation) {
-    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_field(out, &self.1, &self.0, &self.2);
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        self.2.write(config, out);
+        cdecl::write_field(out, &self.1, &self.0);
     }
 }
 
