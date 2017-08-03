@@ -90,8 +90,8 @@ impl Enum {
     }
 
     pub fn rename_fields(&mut self, config: &Config) {
-        if config.enumeration.prefix_with_enum_name ||
-           self.annotations.bool("prefix_with_enum_name").unwrap_or(false)
+        if config.enumeration.prefix_with_name ||
+           self.annotations.bool("prefix-with-name").unwrap_or(false)
         {
             let old = ::std::mem::replace(&mut self.values, Vec::new());
             for (name, value, doc) in old {
