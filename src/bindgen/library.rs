@@ -124,6 +124,7 @@ impl Monomorph {
 
 pub type MonomorphList = BTreeMap<Vec<Type>, Monomorph>;
 pub type Monomorphs = BTreeMap<PathRef, MonomorphList>;
+pub type MemberFunctions = BTreeMap<Type, Vec<Function>>;
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct DependencyList {
@@ -637,8 +638,10 @@ impl Library {
         // Gather only the items that we need for this
         // `extern "c"` interface
         let mut deps = DependencyList::new();
+        let mut oop = MemberFunctions::new();
         for (_, function) in &self.functions {
             function.add_deps(&self, &mut deps);
+            function.add_member_function(&mut oop);
         }
 
         // Gather a list of all the instantiations of generic structs
@@ -712,6 +715,42 @@ impl Library {
         };
         result.items.sort_by(ordering);
 
+        // Collect all possible member fucntions
+        if self.config.language == Language::Cxx && self.config.structure.generate_member_functions {
+            let items = ::std::mem::replace(&mut result.items, Vec::new());
+            for item in items {
+                match item {
+                    PathValue::Struct(mut s) => {
+                        let ty = Type::Path(s.name.clone(), Vec::new());
+                        if let Some(functions) = oop.remove(&ty) {
+                            let opaque = OpaqueItem {
+                                name:s.name.clone(),
+                                generic_params: s.generic_params.clone(),
+                                annotations: s.annotations.clone(),
+                                documentation: s.documentation.clone(),
+                            };
+                            result.items.push(PathValue::OpaqueItem(opaque));
+                            s.functions = functions.into_iter()
+                                .map(|f| {
+                                    Function {
+                                        name: f.name,
+                                        annotations: f.annotations,
+                                        ret: f.ret,
+                                        args: f.args[1..].to_owned(),
+                                        extern_decl: f.extern_decl,
+                                        documentation: f.documentation.clone(),
+                                    }
+                                }).collect();
+                            result.full_objects.push(s);
+                        } else {
+                            result.items.push(PathValue::Struct(s));
+                        }
+                    }
+                    other => result.items.push(other),
+                }
+            }
+        }
+
         result.functions = self.functions.iter()
                                          .map(|(_, function)| function.clone())
                                          .collect::<Vec<_>>();
@@ -762,6 +801,7 @@ pub struct GeneratedBindings {
     monomorphs: Monomorphs,
     items: Vec<PathValue>,
     functions: Vec<Function>,
+    full_objects: Vec<Struct>,
 }
 
 impl GeneratedBindings {
@@ -771,6 +811,7 @@ impl GeneratedBindings {
             monomorphs: Monomorphs::new(),
             items: Vec::new(),
             functions: Vec::new(),
+            full_objects: Vec::new(),
         }
     }
 
@@ -878,6 +919,16 @@ impl GeneratedBindings {
             out.new_line_if_not_start();
             function.write(&self.config, &mut out);
             out.new_line();
+        }
+
+        if self.config.language == Language::Cxx {
+            out.new_line();
+            out.new_line();
+            for full_object in &self.full_objects {
+                full_object.write(&self.config, &mut out);
+                out.new_line();
+                out.new_line();
+            }
         }
 
         if self.config.language == Language::Cxx {

@@ -8,7 +8,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::annotation::*;
-use bindgen::config::{Config, Language};
+use bindgen::config::{Config, Language, Layout};
 use bindgen::ir::*;
 use bindgen::library::*;
 use bindgen::mangle::*;
@@ -23,6 +23,7 @@ pub struct Struct {
     pub fields: Vec<(String, Type, Documentation)>,
     pub generic_params: Vec<String>,
     pub documentation: Documentation,
+    pub functions: Vec<Function>,
 }
 
 impl Struct {
@@ -63,6 +64,7 @@ impl Struct {
             fields: fields,
             generic_params: generic_params,
             documentation: Documentation::load(doc),
+            functions: Vec::new(),
         })
     }
 
@@ -94,6 +96,7 @@ impl Struct {
                                .collect(),
             generic_params: vec![],
             documentation: self.documentation.clone(),
+            functions: vec![],
         };
 
         for &(_, ref ty, _) in &monomorph.fields {
@@ -176,6 +179,28 @@ impl Source for Struct {
                 String::from("other")
             };
 
+            out.new_line();
+            for f in &self.functions {
+                if f.extern_decl {
+                    continue;
+                }
+                out.new_line();
+                f.write_formated(config, out, false);
+                out.open_brace();
+                out.new_line();
+                let option_1 = out.measure(|out| format_function_call_1(f, out));
+
+                if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
+                    config.function.args == Layout::Horizontal {
+                    format_function_call_1(f, out);
+                } else {
+                    format_function_call_2(f, out);
+                }
+
+                out.close_brace(false);
+                out.new_line();
+            }
+
             let mut emit_op = |op, conjuc| {
                 if !wrote_start_newline {
                     wrote_start_newline = true;
@@ -228,6 +253,33 @@ impl Source for Struct {
             out.close_brace(true);
         }
     }
+}
+
+fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
+    out.write("return ::");
+    out.write(&f.name);
+    out.write("(this");
+    for &(ref name, _) in &f.args {
+        out.write(", ");
+        out.write(name);
+    }
+    out.write(");");
+}
+
+fn format_function_call_2<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
+    out.write("return ::");
+    out.write(&f.name);
+    out.write("(");
+    let align_lenght = out.line_length_for_align();
+    out.push_set_spaces(align_lenght);
+    out.write("this");
+    for &(ref name, _) in &f.args {
+        out.write(",");
+        out.new_line();
+        out.write(name);
+    }
+    out.pop_tab();
+    out.write(");");
 }
 
 pub trait SynFieldHelpers {

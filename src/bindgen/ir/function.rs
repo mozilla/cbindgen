@@ -46,6 +46,19 @@ impl Function {
         })
     }
 
+    pub fn add_member_function(&self, out: &mut MemberFunctions) {
+        if let Some(&(_, ref ty)) = self.args.get(0) {
+            match *ty {
+                Type::ConstPtr(ref t) | Type::Ptr(ref t) => {
+                    out.entry((**t).clone())
+                        .or_insert_with(Vec::new)
+                        .push(self.clone())
+                }
+                _ => {}
+            }
+        }
+    }
+
     pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
         self.ret.add_deps(library, out);
         for &(_, ref ty) in &self.args {
@@ -86,11 +99,9 @@ impl Function {
             ty.mangle_paths(monomorphs);
         }
     }
-}
 
-impl Source for Function {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        fn write_1<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
+    pub fn write_formated<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>, add_semicolon: bool) {
+        fn write_1<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>, add_semicolon: bool) {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
@@ -104,10 +115,12 @@ impl Source for Function {
                 out.write(" ");
                 out.write(postfix);
             }
-            out.write(";");
+            if add_semicolon {
+                out.write(";");
+            }
         }
 
-        fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
+        fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>, add_semicolon: bool) {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
@@ -121,17 +134,25 @@ impl Source for Function {
                 out.new_line();
                 out.write(postfix);
             }
-            out.write(";");
+            if add_semicolon {
+                out.write(";");
+            }
         };
 
-        let option_1 = out.measure(|out| write_1(self, config, out));
+        let option_1 = out.measure(|out| write_1(self, config, out, add_semicolon));
 
         if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
            config.function.args == Layout::Horizontal {
-            write_1(self, config, out);
+            write_1(self, config, out, add_semicolon);
         } else {
-            write_2(self, config, out);
+            write_2(self, config, out, add_semicolon);
         }
+    }
+}
+
+impl Source for Function {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        self.write_formated(config, out, true)
     }
 }
 
