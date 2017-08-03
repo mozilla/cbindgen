@@ -231,9 +231,7 @@ impl Typedef {
 
 impl Source for Typedef {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if config.documentation {
-            self.documentation.write(config, out);
-        }
+        self.documentation.write(config, out);
         out.write("typedef ");
         (self.name.clone(), self.aliased.clone()).write(config, out);
         out.write(";");

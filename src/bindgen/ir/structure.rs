@@ -161,14 +161,7 @@ impl Source for Struct {
         }
         out.open_brace();
 
-        if config.documentation {
-            out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
-        } else {
-            out.write_vertical_source_list(&self.fields.iter()
-                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
-                .collect(),
-                ListType::Cap(";"));
-        }
+        out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
 
         if config.language == Language::Cxx {
             let mut wrote_start_newline = false;
