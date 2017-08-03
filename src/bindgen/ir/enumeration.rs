@@ -90,6 +90,15 @@ impl Enum {
     }
 
     pub fn rename_fields(&mut self, config: &Config) {
+        if config.enumeration.prefix_with_enum_name ||
+           self.annotations.bool("prefix_with_enum_name").unwrap_or(false)
+        {
+            let old = ::std::mem::replace(&mut self.values, Vec::new());
+            for (name, value, doc) in old {
+                self.values.push((format!("{}_{}", self.name, name), value, doc));
+            }
+        }
+
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.enumeration.rename_variants];
 
