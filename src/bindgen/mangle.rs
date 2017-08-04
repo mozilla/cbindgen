@@ -4,34 +4,27 @@
 
 use bindgen::ir::*;
 
-pub fn mangle_path(name: &str, generic_values: &Vec<Type>) -> String {
+pub fn mangle_path(name: &str, generic_values: &[Type]) -> String {
     assert!(!name.contains("_"));
 
     let mut out = String::from(name);
-    out.push_str("_");
-    for (i, ty) in generic_values.iter().enumerate() {
-        if i != 0 {
-            out.push_str("__"); // ,
+    if !generic_values.is_empty() {
+        out.push_str("_"); // <
+        for (i, ty) in generic_values.iter().enumerate() {
+            if i != 0 {
+                out.push_str("__"); // ,
+            }
+            append_type(ty, &mut out, mangle_path);
         }
-        append_type(ty, &mut out);
+        out.push_str("___"); // >
     }
     out
 }
 
-fn append_type(ty: &Type, out: &mut String) {
+fn append_type(ty: &Type, out: &mut String, generic_handler: fn(name:&str, generic_values: &[Type]) -> String ) {
     match ty {
         &Type::Path(ref path, ref generic_values) => {
-            out.push_str(path);
-            if generic_values.len() != 0 {
-                out.push_str("_"); // <
-                for (i, generic) in generic_values.iter().enumerate() {
-                    if i != 0 {
-                        out.push_str("__"); // ,
-                    }
-                    append_type(generic, out);
-                }
-                out.push_str("___"); // >
-            }
+            out.push_str(&generic_handler(path, generic_values));
         }
         &Type::Primitive(ref primitive) => {
             out.push_str(primitive.to_repr_rust());
