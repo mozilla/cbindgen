@@ -310,6 +310,9 @@ impl Type {
                 ty.add_deps_with_generics(generic_params, library, out);
             }
             &Type::Path(ref path, ref generic_values) => {
+                for generic_value in generic_values {
+                    generic_value.add_deps_with_generics(generic_params, library, out);
+                }
                 if !generic_params.contains(path) {
                     if let Some(value) = library.resolve_path(path) {
                         if !out.items.contains(path) {
@@ -322,9 +325,6 @@ impl Type {
                     } else {
                         warn!("can't find {}", path);
                     }
-                }
-                for generic_value in generic_values {
-                    generic_value.add_deps_with_generics(generic_params, library, out);
                 }
             }
             &Type::Primitive(_) => { }
