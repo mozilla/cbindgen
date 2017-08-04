@@ -81,6 +81,7 @@ impl Function {
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+        self.ret.mangle_paths(monomorphs);
         for &mut (_, ref mut ty) in &mut self.args {
             ty.mangle_paths(monomorphs);
         }
