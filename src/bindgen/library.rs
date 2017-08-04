@@ -901,6 +901,7 @@ impl GeneratedBindings {
 
         if self.config.structure.generic_template_specialization &&
            self.config.language == Language::Cxx {
+            let mut specialization = Vec::new();
             for (path, monomorph_sets) in &self.monomorphs {
                 if monomorph_sets.len() == 0 {
                     continue;
@@ -931,7 +932,12 @@ impl GeneratedBindings {
                 out.open_brace();
                 out.close_brace(true);
                 out.new_line();
+                // Collect all specializations and print them after theall generic versions are generated
+                // This is needed because the specilizations could have dependencies to each other
+                specialization.push((path, monomorph_sets));
+            }
 
+            for (path, monomorph_sets) in specialization {
                 for (generic_values, monomorph) in monomorph_sets {
                     out.new_line();
                     out.write("template<>");
