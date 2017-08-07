@@ -105,6 +105,7 @@ pub enum Monomorph {
     Struct(Struct),
     OpaqueItem(OpaqueItem),
 }
+
 impl Monomorph {
     pub fn name(&self) -> &str {
         match self {
@@ -185,16 +186,42 @@ impl Library {
         }
     }
 
+    fn add_std_types(&mut self) {
+        let mut add_opaque = |name: &str, generic_params: Vec<&str>| {
+            self.opaque_items.insert(name.to_owned(), OpaqueItem {
+                name: name.to_owned(),
+                generic_params: generic_params.iter()
+                                              .map(|x| (*x).to_owned())
+                                              .collect(),
+                annotations: AnnotationSet::new(),
+                documentation: Documentation::none(),
+            })
+        };
+
+        add_opaque("String", vec![]);
+        add_opaque("Box", vec!["T"]);
+        add_opaque("Rc", vec!["T"]);
+        add_opaque("Arc", vec!["T"]);
+        add_opaque("Result", vec!["T", "E"]);
+        add_opaque("Option", vec!["T"]);
+        add_opaque("Vec", vec!["T"]);
+        add_opaque("HashMap", vec!["K", "V"]);
+        add_opaque("BTreeMap", vec!["K", "V"]);
+        add_opaque("HashSet", vec!["T"]);
+        add_opaque("BTreeSet", vec!["T"]);
+        add_opaque("LinkedList", vec!["T"]);
+        add_opaque("VecDeque", vec!["T"]);
+    }
+
     /// Parse the specified crate or source file and load #[repr(C)] types for binding generation.
     pub fn load_src(src: &path::Path,
                     config: &Config) -> Result<Library, String>
     {
         let mut library = Library::blank("", config);
-
         library.add_std_types();
 
         rust_lib::parse_src(src, &mut |crate_name, items| {
-            library.load_from_crate_mod(&crate_name, items);
+            library.load_syn_crate_mod(&crate_name, items);
         })?;
 
         Ok(library)
@@ -206,7 +233,6 @@ impl Library {
     {
         let mut library = Library::blank(lib.binding_crate_name(),
                                          config);
-
         library.add_std_types();
 
         rust_lib::parse_lib(lib,
@@ -215,153 +241,17 @@ impl Library {
                             &config.parse.exclude,
                             &config.parse.expand,
                             &mut |crate_name, items| {
-            library.load_from_crate_mod(&crate_name, items);
+            library.load_syn_crate_mod(&crate_name, items);
         })?;
 
         Ok(library)
     }
 
-    fn add_std_types(&mut self) {
-        // TODO
-        self.opaque_items.insert("String".to_owned(), OpaqueItem {
-            name: "String".to_owned(),
-            generic_params: vec![],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("Box".to_owned(), OpaqueItem {
-            name: "Box".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("Rc".to_owned(), OpaqueItem {
-            name: "Rc".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("Arc".to_owned(), OpaqueItem {
-            name: "Arc".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("Result".to_owned(), OpaqueItem {
-            name: "Result".to_owned(),
-            generic_params: vec!["T".to_owned(),
-                                 "E".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("Option".to_owned(), OpaqueItem {
-            name: "Option".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("Vec".to_owned(), OpaqueItem {
-            name: "Vec".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("HashMap".to_owned(), OpaqueItem {
-            name: "HashMap".to_owned(),
-            generic_params: vec!["K".to_owned(),
-                                 "V".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("BTreeMap".to_owned(), OpaqueItem {
-            name: "BTreeMap".to_owned(),
-            generic_params: vec!["K".to_owned(),
-                                 "V".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("HashSet".to_owned(), OpaqueItem {
-            name: "HashSet".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("BTreeSet".to_owned(), OpaqueItem {
-            name: "BTreeSet".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("LinkedList".to_owned(), OpaqueItem {
-            name: "LinkedList".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-
-        self.opaque_items.insert("VecDeque".to_owned(), OpaqueItem {
-            name: "VecDeque".to_owned(),
-            generic_params: vec!["T".to_owned()],
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        });
-    }
-
-    fn load_from_crate_mod(&mut self, crate_name: &str, items: &Vec<syn::Item>) {
+    fn load_syn_crate_mod(&mut self, crate_name: &str, items: &Vec<syn::Item>) {
         for item in items {
             match item.node {
                 syn::ItemKind::ForeignMod(ref block) => {
-                    if !block.abi.is_c() {
-                        info!("skip {}::{} - (extern block must be extern C)", crate_name, &item.ident);
-                        continue;
-                    }
-
-                    for foreign_item in &block.items {
-                        match foreign_item.node {
-                            syn::ForeignItemKind::Fn(ref decl,
-                                                     ref _generic) => {
-                                if crate_name != self.bindings_crate_name {
-                                    info!("skip {}::{} - (fn's outside of the binding crate are not used)", crate_name, &foreign_item.ident);
-                                    continue;
-                                }
-
-                                let annotations = match AnnotationSet::parse(foreign_item.get_doc_attr()) {
-                                    Ok(x) => x,
-                                    Err(msg) => {
-                                        warn!("{}", msg);
-                                        AnnotationSet::new()
-                                    }
-                                };
-
-                                match Function::load(foreign_item.ident.to_string(),
-                                                     annotations,
-                                                     decl,
-                                                     true,
-                                                     foreign_item.get_doc_attr()) {
-                                    Ok(func) => {
-                                        info!("take {}::{}", crate_name, &foreign_item.ident);
-
-                                        self.functions.insert(func.name.clone(), func);
-                                    }
-                                    Err(msg) => {
-                                        error!("Cannot use fn {}::{} ({})", crate_name, &foreign_item.ident, msg);
-                                    },
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
+                    self.load_syn_foreign_mod(crate_name, item, block);
                 }
                 syn::ItemKind::Fn(ref decl,
                                   ref _unsafe,
@@ -369,111 +259,44 @@ impl Library {
                                   ref abi,
                                   ref _generic,
                                   ref _block) => {
-                    if crate_name != self.bindings_crate_name {
-                        info!("skip {}::{} - (fn's outside of the binding crate are not used)", crate_name, &item.ident);
-                        continue;
-                    }
-
-                    if item.is_no_mangle() && abi.is_c() {
-                        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-                            Ok(x) => x,
-                            Err(msg) => {
-                                warn!("{}", msg);
-                                AnnotationSet::new()
-                            }
-                        };
-
-                        match Function::load(item.ident.to_string(),
-                                             annotations,
-                                             decl,
-                                             false,
-                                             item.get_doc_attr()) {
-                            Ok(func) => {
-                                info!("take {}::{}", crate_name, &item.ident);
-
-                                self.functions.insert(func.name.clone(), func);
-                            }
-                            Err(msg) => {
-                                error!("Cannot use fn {}::{} ({})", crate_name, &item.ident, msg);
-                            },
-                        }
-                    } else {
-                        if item.is_no_mangle() != abi.is_c() {
-                            warn!("skip {}::{} - (not both `no_mangle` and `extern \"C\"`)", crate_name, &item.ident);
-                        }
-                    }
+                    self.load_syn_fn(crate_name, item, decl, abi);
                 }
-                syn::ItemKind::Struct(ref variant,
-                                      ref generics) => {
-                    let struct_name = item.ident.to_string();
-                    let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-                        Ok(x) => x,
-                        Err(msg) => {
-                            warn!("{}", msg);
-                            AnnotationSet::new()
-                        }
-                    };
-
-                    if item.is_repr_c() {
-                        match Struct::load(struct_name.clone(), annotations.clone(), variant, generics, item.get_doc_attr()) {
-                            Ok(st) => {
-                                info!("take {}::{}", crate_name, &item.ident);
-                                self.structs.insert(struct_name,
-                                                    st);
-                            }
-                            Err(msg) => {
-                                info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
-                                self.opaque_items.insert(struct_name.clone(),
-                                                           OpaqueItem::new(struct_name,
-                                                                             generics,
-                                                                             annotations,
-                                                                             item.get_doc_attr()));
-                            }
-                        }
-                    } else {
-                        info!("take {}::{} - opaque (not marked as repr(C))", crate_name, &item.ident);
-                        self.opaque_items.insert(struct_name.clone(),
-                                                   OpaqueItem::new(struct_name,
-                                                                     generics,
-                                                                     annotations,
-                                                                     item.get_doc_attr()));
-                    }
+                syn::ItemKind::Struct(ref variant, ref generics) => {
+                    self.load_syn_struct(crate_name, item, variant, generics);
                 }
                 syn::ItemKind::Enum(ref variants, ref generics) => {
-                    if !generics.lifetimes.is_empty() ||
-                       !generics.ty_params.is_empty() ||
-                       !generics.where_clause.predicates.is_empty() {
-                        info!("skip {}::{} - (has generics or lifetimes or where bounds)", crate_name, &item.ident);
-                        continue;
-                    }
-
-                    let enum_name = item.ident.to_string();
-                    let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-                        Ok(x) => x,
-                        Err(msg) => {
-                            warn!("{}", msg);
-                            AnnotationSet::new()
-                        }
-                    };
-
-                    match Enum::load(enum_name.clone(), item.get_repr(), annotations.clone(), variants, item.get_doc_attr()) {
-                        Ok(en) => {
-                            info!("take {}::{}", crate_name, &item.ident);
-                            self.enums.insert(enum_name, en);
-                        }
-                        Err(msg) => {
-                            info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
-                            self.opaque_items.insert(enum_name.clone(),
-                                                       OpaqueItem::new(enum_name,
-                                                                         generics,
-                                                                         annotations,
-                                                                         item.get_doc_attr()));
-                        }
-                    }
+                    self.load_syn_enum(crate_name, item, variants, generics);
                 }
                 syn::ItemKind::Ty(ref ty, ref generics) => {
-                    let alias_name = item.ident.to_string();
-                    let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+                    self.load_syn_ty(crate_name, item, ty, generics);
+                }
+                _ => { }
+            }
+        }
+    }
+
+    /// Enters a `extern "C" { }` declaration and loads function declarations.
+    fn load_syn_foreign_mod(&mut self,
+                            crate_name: &str,
+                            item: &syn::Item,
+                            block: &syn::ForeignMod) {
+        if !block.abi.is_c() {
+            info!("skip {}::{} - (extern block must be extern C)", crate_name, &item.ident);
+            return;
+        }
+
+        for foreign_item in &block.items {
+            match foreign_item.node {
+                syn::ForeignItemKind::Fn(ref decl,
+                                         ref _generic) => {
+                    if crate_name != self.bindings_crate_name {
+                        info!("skip {}::{} - (fn's outside of the binding crate are not used)",
+                              crate_name,
+                              &foreign_item.ident);
+                        return;
+                    }
+
+                    let annotations = match AnnotationSet::parse(foreign_item.get_doc_attr()) {
                         Ok(x) => x,
                         Err(msg) => {
                             warn!("{}", msg);
@@ -481,44 +304,224 @@ impl Library {
                         }
                     };
 
+                    match Function::load(foreign_item.ident.to_string(),
+                                         annotations,
+                                         decl,
+                                         true,
+                                         foreign_item.get_doc_attr()) {
+                        Ok(func) => {
+                            info!("take {}::{}", crate_name, &foreign_item.ident);
 
-                    let fail1 = if generics.lifetimes.is_empty() &&
-                                   generics.ty_params.is_empty()
-                    {
-                        match Typedef::load(alias_name.clone(),
-                                            annotations.clone(),
-                                            ty,
-                                            item.get_doc_attr())
-                        {
-                            Ok(typedef) => {
-                                info!("take {}::{}", crate_name, &item.ident);
-                                self.typedefs.insert(alias_name, typedef);
-                                continue;
-                            }
-                            Err(msg) => msg,
+                            self.functions.insert(func.name.clone(), func);
                         }
-                    } else {
-                        format!("cannot have generics in typedef")
-                    };
-
-                    let fail2 = match Specialization::load(alias_name.clone(),
-                                                           annotations.clone(),
-                                                           generics,
-                                                           ty,
-                                                           item.get_doc_attr()) {
-                        Ok(spec) => {
-                            info!("take {}::{}", crate_name, &item.ident);
-                            self.specializations.insert(alias_name, spec);
-                            continue;
-                        }
-                        Err(msg) => msg,
-                    };
-
-                    info!("skip {}::{} - ({} and {})", crate_name, &item.ident, fail1, fail2);
+                        Err(msg) => {
+                            error!("Cannot use fn {}::{} ({})",
+                                   crate_name,
+                                   &foreign_item.ident,
+                                   msg);
+                        },
+                    }
                 }
                 _ => {}
             }
         }
+    }
+
+    /// Loads a `fn` declaration
+    fn load_syn_fn(&mut self,
+                   crate_name: &str,
+                   item: &syn::Item,
+                   decl: &syn::FnDecl,
+                   abi: &Option<syn::Abi>) {
+        if crate_name != self.bindings_crate_name {
+            info!("skip {}::{} - (fn's outside of the binding crate are not used)",
+                  crate_name,
+                  &item.ident);
+            return;
+        }
+
+        if item.is_no_mangle() && abi.is_c() {
+            let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+                Ok(x) => x,
+                Err(msg) => {
+                    warn!("{}", msg);
+                    AnnotationSet::new()
+                }
+            };
+
+            match Function::load(item.ident.to_string(),
+                                 annotations,
+                                 decl,
+                                 false,
+                                 item.get_doc_attr()) {
+                Ok(func) => {
+                    info!("take {}::{}", crate_name, &item.ident);
+
+                    self.functions.insert(func.name.clone(), func);
+                }
+                Err(msg) => {
+                    error!("cannot use fn {}::{} ({})",
+                           crate_name,
+                           &item.ident,
+                           msg);
+                },
+            }
+        } else {
+            if item.is_no_mangle() != abi.is_c() {
+                warn!("skip {}::{} - (not both `no_mangle` and `extern \"C\"`)",
+                      crate_name,
+                      &item.ident);
+            }
+        }
+    }
+
+    /// Loads a `struct` declaration
+    fn load_syn_struct(&mut self,
+                       crate_name: &str,
+                       item: &syn::Item,
+                       variant: &syn::VariantData,
+                       generics: &syn::Generics) {
+        let struct_name = item.ident.to_string();
+        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+            Ok(x) => x,
+            Err(msg) => {
+                warn!("{}", msg);
+                AnnotationSet::new()
+            }
+        };
+
+        if item.is_repr_c() {
+            match Struct::load(struct_name.clone(),
+                               annotations.clone(),
+                               variant,
+                               generics,
+                               item.get_doc_attr()) {
+                Ok(st) => {
+                    info!("take {}::{}", crate_name, &item.ident);
+                    self.structs.insert(struct_name,
+                                        st);
+                }
+                Err(msg) => {
+                    info!("take {}::{} - opaque ({})",
+                          crate_name,
+                          &item.ident,
+                          msg);
+                    self.opaque_items.insert(struct_name.clone(),
+                                             OpaqueItem::new(struct_name,
+                                                             generics,
+                                                             annotations,
+                                                             item.get_doc_attr()));
+                }
+            }
+        } else {
+            info!("take {}::{} - opaque (not marked as repr(C))",
+                  crate_name,
+                  &item.ident);
+            self.opaque_items.insert(struct_name.clone(),
+                                     OpaqueItem::new(struct_name,
+                                                     generics,
+                                                     annotations,
+                                                     item.get_doc_attr()));
+        }
+    }
+
+    /// Loads a `enum` declaration
+    fn load_syn_enum(&mut self,
+                     crate_name: &str,
+                     item: &syn::Item,
+                     variants: &Vec<syn::Variant>,
+                     generics: &syn::Generics) {
+        if !generics.lifetimes.is_empty() ||
+           !generics.ty_params.is_empty() ||
+           !generics.where_clause.predicates.is_empty() {
+            info!("skip {}::{} - (has generics or lifetimes or where bounds)",
+                  crate_name,
+                  &item.ident);
+            return;
+        }
+
+        let enum_name = item.ident.to_string();
+        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+            Ok(x) => x,
+            Err(msg) => {
+                warn!("{}", msg);
+                AnnotationSet::new()
+            }
+        };
+
+        match Enum::load(enum_name.clone(),
+                         item.get_repr(),
+                         annotations.clone(),
+                         variants,
+                         item.get_doc_attr()) {
+            Ok(en) => {
+                info!("take {}::{}", crate_name, &item.ident);
+                self.enums.insert(enum_name, en);
+            }
+            Err(msg) => {
+                info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
+                self.opaque_items.insert(enum_name.clone(),
+                                         OpaqueItem::new(enum_name,
+                                                         generics,
+                                                         annotations,
+                                                         item.get_doc_attr()));
+            }
+        }
+    }
+
+    /// Loads a `type` declaration
+    fn load_syn_ty(&mut self,
+                   crate_name: &str,
+                   item: &syn::Item,
+                   ty: &syn::Ty,
+                   generics: &syn::Generics) {
+        let alias_name = item.ident.to_string();
+        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
+            Ok(x) => x,
+            Err(msg) => {
+                warn!("{}", msg);
+                AnnotationSet::new()
+            }
+        };
+
+
+        let fail1 = if generics.lifetimes.is_empty() &&
+                       generics.ty_params.is_empty()
+        {
+            match Typedef::load(alias_name.clone(),
+                                annotations.clone(),
+                                ty,
+                                item.get_doc_attr())
+            {
+                Ok(typedef) => {
+                    info!("take {}::{}", crate_name, &item.ident);
+                    self.typedefs.insert(alias_name, typedef);
+                    return;
+                }
+                Err(msg) => msg,
+            }
+        } else {
+            format!("cannot have generics in typedef")
+        };
+
+        let fail2 = match Specialization::load(alias_name.clone(),
+                                               annotations.clone(),
+                                               generics,
+                                               ty,
+                                               item.get_doc_attr()) {
+            Ok(spec) => {
+                info!("take {}::{}", crate_name, &item.ident);
+                self.specializations.insert(alias_name, spec);
+                return;
+            }
+            Err(msg) => msg,
+        };
+
+        info!("skip {}::{} - ({} and {})",
+              crate_name,
+              &item.ident,
+              fail1,
+              fail2);
     }
 
     pub fn resolve_path(&self, p: &PathRef) -> Option<PathValue> {

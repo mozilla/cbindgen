@@ -9,17 +9,20 @@ use bindgen::cargo::cargo_lock::{self, Lock};
 use bindgen::cargo::cargo_metadata::{self, Metadata};
 use bindgen::cargo::cargo_toml;
 
+/// Parse a dependency string used in Cargo.lock
 fn parse_dep_string(dep_string: &str) -> (&str, &str) {
     let split: Vec<&str> = dep_string.split_whitespace().collect();
 
     (split[0], split[1])
 }
 
+/// A reference to a package including it's name and the specific version.
 pub struct PackageRef {
     pub name: String,
     pub version: String,
 }
 
+/// A collection of metadata for a library from cargo.
 pub struct Cargo {
     manifest_path: PathBuf,
     binding_crate_name: String,
@@ -29,6 +32,9 @@ pub struct Cargo {
 }
 
 impl Cargo {
+    /// Gather metadata from cargo for a specific library and binding crate
+    /// name. If dependency finding isn't needed then Cargo.lock files don't
+    /// need to be parsed.
     pub fn load(crate_dir: &Path,
                 binding_crate_name: Option<&str>,
                 use_cargo_lock: bool) -> Result<Cargo, String> {
@@ -62,10 +68,13 @@ impl Cargo {
     pub fn binding_crate_name(&self) -> &str {
         &self.binding_crate_name
     }
+
     pub fn binding_crate_ref(&self) -> PackageRef {
         self.find_pkg_ref(&self.binding_crate_name).unwrap()
     }
 
+    /// Finds the package reference in `cargo metadata` that has `package_name`
+    /// ignoring the version.
     fn find_pkg_ref(&self, package_name: &str) -> Option<PackageRef> {
         for package in &self.metadata.packages {
             if package.name == package_name {
@@ -78,15 +87,17 @@ impl Cargo {
         None
     }
 
+    /// Finds the package reference for a dependency of a crate using
+    /// `Cargo.lock`.
     pub fn find_dep_ref(&self, package: &PackageRef, dependency_name: &str) -> Option<PackageRef> {
         if self.lock.is_none() {
             return None;
         }
+        let lock = self.lock.as_ref().unwrap();
 
-        // TODO
-        if self.lock.as_ref().unwrap().root.name == package.name &&
-           self.lock.as_ref().unwrap().root.version == package.version {
-            if let Some(ref deps) = self.lock.as_ref().unwrap().root.dependencies {
+        if lock.root.name == package.name &&
+           lock.root.version == package.version {
+            if let Some(ref deps) = lock.root.dependencies {
                 for dep in deps {
                     let (name, version) = parse_dep_string(dep);
 
@@ -101,7 +112,7 @@ impl Cargo {
             return None;
         }
 
-        for lock_package in &self.lock.as_ref().unwrap().package {
+        for lock_package in &lock.package {
             if lock_package.name == package.name &&
                lock_package.version == package.version {
                 if let Some(ref deps) = lock_package.dependencies {
@@ -122,6 +133,7 @@ impl Cargo {
         None
     }
 
+    /// Finds the directory for a specified package reference.
     pub fn find_crate_dir(&self, package: &PackageRef) -> Option<PathBuf> {
         for meta_package in &self.metadata.packages {
             if meta_package.name == package.name &&
@@ -133,10 +145,12 @@ impl Cargo {
         None
     }
 
+    /// Finds `src/lib.rs` for a specified package reference.
     pub fn find_crate_src(&self, package: &PackageRef) -> Option<PathBuf> {
         let kind_lib = String::from("lib");
         let kind_staticlib = String::from("staticlib");
         let kind_cdylib = String::from("cdylib");
+
         for meta_package in &self.metadata.packages {
             if meta_package.name == package.name &&
                meta_package.version == package.version {

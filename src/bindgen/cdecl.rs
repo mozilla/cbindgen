@@ -10,8 +10,6 @@ use bindgen::writer::*;
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.
 // http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
-// This code can be done in a single recursive function, but it's
-// not pretty and not worth it.
 
 enum CDeclarator {
     Ptr(bool),
@@ -187,7 +185,7 @@ impl CDecl {
                                 out.new_line();
                             }
 
-                            // This is gross, but needed to convert &Option<String> to Option<&str>
+                            // Convert &Option<String> to Option<&str>
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
                             arg_ty.write(out, arg_ident);
@@ -199,7 +197,7 @@ impl CDecl {
                                 out.write(", ");
                             }
 
-                            // This is gross, but needed to convert &Option<String> to Option<&str>
+                            // Convert &Option<String> to Option<&str>
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
                             arg_ty.write(out, arg_ident);

@@ -22,6 +22,7 @@ impl Documentation {
                 Some(x.into())
             }
         }).collect();
+
         Documentation {
             doc_comment: doc,
         }
@@ -39,6 +40,7 @@ impl Source for Documentation {
         if self.doc_comment.is_empty() || !config.documentation {
             return;
         }
+
         for line in &self.doc_comment {
             out.write("//");
             out.write(line);
