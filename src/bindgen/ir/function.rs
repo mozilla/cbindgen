@@ -14,6 +14,7 @@ use bindgen::library::*;
 use bindgen::rename::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
+use bindgen::mangle;
 
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -50,7 +51,16 @@ impl Function {
         if let Some(&(_, ref ty)) = self.args.get(0) {
             match *ty {
                 Type::ConstPtr(ref t) | Type::Ptr(ref t) => {
-                    out.entry((**t).clone())
+                    let t = match **t {
+                        Type::Path(ref t, ref g) if g.is_empty() => {
+                            Type::Path(t.to_owned(), Vec::new())
+                        }
+                        Type::Path(ref p, ref g) => {
+                            Type::Path(mangle::mangle_path(p, g), Vec::new())
+                        }
+                        _ => return
+                    };
+                    out.entry(t)
                         .or_insert_with(Vec::new)
                         .push(self.clone())
                 }
@@ -97,6 +107,13 @@ impl Function {
         self.ret.mangle_paths(monomorphs);
         for &mut (_, ref mut ty) in &mut self.args {
             ty.mangle_paths(monomorphs);
+        }
+    }
+
+    pub fn as_member(self) -> Self{
+        Function {
+            args: self.args[1..].to_owned(),
+            ..self
         }
     }
 

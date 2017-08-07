@@ -24,6 +24,7 @@ pub struct Struct {
     pub generic_params: Vec<String>,
     pub documentation: Documentation,
     pub functions: Vec<Function>,
+    pub destructor: Option<Function>,
 }
 
 impl Struct {
@@ -65,6 +66,7 @@ impl Struct {
             generic_params: generic_params,
             documentation: Documentation::load(doc),
             functions: Vec::new(),
+            destructor: None,
         })
     }
 
@@ -97,6 +99,7 @@ impl Struct {
             generic_params: vec![],
             documentation: self.documentation.clone(),
             functions: vec![],
+            destructor: None,
         };
 
         for &(_, ref ty, _) in &monomorph.fields {
@@ -140,14 +143,99 @@ impl Struct {
                                                x.2.clone()))
                                      .collect();
         }
+
+        for f in &mut self.functions {
+            f.rename_args(config);
+        }
+        if let Some(ref mut destructor) = self.destructor {
+            destructor.rename_args(config);
+        }
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         for &mut (_, ref mut ty, _) in &mut self.fields {
             ty.mangle_paths(monomorphs);
         }
+        for f in &mut self.functions {
+            f.mangle_paths(monomorphs);
+        }
+        if let Some(ref mut destructor) = self.destructor {
+            destructor.mangle_paths(monomorphs);
+        }
+    }
+
+    pub fn add_member_function(&mut self, function: Function) {
+
+        if function.annotations.bool("destructor").unwrap_or(false)
+            && self.destructor.is_none() && function.args.is_empty()
+        {
+            self.destructor = Some(function);
+        } else if !function.annotations.bool("destructor").unwrap_or(false) {
+            self.functions.push(function);
+        } else {
+            warn!("Found double destructor annotation for struct {}", self.name);
+        }
+    }
+
+    pub fn as_opaque(&self) -> OpaqueItem {
+        OpaqueItem {
+            name: self.name.clone(),
+            generic_params: self.generic_params.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        }
+    }
+
+    pub fn write_destructor<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if let Some(ref destructor) = self.destructor {
+            if !destructor.extern_decl {
+                out.new_line();
+                out.new_line();
+
+                out.write(&format!("~{}()", self.name));
+                out.open_brace();
+                let option_1 = out.measure(|out| format_function_call_1(destructor, out, false));
+
+                if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
+                    config.function.args == Layout::Horizontal {
+                        format_function_call_1(destructor, out, false);
+                    } else {
+                        format_function_call_2(destructor, out, false);
+                    }
+
+                out.close_brace(false);
+            }
+        }
+    }
+
+    pub fn write_functions<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if !self.functions.is_empty() {
+            out.new_line();
+            out.new_line();
+        }
+        for f in &self.functions {
+            if f.extern_decl {
+                continue;
+            }
+            out.new_line();
+            f.write_formated(config, out, false);
+            out.open_brace();
+            let option_1 = out.measure(|out| format_function_call_1(f, out, true));
+
+            if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
+                config.function.args == Layout::Horizontal {
+                    format_function_call_1(f, out, true);
+                } else {
+                    format_function_call_2(f, out, true);
+                }
+
+            out.close_brace(false);
+            out.new_line();
+        }
     }
 }
+
+
 
 impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
@@ -172,27 +260,8 @@ impl Source for Struct {
                 String::from("other")
             };
 
-            out.new_line();
-            for f in &self.functions {
-                if f.extern_decl {
-                    continue;
-                }
-                out.new_line();
-                f.write_formated(config, out, false);
-                out.open_brace();
-                out.new_line();
-                let option_1 = out.measure(|out| format_function_call_1(f, out));
-
-                if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
-                    config.function.args == Layout::Horizontal {
-                    format_function_call_1(f, out);
-                } else {
-                    format_function_call_2(f, out);
-                }
-
-                out.close_brace(false);
-                out.new_line();
-            }
+            self.write_destructor(config, out);
+            self.write_functions(config, out);
 
             let mut emit_op = |op, conjuc| {
                 if !wrote_start_newline {
@@ -248,8 +317,12 @@ impl Source for Struct {
     }
 }
 
-fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
-    out.write("return ::");
+fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>, with_return: bool) {
+    if with_return {
+        out.write("return ::");
+    } else {
+        out.write("::");
+    }
     out.write(&f.name);
     out.write("(this");
     for &(ref name, _) in &f.args {
@@ -259,8 +332,12 @@ fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
     out.write(");");
 }
 
-fn format_function_call_2<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
-    out.write("return ::");
+fn format_function_call_2<W: Write>(f: &Function, out: &mut SourceWriter<W>, with_return: bool) {
+    if with_return {
+        out.write("return ::");
+    } else {
+        out.write("::");
+    }
     out.write(&f.name);
     out.write("(");
     let align_lenght = out.line_length_for_align();

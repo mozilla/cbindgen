@@ -115,6 +115,7 @@ impl Specialization {
                             generic_params: self.generic_params.clone(),
                             documentation: aliased.documentation.clone(),
                             functions: Vec::new(),
+                            destructor: None,
                         })))
                     }
                     PathValue::Enum(ref aliased) => {

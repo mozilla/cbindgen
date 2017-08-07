@@ -723,24 +723,11 @@ impl Library {
                     PathValue::Struct(mut s) => {
                         let ty = Type::Path(s.name.clone(), Vec::new());
                         if let Some(functions) = oop.remove(&ty) {
-                            let opaque = OpaqueItem {
-                                name:s.name.clone(),
-                                generic_params: s.generic_params.clone(),
-                                annotations: s.annotations.clone(),
-                                documentation: s.documentation.clone(),
-                            };
+                            let opaque = s.as_opaque();
                             result.items.push(PathValue::OpaqueItem(opaque));
-                            s.functions = functions.into_iter()
-                                .map(|f| {
-                                    Function {
-                                        name: f.name,
-                                        annotations: f.annotations,
-                                        ret: f.ret,
-                                        args: f.args[1..].to_owned(),
-                                        extern_decl: f.extern_decl,
-                                        documentation: f.documentation.clone(),
-                                    }
-                                }).collect();
+                            for f in functions {
+                                s.add_member_function(f.as_member());
+                            }
                             result.full_objects.push(s);
                         } else {
                             result.items.push(PathValue::Struct(s));
@@ -758,6 +745,11 @@ impl Library {
         // Rename all the fields according to their rules and mangle any
         // paths that refer to generic structs that have been monomorphed.
         for item in &mut result.items {
+            item.mangle_paths(&monomorphs);
+            item.rename_fields(&self.config);
+        }
+
+        for item in &mut result.full_objects {
             item.mangle_paths(&monomorphs);
             item.rename_fields(&self.config);
         }
