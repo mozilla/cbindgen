@@ -951,6 +951,14 @@ impl GeneratedBindings {
             }
         }
 
+        if self.config.language == Language::Cxx {
+            out.new_line_if_not_start();
+            out.write("static_assert(sizeof(float) == 4);");
+            out.new_line();
+            out.write("static_assert(sizeof(double) == 8);");
+            out.new_line();
+        }
+
         if let Some(ref f) = self.config.autogen_warning {
             out.new_line_if_not_start();
             out.write(&f);
