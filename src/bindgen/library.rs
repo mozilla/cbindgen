@@ -9,6 +9,7 @@ use std::collections::HashSet;
 use std::cmp::Ordering;
 use std::fs::File;
 use std::path;
+use std::fs;
 
 use syn;
 
@@ -771,6 +772,10 @@ impl GeneratedBindings {
     }
 
     pub fn write_to_file(&self, path: &str) {
+        if let Some(parent) = path::Path::new(path).parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+
         self.write(File::create(path).unwrap());
     }
 
