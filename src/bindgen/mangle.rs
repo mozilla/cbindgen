@@ -4,49 +4,47 @@
 
 use bindgen::ir::*;
 
-pub fn mangle_path(name: &str, generic_values: &Vec<Type>) -> String {
+pub fn mangle_path(name: &str, generic_values: &[Type]) -> String {
     assert!(!name.contains("_"));
 
     let mut out = String::from(name);
-    out.push_str("_");
-    for (i, ty) in generic_values.iter().enumerate() {
-        if i != 0 {
-            out.push_str("__"); // ,
+    if !generic_values.is_empty() {
+        out.push_str("_"); // <
+        let mut should_close = false;
+        for (i, ty) in generic_values.iter().enumerate() {
+            if i != 0 {
+                out.push_str("__"); // ,
+            }
+            if should_close {
+                out.push_str("___"); // >
+            }
+            should_close = append_type(ty, &mut out, mangle_path);
         }
-        append_type(ty, &mut out);
     }
     out
 }
 
-fn append_type(ty: &Type, out: &mut String) {
+fn append_type(ty: &Type, out: &mut String, generic_handler: fn(&str, &[Type]) -> String) -> bool {
     match ty {
         &Type::Path(ref path, ref generic_values) => {
-            out.push_str(path);
-            if generic_values.len() != 0 {
-                out.push_str("_"); // <
-                for (i, generic) in generic_values.iter().enumerate() {
-                    if i != 0 {
-                        out.push_str("__"); // ,
-                    }
-                    append_type(generic, out);
-                }
-                out.push_str("___"); // >
-            }
+            out.push_str(&generic_handler(path, generic_values));
+            true
         }
         &Type::Primitive(ref primitive) => {
             out.push_str(primitive.to_repr_rust());
+            false
         }
         &Type::ConstPtr(..) => {
-            unimplemented!();
+            unimplemented!()
         }
         &Type::Ptr(..) => {
-            unimplemented!();
+            unimplemented!()
         }
         &Type::Array(..) => {
-            unimplemented!();
+            unimplemented!()
         }
         &Type::FuncPtr(..) => {
-            unimplemented!();
+            unimplemented!()
         }
     }
 }
@@ -61,5 +59,12 @@ fn mangle_test() {
                            &vec![Type::Path("Bar".to_owned(),
                                             vec![Type::Primitive(PrimitiveType::Float)])
                            ]),
-               "Foo_Bar_f32___");
+               "Foo_Bar_f32");
+
+    assert_eq!(mangle_path("Vec", &[Type::Path("u8".into(), Vec::new())]), "Vec_u8");
+    assert_eq!(mangle_path("Vec", &[Type::Path("Vec".into(), vec!(Type::Primitive(PrimitiveType::UInt8)))]),
+               "Vec_Vec_u8");
+    assert_eq!(mangle_path("Foo", &[Type::Path("Bar".into(), vec![Type::Path("T".into(), Vec::new()),]),
+                                    Type::Path("E".into(), Vec::new())]),
+               "Foo_Bar_T_____E");
 }
