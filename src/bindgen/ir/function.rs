@@ -93,11 +93,11 @@ impl Source for Function {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
+            func.documentation.write(config, out);
             if let Some(ref prefix) = prefix {
                 out.write(prefix);
                 out.write(" ");
             }
-            func.documentation.write(config, out);
             cdecl::write_func(out, &func, false);
             if let Some(ref postfix) = postfix {
                 out.write(" ");
@@ -110,11 +110,11 @@ impl Source for Function {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
+            func.documentation.write(config, out);
             if let Some(ref prefix) = prefix {
                 out.write(prefix);
                 out.new_line();
             }
-            func.documentation.write(config, out);
             cdecl::write_func(out, &func, true);
             if let Some(ref postfix) = postfix {
                 out.new_line();
