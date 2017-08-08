@@ -22,6 +22,7 @@ serde_derive = "0.9"
 serde_json = "0.9"
 tempdir = "0.3"
 toml = "0.3"
+ordermap = "0.2"
 
 [dependencies.syn]
 version = "0.11"

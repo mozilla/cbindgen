@@ -64,12 +64,11 @@ impl Specialization {
     pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
         match self.specialize(library) {
             Ok(Some(specialization)) => {
-                if !out.items.contains(specialization.name()) {
-                    out.items.insert(specialization.name().to_owned());
+                if !out.order.contains_key(specialization.name()) {
 
                     specialization.add_specializations(library, out);
 
-                    out.order.push(specialization);
+                    out.order.insert(specialization.name().to_owned(), specialization);
                 }
             }
             Ok(None) => { }
