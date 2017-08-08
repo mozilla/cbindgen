@@ -2,8 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use syn::*;
-
+use syn;
 use bindgen::ir::*;
 
 pub trait IterHelpers : Iterator {
@@ -35,32 +34,32 @@ pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
 }
 
 pub trait SynItemHelpers {
-    fn has_attr(&self, target: MetaItem) -> bool;
+    fn has_attr(&self, target: syn::MetaItem) -> bool;
 
     fn get_doc_attr(&self) -> String;
 
     fn is_no_mangle(&self) -> bool {
-        self.has_attr(MetaItem::Word(Ident::new("no_mangle")))
+        self.has_attr(syn::MetaItem::Word(syn::Ident::new("no_mangle")))
     }
 
     fn is_repr_c(&self) -> bool {
-        let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("C")))];
-        self.has_attr(MetaItem::List(Ident::new("repr"), repr_args))
+        let repr_args = vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("C")))];
+        self.has_attr(syn::MetaItem::List(syn::Ident::new("repr"), repr_args))
     }
 
     fn is_repr_u32(&self) -> bool {
-        let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("u32")))];
-        self.has_attr(MetaItem::List(Ident::new("repr"), repr_args))
+        let repr_args = vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u32")))];
+        self.has_attr(syn::MetaItem::List(syn::Ident::new("repr"), repr_args))
     }
 
     fn is_repr_u16(&self) -> bool {
-        let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("u16")))];
-        self.has_attr(MetaItem::List(Ident::new("repr"), repr_args))
+        let repr_args = vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u16")))];
+        self.has_attr(syn::MetaItem::List(syn::Ident::new("repr"), repr_args))
     }
 
     fn is_repr_u8(&self) -> bool {
-        let repr_args = vec![NestedMetaItem::MetaItem(MetaItem::Word(Ident::new("u8")))];
-        self.has_attr(MetaItem::List(Ident::new("repr"), repr_args))
+        let repr_args = vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u8")))];
+        self.has_attr(syn::MetaItem::List(syn::Ident::new("repr"), repr_args))
     }
 
     fn get_repr(&self) -> Repr {
@@ -78,19 +77,19 @@ pub trait SynItemHelpers {
     }
 }
 
-impl SynItemHelpers for Item {
-    fn has_attr(&self, target: MetaItem) -> bool {
+impl SynItemHelpers for syn::Item {
+    fn has_attr(&self, target: syn::MetaItem) -> bool {
         return self.attrs
                    .iter()
-                   .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
+                   .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
     }
 
     fn get_doc_attr(&self) -> String {
         let mut doc = String::new();
         for attr in &self.attrs {
-            if attr.style == AttrStyle::Outer &&
+            if attr.style == syn::AttrStyle::Outer &&
                attr.is_sugared_doc {
-                if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                if let syn::MetaItem::NameValue(_, syn::Lit::Str(ref comment, _)) = attr.value {
                     doc.push_str(&comment);
                     doc.push('\n');
                 }
@@ -100,19 +99,19 @@ impl SynItemHelpers for Item {
     }
 }
 
-impl SynItemHelpers for ForeignItem {
-    fn has_attr(&self, target: MetaItem) -> bool {
+impl SynItemHelpers for syn::ForeignItem {
+    fn has_attr(&self, target: syn::MetaItem) -> bool {
         return self.attrs
                    .iter()
-                   .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
+                   .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
     }
 
     fn get_doc_attr(&self) -> String {
         let mut doc = String::new();
         for attr in &self.attrs {
-            if attr.style == AttrStyle::Outer &&
+            if attr.style == syn::AttrStyle::Outer &&
                attr.is_sugared_doc {
-                if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                if let syn::MetaItem::NameValue(_, syn::Lit::Str(ref comment, _)) = attr.value {
                     doc.push_str(&comment);
                     doc.push('\n');
                 }
@@ -122,19 +121,19 @@ impl SynItemHelpers for ForeignItem {
     }
 }
 
-impl SynItemHelpers for Variant {
-    fn has_attr(&self, target: MetaItem) -> bool {
+impl SynItemHelpers for syn::Variant {
+    fn has_attr(&self, target: syn::MetaItem) -> bool {
         return self.attrs
                    .iter()
-                   .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
+                   .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
     }
 
     fn get_doc_attr(&self) -> String {
         let mut doc = String::new();
         for attr in &self.attrs {
-            if attr.style == AttrStyle::Outer &&
+            if attr.style == syn::AttrStyle::Outer &&
                attr.is_sugared_doc {
-                if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                if let syn::MetaItem::NameValue(_, syn::Lit::Str(ref comment, _)) = attr.value {
                     doc.push_str(&comment);
                     doc.push('\n');
                 }
@@ -144,19 +143,19 @@ impl SynItemHelpers for Variant {
     }
 }
 
-impl SynItemHelpers for Field {
-    fn has_attr(&self, target: MetaItem) -> bool {
+impl SynItemHelpers for syn::Field {
+    fn has_attr(&self, target: syn::MetaItem) -> bool {
         return self.attrs
                    .iter()
-                   .any(|ref attr| attr.style == AttrStyle::Outer && attr.value == target);
+                   .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
     }
 
     fn get_doc_attr(&self) -> String {
         let mut doc = String::new();
         for attr in &self.attrs {
-            if attr.style == AttrStyle::Outer &&
+            if attr.style == syn::AttrStyle::Outer &&
                attr.is_sugared_doc {
-                if let MetaItem::NameValue(_, Lit::Str(ref comment, _)) = attr.value {
+                if let syn::MetaItem::NameValue(_, syn::Lit::Str(ref comment, _)) = attr.value {
                     doc.push_str(&comment);
                     doc.push('\n');
                 }
@@ -171,15 +170,15 @@ pub trait SynAbiHelpers {
     fn is_c(&self) -> bool;
 }
 
-impl SynAbiHelpers for Option<Abi> {
+impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
-        self == &Some(Abi::Named(String::from("C")))
+        self == &Some(syn::Abi::Named(String::from("C")))
     }
 }
 
-impl SynAbiHelpers for Abi {
+impl SynAbiHelpers for syn::Abi {
     fn is_c(&self) -> bool {
-        self == &Abi::Named(String::from("C"))
+        self == &syn::Abi::Named(String::from("C"))
     }
 }
 
@@ -188,7 +187,7 @@ pub trait SynPathHelpers {
     fn convert_to_generic_single_segment(&self) -> Result<(String, Vec<Type>), String>;
 }
 
-impl SynPathHelpers for Path {
+impl SynPathHelpers for syn::Path {
     fn convert_to_generic_single_segment(&self) -> Result<(String, Vec<Type>), String> {
         if self.segments.len() != 1 {
             return Err(format!("path contains more than one segment"));
@@ -201,7 +200,7 @@ impl SynPathHelpers for Path {
         }
 
         let generics = match &self.segments[0].parameters {
-            &PathParameters::AngleBracketed(ref d) => {
+            &syn::PathParameters::AngleBracketed(ref d) => {
                 if !d.lifetimes.is_empty() ||
                    !d.bindings.is_empty() {
                     return Err(format!("path generic parameter contains bindings, or lifetimes"));
@@ -210,7 +209,7 @@ impl SynPathHelpers for Path {
                 d.types.iter()
                        .try_skip_map(|x| Type::load(x))?
             }
-            &PathParameters::Parenthesized(_) => {
+            &syn::PathParameters::Parenthesized(_) => {
                 return Err(format!("path contains parentheses"));
             }
         };

@@ -79,24 +79,24 @@ impl Specialization {
         }
     }
 
-    pub fn specialize(&self, library: &Library) -> Result<Option<PathValue>, String> {
+    pub fn specialize(&self, library: &Library) -> Result<Option<Item>, String> {
         match library.resolve_path(&self.aliased) {
             Some(aliased) => {
                 match aliased {
-                    PathValue::OpaqueItem(ref aliased) => {
+                    Item::OpaqueItem(ref aliased) => {
                         if self.generic_values.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));
                         }
 
-                        Ok(Some(PathValue::OpaqueItem(OpaqueItem {
+                        Ok(Some(Item::OpaqueItem(OpaqueItem {
                             name: self.name.clone(),
                             generic_params: self.generic_params.clone(),
                             annotations: self.annotations.clone(),
                             documentation: self.documentation.clone(),
                         })))
                     }
-                    PathValue::Struct(ref aliased) => {
+                    Item::Struct(ref aliased) => {
                         if self.generic_values.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));
@@ -106,7 +106,7 @@ impl Specialization {
                                                              .zip(self.generic_values.iter())
                                                              .collect::<Vec<_>>();
 
-                        Ok(Some(PathValue::Struct(Struct {
+                        Ok(Some(Item::Struct(Struct {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             fields: aliased.fields.iter()
@@ -116,8 +116,8 @@ impl Specialization {
                             documentation: aliased.documentation.clone(),
                         })))
                     }
-                    PathValue::Enum(ref aliased) => {
-                        Ok(Some(PathValue::Enum(Enum {
+                    Item::Enum(ref aliased) => {
+                        Ok(Some(Item::Enum(Enum {
                             name: self.name.clone(),
                             repr: aliased.repr.clone(),
                             annotations: self.annotations.clone(),
@@ -125,15 +125,15 @@ impl Specialization {
                             documentation: aliased.documentation.clone(),
                         })))
                     }
-                    PathValue::Typedef(ref aliased) => {
-                        Ok(Some(PathValue::Typedef(Typedef {
+                    Item::Typedef(ref aliased) => {
+                        Ok(Some(Item::Typedef(Typedef {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
                             documentation: self.documentation.clone(),
                         })))
                     }
-                    PathValue::Specialization(ref aliased) => {
+                    Item::Specialization(ref aliased) => {
                         if self.generic_values.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));

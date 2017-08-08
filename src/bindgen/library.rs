@@ -21,85 +21,6 @@ use bindgen::rust_lib;
 use bindgen::utilities::*;
 use bindgen::writer::{ListType, Source, SourceWriter};
 
-/// A path ref is used to reference a path value
-pub type PathRef = String;
-
-/// A path value is any type of rust item besides a function
-#[derive(Debug, Clone)]
-pub enum PathValue {
-    Enum(Enum),
-    Struct(Struct),
-    OpaqueItem(OpaqueItem),
-    Typedef(Typedef),
-    Specialization(Specialization),
-}
-
-impl PathValue {
-    pub fn name(&self) -> &str {
-        match self {
-            &PathValue::Enum(ref x) => { &x.name },
-            &PathValue::Struct(ref x) => { &x.name },
-            &PathValue::OpaqueItem(ref x) => { &x.name },
-            &PathValue::Typedef(ref x) => { &x.name },
-            &PathValue::Specialization(ref x) => { &x.name },
-        }
-    }
-
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
-        match self {
-            &PathValue::Struct(ref x) => {
-                x.add_deps(library, out);
-            },
-            &PathValue::Typedef(ref x) => {
-                x.add_deps(library, out);
-            },
-            &PathValue::Specialization(..) => {
-                unreachable!();
-            },
-            _ => { }
-        }
-    }
-
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        match self {
-            &PathValue::Struct(ref x) => {
-                x.add_specializations(library, out);
-            },
-            &PathValue::Typedef(ref x) => {
-                x.add_specializations(library, out);
-            },
-            &PathValue::Specialization(ref x) => {
-                x.add_specializations(library, out);
-            },
-            _ => { }
-        }
-    }
-
-    pub fn rename_fields(&mut self, config: &Config) {
-        match self {
-            &mut PathValue::Enum(ref mut x) => { x.rename_fields(config); },
-            &mut PathValue::Struct(ref mut x) => { x.rename_fields(config); },
-            _ => { },
-        }
-    }
-
-    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        match self {
-            &mut PathValue::Enum(_) => { },
-            &mut PathValue::Struct(ref mut x) => {
-                x.mangle_paths(monomorphs);
-            },
-            &mut PathValue::OpaqueItem(_) => { },
-            &mut PathValue::Typedef(ref mut x) => {
-                x.mangle_paths(monomorphs);
-            },
-            &mut PathValue::Specialization(..) => {
-                unreachable!();
-            },
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 pub enum Monomorph {
     Struct(Struct),
@@ -127,7 +48,7 @@ pub type Monomorphs = BTreeMap<PathRef, MonomorphList>;
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct DependencyList {
-    pub order: Vec<PathValue>,
+    pub order: Vec<Item>,
     pub items: HashSet<PathRef>,
 }
 
@@ -142,7 +63,7 @@ impl DependencyList {
 
 /// A specialization list is used for gathering what order to output the types.
 pub struct SpecializationList {
-    pub order: Vec<PathValue>,
+    pub order: Vec<Item>,
     pub items: HashSet<PathRef>,
     pub errors: Vec<(String, String)>,
 }
@@ -524,21 +445,21 @@ impl Library {
               fail2);
     }
 
-    pub fn resolve_path(&self, p: &PathRef) -> Option<PathValue> {
+    pub fn resolve_path(&self, p: &PathRef) -> Option<Item> {
         if let Some(x) = self.enums.get(p) {
-            return Some(PathValue::Enum(x.clone()));
+            return Some(Item::Enum(x.clone()));
         }
         if let Some(x) = self.structs.get(p) {
-            return Some(PathValue::Struct(x.clone()));
+            return Some(Item::Struct(x.clone()));
         }
         if let Some(x) = self.opaque_items.get(p) {
-            return Some(PathValue::OpaqueItem(x.clone()));
+            return Some(Item::OpaqueItem(x.clone()));
         }
         if let Some(x) = self.typedefs.get(p) {
-            return Some(PathValue::Typedef(x.clone()));
+            return Some(Item::Typedef(x.clone()));
         }
         if let Some(x) = self.specializations.get(p) {
-            return Some(PathValue::Specialization(x.clone()));
+            return Some(Item::Specialization(x.clone()));
         }
 
         None
@@ -559,19 +480,19 @@ impl Library {
         for specialization in specializations.order {
             let name = specialization.name().to_owned();
             match specialization {
-                PathValue::Struct(x) => {
+                Item::Struct(x) => {
                     self.structs.insert(name, x);
                 }
-                PathValue::OpaqueItem(x) => {
+                Item::OpaqueItem(x) => {
                     self.opaque_items.insert(name, x);
                 }
-                PathValue::Enum(x) => {
+                Item::Enum(x) => {
                     self.enums.insert(name, x);
                 }
-                PathValue::Typedef(x) => {
+                Item::Typedef(x) => {
                     self.typedefs.insert(name, x);
                 }
-                PathValue::Specialization(..) => {
+                Item::Specialization(..) => {
                     unreachable!();
                 }
             }
@@ -652,16 +573,16 @@ impl Library {
         // adding any instantiations of generic structs along the way.
         for dep in deps.order {
             match &dep {
-                &PathValue::Struct(ref s) => {
+                &Item::Struct(ref s) => {
                     if s.generic_params.len() != 0 {
                         if let Some(monomorphs) = monomorphs.get(&s.name) {
                             for (_, monomorph) in monomorphs {
                                 result.items.push(match monomorph {
                                     &Monomorph::Struct(ref x) => {
-                                        PathValue::Struct(x.clone())
+                                        Item::Struct(x.clone())
                                     }
                                     &Monomorph::OpaqueItem(ref x) => {
-                                        PathValue::OpaqueItem(x.clone())
+                                        Item::OpaqueItem(x.clone())
                                     }
                                 });
                             }
@@ -671,16 +592,16 @@ impl Library {
                         debug_assert!(!monomorphs.contains_key(&s.name));
                     }
                 }
-                &PathValue::OpaqueItem(ref s) => {
+                &Item::OpaqueItem(ref s) => {
                     if s.generic_params.len() != 0 {
                         if let Some(monomorphs) = monomorphs.get(&s.name) {
                             for (_, monomorph) in monomorphs {
                                 result.items.push(match monomorph {
                                     &Monomorph::Struct(ref x) => {
-                                        PathValue::Struct(x.clone())
+                                        Item::Struct(x.clone())
                                     }
                                     &Monomorph::OpaqueItem(ref x) => {
-                                        PathValue::OpaqueItem(x.clone())
+                                        Item::OpaqueItem(x.clone())
                                     }
                                 });
                             }
@@ -697,15 +618,15 @@ impl Library {
 
         // Sort enums and opaque structs into their own layers because they don't
         // depend on each other or anything else.
-        let ordering = |a: &PathValue, b: &PathValue| {
+        let ordering = |a: &Item, b: &Item| {
             match (a, b) {
-                (&PathValue::Enum(ref e1), &PathValue::Enum(ref e2)) => e1.name.cmp(&e2.name),
-                (&PathValue::Enum(_), _) => Ordering::Less,
-                (_, &PathValue::Enum(_)) => Ordering::Greater,
+                (&Item::Enum(ref e1), &Item::Enum(ref e2)) => e1.name.cmp(&e2.name),
+                (&Item::Enum(_), _) => Ordering::Less,
+                (_, &Item::Enum(_)) => Ordering::Greater,
 
-                (&PathValue::OpaqueItem(ref o1), &PathValue::OpaqueItem(ref o2)) => o1.name.cmp(&o2.name),
-                (&PathValue::OpaqueItem(_), _) => Ordering::Less,
-                (_, &PathValue::OpaqueItem(_)) => Ordering::Greater,
+                (&Item::OpaqueItem(ref o1), &Item::OpaqueItem(ref o2)) => o1.name.cmp(&o2.name),
+                (&Item::OpaqueItem(_), _) => Ordering::Less,
+                (_, &Item::OpaqueItem(_)) => Ordering::Greater,
 
                 _ => Ordering::Equal,
             }
@@ -760,7 +681,7 @@ pub struct GeneratedBindings {
     config: Config,
 
     monomorphs: Monomorphs,
-    items: Vec<PathValue>,
+    items: Vec<Item>,
     functions: Vec<Function>,
 }
 
@@ -853,11 +774,11 @@ impl GeneratedBindings {
         for item in &self.items {
             out.new_line_if_not_start();
             match item {
-                &PathValue::Enum(ref x) => x.write(&self.config, &mut out),
-                &PathValue::Struct(ref x) => x.write(&self.config, &mut out),
-                &PathValue::OpaqueItem(ref x) => x.write(&self.config, &mut out),
-                &PathValue::Typedef(ref x) => x.write(&self.config, &mut out),
-                &PathValue::Specialization(_) => {
+                &Item::Enum(ref x) => x.write(&self.config, &mut out),
+                &Item::Struct(ref x) => x.write(&self.config, &mut out),
+                &Item::OpaqueItem(ref x) => x.write(&self.config, &mut out),
+                &Item::Typedef(ref x) => x.write(&self.config, &mut out),
+                &Item::Specialization(_) => {
                     unreachable!("should not encounter a specialization in a generated library")
                 }
             }

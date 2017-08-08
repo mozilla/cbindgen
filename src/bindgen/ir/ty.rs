@@ -12,7 +12,7 @@ use bindgen::config::Config;
 use bindgen::library::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
-use bindgen::ir::Documentation;
+use bindgen::ir::{Documentation, Item, PathRef};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrimitiveType {
@@ -356,17 +356,17 @@ impl Type {
                 let item = library.resolve_path(path);
                 if let Some(item) = item {
                     match item {
-                        PathValue::Struct(ref x) => {
+                        Item::Struct(ref x) => {
                             x.add_monomorphs(library, generic_values, out);
                         },
-                        PathValue::OpaqueItem(ref x) => {
+                        Item::OpaqueItem(ref x) => {
                             x.add_monomorphs(generic_values, out);
                         },
-                        PathValue::Typedef(ref x) => {
+                        Item::Typedef(ref x) => {
                             assert!(generic_values.len() == 0);
                             x.add_monomorphs(library, out);
                         },
-                        PathValue::Specialization(..) => { unreachable!() },
+                        Item::Specialization(..) => { unreachable!() },
                         _ => { }
                     }
                 }
@@ -396,14 +396,14 @@ impl Type {
                 let item = library.resolve_path(path);
                 if let Some(item) = item {
                     match item {
-                        PathValue::Struct(ref x) => {
+                        Item::Struct(ref x) => {
                             x.add_specializations(library, out);
                         },
-                        PathValue::Typedef(ref x) => {
+                        Item::Typedef(ref x) => {
                             assert!(generic_values.len() == 0);
                             x.add_specializations(library, out);
                         },
-                        PathValue::Specialization(ref x) => {
+                        Item::Specialization(ref x) => {
                             x.add_specializations(library, out);
                         },
                         _ => { }
