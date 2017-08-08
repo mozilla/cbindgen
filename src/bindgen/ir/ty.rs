@@ -315,12 +315,19 @@ impl Type {
                 }
                 if !generic_params.contains(path) {
                     if let Some(value) = library.resolve_path(path) {
-                        if !out.items.contains(path) {
-                            out.items.insert(path.clone());
-
+                        if !out.contains_key(path) {
                             value.add_deps(library, out);
 
-                            out.order.push(value);
+                            out.insert(path.clone(), value);
+                        } else if out.contains_key(path) && !generic_values.is_empty() {
+                            // The type is generic but was already pushed tho the current list
+                            // We don't know if the current monomorphed type will be known before
+                            // this point. At this point the type is known, because it it
+                            // already pushed (by the loop above), so we simply remove
+                            // the type from it old place in the list and put it to the
+                            // end of the current list
+                            out.remove(path);
+                            out.insert(path.clone(), value);
                         }
                     } else {
                         warn!("can't find {}", path);

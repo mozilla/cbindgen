@@ -5,13 +5,13 @@
 use std::io::Write;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use std::cmp::Ordering;
 use std::fs::File;
 use std::path;
 use std::fs;
 
 use syn;
+use ordermap::OrderMap;
 
 use bindgen::cargo::Cargo;
 use bindgen::config::{self, Config, Language};
@@ -124,34 +124,18 @@ impl Monomorph {
 
 pub type MonomorphList = BTreeMap<Vec<Type>, Monomorph>;
 pub type Monomorphs = BTreeMap<PathRef, MonomorphList>;
-
-/// A dependency list is used for gathering what order to output the types.
-pub struct DependencyList {
-    pub order: Vec<PathValue>,
-    pub items: HashSet<PathRef>,
-}
-
-impl DependencyList {
-    fn new() -> DependencyList {
-        DependencyList {
-            order: Vec::new(),
-            items: HashSet::new(),
-        }
-    }
-}
+pub type DependencyList = OrderMap<PathRef, PathValue>;
 
 /// A specialization list is used for gathering what order to output the types.
 pub struct SpecializationList {
-    pub order: Vec<PathValue>,
-    pub items: HashSet<PathRef>,
+    pub order: OrderMap<PathRef, PathValue>,
     pub errors: Vec<(String, String)>,
 }
 
 impl SpecializationList {
     fn new() -> SpecializationList {
         SpecializationList {
-            order: Vec::new(),
-            items: HashSet::new(),
+            order: OrderMap::new(),
             errors: Vec::new(),
         }
     }
@@ -556,7 +540,7 @@ impl Library {
         }
         self.specializations.clear();
 
-        for specialization in specializations.order {
+        for (_, specialization) in specializations.order {
             let name = specialization.name().to_owned();
             match specialization {
                 PathValue::Struct(x) => {
@@ -650,9 +634,9 @@ impl Library {
 
         // Copy the binding items in dependencies order into the generated bindings,
         // adding any instantiations of generic structs along the way.
-        for dep in deps.order {
-            match &dep {
-                &PathValue::Struct(ref s) => {
+        for (_, dep) in deps {
+            match dep {
+                PathValue::Struct(ref s) => {
                     if s.generic_params.len() != 0 {
                         if let Some(monomorphs) = monomorphs.get(&s.name) {
                             for (_, monomorph) in monomorphs {
@@ -671,7 +655,7 @@ impl Library {
                         debug_assert!(!monomorphs.contains_key(&s.name));
                     }
                 }
-                &PathValue::OpaqueItem(ref s) => {
+                PathValue::OpaqueItem(ref s) => {
                     if s.generic_params.len() != 0 {
                         if let Some(monomorphs) = monomorphs.get(&s.name) {
                             for (_, monomorph) in monomorphs {
