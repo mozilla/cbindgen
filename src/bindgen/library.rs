@@ -467,58 +467,7 @@ impl Library {
         self.specialize_items();
 
         // Transfer all typedef annotations to the type they alias
-        let mut typedef_annotations = HashMap::new();
-        for (_, ref mut typedef) in &mut self.typedefs {
-            typedef.transfer_annotations(&mut typedef_annotations);
-        }
-        for (alias_path, annotations) in typedef_annotations.drain() {
-            // TODO
-            if let Some(x) = self.enums.get_mut(&alias_path) {
-                if !x.annotations.is_empty() {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                    continue;
-                }
-                x.annotations = annotations;
-                continue;
-            }
-            if let Some(x) = self.structs.get_mut(&alias_path) {
-                if !x.annotations.is_empty() {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                    continue;
-                }
-                x.annotations = annotations;
-                continue;
-            }
-            if let Some(x) = self.opaque_items.get_mut(&alias_path) {
-                if !x.annotations.is_empty() {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                    continue;
-                }
-                x.annotations = annotations;
-                continue;
-            }
-            if let Some(x) = self.typedefs.get_mut(&alias_path) {
-                if !x.annotations.is_empty() {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                    continue;
-                }
-                x.annotations = annotations;
-                continue;
-            }
-            if let Some(x) = self.specializations.get_mut(&alias_path) {
-                if !x.annotations.is_empty() {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                    continue;
-                }
-                x.annotations = annotations;
-                continue;
-            }
-        }
+        self.transfer_annotations();
 
         // Gather only the items that we need for this
         // `extern "c"` interface
@@ -659,6 +608,63 @@ impl Library {
         }
 
         self.specializations.clear();
+    }
+
+    fn transfer_annotations(&mut self) {
+        let mut annotations = HashMap::new();
+
+        for (_, ref mut typedef) in &mut self.typedefs {
+            typedef.transfer_annotations(&mut annotations);
+        }
+
+        for (alias_path, annotations) in annotations {
+            // TODO
+            if let Some(x) = self.enums.get_mut(&alias_path) {
+                if !x.annotations.is_empty() {
+                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                          alias_path);
+                    continue;
+                }
+                x.annotations = annotations;
+                continue;
+            }
+            if let Some(x) = self.structs.get_mut(&alias_path) {
+                if !x.annotations.is_empty() {
+                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                          alias_path);
+                    continue;
+                }
+                x.annotations = annotations;
+                continue;
+            }
+            if let Some(x) = self.opaque_items.get_mut(&alias_path) {
+                if !x.annotations.is_empty() {
+                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                          alias_path);
+                    continue;
+                }
+                x.annotations = annotations;
+                continue;
+            }
+            if let Some(x) = self.typedefs.get_mut(&alias_path) {
+                if !x.annotations.is_empty() {
+                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                          alias_path);
+                    continue;
+                }
+                x.annotations = annotations;
+                continue;
+            }
+            if let Some(x) = self.specializations.get_mut(&alias_path) {
+                if !x.annotations.is_empty() {
+                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                          alias_path);
+                    continue;
+                }
+                x.annotations = annotations;
+                continue;
+            }
+        }
     }
 }
 
