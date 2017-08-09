@@ -89,7 +89,7 @@ impl Enum {
         })
     }
 
-    pub fn rename_fields(&mut self, config: &Config) {
+    pub fn rename_values(&mut self, config: &Config) {
         if config.enumeration.prefix_with_name ||
            self.annotations.bool("prefix-with-name").unwrap_or(false)
         {

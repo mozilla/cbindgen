@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::BTreeMap;
 use std::io::Write;
 
 use syn;
@@ -12,6 +11,7 @@ use bindgen::config::{Config, Language};
 use bindgen::ir::*;
 use bindgen::library::*;
 use bindgen::mangle::*;
+use bindgen::monomorph::Monomorphs;
 use bindgen::rename::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
@@ -21,6 +21,7 @@ pub struct Struct {
     pub name: String,
     pub annotations: AnnotationSet,
     pub fields: Vec<(String, Type, Documentation)>,
+    pub tuple_struct: bool,
     pub generic_params: Vec<String>,
     pub documentation: Documentation,
 }
@@ -32,10 +33,11 @@ impl Struct {
                 generics: &syn::Generics,
                 doc: String) -> Result<Struct, String>
     {
-        let fields = match decl {
+        let (fields, tuple_struct) = match decl {
             &syn::VariantData::Struct(ref fields) => {
-                fields.iter()
-                      .try_skip_map(|x| x.as_ident_and_type())?
+                let out = fields.iter()
+                                .try_skip_map(|x| x.as_ident_and_type())?;
+                (out, false)
             }
             &syn::VariantData::Tuple(ref fields) => {
                 let mut out = Vec::new();
@@ -46,10 +48,10 @@ impl Struct {
                         current += 1;
                     }
                 }
-                out
+                (out, true)
             }
             &syn::VariantData::Unit => {
-                vec![]
+                (vec![], false)
             }
         };
 
@@ -61,26 +63,37 @@ impl Struct {
             name: name,
             annotations: annotations,
             fields: fields,
+            tuple_struct: tuple_struct,
             generic_params: generic_params,
             documentation: Documentation::load(doc),
         })
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
+    pub fn is_generic(&self) -> bool {
+        self.generic_params.len() > 0
+    }
+
+    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
         for &(_, ref ty, _) in &self.fields {
-            ty.add_deps_with_generics(&self.generic_params, library, out);
+            ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
         }
     }
 
-    pub fn add_monomorphs(&self, library: &Library, generic_values: &Vec<Type>, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() == generic_values.len());
-
-        if self.generic_params.len() == 0 {
-            for &(_, ref ty, _) in &self.fields {
-                ty.add_monomorphs(library, out);
-            }
+    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
+        // Generic structs can instantiate monomorphs only once they've been
+        // instantiated. See `instantiate_monomorph` for more details.
+        if self.is_generic() {
             return;
         }
+
+        for &(_, ref ty, _) in &self.fields {
+            ty.add_monomorphs(library, out);
+        }
+    }
+
+    pub fn instantiate_monomorph(&self, library: &Library, generic_values: &Vec<Type>, out: &mut Monomorphs) {
+        assert!(self.generic_params.len() > 0 &&
+                self.generic_params.len() == generic_values.len());
 
         let mappings = self.generic_params.iter()
                                           .zip(generic_values.iter())
@@ -92,19 +105,21 @@ impl Struct {
             fields: self.fields.iter()
                                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                                .collect(),
+            tuple_struct: self.tuple_struct,
             generic_params: vec![],
             documentation: self.documentation.clone(),
         };
 
-        for &(_, ref ty, _) in &monomorph.fields {
-            ty.add_monomorphs(library, out);
-        }
+        // Instantiate any monomorphs for any generic paths we may have just created.
+        monomorph.add_monomorphs(library, out);
 
-        if !out.contains_key(&self.name) {
-            out.insert(self.name.clone(), BTreeMap::new());
+        out.insert_struct(self, monomorph, generic_values.clone());
+    }
+
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+        for &mut (_, ref mut ty, _) in &mut self.fields {
+            ty.mangle_paths(monomorphs);
         }
-        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
-                                                Monomorph::Struct(monomorph));
     }
 
     pub fn rename_fields(&mut self, config: &Config) {
@@ -130,12 +145,12 @@ impl Struct {
                                                x.1.clone(),
                                                x.2.clone()))
                                      .collect();
-        }
-    }
-
-    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.mangle_paths(monomorphs);
+        } else if self.tuple_struct {
+            // If we don't have any rules for a tuple struct, prefix them with
+            // an underscore so it still compiles
+            for &mut (ref mut name, ..) in &mut self.fields {
+                name.insert(0, '_');
+            }
         }
     }
 }

@@ -41,6 +41,7 @@ mod config;
 mod ir;
 mod library;
 mod mangle;
+mod monomorph;
 mod rename;
 mod rust_lib;
 mod utilities;

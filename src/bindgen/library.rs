@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::cmp::Ordering;
 use std::fs::File;
+use std::mem;
 use std::path;
 use std::fs;
 
@@ -17,34 +18,10 @@ use bindgen::cargo::Cargo;
 use bindgen::config::{self, Config, Language};
 use bindgen::annotation::*;
 use bindgen::ir::*;
+use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
 use bindgen::rust_lib;
 use bindgen::utilities::*;
 use bindgen::writer::{ListType, Source, SourceWriter};
-
-#[derive(Clone, Debug)]
-pub enum Monomorph {
-    Struct(Struct),
-    OpaqueItem(OpaqueItem),
-}
-
-impl Monomorph {
-    pub fn name(&self) -> &str {
-        match self {
-            &Monomorph::Struct(ref x) => &x.name,
-            &Monomorph::OpaqueItem(ref x) => &x.name,
-        }
-    }
-
-    pub fn is_opaque(&self) -> bool {
-        match self {
-            &Monomorph::Struct(_) => false,
-            &Monomorph::OpaqueItem(_) => true,
-        }
-    }
-}
-
-pub type MonomorphList = BTreeMap<Vec<Type>, Monomorph>;
-pub type Monomorphs = BTreeMap<Path, MonomorphList>;
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct DependencyList {
@@ -58,6 +35,26 @@ impl DependencyList {
             order: Vec::new(),
             items: HashSet::new(),
         }
+    }
+
+    fn sort(&mut self) {
+        // Sort enums and opaque structs into their own layers because they don't
+        // depend on each other or anything else.
+        let ordering = |a: &Item, b: &Item| {
+            match (a, b) {
+                (&Item::Enum(ref x), &Item::Enum(ref y)) => x.name.cmp(&y.name),
+                (&Item::Enum(_), _) => Ordering::Less,
+                (_, &Item::Enum(_)) => Ordering::Greater,
+
+                (&Item::OpaqueItem(ref x), &Item::OpaqueItem(ref y)) => x.name.cmp(&y.name),
+                (&Item::OpaqueItem(_), _) => Ordering::Less,
+                (_, &Item::OpaqueItem(_)) => Ordering::Greater,
+
+                _ => Ordering::Equal,
+            }
+        };
+
+        self.order.sort_by(ordering);
     }
 }
 
@@ -73,10 +70,12 @@ pub struct Library {
     typedefs: BTreeMap<String, Typedef>,
     specializations: BTreeMap<String, Specialization>,
     functions: BTreeMap<String, Function>,
+
+    template_specializations: Vec<TemplateSpecialization>,
 }
 
 impl Library {
-    fn blank(bindings_crate_name: &str, config: &Config) -> Library {
+    fn new(bindings_crate_name: &str, config: &Config) -> Library {
         Library {
             bindings_crate_name: String::from(bindings_crate_name),
             config: config.clone(),
@@ -87,6 +86,8 @@ impl Library {
             typedefs: BTreeMap::new(),
             specializations: BTreeMap::new(),
             functions: BTreeMap::new(),
+
+            template_specializations: Vec::new(),
         }
     }
 
@@ -121,7 +122,7 @@ impl Library {
     pub fn load_src(src: &path::Path,
                     config: &Config) -> Result<Library, String>
     {
-        let mut library = Library::blank("", config);
+        let mut library = Library::new("", config);
         library.add_std_types();
 
         rust_lib::parse_src(src, &mut |crate_name, items| {
@@ -135,8 +136,8 @@ impl Library {
     pub fn load_crate(lib: Cargo,
                       config: &Config) -> Result<Library, String>
     {
-        let mut library = Library::blank(lib.binding_crate_name(),
-                                         config);
+        let mut library = Library::new(lib.binding_crate_name(),
+                                       config);
         library.add_std_types();
 
         rust_lib::parse_lib(lib,
@@ -460,154 +461,41 @@ impl Library {
 
     /// Build a bindings file from this rust library.
     pub fn generate(mut self) -> Result<GeneratedBindings, String> {
-        let mut result = GeneratedBindings::blank(&self.config);
-
-        // Specialize 'specialization' items into new items and remove the
-        // 'specialization' items
-        self.specialize_items();
-
         // Transfer all typedef annotations to the type they alias
         self.transfer_annotations();
 
-        // Gather only the items that we need for this
-        // `extern "c"` interface
+        // Rename internal parts of items according to rename rules
+        self.rename_item_internals();
+
+        // Specialize and remove 'specialization' items
+        self.specialize_items();
+
+        // Instantiate monomorphs for each generic path
+        self.instantiate_monomorphs();
+
+        let mut result = GeneratedBindings::new(&self.config);
+
+        // Gather only the items that we need for this `extern "c"` interface
         let mut deps = DependencyList::new();
+
         for (_, function) in &self.functions {
-            function.add_deps(&self, &mut deps);
+            function.add_dependencies(&self, &mut deps);
         }
 
-        // Gather a list of all the instantiations of generic structs
-        // TODO - monomorphs of a single type are not sorted by dependencies
-        let mut monomorphs = Monomorphs::new();
-        for (_, function) in &self.functions {
-            function.add_monomorphs(&self, &mut monomorphs);
-        }
-
-        // Copy the binding items in dependencies order into the generated bindings,
-        // adding any instantiations of generic structs along the way.
-        for dep in deps.order {
-            match &dep {
-                &Item::Struct(ref s) => {
-                    if s.generic_params.len() != 0 {
-                        if let Some(monomorphs) = monomorphs.get(&s.name) {
-                            for (_, monomorph) in monomorphs {
-                                result.items.push(match monomorph {
-                                    &Monomorph::Struct(ref x) => {
-                                        Item::Struct(x.clone())
-                                    }
-                                    &Monomorph::OpaqueItem(ref x) => {
-                                        Item::OpaqueItem(x.clone())
-                                    }
-                                });
-                            }
-                        }
-                        continue;
-                    } else {
-                        debug_assert!(!monomorphs.contains_key(&s.name));
-                    }
-                }
-                &Item::OpaqueItem(ref s) => {
-                    if s.generic_params.len() != 0 {
-                        if let Some(monomorphs) = monomorphs.get(&s.name) {
-                            for (_, monomorph) in monomorphs {
-                                result.items.push(match monomorph {
-                                    &Monomorph::Struct(ref x) => {
-                                        Item::Struct(x.clone())
-                                    }
-                                    &Monomorph::OpaqueItem(ref x) => {
-                                        Item::OpaqueItem(x.clone())
-                                    }
-                                });
-                            }
-                        }
-                        continue;
-                    } else {
-                        debug_assert!(!monomorphs.contains_key(&s.name));
-                    }
-                }
-                _ => { }
+        if self.config.structure.generic_template_specialization &&
+           self.config.language == Language::Cxx {
+            for template_specialization in &self.template_specializations {
+              template_specialization.add_dependencies(&self, &mut deps);
             }
-            result.items.push(dep);
         }
 
-        // Sort enums and opaque structs into their own layers because they don't
-        // depend on each other or anything else.
-        let ordering = |a: &Item, b: &Item| {
-            match (a, b) {
-                (&Item::Enum(ref e1), &Item::Enum(ref e2)) => e1.name.cmp(&e2.name),
-                (&Item::Enum(_), _) => Ordering::Less,
-                (_, &Item::Enum(_)) => Ordering::Greater,
+        deps.sort();
 
-                (&Item::OpaqueItem(ref o1), &Item::OpaqueItem(ref o2)) => o1.name.cmp(&o2.name),
-                (&Item::OpaqueItem(_), _) => Ordering::Less,
-                (_, &Item::OpaqueItem(_)) => Ordering::Greater,
-
-                _ => Ordering::Equal,
-            }
-        };
-        result.items.sort_by(ordering);
-
-        result.functions = self.functions.iter()
-                                         .map(|(_, function)| function.clone())
-                                         .collect::<Vec<_>>();
-
-        // Rename all the fields according to their rules and mangle any
-        // paths that refer to generic structs that have been monomorphed.
-        for item in &mut result.items {
-            item.mangle_paths(&monomorphs);
-            item.rename_fields(&self.config);
-        }
-
-        // Rename all the arguments according to their rules and mangle any
-        // paths that refer to generic structs that have been monomorph'ed.
-        for func in &mut result.functions {
-            func.mangle_paths(&monomorphs);
-            func.rename_args(&self.config);
-        }
-
-        // The bindings writing code uses information about the monomorphs
-        // to write out utility template specializations. We ideally should
-        // send a different data structure. Currently we reuse the existing one,
-        // but unfortunately the generic values have types that are not
-        // mangled and need to be. So we build a copy and mangle along the way.
-        // TODO
-        let mut new_monomorphs = Monomorphs::new();
-        for (path, monomorph_set) in monomorphs.iter() {
-            let mut new_monomorph_set = BTreeMap::new();
-            for (generic_values, monomorph) in monomorph_set.iter() {
-                let mut new_generic_values = generic_values.clone();
-                for generic_value in &mut new_generic_values {
-                    generic_value.mangle_paths(&monomorphs);
-                }
-                new_monomorph_set.insert(new_generic_values, monomorph.clone());
-            }
-            new_monomorphs.insert(path.clone(), new_monomorph_set);
-        }
-        result.monomorphs = new_monomorphs;
+        result.items = deps.order;
+        result.functions = self.functions.values().map(|x| x.clone()).collect();
+        result.template_specializations = mem::replace(&mut self.template_specializations, Vec::new());
 
         Ok(result)
-    }
-
-    fn specialize_items(&mut self) {
-        let mut specializations = Vec::new();
-
-        for (_, specialization) in &self.specializations {
-            match specialization.specialize(&self) {
-                Ok(Some(specialization)) => {
-                    specializations.push(specialization);
-                }
-                Ok(None) => { }
-                Err(msg) => {
-                    warn!("specializing {} failed - ({})", specialization.name.clone(), msg);
-                }
-            }
-        }
-
-        for specialization in specializations {
-            self.insert_item(specialization);
-        }
-
-        self.specializations.clear();
     }
 
     fn transfer_annotations(&mut self) {
@@ -666,25 +554,110 @@ impl Library {
             }
         }
     }
+
+    fn rename_item_internals(&mut self) {
+        for item in self.structs.values_mut() {
+            item.rename_fields(&self.config);
+        }
+
+        for item in self.enums.values_mut() {
+            item.rename_values(&self.config);
+        }
+
+        for item in self.functions.values_mut() {
+            item.rename_args(&self.config);
+        }
+    }
+
+    fn specialize_items(&mut self) {
+        let mut specializations = Vec::new();
+
+        for specialization in self.specializations.values() {
+            match specialization.specialize(&self) {
+                Ok(Some(specialization)) => {
+                    specializations.push(specialization);
+                }
+                Ok(None) => { }
+                Err(msg) => {
+                    warn!("specializing {} failed - ({})", specialization.name.clone(), msg);
+                }
+            }
+        }
+
+        for specialization in specializations {
+            self.insert_item(specialization);
+        }
+
+        self.specializations.clear();
+    }
+
+    fn instantiate_monomorphs(&mut self) {
+      assert!(self.specializations.len() == 0);
+
+      let mut monomorphs = Monomorphs::new();
+
+      for x in self.structs.values() {
+        x.add_monomorphs(self, &mut monomorphs);
+      }
+      for x in self.typedefs.values() {
+        x.add_monomorphs(self, &mut monomorphs);
+      }
+      for x in self.functions.values() {
+        x.add_monomorphs(self, &mut monomorphs);
+      }
+
+      for monomorph in monomorphs.drain_structs() {
+        self.structs.insert(monomorph.name.clone(), monomorph);
+      }
+      for monomorph in monomorphs.drain_opaques() {
+        self.opaque_items.insert(monomorph.name.clone(), monomorph);
+      }
+
+      let opaque_items = mem::replace(&mut self.opaque_items, BTreeMap::new());
+      for (path, item) in opaque_items {
+        if item.generic_params.len() != 0 {
+          continue;
+        }
+        self.opaque_items.insert(path, item);
+      }
+
+      let structs = mem::replace(&mut self.structs, BTreeMap::new());
+      for (path, item) in structs {
+        if item.generic_params.len() != 0 {
+          continue;
+        }
+        self.structs.insert(path, item);
+      }
+
+      for x in self.structs.values_mut() {
+        x.mangle_paths(&monomorphs);
+      }
+      for x in self.typedefs.values_mut() {
+        x.mangle_paths(&monomorphs);
+      }
+      for x in self.functions.values_mut() {
+        x.mangle_paths(&monomorphs);
+      }
+
+      self.template_specializations = monomorphs.drain_template_specializations();
+    }
 }
 
 /// A GeneratedBindings is a completed bindings file ready to be written.
-#[derive(Debug, Clone)]
 pub struct GeneratedBindings {
     config: Config,
-
-    monomorphs: Monomorphs,
     items: Vec<Item>,
     functions: Vec<Function>,
+    template_specializations: Vec<TemplateSpecialization>,
 }
 
 impl GeneratedBindings {
-    fn blank(config: &Config) -> GeneratedBindings {
+    fn new(config: &Config) -> GeneratedBindings {
         GeneratedBindings {
             config: config.clone(),
-            monomorphs: Monomorphs::new(),
             items: Vec::new(),
             functions: Vec::new(),
+            template_specializations: Vec::new(),
         }
     }
 
@@ -823,55 +796,33 @@ impl GeneratedBindings {
 
         if self.config.structure.generic_template_specialization &&
            self.config.language == Language::Cxx {
-            let mut specialization = Vec::new();
-            for (path, monomorph_sets) in &self.monomorphs {
-                if monomorph_sets.len() == 0 {
-                    continue;
+          for template in &self.template_specializations {
+            out.new_line_if_not_start();
+            out.write("template<");
+            for (i, param) in template.generic.generic_params.iter().enumerate() {
+                if i != 0 {
+                    out.write(", ")
                 }
-
-                // TODO
-                let is_opaque = monomorph_sets.iter().next().unwrap().1.is_opaque();
-                let generics_count = monomorph_sets.iter().next().unwrap().0.len();
-                let generics_names = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-                                      "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
-
-                if is_opaque || generics_count > 26 {
-                    continue;
-                }
-
-                out.new_line_if_not_start();
-                out.write("template<");
-                for i in 0..generics_count {
-                    if i != 0 {
-                        out.write(", ")
-                    }
-                    out.write("typename ");
-                    out.write(generics_names[i]);
-                }
-                out.write(">");
-                out.new_line();
-                out.write(&format!("struct {}", path));
-                out.open_brace();
-                out.close_brace(true);
-                out.new_line();
-                // Collect all specializations and print them after theall generic versions are generated
-                // This is needed because the specilizations could have dependencies to each other
-                specialization.push((path, monomorph_sets));
+                out.write("typename ");
+                out.write(param);
             }
+            out.write(">");
+            out.new_line();
+            out.write(&format!("struct {};", template.generic.name));
+            out.new_line();
 
-            for (path, monomorph_sets) in specialization {
-                for (generic_values, monomorph) in monomorph_sets {
-                    out.new_line();
-                    out.write("template<>");
-                    out.new_line();
-                    out.write(&format!("struct {}<", path));
-                    out.write_horizontal_source_list(generic_values, ListType::Join(", "));
-                    out.write(&format!("> : public {}", monomorph.name()));
-                    out.open_brace();
-                    out.close_brace(true);
-                    out.new_line();
-                }
+            for &(ref monomorph_path, ref generic_values) in &template.monomorphs {
+              out.new_line();
+              out.write("template<>");
+              out.new_line();
+              out.write(&format!("struct {}<", template.generic.name));
+              out.write_horizontal_source_list(generic_values, ListType::Join(", "));
+              out.write(&format!("> : public {}", monomorph_path));
+              out.open_brace();
+              out.close_brace(true);
+              out.new_line();
             }
+          }
         }
 
         if self.config.language == Language::Cxx {

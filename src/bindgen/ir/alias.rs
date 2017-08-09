@@ -11,11 +11,12 @@ use bindgen::annotation::*;
 use bindgen::config::Config;
 use bindgen::ir::*;
 use bindgen::library::*;
+use bindgen::monomorph::Monomorphs;
 use bindgen::writer::*;
 
 /// A type alias that generates a copy of its aliasee with a new name. If the type
-/// alias has generic values, it monomorphosizes its aliasee. This is useful for
-/// presenting an interface that includes generic types.
+/// alias has generic values, it specializes its aliasee. This is useful for
+/// presenting an interface that includes generic types without mangling.
 #[derive(Debug, Clone)]
 pub struct Specialization {
     pub name: String,
@@ -91,6 +92,7 @@ impl Specialization {
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                                                   .collect(),
+                            tuple_struct: aliased.tuple_struct,
                             generic_params: self.generic_params.clone(),
                             documentation: aliased.documentation.clone(),
                         })))
@@ -189,8 +191,8 @@ impl Typedef {
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
-        self.aliased.add_deps(library, out);
+    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
+        self.aliased.add_dependencies(library, out);
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

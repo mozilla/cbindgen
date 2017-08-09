@@ -11,6 +11,7 @@ use bindgen::cdecl;
 use bindgen::config::{Config, Layout};
 use bindgen::ir::*;
 use bindgen::library::*;
+use bindgen::monomorph::Monomorphs;
 use bindgen::rename::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
@@ -46,10 +47,10 @@ impl Function {
         })
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
-        self.ret.add_deps(library, out);
+    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
+        self.ret.add_dependencies(library, out);
         for &(_, ref ty) in &self.args {
-            ty.add_deps(library, out);
+            ty.add_dependencies(library, out);
         }
     }
 
@@ -57,6 +58,13 @@ impl Function {
         self.ret.add_monomorphs(library, out);
         for &(_, ref ty) in &self.args {
             ty.add_monomorphs(library, out);
+        }
+    }
+
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+        self.ret.mangle_paths(monomorphs);
+        for &mut (_, ref mut ty) in &mut self.args {
+            ty.mangle_paths(monomorphs);
         }
     }
 
@@ -70,13 +78,6 @@ impl Function {
                                                                  IdentifierType::FunctionArg),
                                            x.1.clone()))
                                   .collect()
-        }
-    }
-
-    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        self.ret.mangle_paths(monomorphs);
-        for &mut (_, ref mut ty) in &mut self.args {
-            ty.mangle_paths(monomorphs);
         }
     }
 }

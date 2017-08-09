@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::BTreeMap;
 use std::io::Write;
 
 use syn;
@@ -10,8 +9,8 @@ use syn;
 use bindgen::annotation::*;
 use bindgen::config::{Config, Language};
 use bindgen::ir::*;
-use bindgen::library::*;
 use bindgen::mangle::*;
+use bindgen::monomorph::Monomorphs;
 use bindgen::writer::*;
 
 #[derive(Debug, Clone)]
@@ -39,12 +38,8 @@ impl OpaqueItem {
         }
     }
 
-    pub fn add_monomorphs(&self, generic_values: &Vec<Type>, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() == generic_values.len());
-
-        if self.generic_params.len() == 0 {
-            return;
-        }
+    pub fn instantiate_monomorph(&self, generic_values: &Vec<Type>, out: &mut Monomorphs) {
+        assert!(self.generic_params.len() > 0);
 
         let monomorph = OpaqueItem {
             name: mangle_path(&self.name, generic_values),
@@ -53,11 +48,7 @@ impl OpaqueItem {
             documentation: self.documentation.clone(),
         };
 
-        if !out.contains_key(&self.name) {
-            out.insert(self.name.clone(), BTreeMap::new());
-        }
-        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
-                                                Monomorph::OpaqueItem(monomorph));
+        out.insert_opaque(self, monomorph, generic_values.clone());
     }
 }
 

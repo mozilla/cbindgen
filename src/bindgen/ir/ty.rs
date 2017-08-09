@@ -10,6 +10,7 @@ use syn;
 use bindgen::cdecl;
 use bindgen::config::Config;
 use bindgen::library::*;
+use bindgen::monomorph::Monomorphs;
 use bindgen::utilities::*;
 use bindgen::writer::*;
 use bindgen::ir::{Documentation, Item, GenericPath, Path};
@@ -245,7 +246,6 @@ impl Type {
 
     pub fn get_root_path(&self) -> Option<Path> {
         let mut current = self;
-
         loop {
             match current {
                 &Type::ConstPtr(ref ty) => { current = ty },
@@ -302,24 +302,24 @@ impl Type {
         }
     }
 
-    pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut DependencyList) {
+    pub fn add_dependencies_ignoring_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut DependencyList) {
         match self {
             &Type::ConstPtr(ref ty) => {
-                ty.add_deps_with_generics(generic_params, library, out);
+                ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
             &Type::Ptr(ref ty) => {
-                ty.add_deps_with_generics(generic_params, library, out);
+                ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
             &Type::Path(ref path) => {
                 for generic_value in &path.generics {
-                    generic_value.add_deps_with_generics(generic_params, library, out);
+                    generic_value.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
                 if !generic_params.contains(&path.name) {
                     if let Some(value) = library.resolve_path(&path.name) {
                         if !out.items.contains(&path.name) {
                             out.items.insert(path.name.clone());
 
-                            value.add_deps(library, out);
+                            value.add_dependencies(library, out);
 
                             out.order.push(value);
                         }
@@ -330,19 +330,19 @@ impl Type {
             }
             &Type::Primitive(_) => { }
             &Type::Array(ref ty, _) => {
-                ty.add_deps_with_generics(generic_params, library, out);
+                ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
             &Type::FuncPtr(ref ret, ref args) => {
-                ret.add_deps_with_generics(generic_params, library, out);
+                ret.add_dependencies_ignoring_generics(generic_params, library, out);
                 for arg in args {
-                    arg.add_deps_with_generics(generic_params, library, out);
+                    arg.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
             }
         }
     }
 
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
-        self.add_deps_with_generics(&Vec::new(), library, out)
+    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
+        self.add_dependencies_ignoring_generics(&Vec::new(), library, out)
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -354,21 +354,29 @@ impl Type {
                 ty.add_monomorphs(library, out);
             }
             &Type::Path(ref path) => {
+                if path.generics.len() == 0 ||
+                   out.contains(&path) {
+                    return;
+                }
+
                 let item = library.resolve_path(&path.name);
                 if let Some(item) = item {
                     match item {
-                        Item::Struct(ref x) => {
-                            x.add_monomorphs(library, &path.generics, out);
-                        },
                         Item::OpaqueItem(ref x) => {
-                            x.add_monomorphs(&path.generics, out);
+                            x.instantiate_monomorph(&path.generics, out);
                         },
-                        Item::Typedef(ref x) => {
-                            assert!(path.generics.len() == 0);
-                            x.add_monomorphs(library, out);
+                        Item::Struct(ref x) => {
+                            x.instantiate_monomorph(library, &path.generics, out);
                         },
-                        Item::Specialization(..) => { unreachable!() },
-                        _ => { }
+                        Item::Enum(..) => {
+                            warn!("cannot instantiate a generic enum")
+                        },
+                        Item::Typedef(..) => {
+                            warn!("cannot instantiate a generic typedef")
+                        },
+                        Item::Specialization(..) => {
+                            warn!("cannot instantiate a generic specialization")
+                        },
                     }
                 }
             }
@@ -394,18 +402,15 @@ impl Type {
                 ty.mangle_paths(monomorphs);
             }
             &mut Type::Path(ref mut path) => {
-                // TODO: simplify
-                if path.generics.len() != 0 {
-                    if let Some(monomorph_list) = monomorphs.get(&path.name) {
-                        if let Some(monomorph) = monomorph_list.get(&path.generics) {
-                            path.name = monomorph.name().to_owned();
-                            path.generics = Vec::new();
-                        } else {
-                            warn!("cannot find a monomorph for {:?}", path);
-                        }
-                    } else {
-                        warn!("cannot find a monomorph for {:?}", path);
-                    }
+                if path.generics.len() == 0 {
+                    return;
+                }
+
+                if let Some(mangled) = monomorphs.mangle_path(path) {
+                    path.name = mangled.clone();
+                    path.generics = Vec::new();
+                } else {
+                    warn!("cannot find a monomorph for {:?}", path);
                 }
             }
             &mut Type::Primitive(_) => { }

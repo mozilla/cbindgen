@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use bindgen::config::*;
 use bindgen::ir::*;
 use bindgen::library::*;
 
@@ -17,42 +16,18 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
+    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
         match self {
             &Item::Struct(ref x) => {
-                x.add_deps(library, out);
+                x.add_dependencies(library, out);
             },
             &Item::Typedef(ref x) => {
-                x.add_deps(library, out);
+                x.add_dependencies(library, out);
             },
             &Item::Specialization(..) => {
                 unreachable!();
             },
             _ => { }
-        }
-    }
-
-    pub fn rename_fields(&mut self, config: &Config) {
-        match self {
-            &mut Item::Struct(ref mut x) => { x.rename_fields(config); },
-            &mut Item::Enum(ref mut x) => { x.rename_fields(config); },
-            _ => { },
-        }
-    }
-
-    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        match self {
-            &mut Item::OpaqueItem(_) => { },
-            &mut Item::Struct(ref mut x) => {
-                x.mangle_paths(monomorphs);
-            },
-            &mut Item::Enum(_) => { },
-            &mut Item::Typedef(ref mut x) => {
-                x.mangle_paths(monomorphs);
-            },
-            &mut Item::Specialization(..) => {
-                unreachable!();
-            },
         }
     }
 }
