@@ -107,12 +107,6 @@ impl Struct {
                                                 Monomorph::Struct(monomorph));
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        for &(_, ref ty, _) in &self.fields {
-            ty.add_specializations(library, out);
-        }
-    }
-
     pub fn rename_fields(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.structure.rename_fields];

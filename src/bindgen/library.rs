@@ -61,23 +61,6 @@ impl DependencyList {
     }
 }
 
-/// A specialization list is used for gathering what order to output the types.
-pub struct SpecializationList {
-    pub order: Vec<Item>,
-    pub items: HashSet<PathRef>,
-    pub errors: Vec<(String, String)>,
-}
-
-impl SpecializationList {
-    fn new() -> SpecializationList {
-        SpecializationList {
-            order: Vec::new(),
-            items: HashSet::new(),
-            errors: Vec::new(),
-        }
-    }
-}
-
 /// A library contains all of the information needed to generate bindings for a rust library.
 #[derive(Debug, Clone)]
 pub struct Library {
@@ -445,6 +428,16 @@ impl Library {
               fail2);
     }
 
+    pub fn insert_item(&mut self, item: Item) {
+        match item {
+            Item::OpaqueItem(x) => { self.opaque_items.insert(x.name.clone(), x); },
+            Item::Struct(x) => { self.structs.insert(x.name.clone(), x); },
+            Item::Enum(x) => { self.enums.insert(x.name.clone(), x); },
+            Item::Typedef(x) => { self.typedefs.insert(x.name.clone(), x); },
+            Item::Specialization(x) => { self.specializations.insert(x.name.clone(), x); },
+        };
+    }
+
     pub fn resolve_path(&self, p: &PathRef) -> Option<Item> {
         if let Some(x) = self.enums.get(p) {
             return Some(Item::Enum(x.clone()));
@@ -469,37 +462,9 @@ impl Library {
     pub fn generate(mut self) -> Result<GeneratedBindings, String> {
         let mut result = GeneratedBindings::blank(&self.config);
 
-        // Specialize types into new types and remove all the specializations
-        // that are left behind
-        let mut specializations = SpecializationList::new();
-        for (_, function) in &self.functions {
-            function.add_specializations(&self, &mut specializations);
-        }
-        self.specializations.clear();
-
-        for specialization in specializations.order {
-            let name = specialization.name().to_owned();
-            match specialization {
-                Item::Struct(x) => {
-                    self.structs.insert(name, x);
-                }
-                Item::OpaqueItem(x) => {
-                    self.opaque_items.insert(name, x);
-                }
-                Item::Enum(x) => {
-                    self.enums.insert(name, x);
-                }
-                Item::Typedef(x) => {
-                    self.typedefs.insert(name, x);
-                }
-                Item::Specialization(..) => {
-                    unreachable!();
-                }
-            }
-        }
-        for (path, error) in specializations.errors {
-            warn!("specializing {} failed - ({})", path, error);
-        }
+        // Specialize 'specialization' items into new items and remove the
+        // 'specialization' items
+        self.specialize_items();
 
         // Transfer all typedef annotations to the type they alias
         let mut typedef_annotations = HashMap::new();
@@ -672,6 +637,28 @@ impl Library {
         result.monomorphs = new_monomorphs;
 
         Ok(result)
+    }
+
+    fn specialize_items(&mut self) {
+        let mut specializations = Vec::new();
+
+        for (_, specialization) in &self.specializations {
+            match specialization.specialize(&self) {
+                Ok(Some(specialization)) => {
+                    specializations.push(specialization);
+                }
+                Ok(None) => { }
+                Err(msg) => {
+                    warn!("specializing {} failed - ({})", specialization.name.clone(), msg);
+                }
+            }
+        }
+
+        for specialization in specializations {
+            self.insert_item(specialization);
+        }
+
+        self.specializations.clear();
     }
 }
 

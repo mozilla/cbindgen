@@ -384,45 +384,6 @@ impl Type {
         }
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        match self {
-            &Type::ConstPtr(ref ty) => {
-                ty.add_specializations(library, out);
-            }
-            &Type::Ptr(ref ty) => {
-                ty.add_specializations(library, out);
-            }
-            &Type::Path(ref path, ref generic_values) => {
-                let item = library.resolve_path(path);
-                if let Some(item) = item {
-                    match item {
-                        Item::Struct(ref x) => {
-                            x.add_specializations(library, out);
-                        },
-                        Item::Typedef(ref x) => {
-                            assert!(generic_values.len() == 0);
-                            x.add_specializations(library, out);
-                        },
-                        Item::Specialization(ref x) => {
-                            x.add_specializations(library, out);
-                        },
-                        _ => { }
-                    }
-                }
-            }
-            &Type::Primitive(_) => { }
-            &Type::Array(ref ty, _) => {
-                ty.add_specializations(library, out);
-            }
-            &Type::FuncPtr(ref ret, ref args) => {
-                ret.add_specializations(library, out);
-                for arg in args {
-                    arg.add_specializations(library, out);
-                }
-            }
-        }
-    }
-
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         match self {
             &mut Type::ConstPtr(ref mut ty) => {

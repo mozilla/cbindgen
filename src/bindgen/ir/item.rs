@@ -17,16 +17,6 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn name(&self) -> &str {
-        match self {
-            &Item::OpaqueItem(ref x) => { &x.name },
-            &Item::Struct(ref x) => { &x.name },
-            &Item::Enum(ref x) => { &x.name },
-            &Item::Typedef(ref x) => { &x.name },
-            &Item::Specialization(ref x) => { &x.name },
-        }
-    }
-
     pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
         match self {
             &Item::Struct(ref x) => {
@@ -37,21 +27,6 @@ impl Item {
             },
             &Item::Specialization(..) => {
                 unreachable!();
-            },
-            _ => { }
-        }
-    }
-
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        match self {
-            &Item::Struct(ref x) => {
-                x.add_specializations(library, out);
-            },
-            &Item::Typedef(ref x) => {
-                x.add_specializations(library, out);
-            },
-            &Item::Specialization(ref x) => {
-                x.add_specializations(library, out);
             },
             _ => { }
         }

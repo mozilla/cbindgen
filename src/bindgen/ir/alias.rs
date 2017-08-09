@@ -61,24 +61,6 @@ impl Specialization {
         }
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        match self.specialize(library) {
-            Ok(Some(specialization)) => {
-                if !out.items.contains(specialization.name()) {
-                    out.items.insert(specialization.name().to_owned());
-
-                    specialization.add_specializations(library, out);
-
-                    out.order.push(specialization);
-                }
-            }
-            Ok(None) => { }
-            Err(msg) => {
-                out.errors.push((self.name.clone(), msg));
-            }
-        }
-    }
-
     pub fn specialize(&self, library: &Library) -> Result<Option<Item>, String> {
         match library.resolve_path(&self.aliased) {
             Some(aliased) => {
@@ -217,10 +199,6 @@ impl Typedef {
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         self.aliased.add_monomorphs(library, out);
-    }
-
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        self.aliased.add_specializations(library, out);
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
