@@ -61,8 +61,8 @@ impl CDecl {
 
     fn build_type(&mut self, t: &Type, is_const: bool) {
         match t {
-            &Type::Path(ref path, ref generic_values) => {
-                assert!(generic_values.len() == 0);
+            &Type::Path(ref path) => {
+                assert!(path.generics.len() == 0);
 
                 if is_const {
                     assert!(self.type_qualifers.len() == 0);
@@ -70,7 +70,7 @@ impl CDecl {
                 }
 
                 assert!(self.type_name.len() == 0);
-                self.type_name = path.clone();
+                self.type_name = path.name.clone();
             }
             &Type::Primitive(ref p) => {
                 if is_const {

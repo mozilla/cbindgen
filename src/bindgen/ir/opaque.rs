@@ -16,7 +16,7 @@ use bindgen::writer::*;
 
 #[derive(Debug, Clone)]
 pub struct OpaqueItem {
-    pub name: PathRef,
+    pub name: Path,
     pub generic_params: Vec<String>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,

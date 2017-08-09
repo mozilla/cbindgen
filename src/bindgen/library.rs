@@ -44,12 +44,12 @@ impl Monomorph {
 }
 
 pub type MonomorphList = BTreeMap<Vec<Type>, Monomorph>;
-pub type Monomorphs = BTreeMap<PathRef, MonomorphList>;
+pub type Monomorphs = BTreeMap<Path, MonomorphList>;
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct DependencyList {
     pub order: Vec<Item>,
-    pub items: HashSet<PathRef>,
+    pub items: HashSet<Path>,
 }
 
 impl DependencyList {
@@ -438,7 +438,7 @@ impl Library {
         };
     }
 
-    pub fn resolve_path(&self, p: &PathRef) -> Option<Item> {
+    pub fn resolve_path(&self, p: &Path) -> Option<Item> {
         if let Some(x) = self.enums.get(p) {
             return Some(Item::Enum(x.clone()));
         }

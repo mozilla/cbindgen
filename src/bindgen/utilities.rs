@@ -181,39 +181,3 @@ impl SynAbiHelpers for syn::Abi {
         self == &syn::Abi::Named(String::from("C"))
     }
 }
-
-/// Helper function for loading a Path and generics from a syn::Path
-pub trait SynPathHelpers {
-    fn convert_to_generic_single_segment(&self) -> Result<(String, Vec<Type>), String>;
-}
-
-impl SynPathHelpers for syn::Path {
-    fn convert_to_generic_single_segment(&self) -> Result<(String, Vec<Type>), String> {
-        if self.segments.len() != 1 {
-            return Err(format!("path contains more than one segment"));
-        }
-
-        let name = self.segments[0].ident.to_string();
-
-        if name == "PhantomData" {
-            return Ok((name, Vec::new()));
-        }
-
-        let generics = match &self.segments[0].parameters {
-            &syn::PathParameters::AngleBracketed(ref d) => {
-                if !d.lifetimes.is_empty() ||
-                   !d.bindings.is_empty() {
-                    return Err(format!("path generic parameter contains bindings, or lifetimes"));
-                }
-
-                d.types.iter()
-                       .try_skip_map(|x| Type::load(x))?
-            }
-            &syn::PathParameters::Parenthesized(_) => {
-                return Err(format!("path contains parentheses"));
-            }
-        };
-
-        Ok((name, generics))
-    }
-}

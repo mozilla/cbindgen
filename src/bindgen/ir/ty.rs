@@ -12,7 +12,7 @@ use bindgen::config::Config;
 use bindgen::library::*;
 use bindgen::utilities::*;
 use bindgen::writer::*;
-use bindgen::ir::{Documentation, Item, PathRef};
+use bindgen::ir::{Documentation, Item, GenericPath, Path};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrimitiveType {
@@ -163,7 +163,7 @@ impl fmt::Display for PrimitiveType {
 pub enum Type {
     ConstPtr(Box<Type>),
     Ptr(Box<Type>),
-    Path(PathRef, Vec<Type>),
+    Path(GenericPath),
     Primitive(PrimitiveType),
     Array(Box<Type>, u64),
     FuncPtr(Box<Type>, Vec<Type>),
@@ -199,19 +199,19 @@ impl Type {
                 }
             }
             &syn::Ty::Path(_, ref path) => {
-                let (name, generics) = path.convert_to_generic_single_segment()?;
+                let path = GenericPath::load(path)?;
 
-                if name == "PhantomData" {
+                if path.name == "PhantomData" {
                     return Ok(None);
                 }
 
-                if let Some(prim) = PrimitiveType::maybe(&name) {
-                    if generics.len() > 0 {
+                if let Some(prim) = PrimitiveType::maybe(&path.name) {
+                    if path.generics.len() > 0 {
                         return Err(format!("primitive has generics"));
                     }
                     Type::Primitive(prim)
                 } else {
-                    Type::Path(name, generics)
+                    Type::Path(path)
                 }
             }
             &syn::Ty::Array(ref ty, syn::ConstExpr::Lit(syn::Lit::Int(size, _))) => {
@@ -243,15 +243,15 @@ impl Type {
         return Ok(Some(converted));
     }
 
-    pub fn get_root_path(&self) -> Option<PathRef> {
+    pub fn get_root_path(&self) -> Option<Path> {
         let mut current = self;
 
         loop {
             match current {
                 &Type::ConstPtr(ref ty) => { current = ty },
                 &Type::Ptr(ref ty) => { current = ty },
-                &Type::Path(ref path, ..) => {
-                    return Some(path.clone());
+                &Type::Path(ref path) => {
+                    return Some(path.name.clone());
                 },
                 &Type::Primitive(..) => {
                     return None;
@@ -274,17 +274,18 @@ impl Type {
             &Type::Ptr(ref ty) => {
                 Type::Ptr(Box::new(ty.specialize(mappings)))
             }
-            &Type::Path(ref path, ref generic_values) => {
+            &Type::Path(ref path) => {
                 for &(param, value) in mappings {
-                    if *path == *param {
+                    if *path.name == *param {
                         return value.clone();
                     }
                 }
 
-                Type::Path(path.clone(),
-                           generic_values.iter()
-                                         .map(|x| x.specialize(mappings))
-                                         .collect())
+                let specialized = GenericPath::new(path.name.clone(),
+                                                   path.generics.iter()
+                                                                .map(|x| x.specialize(mappings))
+                                                                .collect());
+                Type::Path(specialized)
             }
             &Type::Primitive(ref primitive) => {
                 Type::Primitive(primitive.clone())
@@ -309,21 +310,21 @@ impl Type {
             &Type::Ptr(ref ty) => {
                 ty.add_deps_with_generics(generic_params, library, out);
             }
-            &Type::Path(ref path, ref generic_values) => {
-                for generic_value in generic_values {
+            &Type::Path(ref path) => {
+                for generic_value in &path.generics {
                     generic_value.add_deps_with_generics(generic_params, library, out);
                 }
-                if !generic_params.contains(path) {
-                    if let Some(value) = library.resolve_path(path) {
-                        if !out.items.contains(path) {
-                            out.items.insert(path.clone());
+                if !generic_params.contains(&path.name) {
+                    if let Some(value) = library.resolve_path(&path.name) {
+                        if !out.items.contains(&path.name) {
+                            out.items.insert(path.name.clone());
 
                             value.add_deps(library, out);
 
                             out.order.push(value);
                         }
                     } else {
-                        warn!("can't find {}", path);
+                        warn!("can't find {}", path.name);
                     }
                 }
             }
@@ -352,18 +353,18 @@ impl Type {
             &Type::Ptr(ref ty) => {
                 ty.add_monomorphs(library, out);
             }
-            &Type::Path(ref path, ref generic_values) => {
-                let item = library.resolve_path(path);
+            &Type::Path(ref path) => {
+                let item = library.resolve_path(&path.name);
                 if let Some(item) = item {
                     match item {
                         Item::Struct(ref x) => {
-                            x.add_monomorphs(library, generic_values, out);
+                            x.add_monomorphs(library, &path.generics, out);
                         },
                         Item::OpaqueItem(ref x) => {
-                            x.add_monomorphs(generic_values, out);
+                            x.add_monomorphs(&path.generics, out);
                         },
                         Item::Typedef(ref x) => {
-                            assert!(generic_values.len() == 0);
+                            assert!(path.generics.len() == 0);
                             x.add_monomorphs(library, out);
                         },
                         Item::Specialization(..) => { unreachable!() },
@@ -392,18 +393,18 @@ impl Type {
             &mut Type::Ptr(ref mut ty) => {
                 ty.mangle_paths(monomorphs);
             }
-            &mut Type::Path(ref mut path, ref mut generic_values) => {
+            &mut Type::Path(ref mut path) => {
                 // TODO: simplify
-                if generic_values.len() != 0 {
-                    if let Some(monomorph_list) = monomorphs.get(path) {
-                        if let Some(monomorph) = monomorph_list.get(generic_values) {
-                            *path = monomorph.name().to_owned();
-                            *generic_values = Vec::new();
+                if path.generics.len() != 0 {
+                    if let Some(monomorph_list) = monomorphs.get(&path.name) {
+                        if let Some(monomorph) = monomorph_list.get(&path.generics) {
+                            path.name = monomorph.name().to_owned();
+                            path.generics = Vec::new();
                         } else {
-                            warn!("cannot find a monomorph for {}::{:?}", path, generic_values);
+                            warn!("cannot find a monomorph for {:?}", path);
                         }
                     } else {
-                        warn!("cannot find a monomorph for {}::{:?}", path, generic_values);
+                        warn!("cannot find a monomorph for {:?}", path);
                     }
                 }
             }

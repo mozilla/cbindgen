@@ -11,7 +11,6 @@ use bindgen::annotation::*;
 use bindgen::config::Config;
 use bindgen::ir::*;
 use bindgen::library::*;
-use bindgen::utilities::*;
 use bindgen::writer::*;
 
 /// A type alias that generates a copy of its aliasee with a new name. If the type
@@ -21,9 +20,8 @@ use bindgen::writer::*;
 pub struct Specialization {
     pub name: String,
     pub annotations: AnnotationSet,
-    pub aliased: PathRef,
+    pub aliased: GenericPath,
     pub generic_params: Vec<String>,
-    pub generic_values: Vec<Type>,
     pub documentation: Documentation,
 }
 
@@ -40,9 +38,9 @@ impl Specialization {
                                                        .map(|x| x.ident.to_string())
                                                        .collect::<Vec<_>>();
 
-                let (path, generic_values) = p.convert_to_generic_single_segment()?;
+                let path = GenericPath::load(p)?;
 
-                if PrimitiveType::maybe(&path).is_some() {
+                if PrimitiveType::maybe(&path.name).is_some() {
                     return Err(format!("can't specialize a primitive"));
                 }
 
@@ -51,7 +49,6 @@ impl Specialization {
                     annotations: annotations,
                     aliased: path,
                     generic_params: generic_params,
-                    generic_values: generic_values,
                     documentation: Documentation::load(doc),
                 })
             }
@@ -62,11 +59,11 @@ impl Specialization {
     }
 
     pub fn specialize(&self, library: &Library) -> Result<Option<Item>, String> {
-        match library.resolve_path(&self.aliased) {
+        match library.resolve_path(&self.aliased.name) {
             Some(aliased) => {
                 match aliased {
                     Item::OpaqueItem(ref aliased) => {
-                        if self.generic_values.len() !=
+                        if self.aliased.generics.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));
                         }
@@ -79,13 +76,13 @@ impl Specialization {
                         })))
                     }
                     Item::Struct(ref aliased) => {
-                        if self.generic_values.len() !=
+                        if self.aliased.generics.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));
                         }
 
                         let mappings = aliased.generic_params.iter()
-                                                             .zip(self.generic_values.iter())
+                                                             .zip(self.aliased.generics.iter())
                                                              .collect::<Vec<_>>();
 
                         Ok(Some(Item::Struct(Struct {
@@ -116,25 +113,24 @@ impl Specialization {
                         })))
                     }
                     Item::Specialization(ref aliased) => {
-                        if self.generic_values.len() !=
+                        if self.aliased.generics.len() !=
                            aliased.generic_params.len() {
                             return Err(format!("incomplete specialization"));
                         }
 
                         let mappings = aliased.generic_params.iter()
-                                                             .zip(self.generic_values.iter())
+                                                             .zip(self.aliased.generics.iter())
                                                              .collect::<Vec<_>>();
 
-                        let generic_values = aliased.generic_values.iter()
-                                                                   .map(|x| x.specialize(&mappings))
-                                                                   .collect();
+                        let generics = aliased.aliased.generics.iter()
+                                                               .map(|x| x.specialize(&mappings))
+                                                               .collect();
 
                         Specialization {
                             name: self.name.clone(),
                             annotations: self.annotations.clone(),
-                            aliased: aliased.aliased.clone(),
+                            aliased: GenericPath::new(aliased.aliased.name.clone(), generics),
                             generic_params: self.generic_params.clone(),
-                            generic_values: generic_values,
                             documentation: self.documentation.clone(),
                         }.specialize(library)
                     }
@@ -173,7 +169,7 @@ impl Typedef {
         }
     }
 
-    pub fn transfer_annotations(&mut self, out: &mut HashMap<PathRef, AnnotationSet>) {
+    pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {
         if self.annotations.is_empty() {
             return;
         }

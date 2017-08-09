@@ -26,8 +26,8 @@ pub fn mangle_path(name: &str, generic_values: &[Type]) -> String {
 
 fn append_type(ty: &Type, out: &mut String, generic_handler: fn(&str, &[Type]) -> String) -> bool {
     match ty {
-        &Type::Path(ref path, ref generic_values) => {
-            out.push_str(&generic_handler(path, generic_values));
+        &Type::Path(ref path) => {
+            out.push_str(&generic_handler(&path.name, &path.generics));
             true
         }
         &Type::Primitive(ref primitive) => {
