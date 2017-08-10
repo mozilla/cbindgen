@@ -4,6 +4,7 @@
 
 use std::collections::BTreeMap;
 use std::io::Write;
+use std::fmt::{Display, self};
 
 use syn;
 
@@ -23,6 +24,12 @@ pub struct Struct {
     pub fields: Vec<(String, Type, Documentation)>,
     pub generic_params: Vec<String>,
     pub documentation: Documentation,
+}
+
+impl Display for Struct {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Struct {}", self.name)
+    }
 }
 
 impl Struct {
@@ -66,18 +73,31 @@ impl Struct {
         })
     }
 
+    pub fn as_opaque(&self) -> OpaqueItem {
+        OpaqueItem {
+            name: self.name.clone(),
+            generic_params: self.generic_params.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        }
+    }
+
     pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
         for &(_, ref ty, _) in &self.fields {
             ty.add_deps_with_generics(&self.generic_params, library, out);
         }
     }
 
-    pub fn add_monomorphs(&self, library: &Library, generic_values: &Vec<Type>, out: &mut Monomorphs) {
+    pub fn add_monomorphs(&self, library: &Library,
+                          generic_values: &Vec<Type>,
+                          out: &mut Monomorphs,
+                          cycle_check: &mut CycleCheckList)
+    {
         assert!(self.generic_params.len() == generic_values.len());
 
         if self.generic_params.len() == 0 {
             for &(_, ref ty, _) in &self.fields {
-                ty.add_monomorphs(library, out);
+                ty.add_monomorphs(library, out, cycle_check);
             }
             return;
         }
@@ -97,19 +117,22 @@ impl Struct {
         };
 
         for &(_, ref ty, _) in &monomorph.fields {
-            ty.add_monomorphs(library, out);
+            ty.add_monomorphs(library, out, cycle_check);
         }
 
         if !out.contains_key(&self.name) {
             out.insert(self.name.clone(), BTreeMap::new());
         }
-        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
+        out.get_mut(&self.name).unwrap().insert(generic_values.clone(),
                                                 Monomorph::Struct(monomorph));
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+    pub fn add_specializations(&self, library: &Library,
+                               out: &mut SpecializationList,
+                               cycle_check: &mut CycleCheckList)
+    {
         for &(_, ref ty, _) in &self.fields {
-            ty.add_specializations(library, out);
+            ty.add_specializations(library, out, cycle_check);
         }
     }
 

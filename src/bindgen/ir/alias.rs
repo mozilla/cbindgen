@@ -61,13 +61,16 @@ impl Specialization {
         }
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+    pub fn add_specializations(&self, library: &Library,
+                               out: &mut SpecializationList,
+                               cycle_check: &mut CycleCheckList)
+    {
         match self.specialize(library) {
             Ok(Some(specialization)) => {
                 if !out.items.contains(specialization.name()) {
                     out.items.insert(specialization.name().to_owned());
 
-                    specialization.add_specializations(library, out);
+                    specialization.add_specializations(library, out, cycle_check);
 
                     out.order.push(specialization);
                 }
@@ -215,12 +218,18 @@ impl Typedef {
         self.aliased.add_deps(library, out);
     }
 
-    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
-        self.aliased.add_monomorphs(library, out);
+    pub fn add_monomorphs(&self, library: &Library,
+                          out: &mut Monomorphs,
+                          cycle_check: &mut CycleCheckList)
+    {
+        self.aliased.add_monomorphs(library, out, cycle_check);
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        self.aliased.add_specializations(library, out);
+    pub fn add_specializations(&self, library: &Library,
+                               out: &mut SpecializationList,
+                               cycle_check: &mut CycleCheckList)
+    {
+        self.aliased.add_specializations(library, out, cycle_check);
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {

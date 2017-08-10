@@ -6,7 +6,6 @@ use std::io::Write;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::cmp::Ordering;
 use std::fs::File;
 use std::path;
 use std::fs;
@@ -20,6 +19,9 @@ use bindgen::ir::*;
 use bindgen::rust_lib;
 use bindgen::utilities::*;
 use bindgen::writer::{ListType, Source, SourceWriter};
+
+use petgraph::{Graph, Direction};
+use petgraph::graph::{NodeIndex};
 
 /// A path ref is used to reference a path value
 pub type PathRef = String;
@@ -60,18 +62,21 @@ impl PathValue {
         }
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+    pub fn add_specializations(&self, library: &Library,
+                               out: &mut SpecializationList,
+                               cycle_check: &mut CycleCheckList)
+    {
         match self {
             &PathValue::Struct(ref x) => {
-                x.add_specializations(library, out);
-            },
+                x.add_specializations(library, out, cycle_check);
+            }
             &PathValue::Typedef(ref x) => {
-                x.add_specializations(library, out);
-            },
+                x.add_specializations(library, out, cycle_check);
+            }
             &PathValue::Specialization(ref x) => {
-                x.add_specializations(library, out);
-            },
-            _ => { }
+                x.add_specializations(library, out, cycle_check);
+            }
+            _ => {}
         }
     }
 
@@ -124,19 +129,154 @@ impl Monomorph {
 
 pub type MonomorphList = BTreeMap<Vec<Type>, Monomorph>;
 pub type Monomorphs = BTreeMap<PathRef, MonomorphList>;
+pub type CycleCheckList = HashSet<Type>;
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct DependencyList {
-    pub order: Vec<PathValue>,
-    pub items: HashSet<PathRef>,
+    pub lookup: HashSet<PathRef>,
+    pub items: Vec<PathValue>,
 }
 
 impl DependencyList {
     fn new() -> DependencyList {
         DependencyList {
-            order: Vec::new(),
-            items: HashSet::new(),
+            lookup: HashSet::new(),
+            items: Vec::new(),
         }
+    }
+
+    fn calculate_order(self, monomorphs: &Monomorphs, library: &Library) -> Vec<PathValue> {
+        let mut enums = Vec::new();
+        let mut opaque = Vec::new();
+        let mut type_def = Vec::new();
+        let mut specialization = Vec::new();
+
+        // We use i8 as edge weight because it implements display
+        let mut graph = Graph::<Struct, i8>::new();
+        let mut lookup = HashMap::<PathRef, NodeIndex>::new();
+
+        // Add all monomorphs of a all useded items to our dependency graph
+        for item in self.items.into_iter() {
+            match item {
+                e @ PathValue::Enum(_) => enums.push(e),
+                t @ PathValue::Typedef(_) => type_def.push(t),
+                s @ PathValue::Specialization(_) => specialization.push(s),
+                PathValue::OpaqueItem(o) => {
+                    if let Some(m) = monomorphs.get(&o.name) {
+                        for (_, monomorph) in m {
+                            match *monomorph {
+                                Monomorph::Struct(ref s) => {
+                                    let idx = graph.add_node(s.clone());
+                                    lookup.insert(s.name.clone(), idx);
+                                }
+                                Monomorph::OpaqueItem(ref o) => {
+                                    opaque.push(PathValue::OpaqueItem(o.clone()))
+                                }
+                            }
+                        }
+                    } else {
+                        opaque.push(PathValue::OpaqueItem(o))
+                    }
+                },
+                PathValue::Struct(s) => {
+                    if let Some(m) = monomorphs.get(&s.name){
+                        for (_, monomorph) in m {
+                            match *monomorph {
+                                Monomorph::Struct(ref s) => {
+                                    let idx = graph.add_node(s.clone());
+                                    lookup.insert(s.name.clone(), idx);
+                                }
+                                Monomorph::OpaqueItem(ref o) => {
+                                    opaque.push(PathValue::OpaqueItem(o.clone()))
+                                },
+                            }
+                        }
+                    } else {
+                        let name = s.name.clone();
+                        let idx = graph.add_node(s);
+                        lookup.insert(name, idx);
+                    }
+                }
+            }
+        }
+
+        // For each node add all dependendcies
+        // This is done by simply go through all struct fields and add each type
+        // as dependency/edge to the graph
+        for id in graph.node_indices() {
+            let fields = &graph.node_weight(id)
+                .expect("Must be there because we get the id's above")
+                .fields.clone();
+            for &(_, ref ty, _) in fields {
+                let iter = ty.lookup(library).into_iter().filter_map(|t| {
+                    match t {
+                        PathValue::Struct(ref s) if s.generic_params.is_empty() => {
+                            Some(s.name.clone())
+                        },
+                        PathValue::Struct(ref s) if monomorphs.get(&s.name).is_some() => {
+                            let monomorphs = monomorphs.get(&s.name).expect("Checked it's there above");
+                            ty.resolve_monomorphed_type(monomorphs)
+                        },
+                        PathValue::Struct(_) => unreachable!(),
+                        _ => None,
+                    }
+                });
+                for dep in iter {
+                    if let Some(to_id) = lookup.get(&dep) {
+                        graph.add_edge(id, *to_id, 0);
+                    } else {
+                        panic!("Type {} not found", dep);
+                    }
+                }
+            }
+        }
+        // Debug output
+        use petgraph::dot::Dot;
+        println!("{}", Dot::new(&graph));
+
+        let mut structs = Vec::new();
+        // loop over the graph till there are no elements left
+        while graph.node_count() > 0 {
+            // find structs without any dependency
+            let externals = graph.externals(Direction::Outgoing).collect::<Vec<_>>();
+            if externals.is_empty() {
+                // there is a cyclic graph left, so we add a struct as opaque
+                // item and remove some edge from the dependceny graph
+                if let Some(id) = graph.node_indices().next() {
+                    {
+                        let node = graph.node_weight(id)
+                            .expect("We got the id from the graph");
+                        opaque.push(PathValue::OpaqueItem(node.as_opaque()));
+                    }
+                    let n =  graph.neighbors_directed(id, Direction::Outgoing)
+                        .next()
+                        .expect("It's a cyclic graph, so this must be there");
+                    let e = graph.find_edge(n, id)
+                        .expect("It's a cyclic graph, so this must be there");
+
+                    graph.remove_edge(e);
+                } else {
+                    // No nodes left?
+                    // can this happen?
+                    break;
+                }
+            } else {
+                // Iterate over all nodes without dependency
+                // 1. Remove them from the graph
+                // 2. Push them to the orderd struct list
+                for idx in externals {
+                    if let Some(s) = graph.remove_node(idx){
+                        structs.push(PathValue::Struct(s));
+                    }
+                }
+            }
+        }
+
+        enums.extend_from_slice(&opaque);
+        enums.extend_from_slice(&structs);
+        enums.extend_from_slice(&type_def);
+        assert!(specialization.is_empty());
+        enums
     }
 }
 
@@ -551,8 +691,11 @@ impl Library {
         // Specialize types into new types and remove all the specializations
         // that are left behind
         let mut specializations = SpecializationList::new();
+        let mut cycle_check_list = CycleCheckList::new();
         for (_, function) in &self.functions {
-            function.add_specializations(&self, &mut specializations);
+            function.add_specializations(&self,
+                                         &mut specializations,
+                                         &mut cycle_check_list);
         }
         self.specializations.clear();
 
@@ -642,75 +785,13 @@ impl Library {
         }
 
         // Gather a list of all the instantiations of generic structs
-        // TODO - monomorphs of a single type are not sorted by dependencies
         let mut monomorphs = Monomorphs::new();
+        let mut cycle_check_list = CycleCheckList::new();
         for (_, function) in &self.functions {
-            function.add_monomorphs(&self, &mut monomorphs);
+            function.add_monomorphs(&self, &mut monomorphs, &mut cycle_check_list);
         }
+        result.items = deps.calculate_order(&monomorphs, &self);
 
-        // Copy the binding items in dependencies order into the generated bindings,
-        // adding any instantiations of generic structs along the way.
-        for dep in deps.order {
-            match &dep {
-                &PathValue::Struct(ref s) => {
-                    if s.generic_params.len() != 0 {
-                        if let Some(monomorphs) = monomorphs.get(&s.name) {
-                            for (_, monomorph) in monomorphs {
-                                result.items.push(match monomorph {
-                                    &Monomorph::Struct(ref x) => {
-                                        PathValue::Struct(x.clone())
-                                    }
-                                    &Monomorph::OpaqueItem(ref x) => {
-                                        PathValue::OpaqueItem(x.clone())
-                                    }
-                                });
-                            }
-                        }
-                        continue;
-                    } else {
-                        debug_assert!(!monomorphs.contains_key(&s.name));
-                    }
-                }
-                &PathValue::OpaqueItem(ref s) => {
-                    if s.generic_params.len() != 0 {
-                        if let Some(monomorphs) = monomorphs.get(&s.name) {
-                            for (_, monomorph) in monomorphs {
-                                result.items.push(match monomorph {
-                                    &Monomorph::Struct(ref x) => {
-                                        PathValue::Struct(x.clone())
-                                    }
-                                    &Monomorph::OpaqueItem(ref x) => {
-                                        PathValue::OpaqueItem(x.clone())
-                                    }
-                                });
-                            }
-                        }
-                        continue;
-                    } else {
-                        debug_assert!(!monomorphs.contains_key(&s.name));
-                    }
-                }
-                _ => { }
-            }
-            result.items.push(dep);
-        }
-
-        // Sort enums and opaque structs into their own layers because they don't
-        // depend on each other or anything else.
-        let ordering = |a: &PathValue, b: &PathValue| {
-            match (a, b) {
-                (&PathValue::Enum(ref e1), &PathValue::Enum(ref e2)) => e1.name.cmp(&e2.name),
-                (&PathValue::Enum(_), _) => Ordering::Less,
-                (_, &PathValue::Enum(_)) => Ordering::Greater,
-
-                (&PathValue::OpaqueItem(ref o1), &PathValue::OpaqueItem(ref o2)) => o1.name.cmp(&o2.name),
-                (&PathValue::OpaqueItem(_), _) => Ordering::Less,
-                (_, &PathValue::OpaqueItem(_)) => Ordering::Greater,
-
-                _ => Ordering::Equal,
-            }
-        };
-        result.items.sort_by(ordering);
 
         result.functions = self.functions.iter()
                                          .map(|(_, function)| function.clone())
