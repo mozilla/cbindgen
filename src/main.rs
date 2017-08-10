@@ -14,6 +14,7 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate syn;
 extern crate toml;
+extern crate petgraph;
 
 use clap::{Arg, ArgMatches, App};
 

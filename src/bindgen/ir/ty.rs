@@ -301,7 +301,50 @@ impl Type {
         }
     }
 
-    pub fn add_deps_with_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut DependencyList) {
+    pub fn lookup(&self, library: &Library) -> Vec<PathValue> {
+        match *self {
+            Type::ConstPtr(ref ty)|
+            Type::Ptr(ref ty)|
+            Type::Array(ref ty, _) => ty.lookup(library),
+            Type::FuncPtr(ref ret, ref args) => {
+                let mut ret = ret.lookup(library);
+                for arg in args {
+                    ret.extend_from_slice(&arg.lookup(library));
+                }
+                ret
+            }
+            Type::Primitive(_) => Vec::new(),
+            Type::Path(ref path, _) => {
+                library.resolve_path(path)
+                    .map(|p| vec![p])
+                    .unwrap_or_else(Vec::new)
+            }
+        }
+    }
+
+    pub fn resolve_monomorphed_type(&self, monomorphs: &MonomorphList) -> Option<String> {
+        match *self {
+            Type::Path(_, ref generics) => {
+                if let Some(s) = monomorphs.get(generics) {
+                    Some(s.name().clone().to_owned())
+                }else {
+                    None
+                }
+            }
+            Type::ConstPtr(ref ty) | Type::Ptr(ref ty) | Type::Array(ref ty, _) => {
+                ty.resolve_monomorphed_type(monomorphs)
+            }
+            ref o => {
+                println!("\t\t{:?}", o);
+                None
+            }
+        }
+    }
+
+    pub fn add_deps_with_generics(&self,
+                                  generic_params: &Vec<String>,
+                                  library: &Library,
+                                  out: &mut DependencyList) {
         match self {
             &Type::ConstPtr(ref ty) => {
                 ty.add_deps_with_generics(generic_params, library, out);
@@ -315,12 +358,11 @@ impl Type {
                 }
                 if !generic_params.contains(path) {
                     if let Some(value) = library.resolve_path(path) {
-                        if !out.items.contains(path) {
-                            out.items.insert(path.clone());
 
+                        if !out.lookup.contains(path) {
+                            out.lookup.insert(path.clone());
                             value.add_deps(library, out);
-
-                            out.order.push(value);
+                            out.items.push(value);
                         }
                     } else {
                         warn!("can't find {}", path);

@@ -4,6 +4,7 @@
 
 use std::collections::BTreeMap;
 use std::io::Write;
+use std::fmt::{Display, self};
 
 use syn;
 
@@ -23,6 +24,12 @@ pub struct Struct {
     pub fields: Vec<(String, Type, Documentation)>,
     pub generic_params: Vec<String>,
     pub documentation: Documentation,
+}
+
+impl Display for Struct {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Struct {}", self.name)
+    }
 }
 
 impl Struct {
@@ -64,6 +71,15 @@ impl Struct {
             generic_params: generic_params,
             documentation: Documentation::load(doc),
         })
+    }
+
+    pub fn as_opaque(&self) -> OpaqueItem {
+        OpaqueItem {
+            name: self.name.clone(),
+            generic_params: self.generic_params.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        }
     }
 
     pub fn add_deps(&self, library: &Library, out: &mut DependencyList) {
