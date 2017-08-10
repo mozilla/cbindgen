@@ -62,18 +62,21 @@ impl PathValue {
         }
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
+    pub fn add_specializations(&self, library: &Library,
+                               out: &mut SpecializationList,
+                               cycle_check: &mut CycleCheckList)
+    {
         match self {
             &PathValue::Struct(ref x) => {
-                x.add_specializations(library, out);
-            },
+                x.add_specializations(library, out, cycle_check);
+            }
             &PathValue::Typedef(ref x) => {
-                x.add_specializations(library, out);
-            },
+                x.add_specializations(library, out, cycle_check);
+            }
             &PathValue::Specialization(ref x) => {
-                x.add_specializations(library, out);
-            },
-            _ => { }
+                x.add_specializations(library, out, cycle_check);
+            }
+            _ => {}
         }
     }
 
@@ -126,6 +129,7 @@ impl Monomorph {
 
 pub type MonomorphList = BTreeMap<Vec<Type>, Monomorph>;
 pub type Monomorphs = BTreeMap<PathRef, MonomorphList>;
+pub type CycleCheckList = HashSet<Type>;
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct DependencyList {
@@ -687,8 +691,11 @@ impl Library {
         // Specialize types into new types and remove all the specializations
         // that are left behind
         let mut specializations = SpecializationList::new();
+        let mut cycle_check_list = CycleCheckList::new();
         for (_, function) in &self.functions {
-            function.add_specializations(&self, &mut specializations);
+            function.add_specializations(&self,
+                                         &mut specializations,
+                                         &mut cycle_check_list);
         }
         self.specializations.clear();
 
@@ -779,9 +786,9 @@ impl Library {
 
         // Gather a list of all the instantiations of generic structs
         let mut monomorphs = Monomorphs::new();
+        let mut cycle_check_list = CycleCheckList::new();
         for (_, function) in &self.functions {
-            function.add_monomorphs(&self, &mut monomorphs);
-        }
+            function.add_monomorphs(&self, &mut monomorphs, &mut cycle_check_list);
         }
         result.items = deps.calculate_order(&monomorphs, &self);
 

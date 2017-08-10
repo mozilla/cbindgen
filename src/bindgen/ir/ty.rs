@@ -386,80 +386,91 @@ impl Type {
         self.add_deps_with_generics(&Vec::new(), library, out)
     }
 
-    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
-        match self {
-            &Type::ConstPtr(ref ty) => {
-                ty.add_monomorphs(library, out);
-            }
-            &Type::Ptr(ref ty) => {
-                ty.add_monomorphs(library, out);
-            }
-            &Type::Path(ref path, ref generic_values) => {
-                let item = library.resolve_path(path);
-                if let Some(item) = item {
-                    match item {
-                        PathValue::Struct(ref x) => {
-                            x.add_monomorphs(library, generic_values, out);
-                        },
-                        PathValue::OpaqueItem(ref x) => {
-                            x.add_monomorphs(generic_values, out);
-                        },
-                        PathValue::Typedef(ref x) => {
-                            assert!(generic_values.len() == 0);
-                            x.add_monomorphs(library, out);
-                        },
-                        PathValue::Specialization(..) => { unreachable!() },
-                        _ => { }
+    pub fn add_monomorphs(&self, library: &Library,
+                          out: &mut Monomorphs,
+                          cycle_check: &mut CycleCheckList)
+    {
+        if !cycle_check.contains(self){
+            cycle_check.insert(self.clone());
+                match self {
+                    &Type::ConstPtr(ref ty) => {
+                        ty.add_monomorphs(library, out, cycle_check);
+                    }
+                    &Type::Ptr(ref ty) => {
+                        ty.add_monomorphs(library, out, cycle_check);
+                    }
+                    &Type::Path(ref path, ref generic_values) => {
+                        let item = library.resolve_path(path);
+                        if let Some(item) = item {
+                            match item {
+                                PathValue::Struct(ref x) => {
+                                    x.add_monomorphs(library, generic_values, out, cycle_check);
+                                }
+                                PathValue::OpaqueItem(ref x) => {
+                                    x.add_monomorphs(generic_values, out);
+                                }
+                                PathValue::Typedef(ref x) => {
+                                    assert!(generic_values.len() == 0);
+                                    x.add_monomorphs(library, out, cycle_check);
+                                }
+                                PathValue::Specialization(..) => unreachable!(),
+                                _ => {}
+                            }
+                        }
+                    }
+                    &Type::Primitive(_) => {}
+                    &Type::Array(ref ty, _) => {
+                        ty.add_monomorphs(library, out, cycle_check);
+                    }
+                    &Type::FuncPtr(ref ret, ref args) => {
+                        ret.add_monomorphs(library, out, cycle_check);
+                        for arg in args {
+                            arg.add_monomorphs(library, out, cycle_check);
+                        }
                     }
                 }
-            }
-            &Type::Primitive(_) => { }
-            &Type::Array(ref ty, _) => {
-                ty.add_monomorphs(library, out);
-            }
-            &Type::FuncPtr(ref ret, ref args) => {
-                ret.add_monomorphs(library, out);
-                for arg in args {
-                    arg.add_monomorphs(library, out);
-                }
-            }
         }
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        match self {
-            &Type::ConstPtr(ref ty) => {
-                ty.add_specializations(library, out);
-            }
-            &Type::Ptr(ref ty) => {
-                ty.add_specializations(library, out);
-            }
-            &Type::Path(ref path, ref generic_values) => {
-                let item = library.resolve_path(path);
-                if let Some(item) = item {
-                    match item {
-                        PathValue::Struct(ref x) => {
-                            x.add_specializations(library, out);
-                        },
-                        PathValue::Typedef(ref x) => {
-                            assert!(generic_values.len() == 0);
-                            x.add_specializations(library, out);
-                        },
-                        PathValue::Specialization(ref x) => {
-                            x.add_specializations(library, out);
-                        },
-                        _ => { }
+    pub fn add_specializations(&self, library: &Library,
+                               out: &mut SpecializationList,
+                               cycle_check: &mut CycleCheckList)
+    {
+        if !cycle_check.contains(self) {
+            cycle_check.insert(self.clone());
+            match self {
+                &Type::ConstPtr(ref ty) => {
+                    ty.add_specializations(library, out, cycle_check);
+                }
+                &Type::Ptr(ref ty) => {
+                    ty.add_specializations(library, out, cycle_check);
+                }
+                &Type::Path(ref path, ref generic_values) => {
+                    if let Some(item) = library.resolve_path(path) {
+                        match item {
+                            PathValue::Struct(ref x) => {
+                                x.add_specializations(library, out, cycle_check);
+                            }
+                            PathValue::Typedef(ref x) => {
+                                assert!(generic_values.len() == 0);
+                                x.add_specializations(library, out, cycle_check);
+                            }
+                            PathValue::Specialization(ref x) => {
+                                x.add_specializations(library, out, cycle_check);
+                            }
+                            _ => {}
+                        }
                     }
                 }
-            }
-            &Type::Primitive(_) => { }
-            &Type::Array(ref ty, _) => {
-                ty.add_specializations(library, out);
-            }
-            &Type::FuncPtr(ref ret, ref args) => {
-                ret.add_specializations(library, out);
-                for arg in args {
-                    arg.add_specializations(library, out);
+                &Type::Primitive(_) => {}
+                &Type::Array(ref ty, _) => {
+                    ty.add_specializations(library, out, cycle_check);
+                }
+                &Type::FuncPtr(ref ret, ref args) => {
+                    ret.add_specializations(library, out, cycle_check);
+                    for arg in args {
+                        arg.add_specializations(library, out, cycle_check);
+                    }
                 }
             }
         }

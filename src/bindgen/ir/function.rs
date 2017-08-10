@@ -53,17 +53,23 @@ impl Function {
         }
     }
 
-    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
-        self.ret.add_monomorphs(library, out);
+    pub fn add_monomorphs(&self, library: &Library,
+                          out: &mut Monomorphs,
+                          cycle_check: &mut CycleCheckList)
+    {
+        self.ret.add_monomorphs(library, out, cycle_check);
         for &(_, ref ty) in &self.args {
-            ty.add_monomorphs(library, out);
+            ty.add_monomorphs(library, out, cycle_check);
         }
     }
 
-    pub fn add_specializations(&self, library: &Library, out: &mut SpecializationList) {
-        self.ret.add_specializations(library, out);
+    pub fn add_specializations(&self, library: &Library,
+                               out: &mut SpecializationList,
+                               cycle_check: &mut CycleCheckList)
+    {
+        self.ret.add_specializations(library, out, cycle_check);
         for &(_, ref ty) in &self.args {
-            ty.add_specializations(library, out);
+            ty.add_specializations(library, out, cycle_check);
         }
     }
 
