@@ -109,7 +109,7 @@ impl Struct {
         if !out.contains_key(&self.name) {
             out.insert(self.name.clone(), BTreeMap::new());
         }
-        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
+        out.get_mut(&self.name).unwrap().insert(generic_values.clone(),
                                                 Monomorph::Struct(monomorph));
     }
 
@@ -191,6 +191,16 @@ impl Struct {
             if !destructor.extern_decl {
                 out.new_line();
                 out.new_line();
+                // Explicitly disable copy constructor and assignment
+                out.write(&format!("{0}(const {0}& ) = delete;", self.name));
+                out.new_line();
+                out.write(&format!("{0}& operator=(const {0}&) = delete;", self.name));
+                out.new_line();
+                out.write(&format!("{0}({0}&&) = default;", self.name));
+                out.new_line();
+                out.write(&format!("{0}& operator=({0}&&) = default;", self.name));
+                out.new_line();
+                out.new_line();
 
                 out.write(&format!("~{}()", self.name));
                 out.open_brace();
@@ -210,7 +220,6 @@ impl Struct {
 
     pub fn write_functions<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if !self.functions.is_empty() {
-            out.new_line();
             out.new_line();
         }
         for f in &self.functions {
