@@ -725,9 +725,7 @@ impl Library {
                         if let Some(functions) = oop.remove(&ty) {
                             let opaque = s.as_opaque();
                             result.items.push(PathValue::OpaqueItem(opaque));
-                            for f in functions {
-                                s.add_member_function(f.as_member());
-                            }
+                            s.add_member_functions(functions);
                             result.full_objects.push(s);
                         } else {
                             result.items.push(PathValue::Struct(s));

@@ -16,6 +16,12 @@ use bindgen::utilities::*;
 use bindgen::writer::*;
 use bindgen::mangle;
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum FunctionWriteMode {
+    Global,
+    MemberFunction,
+}
+
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
@@ -52,9 +58,6 @@ impl Function {
             match *ty {
                 Type::ConstPtr(ref t) | Type::Ptr(ref t) => {
                     let t = match **t {
-                        Type::Path(ref t, ref g) if g.is_empty() => {
-                            Type::Path(t.to_owned(), Vec::new())
-                        }
                         Type::Path(ref p, ref g) => {
                             Type::Path(mangle::mangle_path(p, g), Vec::new())
                         }
@@ -110,15 +113,16 @@ impl Function {
         }
     }
 
-    pub fn as_member(self) -> Self{
-        Function {
-            args: self.args[1..].to_owned(),
-            ..self
-        }
-    }
-
-    pub fn write_formated<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>, add_semicolon: bool) {
-        fn write_1<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>, add_semicolon: bool) {
+    pub fn write_formated<F: Write>(&self,
+                                    config: &Config,
+                                    out: &mut SourceWriter<F>,
+                                    mode: FunctionWriteMode)
+    {
+        fn write_1<W: Write>(func: &Function,
+                             config: &Config,
+                             out: &mut SourceWriter<W>,
+                             mode: FunctionWriteMode)
+        {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
@@ -127,17 +131,32 @@ impl Function {
                 out.write(prefix);
                 out.write(" ");
             }
-            cdecl::write_func(out, &func, false);
+            if mode == FunctionWriteMode::Global {
+                cdecl::write_func(out, &func, false);
+            } else {
+                let f = Function {
+                    args: func.args[1..].to_owned(),
+                    ..func.clone()
+                };
+                cdecl::write_func(out, &f, false);
+                if let Type::ConstPtr(_) = func.args[0].1 {
+                    out.write(" const");
+                }
+            }
             if let Some(ref postfix) = postfix {
                 out.write(" ");
                 out.write(postfix);
             }
-            if add_semicolon {
+            if mode == FunctionWriteMode::Global {
                 out.write(";");
             }
         }
 
-        fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>, add_semicolon: bool) {
+        fn write_2<W: Write>(func: &Function,
+                             config: &Config,
+                             out: &mut SourceWriter<W>,
+                             mode: FunctionWriteMode)
+        {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
@@ -146,30 +165,41 @@ impl Function {
                 out.write(prefix);
                 out.new_line();
             }
-            cdecl::write_func(out, &func, true);
+            if mode == FunctionWriteMode::Global {
+                cdecl::write_func(out, &func, true);
+            } else {
+                let f = Function {
+                    args: func.args[1..].to_owned(),
+                    ..func.clone()
+                };
+                cdecl::write_func(out, &f, true);
+                if let Type::ConstPtr(_) = func.args[0].1 {
+                    out.write(" const");
+                }
+            }
             if let Some(ref postfix) = postfix {
                 out.new_line();
                 out.write(postfix);
             }
-            if add_semicolon {
+            if mode == FunctionWriteMode::Global {
                 out.write(";");
             }
         };
 
-        let option_1 = out.measure(|out| write_1(self, config, out, add_semicolon));
+        let option_1 = out.measure(|out| write_1(self, config, out, mode));
 
         if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
            config.function.args == Layout::Horizontal {
-            write_1(self, config, out, add_semicolon);
+            write_1(self, config, out, mode);
         } else {
-            write_2(self, config, out, add_semicolon);
+            write_2(self, config, out, mode);
         }
     }
 }
 
 impl Source for Function {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.write_formated(config, out, true)
+        self.write_formated(config, out, FunctionWriteMode::Global)
     }
 }
 

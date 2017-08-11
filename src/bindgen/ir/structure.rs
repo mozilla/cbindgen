@@ -164,16 +164,18 @@ impl Struct {
         }
     }
 
-    pub fn add_member_function(&mut self, function: Function) {
-
-        if function.annotations.bool("destructor").unwrap_or(false)
-            && self.destructor.is_none() && function.args.is_empty()
-        {
-            self.destructor = Some(function);
-        } else if !function.annotations.bool("destructor").unwrap_or(false) {
-            self.functions.push(function);
-        } else {
-            warn!("Found double destructor annotation for struct {}", self.name);
+    pub fn add_member_functions(&mut self, functions: Vec<Function>) {
+        for function in functions {
+            if function.annotations.bool("destructor").unwrap_or(false)
+                && self.destructor.is_none() && function.args.len() == 1 &&
+                function.ret == Type::Primitive(PrimitiveType::Void)
+            {
+                self.destructor = Some(function);
+            } else if !function.annotations.bool("destructor").unwrap_or(false) {
+                self.functions.push(function);
+            } else {
+                warn!("Found double destructor annotation for struct {}", self.name);
+            }
         }
     }
 
@@ -192,7 +194,7 @@ impl Struct {
                 out.new_line();
                 out.new_line();
                 // Explicitly disable copy constructor and assignment
-                out.write(&format!("{0}(const {0}& ) = delete;", self.name));
+                out.write(&format!("{0}(const {0}&) = delete;", self.name));
                 out.new_line();
                 out.write(&format!("{0}& operator=(const {0}&) = delete;", self.name));
                 out.new_line();
@@ -227,7 +229,7 @@ impl Struct {
                 continue;
             }
             out.new_line();
-            f.write_formated(config, out, false);
+            f.write_formated(config, out, FunctionWriteMode::MemberFunction);
             out.open_brace();
             let option_1 = out.measure(|out| format_function_call_1(f, out));
 
@@ -334,7 +336,7 @@ fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
     }
     out.write(&f.name);
     out.write("(this");
-    for &(ref name, _) in &f.args {
+    for &(ref name, _) in &f.args[1..] {
         out.write(", ");
         out.write(name);
     }
@@ -352,7 +354,7 @@ fn format_function_call_2<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
     let align_lenght = out.line_length_for_align();
     out.push_set_spaces(align_lenght);
     out.write("this");
-    for &(ref name, _) in &f.args {
+    for &(ref name, _) in &f.args[1..] {
         out.write(",");
         out.new_line();
         out.write(name);
