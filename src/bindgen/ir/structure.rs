@@ -351,8 +351,8 @@ fn format_function_call_2<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
     }
     out.write(&f.name);
     out.write("(");
-    let align_lenght = out.line_length_for_align();
-    out.push_set_spaces(align_lenght);
+    let align_length = out.line_length_for_align();
+    out.push_set_spaces(align_length);
     out.write("this");
     for &(ref name, _) in &f.args[1..] {
         out.write(",");

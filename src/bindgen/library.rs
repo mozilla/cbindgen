@@ -638,10 +638,10 @@ impl Library {
         // Gather only the items that we need for this
         // `extern "c"` interface
         let mut deps = DependencyList::new();
-        let mut oop = MemberFunctions::new();
+        let mut member_functions = MemberFunctions::new();
         for (_, function) in &self.functions {
             function.add_deps(&self, &mut deps);
-            function.add_member_function(&mut oop);
+            function.add_member_function(&mut member_functions);
         }
 
         // Gather a list of all the instantiations of generic structs
@@ -722,11 +722,11 @@ impl Library {
                 match item {
                     PathValue::Struct(mut s) => {
                         let ty = Type::Path(s.name.clone(), Vec::new());
-                        if let Some(functions) = oop.remove(&ty) {
+                        if let Some(functions) = member_functions.remove(&ty) {
                             let opaque = s.as_opaque();
                             result.items.push(PathValue::OpaqueItem(opaque));
                             s.add_member_functions(functions);
-                            result.full_objects.push(s);
+                            result.member_function_structs.push(s);
                         } else {
                             result.items.push(PathValue::Struct(s));
                         }
@@ -747,7 +747,7 @@ impl Library {
             item.rename_fields(&self.config);
         }
 
-        for item in &mut result.full_objects {
+        for item in &mut result.member_function_structs {
             item.mangle_paths(&monomorphs);
             item.rename_fields(&self.config);
         }
@@ -791,7 +791,7 @@ pub struct GeneratedBindings {
     monomorphs: Monomorphs,
     items: Vec<PathValue>,
     functions: Vec<Function>,
-    full_objects: Vec<Struct>,
+    member_function_structs: Vec<Struct>,
 }
 
 impl GeneratedBindings {
@@ -801,7 +801,7 @@ impl GeneratedBindings {
             monomorphs: Monomorphs::new(),
             items: Vec::new(),
             functions: Vec::new(),
-            full_objects: Vec::new(),
+            member_function_structs: Vec::new(),
         }
     }
 
@@ -913,10 +913,14 @@ impl GeneratedBindings {
 
         if self.config.language == Language::Cxx {
             out.new_line();
-            out.new_line();
-            for full_object in &self.full_objects {
+            let mut first = true;
+            for full_object in &self.member_function_structs {
+                if first {
+                    first = false;
+                } else {
+                    out.new_line();
+                }
                 full_object.write(&self.config, &mut out);
-                out.new_line();
                 out.new_line();
             }
         }
