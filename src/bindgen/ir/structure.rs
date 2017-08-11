@@ -204,13 +204,13 @@ impl Struct {
 
                 out.write(&format!("~{}()", self.name));
                 out.open_brace();
-                let option_1 = out.measure(|out| format_function_call_1(destructor, out, false));
+                let option_1 = out.measure(|out| format_function_call_1(destructor, out));
 
                 if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
                     config.function.args == Layout::Horizontal {
-                        format_function_call_1(destructor, out, false);
+                        format_function_call_1(destructor, out);
                     } else {
-                        format_function_call_2(destructor, out, false);
+                        format_function_call_2(destructor, out);
                     }
 
                 out.close_brace(false);
@@ -229,13 +229,13 @@ impl Struct {
             out.new_line();
             f.write_formated(config, out, false);
             out.open_brace();
-            let option_1 = out.measure(|out| format_function_call_1(f, out, true));
+            let option_1 = out.measure(|out| format_function_call_1(f, out));
 
             if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
                 config.function.args == Layout::Horizontal {
-                    format_function_call_1(f, out, true);
+                    format_function_call_1(f, out);
                 } else {
-                    format_function_call_2(f, out, true);
+                    format_function_call_2(f, out);
                 }
 
             out.close_brace(false);
@@ -326,11 +326,11 @@ impl Source for Struct {
     }
 }
 
-fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>, with_return: bool) {
-    if with_return {
-        out.write("return ::");
-    } else {
+fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
+    if f.ret == Type::Primitive(PrimitiveType::Void) {
         out.write("::");
+    } else {
+        out.write("return ::");
     }
     out.write(&f.name);
     out.write("(this");
@@ -341,11 +341,11 @@ fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>, wit
     out.write(");");
 }
 
-fn format_function_call_2<W: Write>(f: &Function, out: &mut SourceWriter<W>, with_return: bool) {
-    if with_return {
-        out.write("return ::");
-    } else {
+fn format_function_call_2<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
+    if f.ret == Type::Primitive(PrimitiveType::Void) {
         out.write("::");
+    } else {
+        out.write("return ::");
     }
     out.write(&f.name);
     out.write("(");
