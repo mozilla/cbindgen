@@ -8,7 +8,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::annotation::*;
-use bindgen::config::{Config, Language};
+use bindgen::config::{Config, Language, Layout};
 use bindgen::ir::*;
 use bindgen::library::*;
 use bindgen::mangle::*;
@@ -23,6 +23,8 @@ pub struct Struct {
     pub fields: Vec<(String, Type, Documentation)>,
     pub generic_params: Vec<String>,
     pub documentation: Documentation,
+    pub functions: Vec<Function>,
+    pub destructor: Option<Function>,
 }
 
 impl Struct {
@@ -63,6 +65,8 @@ impl Struct {
             fields: fields,
             generic_params: generic_params,
             documentation: Documentation::load(doc),
+            functions: Vec::new(),
+            destructor: None,
         })
     }
 
@@ -94,6 +98,8 @@ impl Struct {
                                .collect(),
             generic_params: vec![],
             documentation: self.documentation.clone(),
+            functions: vec![],
+            destructor: None,
         };
 
         for &(_, ref ty, _) in &monomorph.fields {
@@ -103,7 +109,7 @@ impl Struct {
         if !out.contains_key(&self.name) {
             out.insert(self.name.clone(), BTreeMap::new());
         }
-        out.get_mut(&self.name).unwrap().insert(generic_values.clone(), 
+        out.get_mut(&self.name).unwrap().insert(generic_values.clone(),
                                                 Monomorph::Struct(monomorph));
     }
 
@@ -137,14 +143,110 @@ impl Struct {
                                                x.2.clone()))
                                      .collect();
         }
+
+        for f in &mut self.functions {
+            f.rename_args(config);
+        }
+        if let Some(ref mut destructor) = self.destructor {
+            destructor.rename_args(config);
+        }
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         for &mut (_, ref mut ty, _) in &mut self.fields {
             ty.mangle_paths(monomorphs);
         }
+        for f in &mut self.functions {
+            f.mangle_paths(monomorphs);
+        }
+        if let Some(ref mut destructor) = self.destructor {
+            destructor.mangle_paths(monomorphs);
+        }
+    }
+
+    pub fn add_member_functions(&mut self, functions: Vec<Function>) {
+        for function in functions {
+            if function.annotations.bool("destructor").unwrap_or(false)
+                && self.destructor.is_none() && function.args.len() == 1 &&
+                function.ret == Type::Primitive(PrimitiveType::Void)
+            {
+                self.destructor = Some(function);
+            } else if !function.annotations.bool("destructor").unwrap_or(false) {
+                self.functions.push(function);
+            } else {
+                warn!("Found double destructor annotation for struct {}", self.name);
+            }
+        }
+    }
+
+    pub fn as_opaque(&self) -> OpaqueItem {
+        OpaqueItem {
+            name: self.name.clone(),
+            generic_params: self.generic_params.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        }
+    }
+
+    pub fn write_destructor<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if let Some(ref destructor) = self.destructor {
+            if !destructor.extern_decl {
+                out.new_line();
+                out.new_line();
+                // Explicitly disable copy constructor and assignment
+                out.write(&format!("{0}(const {0}&) = delete;", self.name));
+                out.new_line();
+                out.write(&format!("{0}& operator=(const {0}&) = delete;", self.name));
+                out.new_line();
+                out.write(&format!("{0}({0}&&) = default;", self.name));
+                out.new_line();
+                out.write(&format!("{0}& operator=({0}&&) = default;", self.name));
+                out.new_line();
+                out.new_line();
+
+                out.write(&format!("~{}()", self.name));
+                out.open_brace();
+                let option_1 = out.measure(|out| format_function_call_1(destructor, out));
+
+                if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
+                    config.function.args == Layout::Horizontal {
+                        format_function_call_1(destructor, out);
+                    } else {
+                        format_function_call_2(destructor, out);
+                    }
+
+                out.close_brace(false);
+            }
+        }
+    }
+
+    pub fn write_functions<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if !self.functions.is_empty() {
+            out.new_line();
+        }
+        for f in &self.functions {
+            if f.extern_decl {
+                continue;
+            }
+            out.new_line();
+            f.write_formated(config, out, FunctionWriteMode::MemberFunction);
+            out.open_brace();
+            let option_1 = out.measure(|out| format_function_call_1(f, out));
+
+            if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
+                config.function.args == Layout::Horizontal {
+                    format_function_call_1(f, out);
+                } else {
+                    format_function_call_2(f, out);
+                }
+
+            out.close_brace(false);
+            out.new_line();
+        }
     }
 }
+
+
 
 impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
@@ -158,14 +260,7 @@ impl Source for Struct {
         }
         out.open_brace();
 
-        if config.documentation {
-            out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
-        } else {
-            out.write_vertical_source_list(&self.fields.iter()
-                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
-                .collect(),
-                ListType::Cap(";"));
-        }
+        out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
 
         if config.language == Language::Cxx {
             let mut wrote_start_newline = false;
@@ -175,6 +270,9 @@ impl Source for Struct {
             } else {
                 String::from("other")
             };
+
+            self.write_destructor(config, out);
+            self.write_functions(config, out);
 
             let mut emit_op = |op, conjuc| {
                 if !wrote_start_newline {
@@ -228,6 +326,41 @@ impl Source for Struct {
             out.close_brace(true);
         }
     }
+}
+
+fn format_function_call_1<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
+    if f.ret == Type::Primitive(PrimitiveType::Void) {
+        out.write("::");
+    } else {
+        out.write("return ::");
+    }
+    out.write(&f.name);
+    out.write("(this");
+    for &(ref name, _) in &f.args[1..] {
+        out.write(", ");
+        out.write(name);
+    }
+    out.write(");");
+}
+
+fn format_function_call_2<W: Write>(f: &Function, out: &mut SourceWriter<W>) {
+    if f.ret == Type::Primitive(PrimitiveType::Void) {
+        out.write("::");
+    } else {
+        out.write("return ::");
+    }
+    out.write(&f.name);
+    out.write("(");
+    let align_length = out.line_length_for_align();
+    out.push_set_spaces(align_length);
+    out.write("this");
+    for &(ref name, _) in &f.args[1..] {
+        out.write(",");
+        out.new_line();
+        out.write(name);
+    }
+    out.pop_tab();
+    out.write(");");
 }
 
 pub trait SynFieldHelpers {

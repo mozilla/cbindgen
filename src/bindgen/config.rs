@@ -159,6 +159,9 @@ pub struct StructConfig {
     pub derive_gt: bool,
     /// Whether to generate a greater than or equal to operator on structs with one field
     pub derive_gte: bool,
+    /// Whether to generate member functions to wrap functions taking a pointer to this struct as
+    /// first argument
+    pub generate_member_functions: bool,
 }
 
 impl Default for StructConfig {
@@ -172,6 +175,7 @@ impl Default for StructConfig {
             derive_lte: false,
             derive_gt: false,
             derive_gte: false,
+            generate_member_functions: true,
         }
     }
 }
