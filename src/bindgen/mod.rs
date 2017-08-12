@@ -34,6 +34,8 @@ macro_rules! deserialize_enum_str {
     }
 }
 
+mod bindings;
+mod builder;
 mod cargo;
 mod cdecl;
 mod config;
@@ -49,4 +51,6 @@ mod writer;
 
 pub use self::cargo::*;
 pub use self::config::*;
-pub use self::library::{GeneratedBindings, Library};
+pub use self::bindings::Bindings;
+pub use self::builder::LibraryBuilder;
+pub use self::library::Library;

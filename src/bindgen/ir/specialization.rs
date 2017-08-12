@@ -54,7 +54,7 @@ impl Specialization {
     }
 
     pub fn specialize(&self, library: &Library) -> Result<Option<Item>, String> {
-        match library.resolve_path(&self.aliased.name) {
+        match library.get_item(&self.aliased.name) {
             Some(aliased) => {
                 match aliased {
                     Item::OpaqueItem(ref aliased) => {

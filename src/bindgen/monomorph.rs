@@ -61,8 +61,8 @@ impl Monomorphs {
         // Add extra information for struct instantiations so we can use template
         // specialization to make using the type more ergonomic.
         self.templates.entry(generic.name.clone())
-                                                                 .or_insert_with(|| TemplateSpecialization::new(generic.clone()))
-                                                                 .monomorphs.push((monomorph.name.clone(), parameters.clone()));
+                             .or_insert_with(|| TemplateSpecialization::new(generic.clone()))
+                             .monomorphs.push((monomorph.name.clone(), parameters.clone()));
 
         let replacement_path = GenericPath::new(generic.name.clone(), parameters);
 
@@ -74,9 +74,9 @@ impl Monomorphs {
     }
 
     pub fn insert_opaque(&mut self,
-                                             generic: &OpaqueItem,
-                                             monomorph: OpaqueItem,
-                                             parameters: Vec<Type>) {
+                         generic: &OpaqueItem,
+                         monomorph: OpaqueItem,
+                         parameters: Vec<Type>) {
         let replacement_path = GenericPath::new(generic.name.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);

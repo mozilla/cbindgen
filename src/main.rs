@@ -20,7 +20,7 @@ use clap::{Arg, ArgMatches, App};
 mod logging;
 mod bindgen;
 
-use bindgen::{Cargo, Config, Language, Library};
+use bindgen::{Cargo, Config, Language, Library, LibraryBuilder};
 
 fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // We allow specifying a language to override the config default. This is
@@ -56,7 +56,10 @@ fn load_library<'a>(input: &str, matches: &ArgMatches<'a>) -> Result<Library, St
 
         apply_config_overrides(&mut config, &matches);
 
-        return Library::load_src(input, &config);
+        return LibraryBuilder::new().with_config(config)
+                                    .with_std_types()
+                                    .with_src(input)
+                                    .build();
     }
 
     // We have to load a whole crate, so we use cargo to gather metadata
@@ -81,7 +84,10 @@ fn load_library<'a>(input: &str, matches: &ArgMatches<'a>) -> Result<Library, St
 
     apply_config_overrides(&mut config, &matches);
 
-    Library::load_crate(lib, &config)
+    LibraryBuilder::new().with_config(config)
+                         .with_std_types()
+                         .with_crate(lib)
+                         .build()
 }
 
 fn main() {

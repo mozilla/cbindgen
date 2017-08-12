@@ -316,13 +316,13 @@ impl Type {
                     generic_value.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
                 if !generic_params.contains(&path.name) {
-                    if let Some(value) = library.resolve_path(&path.name) {
+                    if let Some(item) = library.get_item(&path.name) {
                         if !out.items.contains(&path.name) {
                             out.items.insert(path.name.clone());
 
-                            value.add_dependencies(library, out);
+                            item.add_dependencies(library, out);
 
-                            out.order.push(value);
+                            out.order.push(item);
                         }
                     } else {
                         warn!("can't find {}", path.name);
@@ -360,7 +360,7 @@ impl Type {
                     return;
                 }
 
-                let item = library.resolve_path(&path.name);
+                let item = library.get_item(&path.name);
                 if let Some(item) = item {
                     match item {
                         Item::OpaqueItem(ref x) => {

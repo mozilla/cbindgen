@@ -23,6 +23,7 @@ pub struct PackageRef {
 }
 
 /// A collection of metadata for a library from cargo.
+#[derive(Clone, Debug)]
 pub struct Cargo {
     manifest_path: PathBuf,
     binding_crate_name: String,

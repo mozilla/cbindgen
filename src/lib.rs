@@ -19,23 +19,22 @@ use std::path::Path;
 
 /// A utility function for build scripts to generate bindings for a crate, using
 /// a `cbindgen.toml` if it exists.
-pub fn generate(crate_dir: &str) -> Result<GeneratedBindings, String> {
-    let crate_dir = Path::new(crate_dir);
-    let config = Config::from_root_or_default(crate_dir);
+pub fn generate(crate_dir: &str) -> Result<Bindings, String> {
+    let config = Config::from_root_or_default(Path::new(crate_dir));
 
-    Library::load_crate(Cargo::load(crate_dir,
-                                    None,
-                                    config.parse.parse_deps)?,
-                        &config)?.generate()
+    generate_with_config(crate_dir, config)
 }
 
 /// A utility function for build scripts to generate bindings for a crate with a
 /// custom config.
-pub fn generate_with_config(crate_dir: &str, config: &Config) -> Result<GeneratedBindings, String> {
+pub fn generate_with_config(crate_dir: &str, config: Config) -> Result<Bindings, String> {
     let crate_dir = Path::new(crate_dir);
+    let cargo = Cargo::load(crate_dir,
+                            None,
+                            config.parse.parse_deps)?;
 
-    Library::load_crate(Cargo::load(crate_dir,
-                                    None,
-                                    config.parse.parse_deps)?,
-                        config)?.generate()
+    LibraryBuilder::new().with_config(config)
+                         .with_std_types()
+                         .with_crate(cargo)
+                         .build()?.generate()
 }

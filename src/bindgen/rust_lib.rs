@@ -48,7 +48,7 @@ pub fn parse_lib<F>(lib: Cargo,
                     exclude: &Vec<String>,
                     expand: &Vec<String>,
                     items_callback: &mut F) -> ParseResult
-    where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, &Vec<syn::Item>)
 {
     let mut context = ParseLibContext {
         lib: lib,
@@ -65,7 +65,7 @@ pub fn parse_lib<F>(lib: Cargo,
 }
 
 struct ParseLibContext<F>
-    where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, &Vec<syn::Item>)
 {
     lib: Cargo,
     parse_deps: bool,
@@ -79,7 +79,7 @@ struct ParseLibContext<F>
 }
 
 impl<F> ParseLibContext<F>
-    where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, &Vec<syn::Item>)
 {
     fn should_parse_dependency(&self, pkg_name: &String) -> bool {
         if !self.parse_deps {
@@ -105,7 +105,7 @@ impl<F> ParseLibContext<F>
 }
 
 fn parse_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, &Vec<syn::Item>)
 {
     // Check if we should use cargo expand for this crate
     if context.expand.contains(&pkg.name) {
@@ -128,7 +128,7 @@ fn parse_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseRe
 }
 
 fn parse_expand_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, &Vec<syn::Item>)
 {
     let mod_parsed = {
         if !context.cache_expanded_crate.contains_key(&pkg.name) {
@@ -146,9 +146,9 @@ fn parse_expand_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> 
 fn process_expanded_mod<F>(pkg: &PackageRef,
                            items: &Vec<syn::Item>,
                            context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, &Vec<syn::Item>)
 {
-    (context.items_callback)(&pkg.name, items);
+    (context.items_callback)(context.lib.binding_crate_name(), &pkg.name, items);
 
     for item in items {
         match item.node {
@@ -183,7 +183,7 @@ fn process_expanded_mod<F>(pkg: &PackageRef,
 fn parse_mod<F>(pkg: &PackageRef,
                 mod_path: &Path,
                 context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, &Vec<syn::Item>)
 {
     let mod_parsed = {
         let owned_mod_path = mod_path.to_path_buf();
@@ -211,9 +211,9 @@ fn process_mod<F>(pkg: &PackageRef,
                   mod_dir: &Path,
                   items: &Vec<syn::Item>,
                   context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, &Vec<syn::Item>)
 {
-    (context.items_callback)(&pkg.name, items);
+    (context.items_callback)(context.lib.binding_crate_name(), &pkg.name, items);
 
     for item in items {
         match item.node {
