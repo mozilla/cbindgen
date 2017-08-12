@@ -86,27 +86,7 @@ impl Bindings {
             out.write("extern \"C\" {");
             out.new_line();
 
-            let mut wrote_namespace: bool = false;
-            if let Some(ref namespace) = self.config.namespace {
-                wrote_namespace = true;
-
-                out.new_line();
-                out.write("namespace ");
-                out.write(namespace);
-                out.write(" {");
-            }
-            if let Some(ref namespaces) = self.config.namespaces {
-                wrote_namespace = true;
-                for namespace in namespaces {
-                    out.new_line();
-                    out.write("namespace ");
-                    out.write(namespace);
-                    out.write(" {");
-                }
-            }
-            if wrote_namespace {
-                out.new_line();
-            }
+            self.open_namespaces(&mut out);
         }
 
         for item in &self.items {
@@ -136,26 +116,7 @@ impl Bindings {
         }
 
         if self.config.language == Language::Cxx {
-            let mut wrote_namespace: bool = false;
-            if let Some(ref namespaces) = self.config.namespaces {
-                wrote_namespace = true;
-
-                for namespace in namespaces.iter().rev() {
-                    out.new_line_if_not_start();
-                    out.write("} // namespace ");
-                    out.write(namespace);
-                }
-            }
-            if let Some(ref namespace) = self.config.namespace {
-                wrote_namespace = true;
-
-                out.new_line_if_not_start();
-                out.write("} // namespace ");
-                out.write(namespace);
-            }
-            if wrote_namespace {
-                out.new_line();
-            }
+            self.close_namespaces(&mut out);
 
             out.new_line_if_not_start();
             out.write("} // extern \"C\"");
@@ -164,33 +125,35 @@ impl Bindings {
 
         if self.config.structure.generic_template_specialization &&
            self.config.language == Language::Cxx {
-          for template in &self.template_specializations {
-            out.new_line_if_not_start();
-            out.write("template<");
-            for (i, param) in template.generic.generic_params.iter().enumerate() {
-                if i != 0 {
-                    out.write(", ")
-                }
-                out.write("typename ");
-                out.write(param);
-            }
-            out.write(">");
-            out.new_line();
-            out.write(&format!("struct {};", template.generic.name));
-            out.new_line();
+            self.open_namespaces(&mut out);
+            for template in &self.template_specializations {
+              out.new_line_if_not_start();
+              out.write("template<");
+              for (i, param) in template.generic.generic_params.iter().enumerate() {
+                  if i != 0 {
+                      out.write(", ")
+                  }
+                  out.write("typename ");
+                  out.write(param);
+              }
+              out.write(">");
+              out.new_line();
+              out.write(&format!("struct {};", template.generic.name));
+              out.new_line();
 
-            for &(ref monomorph_path, ref generic_values) in &template.monomorphs {
-              out.new_line();
-              out.write("template<>");
-              out.new_line();
-              out.write(&format!("struct {}<", template.generic.name));
-              out.write_horizontal_source_list(generic_values, ListType::Join(", "));
-              out.write(&format!("> : public {}", monomorph_path));
-              out.open_brace();
-              out.close_brace(true);
-              out.new_line();
+              for &(ref monomorph_path, ref generic_values) in &template.monomorphs {
+                out.new_line();
+                out.write("template<>");
+                out.new_line();
+                out.write(&format!("struct {}<", template.generic.name));
+                out.write_horizontal_source_list(generic_values, ListType::Join(", "));
+                out.write(&format!("> : public {}", monomorph_path));
+                out.open_brace();
+                out.close_brace(true);
+                out.new_line();
+              }
             }
-          }
+            self.close_namespaces(&mut out);
         }
 
         if self.config.language == Language::Cxx {
@@ -214,6 +177,53 @@ impl Bindings {
         if let Some(ref f) = self.config.trailer {
             out.new_line_if_not_start();
             out.write(&f);
+            out.new_line();
+        }
+    }
+
+    pub fn open_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
+        let mut wrote_namespace: bool = false;
+        if let Some(ref namespace) = self.config.namespace {
+            wrote_namespace = true;
+
+            out.new_line();
+            out.write("namespace ");
+            out.write(namespace);
+            out.write(" {");
+        }
+        if let Some(ref namespaces) = self.config.namespaces {
+            wrote_namespace = true;
+            for namespace in namespaces {
+                out.new_line();
+                out.write("namespace ");
+                out.write(namespace);
+                out.write(" {");
+            }
+        }
+        if wrote_namespace {
+            out.new_line();
+        }
+    }
+
+    pub fn close_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
+        let mut wrote_namespace: bool = false;
+        if let Some(ref namespaces) = self.config.namespaces {
+            wrote_namespace = true;
+
+            for namespace in namespaces.iter().rev() {
+                out.new_line_if_not_start();
+                out.write("} // namespace ");
+                out.write(namespace);
+            }
+        }
+        if let Some(ref namespace) = self.config.namespace {
+            wrote_namespace = true;
+
+            out.new_line_if_not_start();
+            out.write("} // namespace ");
+            out.write(namespace);
+        }
+        if wrote_namespace {
             out.new_line();
         }
     }
