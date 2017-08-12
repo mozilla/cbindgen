@@ -8,6 +8,7 @@ use syn;
 
 use bindgen::cdecl;
 use bindgen::config::{Config, Layout};
+use bindgen::dependencies::Dependencies;
 use bindgen::ir::*;
 use bindgen::library::*;
 use bindgen::monomorph::Monomorphs;
@@ -46,7 +47,7 @@ impl Function {
         })
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
+    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ret.add_dependencies(library, out);
         for &(_, ref ty) in &self.args {
             ty.add_dependencies(library, out);

@@ -5,8 +5,6 @@
 use std::io::Write;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
-use std::collections::HashSet;
-use std::cmp::Ordering;
 use std::fs::File;
 use std::mem;
 use std::path;
@@ -16,46 +14,12 @@ use syn;
 
 use bindgen::cargo::Cargo;
 use bindgen::config::{self, Config, Language};
+use bindgen::dependencies::Dependencies;
 use bindgen::ir::*;
 use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
 use bindgen::rust_lib;
 use bindgen::utilities::*;
 use bindgen::writer::{ListType, Source, SourceWriter};
-
-/// A dependency list is used for gathering what order to output the types.
-pub struct DependencyList {
-    pub order: Vec<Item>,
-    pub items: HashSet<Path>,
-}
-
-impl DependencyList {
-    fn new() -> DependencyList {
-        DependencyList {
-            order: Vec::new(),
-            items: HashSet::new(),
-        }
-    }
-
-    fn sort(&mut self) {
-        // Sort enums and opaque structs into their own layers because they don't
-        // depend on each other or anything else.
-        let ordering = |a: &Item, b: &Item| {
-            match (a, b) {
-                (&Item::Enum(ref x), &Item::Enum(ref y)) => x.name.cmp(&y.name),
-                (&Item::Enum(_), _) => Ordering::Less,
-                (_, &Item::Enum(_)) => Ordering::Greater,
-
-                (&Item::OpaqueItem(ref x), &Item::OpaqueItem(ref y)) => x.name.cmp(&y.name),
-                (&Item::OpaqueItem(_), _) => Ordering::Less,
-                (_, &Item::OpaqueItem(_)) => Ordering::Greater,
-
-                _ => Ordering::Equal,
-            }
-        };
-
-        self.order.sort_by(ordering);
-    }
-}
 
 /// A library contains all of the information needed to generate bindings for a rust library.
 #[derive(Debug, Clone)]
@@ -475,7 +439,7 @@ impl Library {
         let mut result = GeneratedBindings::new(&self.config);
 
         // Gather only the items that we need for this `extern "c"` interface
-        let mut deps = DependencyList::new();
+        let mut deps = Dependencies::new();
 
         for (_, function) in &self.functions {
             function.add_dependencies(&self, &mut deps);

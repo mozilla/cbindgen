@@ -8,6 +8,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::Config;
+use bindgen::dependencies::Dependencies;
 use bindgen::ir::*;
 use bindgen::library::*;
 use bindgen::monomorph::Monomorphs;
@@ -190,7 +191,7 @@ impl Typedef {
         }
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
+    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.aliased.add_dependencies(library, out);
     }
 

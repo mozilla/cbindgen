@@ -9,6 +9,7 @@ use syn;
 
 use bindgen::cdecl;
 use bindgen::config::Config;
+use bindgen::dependencies::Dependencies;
 use bindgen::library::*;
 use bindgen::monomorph::Monomorphs;
 use bindgen::utilities::*;
@@ -302,7 +303,7 @@ impl Type {
         }
     }
 
-    pub fn add_dependencies_ignoring_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut DependencyList) {
+    pub fn add_dependencies_ignoring_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut Dependencies) {
         match self {
             &Type::ConstPtr(ref ty) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
@@ -341,7 +342,7 @@ impl Type {
         }
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
+    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.add_dependencies_ignoring_generics(&Vec::new(), library, out)
     }
 

@@ -5,7 +5,8 @@
 use std::collections::HashMap;
 use std::mem;
 
-use bindgen::library::{DependencyList, Library};
+use bindgen::dependencies::Dependencies;
+use bindgen::library::Library;
 use bindgen::ir::{GenericPath, OpaqueItem, Path, Struct, Type};
 
 #[derive(Clone, Debug)]
@@ -22,7 +23,7 @@ impl TemplateSpecialization {
         }
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
+    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
             for &(_, ref generic_values) in &self.monomorphs {
                 for generic_value in generic_values {
                     generic_value.add_dependencies(library, out);

@@ -7,6 +7,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
+use bindgen::dependencies::Dependencies;
 use bindgen::ir::*;
 use bindgen::library::*;
 use bindgen::mangle::*;
@@ -72,7 +73,7 @@ impl Struct {
         self.generic_params.len() > 0
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut DependencyList) {
+    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         for &(_, ref ty, _) in &self.fields {
             ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
         }
