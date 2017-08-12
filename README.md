@@ -1,6 +1,6 @@
 # `cbindgen` &emsp; [![Build Status]][travis] [![Latest Version]][crates.io]
 
-[Build Status]: https://api.travis-ci.org/rlhunt/cbindgen.svg?branch=master
+[Build Status]: https://api.travis-ci.org/eqrion/cbindgen.svg?branch=master
 [travis]: https://travis-ci.org/eqrion/cbindgen
 [Latest Version]: https://img.shields.io/crates/v/cbindgen.svg
 [crates.io]: https://crates.io/crates/cbindgen
