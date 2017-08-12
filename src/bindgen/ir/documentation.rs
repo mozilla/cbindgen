@@ -4,8 +4,8 @@
 
 use std::io::Write;
 
-use bindgen::writer::{Source, SourceWriter};
 use bindgen::config::Config;
+use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Documentation {

@@ -10,11 +10,11 @@ use syn;
 use bindgen::cdecl;
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::library::*;
+use bindgen::ir::{Documentation, GenericPath, Item, Path};
+use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
-use bindgen::utilities::*;
-use bindgen::writer::*;
-use bindgen::ir::{Documentation, Item, GenericPath, Path};
+use bindgen::utilities::IterHelpers;
+use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrimitiveType {

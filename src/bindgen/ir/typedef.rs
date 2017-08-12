@@ -9,10 +9,10 @@ use syn;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::*;
-use bindgen::library::*;
+use bindgen::ir::{AnnotationSet, Documentation, Path, Type};
+use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
-use bindgen::writer::*;
+use bindgen::writer::{Source, SourceWriter};
 
 /// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]

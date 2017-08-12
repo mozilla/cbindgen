@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use std::mem;
 
 use bindgen::dependencies::Dependencies;
-use bindgen::library::Library;
 use bindgen::ir::{GenericPath, OpaqueItem, Path, Struct, Type};
+use bindgen::library::Library;
 
 #[derive(Clone, Debug)]
 pub struct TemplateSpecialization {

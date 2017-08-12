@@ -3,7 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use syn;
-use bindgen::ir::*;
+
+use bindgen::ir::Repr;
 
 pub trait IterHelpers : Iterator {
     fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>

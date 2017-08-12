@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::*;
-use bindgen::library::*;
+use bindgen::ir::{Enum, OpaqueItem, Specialization, Struct, Typedef};
+use bindgen::library::Library;
 
 /// An item is any type of rust item besides a function
 #[derive(Debug, Clone)]

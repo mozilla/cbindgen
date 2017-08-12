@@ -7,10 +7,10 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::*;
-use bindgen::mangle::*;
+use bindgen::ir::{AnnotationSet, Documentation, Path, Type};
+use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
-use bindgen::writer::*;
+use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct OpaqueItem {
@@ -41,7 +41,7 @@ impl OpaqueItem {
         assert!(self.generic_params.len() > 0);
 
         let monomorph = OpaqueItem {
-            name: mangle_path(&self.name, generic_values),
+            name: mangle::mangle_path(&self.name, generic_values),
             generic_params: vec![],
             annotations: self.annotations.clone(),
             documentation: self.documentation.clone(),

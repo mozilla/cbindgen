@@ -4,8 +4,8 @@
 
 use std::io::Write;
 
-use bindgen::ir::*;
-use bindgen::writer::*;
+use bindgen::ir::{Function, Type};
+use bindgen::writer::SourceWriter;
 
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.

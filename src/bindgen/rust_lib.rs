@@ -7,8 +7,9 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use bindgen::cargo::{Cargo, PackageRef};
 use syn;
+
+use bindgen::cargo::{Cargo, PackageRef};
 
 const STD_CRATES: &'static [&'static str] = &["std",
                                               "std_unicode",

@@ -13,12 +13,13 @@ use std::fs;
 use syn;
 
 use bindgen::cargo::Cargo;
-use bindgen::config::{self, Config, Language};
+use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::*;
+use bindgen::ir::{AnnotationSet, Documentation, Enum, Function};
+use bindgen::ir::{Item, OpaqueItem, Path, Specialization, Struct, Typedef};
 use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
 use bindgen::rust_lib;
-use bindgen::utilities::*;
+use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 use bindgen::writer::{ListType, Source, SourceWriter};
 
 /// A library contains all of the information needed to generate bindings for a rust library.
@@ -649,7 +650,8 @@ impl GeneratedBindings {
         }
         if self.config.include_version {
             out.new_line_if_not_start();
-            out.write(&format!("/* Generated with cbindgen:{} */", config::VERSION));
+            out.write(&format!("/* Generated with cbindgen:{} */",
+                      ::bindgen::config::VERSION));
             out.new_line();
         }
         if let Some(ref f) = self.config.autogen_warning {

@@ -9,12 +9,12 @@ use syn;
 use bindgen::cdecl;
 use bindgen::config::{Config, Layout};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::*;
-use bindgen::library::*;
+use bindgen::ir::{AnnotationSet, Documentation, SynFnRetTyHelpers, Type};
+use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
-use bindgen::rename::*;
-use bindgen::utilities::*;
-use bindgen::writer::*;
+use bindgen::rename::{IdentifierType, RenameRule};
+use bindgen::utilities::{find_first_some, IterHelpers};
+use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Function {

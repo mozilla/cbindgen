@@ -11,8 +11,8 @@ use std::str::FromStr;
 
 use toml;
 
-pub use bindgen::ir::annotation::*;
-pub use bindgen::rename::*;
+pub use bindgen::ir::annotation::AnnotationSet;
+pub use bindgen::rename::RenameRule;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 

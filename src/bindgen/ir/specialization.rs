@@ -4,8 +4,9 @@
 
 use syn;
 
-use bindgen::ir::*;
-use bindgen::library::*;
+use bindgen::ir::{AnnotationSet, Documentation, Enum, GenericPath};
+use bindgen::ir::{Item, OpaqueItem, PrimitiveType, Struct, Typedef};
+use bindgen::library::Library;
 
 /// A type alias that generates a copy of its aliasee with a new name. If the type
 /// alias has generic values, it specializes its aliasee. This is useful for

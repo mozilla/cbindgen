@@ -8,13 +8,13 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::*;
-use bindgen::library::*;
-use bindgen::mangle::*;
+use bindgen::ir::{AnnotationSet, Documentation, Type};
+use bindgen::library::Library;
+use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
-use bindgen::rename::*;
-use bindgen::utilities::*;
-use bindgen::writer::*;
+use bindgen::rename::{IdentifierType, RenameRule};
+use bindgen::utilities::{find_first_some, IterHelpers, SynItemHelpers};
+use bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Struct {
@@ -100,7 +100,7 @@ impl Struct {
                                           .collect::<Vec<_>>();
 
         let monomorph = Struct {
-            name: mangle_path(&self.name, generic_values),
+            name: mangle::mangle_path(&self.name, generic_values),
             annotations: self.annotations.clone(),
             fields: self.fields.iter()
                                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))

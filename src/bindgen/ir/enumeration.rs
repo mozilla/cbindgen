@@ -7,10 +7,10 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::rename::*;
-use bindgen::utilities::*;
-use bindgen::writer::*;
 use bindgen::ir::{AnnotationSet, Documentation};
+use bindgen::rename::{IdentifierType, RenameRule};
+use bindgen::utilities::{find_first_some, SynItemHelpers};
+use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Repr {
