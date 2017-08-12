@@ -130,10 +130,6 @@ impl Bindings {
         }
 
         for function in &self.functions {
-            if function.extern_decl {
-                continue;
-            }
-
             out.new_line_if_not_start();
             function.write(&self.config, &mut out);
             out.new_line();
