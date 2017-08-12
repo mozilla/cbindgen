@@ -6,7 +6,6 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::annotation::*;
 use bindgen::cdecl;
 use bindgen::config::{Config, Layout};
 use bindgen::ir::*;

@@ -34,7 +34,6 @@ macro_rules! deserialize_enum_str {
     }
 }
 
-mod annotation;
 mod cargo;
 mod cdecl;
 mod config;

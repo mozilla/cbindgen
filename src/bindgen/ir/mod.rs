@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 pub mod alias;
+pub mod annotation;
 pub mod enumeration;
 pub mod function;
 pub mod item;
@@ -13,6 +14,7 @@ pub mod ty;
 pub mod documentation;
 
 pub use self::alias::*;
+pub use self::annotation::{AnnotationSet, AnnotationValue};
 pub use self::enumeration::*;
 pub use self::function::*;
 pub use self::item::*;

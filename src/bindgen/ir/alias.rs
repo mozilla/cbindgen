@@ -7,7 +7,6 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::annotation::*;
 use bindgen::config::Config;
 use bindgen::ir::*;
 use bindgen::library::*;

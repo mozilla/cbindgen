@@ -16,7 +16,6 @@ use syn;
 
 use bindgen::cargo::Cargo;
 use bindgen::config::{self, Config, Language};
-use bindgen::annotation::*;
 use bindgen::ir::*;
 use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
 use bindgen::rust_lib;
