@@ -89,17 +89,20 @@ impl Source for Function {
             let postfix = config.function.postfix(&func.annotations);
 
             func.documentation.write(config, out);
-            if let Some(ref prefix) = prefix {
-                out.write(prefix);
-                out.write(" ");
-            }
             if func.extern_decl {
                 out.write("extern ");
+            } else {
+                if let Some(ref prefix) = prefix {
+                    out.write(prefix);
+                    out.write(" ");
+                }
             }
             cdecl::write_func(out, &func, false);
-            if let Some(ref postfix) = postfix {
-                out.write(" ");
-                out.write(postfix);
+            if !func.extern_decl {
+                if let Some(ref postfix) = postfix {
+                    out.write(" ");
+                    out.write(postfix);
+                }
             }
             out.write(";");
         }
@@ -109,17 +112,20 @@ impl Source for Function {
             let postfix = config.function.postfix(&func.annotations);
 
             func.documentation.write(config, out);
-            if let Some(ref prefix) = prefix {
-                out.write(prefix);
-                out.new_line();
-            }
             if func.extern_decl {
                 out.write("extern ");
+            } else {
+                if let Some(ref prefix) = prefix {
+                    out.write(prefix);
+                    out.new_line();
+                }
             }
             cdecl::write_func(out, &func, true);
-            if let Some(ref postfix) = postfix {
-                out.new_line();
-                out.write(postfix);
+            if !func.extern_decl {
+                if let Some(ref postfix) = postfix {
+                    out.new_line();
+                    out.write(postfix);
+                }
             }
             out.write(";");
         };
