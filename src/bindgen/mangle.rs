@@ -9,11 +9,10 @@ pub fn mangle_path(name: &str, generic_values: &[Type]) -> String {
 }
 
 fn internal_mangle_path(name: &str, generic_values: &[Type], last_in_parent: bool) -> String {
-    assert!(!name.contains("_"));
-
     if generic_values.is_empty() {
         return String::from(name);
     }
+    assert!(!name.contains("_"));
 
     let mut out = String::from(name);
 

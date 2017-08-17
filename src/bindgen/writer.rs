@@ -154,23 +154,6 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         self.max_line_length = cmp::max(self.max_line_length, self.line_length);
     }
 
-    pub fn write_horizontal_source_list<'b, S: Source>(&mut self, items: &Vec<S>, list_type: ListType<'b>) {
-        for (i, ref item) in items.iter().enumerate() {
-            item.write(self.config, self);
-
-            match list_type {
-                ListType::Join(text) => {
-                    if i != items.len() - 1 {
-                        self.write(&text);
-                    }
-                }
-                ListType::Cap(text) => {
-                    self.write(&text);
-                }
-            }
-        }
-    }
-
     pub fn write_vertical_list<'b>(&mut self, items: &Vec<String>, list_type: ListType<'b>) {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);

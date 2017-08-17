@@ -11,7 +11,7 @@ use syn;
 use bindgen::cargo::Cargo;
 use bindgen::config::Config;
 use bindgen::ir::{AnnotationSet, Cfg, Documentation, Enum, Function};
-use bindgen::ir::{OpaqueItem, Specialization, Struct, Typedef};
+use bindgen::ir::{OpaqueItem, Struct, Typedef};
 use bindgen::library::Library;
 use bindgen::rust_lib;
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
@@ -25,7 +25,6 @@ pub struct LibraryBuilder {
     structs: BTreeMap<String, Struct>,
     opaque_items: BTreeMap<String, OpaqueItem>,
     typedefs: BTreeMap<String, Typedef>,
-    specializations: BTreeMap<String, Specialization>,
     functions: Vec<Function>,
 }
 
@@ -39,7 +38,6 @@ impl LibraryBuilder {
             structs: BTreeMap::new(),
             opaque_items: BTreeMap::new(),
             typedefs: BTreeMap::new(),
-            specializations: BTreeMap::new(),
             functions: Vec::new(),
         }
     }
@@ -115,14 +113,11 @@ impl LibraryBuilder {
             })?;
         }
 
-        self.functions.sort_by(|x, y| x.name.cmp(&y.name));
-
         Ok(Library::new(self.config,
                         self.enums,
                         self.structs,
                         self.opaque_items,
                         self.typedefs,
-                        self.specializations,
                         self.functions))
     }
 
@@ -333,42 +328,23 @@ impl LibraryBuilder {
                    generics: &syn::Generics) {
         let alias_name = item.ident.to_string();
 
-        let fail1 = if generics.lifetimes.is_empty() &&
-                       generics.ty_params.is_empty()
+        match Typedef::load(alias_name.clone(),
+                            &item.attrs,
+                            generics,
+                            ty,
+                            mod_cfg)
         {
-            match Typedef::load(alias_name.clone(),
-                                ty,
-                                &item.attrs,
-                                mod_cfg)
-            {
-                Ok(typedef) => {
-                    info!("take {}::{}", crate_name, &item.ident);
-                    self.typedefs.insert(alias_name, typedef);
-                    return;
-                }
-                Err(msg) => msg,
-            }
-        } else {
-            format!("cannot have generics in typedef")
-        };
-
-        let fail2 = match Specialization::load(alias_name.clone(),
-                                               generics,
-                                               ty,
-                                               &item.attrs,
-                                               mod_cfg) {
-            Ok(spec) => {
+            Ok(typedef) => {
                 info!("take {}::{}", crate_name, &item.ident);
-                self.specializations.insert(alias_name, spec);
+                self.typedefs.insert(alias_name, typedef);
                 return;
             }
-            Err(msg) => msg,
-        };
-
-        info!("skip {}::{} - ({} and {})",
-              crate_name,
-              &item.ident,
-              fail1,
-              fail2);
+            Err(msg) => {
+                info!("skip {}::{} - ({})",
+                    crate_name,
+                    &item.ident,
+                    msg);
+            },
+        }
     }
 }

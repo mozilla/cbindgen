@@ -7,12 +7,11 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Repr, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Type};
+use bindgen::ir::{Repr, Specialization, OpaqueItem, Item};
 use bindgen::library::Library;
-use bindgen::mangle;
-use bindgen::monomorph::Monomorphs;
 use bindgen::rename::{IdentifierType, RenameRule};
+use bindgen::dependencies::DependencyKind;
 use bindgen::utilities::{find_first_some, IterHelpers};
 use bindgen::writer::{ListType, Source, SourceWriter};
 
@@ -25,6 +24,7 @@ pub struct Struct {
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
+    pub specialization: Option<Specialization>,
 }
 
 impl Struct {
@@ -72,60 +72,34 @@ impl Struct {
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
             documentation: Documentation::load(attrs),
+            specialization: None,
         })
     }
 
-    pub fn is_generic(&self) -> bool {
-        self.generic_params.len() > 0
-    }
-
-    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        for &(_, ref ty, _) in &self.fields {
-            ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
-        }
-    }
-
-    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
-        // Generic structs can instantiate monomorphs only once they've been
-        // instantiated. See `instantiate_monomorph` for more details.
-        if self.is_generic() {
-            return;
-        }
-
-        for &(_, ref ty, _) in &self.fields {
-            ty.add_monomorphs(library, out);
-        }
-    }
-
-    pub fn instantiate_monomorph(&self, library: &Library, generic_values: &Vec<Type>, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() > 0 &&
-                self.generic_params.len() == generic_values.len());
-
-        let mappings = self.generic_params.iter()
-                                          .zip(generic_values.iter())
-                                          .collect::<Vec<_>>();
-
-        let monomorph = Struct {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: vec![],
-            fields: self.fields.iter()
-                               .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
-                               .collect(),
-            tuple_struct: self.tuple_struct,
-            cfg: self.cfg.clone(),
+    pub fn as_opaque(&self) -> OpaqueItem {
+        OpaqueItem {
+            name: self.name.clone(),
+            generic_params: self.generic_params.clone(),
             annotations: self.annotations.clone(),
             documentation: self.documentation.clone(),
-        };
-
-        // Instantiate any monomorphs for any generic paths we may have just created.
-        monomorph.add_monomorphs(library, out);
-
-        out.insert_struct(self, monomorph, generic_values.clone());
+            cfg: self.cfg.clone(),
+        }
     }
 
-    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+    pub fn get_deps(&self, library: &Library) -> Vec<(Item, DependencyKind)> {
+        let mut ret = Vec::new();
+        for f in &self.fields {
+            ret.extend_from_slice(&f.1.get_items(library, DependencyKind::Normal));
+        }
+        if let Some(ref s) = self.specialization {
+            ret.push((Item::Specialization(s.clone()), DependencyKind::Normal));
+        }
+        ret
+    }
+
+    pub fn mangle_paths(&mut self) {
         for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.mangle_paths(monomorphs);
+            ty.mangle_paths();
         }
     }
 
@@ -173,7 +147,7 @@ impl Source for Struct {
         if config.language == Language::C {
             out.write("typedef struct");
         } else {
-            out.write(&format!("struct {}", self.name));
+            out.write(&format!("extern \"C\" struct {}", self.name));
         }
         out.open_brace();
 

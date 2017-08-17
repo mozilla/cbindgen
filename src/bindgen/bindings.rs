@@ -8,27 +8,20 @@ use std::path;
 use std::fs;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{Item, Function};
-use bindgen::monomorph::TemplateSpecialization;
-use bindgen::writer::{ListType, Source, SourceWriter};
+use bindgen::ir::Item;
+use bindgen::writer::{Source, SourceWriter};
 
 pub struct Bindings {
     config: Config,
     items: Vec<Item>,
-    functions: Vec<Function>,
-    template_specializations: Vec<TemplateSpecialization>,
 }
 
 impl Bindings {
     pub fn new(config: Config,
-               items: Vec<Item>,
-               functions: Vec<Function>,
-               template_specializations: Vec<TemplateSpecialization>) -> Bindings {
+               items: Vec<Item>) -> Bindings {
         Bindings {
-            config: config,
-            items: items,
-            functions: functions,
-            template_specializations: template_specializations,
+            config,
+            items,
         }
     }
 
@@ -83,25 +76,10 @@ impl Bindings {
 
         if self.config.language == Language::Cxx {
             out.new_line_if_not_start();
-            out.write("extern \"C\" {");
-            out.new_line();
 
             self.open_namespaces(&mut out);
         }
 
-        for item in &self.items {
-            out.new_line_if_not_start();
-            match item {
-                &Item::Enum(ref x) => x.write(&self.config, &mut out),
-                &Item::Struct(ref x) => x.write(&self.config, &mut out),
-                &Item::OpaqueItem(ref x) => x.write(&self.config, &mut out),
-                &Item::Typedef(ref x) => x.write(&self.config, &mut out),
-                &Item::Specialization(_) => {
-                    unreachable!("should not encounter a specialization in a generated library")
-                }
-            }
-            out.new_line();
-        }
 
         if let Some(ref f) = self.config.autogen_warning {
             out.new_line_if_not_start();
@@ -109,50 +87,13 @@ impl Bindings {
             out.new_line();
         }
 
-        for function in &self.functions {
+        for item in &self.items {
             out.new_line_if_not_start();
-            function.write(&self.config, &mut out);
+            item.write(&self.config, &mut out);
             out.new_line();
         }
 
         if self.config.language == Language::Cxx {
-            self.close_namespaces(&mut out);
-
-            out.new_line_if_not_start();
-            out.write("} // extern \"C\"");
-            out.new_line();
-        }
-
-        if self.config.structure.generic_template_specialization &&
-           self.config.language == Language::Cxx {
-            self.open_namespaces(&mut out);
-            for template in &self.template_specializations {
-              out.new_line_if_not_start();
-              out.write("template<");
-              for (i, param) in template.generic.generic_params.iter().enumerate() {
-                  if i != 0 {
-                      out.write(", ")
-                  }
-                  out.write("typename ");
-                  out.write(param);
-              }
-              out.write(">");
-              out.new_line();
-              out.write(&format!("struct {};", template.generic.name));
-              out.new_line();
-
-              for &(ref monomorph_path, ref generic_values) in &template.monomorphs {
-                out.new_line();
-                out.write("template<>");
-                out.new_line();
-                out.write(&format!("struct {}<", template.generic.name));
-                out.write_horizontal_source_list(generic_values, ListType::Join(", "));
-                out.write(&format!("> : public {}", monomorph_path));
-                out.open_brace();
-                out.close_brace(true);
-                out.new_line();
-              }
-            }
             self.close_namespaces(&mut out);
         }
 
