@@ -14,6 +14,7 @@ This project can be used to generate C bindings for Rust code. It is currently b
   * Can specify annotations for controlling some aspects of binding
   * Support for generic structs
   * Customizable formatting, can be used in C or C++ projects
+  * Support for generating `#ifdef`'s for `#[cfg]` attributes
 
 ## Use
 

@@ -1,6 +1,6 @@
 [package]
 name = "cbindgen"
-version = "0.1.21"
+version = "0.1.22"
 authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>",
            "Kartikaya Gupta <kats@mozilla.com>",
            "Ryan Hunt <rhunt@eqrion.net>"]
@@ -9,7 +9,7 @@ description = "A tool for generating C bindings to Rust code."
 keywords = ["bindings", "ffi", "code-generation"]
 categories = ["external-ffi-bindings", "development-tools::ffi"]
 repository = "https://github.com/eqrion/cbindgen/"
-exclude = ["run-tests.py", "compile-tests/**"]
+exclude = ["test.py", "compile-tests/**"]
 
 [badges]
 travis-ci = { repository = "eqrion/cbindgen" }
