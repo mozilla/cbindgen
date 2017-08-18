@@ -9,7 +9,7 @@ use syn;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Documentation, Path, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Path, Type};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::writer::{Source, SourceWriter};
@@ -18,22 +18,24 @@ use bindgen::writer::{Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct Typedef {
     pub name: String,
-    pub annotations: AnnotationSet,
     pub aliased: Type,
+    pub cfg: Option<Cfg>,
+    pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
 
 impl Typedef {
     pub fn load(name: String,
-                annotations: AnnotationSet,
                 ty: &syn::Ty,
-                doc: String) -> Result<Typedef, String> {
+                attrs: &Vec<syn::Attribute>,
+                mod_cfg: &Option<Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(ty)? {
             Ok(Typedef {
                 name: name,
-                annotations: annotations,
                 aliased: x,
-                documentation: Documentation::load(doc),
+                cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
+                annotations: AnnotationSet::load(attrs)?,
+                documentation: Documentation::load(attrs),
             })
         } else {
             Err(format!("cannot have a typedef of a zero sized type"))
@@ -75,11 +77,14 @@ impl Typedef {
 
 impl Source for Typedef {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if config.documentation {
-            self.documentation.write(config, out);
-        }
+        self.cfg.write_before(config, out);
+
+        self.documentation.write(config, out);
+
         out.write("typedef ");
         (self.name.clone(), self.aliased.clone()).write(config, out);
         out.write(";");
+
+        self.cfg.write_after(config, out);
     }
 }

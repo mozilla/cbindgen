@@ -32,7 +32,7 @@ impl From<toml::de::Error> for Error {
 #[derive(Clone, Deserialize, Debug)]
 pub struct Lock {
     pub root: Package,
-    pub package: Vec<Package>,
+    pub package: Option<Vec<Package>>,
 }
 
 #[derive(Clone, Deserialize, Debug)]

@@ -7,7 +7,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{AnnotationSet, Documentation, Path, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Path, Type};
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
 use bindgen::writer::{Source, SourceWriter};
@@ -16,6 +16,7 @@ use bindgen::writer::{Source, SourceWriter};
 pub struct OpaqueItem {
     pub name: Path,
     pub generic_params: Vec<String>,
+    pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
@@ -23,8 +24,8 @@ pub struct OpaqueItem {
 impl OpaqueItem {
     pub fn new(name: String,
                generics: &syn::Generics,
-               annotations: AnnotationSet,
-               doc: String) -> OpaqueItem {
+               attrs: &Vec<syn::Attribute>,
+               mod_cfg: &Option<Cfg>) -> OpaqueItem {
         let generic_params = generics.ty_params.iter()
                                                .map(|x| x.ident.to_string())
                                                .collect::<Vec<_>>();
@@ -32,8 +33,9 @@ impl OpaqueItem {
         OpaqueItem {
             name: name,
             generic_params: generic_params,
-            annotations: annotations,
-            documentation: Documentation::load(doc),
+            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
+            annotations: AnnotationSet::load(attrs).unwrap_or(AnnotationSet::new()),
+            documentation: Documentation::load(attrs),
         }
     }
 
@@ -43,6 +45,7 @@ impl OpaqueItem {
         let monomorph = OpaqueItem {
             name: mangle::mangle_path(&self.name, generic_values),
             generic_params: vec![],
+            cfg: self.cfg.clone(),
             annotations: self.annotations.clone(),
             documentation: self.documentation.clone(),
         };
@@ -53,7 +56,10 @@ impl OpaqueItem {
 
 impl Source for OpaqueItem {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        self.cfg.write_before(config, out);
+
         self.documentation.write(config, out);
+
         if config.language == Language::C {
             out.write(&format!("struct {};", self.name));
             out.new_line();
@@ -61,5 +67,7 @@ impl Source for OpaqueItem {
         } else {
             out.write(&format!("struct {};", self.name));
         }
+
+        self.cfg.write_after(config, out);
     }
 }

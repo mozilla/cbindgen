@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use syn;
 
 use bindgen::cargo::{Cargo, PackageRef};
+use bindgen::ir::Cfg;
 
 const STD_CRATES: &'static [&'static str] = &["std",
                                               "std_unicode",
@@ -48,7 +49,7 @@ pub fn parse_lib<F>(lib: Cargo,
                     exclude: &Vec<String>,
                     expand: &Vec<String>,
                     items_callback: &mut F) -> ParseResult
-    where F: FnMut(&str, &str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
     let mut context = ParseLibContext {
         lib: lib,
@@ -58,6 +59,9 @@ pub fn parse_lib<F>(lib: Cargo,
         expand: expand.clone(),
         cache_src: HashMap::new(),
         cache_expanded_crate: HashMap::new(),
+
+        cfg_stack: Vec::new(),
+
         items_callback: items_callback,
     };
 
@@ -65,7 +69,7 @@ pub fn parse_lib<F>(lib: Cargo,
 }
 
 struct ParseLibContext<F>
-    where F: FnMut(&str, &str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
     lib: Cargo,
     parse_deps: bool,
@@ -75,11 +79,13 @@ struct ParseLibContext<F>
     cache_src: HashMap<PathBuf, Vec<syn::Item>>,
     cache_expanded_crate: HashMap<String, Vec<syn::Item>>,
 
+    cfg_stack: Vec<Cfg>,
+
     items_callback: F,
 }
 
 impl<F> ParseLibContext<F>
-    where F: FnMut(&str, &str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
     fn should_parse_dependency(&self, pkg_name: &String) -> bool {
         if !self.parse_deps {
@@ -105,7 +111,7 @@ impl<F> ParseLibContext<F>
 }
 
 fn parse_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
     // Check if we should use cargo expand for this crate
     if context.expand.contains(&pkg.name) {
@@ -128,7 +134,7 @@ fn parse_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseRe
 }
 
 fn parse_expand_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
     let mod_parsed = {
         if !context.cache_expanded_crate.contains_key(&pkg.name) {
@@ -146,22 +152,38 @@ fn parse_expand_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> 
 fn process_expanded_mod<F>(pkg: &PackageRef,
                            items: &Vec<syn::Item>,
                            context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
-    (context.items_callback)(context.lib.binding_crate_name(), &pkg.name, items);
+    (context.items_callback)(context.lib.binding_crate_name(),
+                             &pkg.name,
+                             Cfg::join(&context.cfg_stack),
+                             items);
 
     for item in items {
         match item.node {
             syn::ItemKind::Mod(ref inline_items) => {
-                if let &Some(ref inline_items) = inline_items {
-                    process_expanded_mod(pkg, inline_items, context)?;
-                    continue;
+                let cfg = Cfg::load(&item.attrs);
+                if let &Some(ref cfg) = &cfg {
+                    context.cfg_stack.push(cfg.clone());
                 }
 
-                return Err(format!("parsing crate `{}`: external mod found in expanded source", pkg.name));
+                if let &Some(ref inline_items) = inline_items {
+                    process_expanded_mod(pkg, inline_items, context)?;
+                } else {
+                    error!("parsing crate `{}`: external mod found in expanded source", pkg.name);
+                }
+
+                if cfg.is_some() {
+                    context.cfg_stack.pop();
+                }
             }
             syn::ItemKind::ExternCrate(_) => {
                 let dep_pkg_name = item.ident.to_string();
+
+                let cfg = Cfg::load(&item.attrs);
+                if let &Some(ref cfg) = &cfg {
+                    context.cfg_stack.push(cfg.clone());
+                }
 
                 if context.should_parse_dependency(&dep_pkg_name) {
                     let dep_pkg_ref = context.lib.find_dep_ref(pkg, &dep_pkg_name);
@@ -171,6 +193,10 @@ fn process_expanded_mod<F>(pkg: &PackageRef,
                     } else {
                         error!("parsing crate `{}`: can't find dependency version for {}`", pkg.name, dep_pkg_name);
                     }
+                }
+
+                if cfg.is_some() {
+                    context.cfg_stack.pop();
                 }
             }
             _ => {}
@@ -183,7 +209,7 @@ fn process_expanded_mod<F>(pkg: &PackageRef,
 fn parse_mod<F>(pkg: &PackageRef,
                 mod_path: &Path,
                 context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
     let mod_parsed = {
         let owned_mod_path = mod_path.to_path_buf();
@@ -211,41 +237,57 @@ fn process_mod<F>(pkg: &PackageRef,
                   mod_dir: &Path,
                   items: &Vec<syn::Item>,
                   context: &mut ParseLibContext<F>) -> ParseResult
-    where F: FnMut(&str, &str, &Vec<syn::Item>)
+    where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
-    (context.items_callback)(context.lib.binding_crate_name(), &pkg.name, items);
+    (context.items_callback)(context.lib.binding_crate_name(),
+                             &pkg.name,
+                             Cfg::join(&context.cfg_stack),
+                             items);
 
     for item in items {
         match item.node {
             syn::ItemKind::Mod(ref inline_items) => {
                 let next_mod_name = item.ident.to_string();
 
+                let cfg = Cfg::load(&item.attrs);
+                if let &Some(ref cfg) = &cfg {
+                    context.cfg_stack.push(cfg.clone());
+                }
+
                 if let &Some(ref inline_items) = inline_items {
                     process_mod(pkg,
                                 &mod_dir.join(&next_mod_name),
                                 inline_items,
                                 context)?;
-                    continue;
+                } else {
+                    let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
+                    let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
+
+                    if next_mod_path1.exists() {
+                        parse_mod(pkg,
+                                  next_mod_path1.as_path(),
+                                  context)?;
+                    } else if next_mod_path2.exists() {
+                        parse_mod(pkg,
+                                  next_mod_path2.as_path(),
+                                  context)?;
+                    } else {
+                        // This should be an error, but is common enough to just elicit a warning
+                        warn!("parsing crate `{}`: can't find mod {}`", pkg.name, next_mod_name);
+                    }
                 }
 
-                let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
-                let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
-
-                if next_mod_path1.exists() {
-                    parse_mod(pkg,
-                              next_mod_path1.as_path(),
-                              context)?;
-                } else if next_mod_path2.exists() {
-                    parse_mod(pkg,
-                              next_mod_path2.as_path(),
-                              context)?;
-                } else {
-                    // This should be an error, but is common enough to just elicit a warning
-                    warn!("parsing crate `{}`: can't find mod {}`", pkg.name, next_mod_name);
+                if cfg.is_some() {
+                    context.cfg_stack.pop();
                 }
             }
             syn::ItemKind::ExternCrate(_) => {
                 let dep_pkg_name = item.ident.to_string();
+
+                let cfg = Cfg::load(&item.attrs);
+                if let &Some(ref cfg) = &cfg {
+                    context.cfg_stack.push(cfg.clone());
+                }
 
                 if context.should_parse_dependency(&dep_pkg_name) {
                     let dep_pkg_ref = context.lib.find_dep_ref(pkg, &dep_pkg_name);
@@ -255,6 +297,10 @@ fn process_mod<F>(pkg: &PackageRef,
                     } else {
                         error!("parsing crate `{}`: can't find dependency version for {}`", pkg.name, dep_pkg_name);
                     }
+                }
+
+                if cfg.is_some() {
+                    context.cfg_stack.pop();
                 }
             }
             _ => {}

@@ -18,5 +18,5 @@ env:
 script:
   - cargo build --verbose
   - cargo test --verbose
-  - python run-tests.py
-  - python run-tests.py -c
+  - python test.py
+  - python test.py -c

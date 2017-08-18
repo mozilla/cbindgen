@@ -10,7 +10,7 @@ use syn;
 
 use bindgen::cargo::Cargo;
 use bindgen::config::Config;
-use bindgen::ir::{AnnotationSet, Documentation, Enum, Function};
+use bindgen::ir::{AnnotationSet, Cfg, Documentation, Enum, Function};
 use bindgen::ir::{OpaqueItem, Specialization, Struct, Typedef};
 use bindgen::library::Library;
 use bindgen::rust_lib;
@@ -26,7 +26,7 @@ pub struct LibraryBuilder {
     opaque_items: BTreeMap<String, OpaqueItem>,
     typedefs: BTreeMap<String, Typedef>,
     specializations: BTreeMap<String, Specialization>,
-    functions: BTreeMap<String, Function>,
+    functions: Vec<Function>,
 }
 
 impl LibraryBuilder {
@@ -40,7 +40,7 @@ impl LibraryBuilder {
             opaque_items: BTreeMap::new(),
             typedefs: BTreeMap::new(),
             specializations: BTreeMap::new(),
-            functions: BTreeMap::new(),
+            functions: Vec::new(),
         }
     }
 
@@ -57,6 +57,7 @@ impl LibraryBuilder {
                     generic_params: generic_params.iter()
                                                   .map(|x| (*x).to_owned())
                                                   .collect(),
+                    cfg: None,
                     annotations: AnnotationSet::new(),
                     documentation: Documentation::none(),
                 })
@@ -92,14 +93,14 @@ impl LibraryBuilder {
     }
 
     pub fn build(mut self) -> Result<Library, String> {
-        // Workaround the borrowchecker
+        // Workaround the borrow checker
         let srcs = mem::replace(&mut self.srcs, Vec::new());
         let lib = mem::replace(&mut self.lib, None);
         let config = self.config.clone();
 
         for x in &srcs {
             rust_lib::parse_src(x, &mut |crate_name, items| {
-                self.load_syn_crate_mod("", &crate_name, items);
+                self.load_syn_crate_mod("", &crate_name, &None, items);
             })?;
         }
 
@@ -109,10 +110,12 @@ impl LibraryBuilder {
                                 &config.parse.include,
                                 &config.parse.exclude,
                                 &config.parse.expand,
-                                &mut |binding_crate_name, crate_name, items| {
-                self.load_syn_crate_mod(binding_crate_name, &crate_name, items);
+                                &mut |binding_crate_name, crate_name, mod_cfg, items| {
+                self.load_syn_crate_mod(binding_crate_name, &crate_name, &mod_cfg, items);
             })?;
         }
+
+        self.functions.sort_by(|x, y| x.name.cmp(&y.name));
 
         Ok(Library::new(self.config,
                         self.enums,
@@ -123,11 +126,19 @@ impl LibraryBuilder {
                         self.functions))
     }
 
-    fn load_syn_crate_mod(&mut self, binding_crate_name: &str, crate_name: &str, items: &Vec<syn::Item>) {
+    fn load_syn_crate_mod(&mut self,
+                          binding_crate_name: &str,
+                          crate_name: &str,
+                          mod_cfg: &Option<Cfg>,
+                          items: &Vec<syn::Item>) {
         for item in items {
             match item.node {
                 syn::ItemKind::ForeignMod(ref block) => {
-                    self.load_syn_foreign_mod(binding_crate_name, crate_name, item, block);
+                    self.load_syn_foreign_mod(binding_crate_name,
+                                              crate_name,
+                                              mod_cfg,
+                                              item,
+                                              block);
                 }
                 syn::ItemKind::Fn(ref decl,
                                   ref _unsafe,
@@ -135,16 +146,21 @@ impl LibraryBuilder {
                                   ref abi,
                                   ref _generic,
                                   ref _block) => {
-                    self.load_syn_fn(binding_crate_name, crate_name, item, decl, abi);
+                    self.load_syn_fn(binding_crate_name,
+                                     crate_name,
+                                     mod_cfg,
+                                     item,
+                                     decl,
+                                     abi);
                 }
                 syn::ItemKind::Struct(ref variant, ref generics) => {
-                    self.load_syn_struct(crate_name, item, variant, generics);
+                    self.load_syn_struct(crate_name, mod_cfg, item, variant, generics);
                 }
                 syn::ItemKind::Enum(ref variants, ref generics) => {
-                    self.load_syn_enum(crate_name, item, variants, generics);
+                    self.load_syn_enum(crate_name, mod_cfg, item, variants, generics);
                 }
                 syn::ItemKind::Ty(ref ty, ref generics) => {
-                    self.load_syn_ty(crate_name, item, ty, generics);
+                    self.load_syn_ty(crate_name, mod_cfg, item, ty, generics);
                 }
                 _ => { }
             }
@@ -155,6 +171,7 @@ impl LibraryBuilder {
     fn load_syn_foreign_mod(&mut self,
                             binding_crate_name: &str,
                             crate_name: &str,
+                            mod_cfg: &Option<Cfg>,
                             item: &syn::Item,
                             block: &syn::ForeignMod) {
         if !block.abi.is_c() {
@@ -173,23 +190,15 @@ impl LibraryBuilder {
                         return;
                     }
 
-                    let annotations = match AnnotationSet::parse(foreign_item.get_doc_attr()) {
-                        Ok(x) => x,
-                        Err(msg) => {
-                            warn!("{}", msg);
-                            AnnotationSet::new()
-                        }
-                    };
-
                     match Function::load(foreign_item.ident.to_string(),
-                                         annotations,
                                          decl,
                                          true,
-                                         foreign_item.get_doc_attr()) {
+                                         &foreign_item.attrs,
+                                         mod_cfg) {
                         Ok(func) => {
                             info!("take {}::{}", crate_name, &foreign_item.ident);
 
-                            self.functions.insert(func.name.clone(), func);
+                            self.functions.push(func);
                         }
                         Err(msg) => {
                             error!("Cannot use fn {}::{} ({})",
@@ -208,6 +217,7 @@ impl LibraryBuilder {
     fn load_syn_fn(&mut self,
                    binding_crate_name: &str,
                    crate_name: &str,
+                   mod_cfg: &Option<Cfg>,
                    item: &syn::Item,
                    decl: &syn::FnDecl,
                    abi: &Option<syn::Abi>) {
@@ -219,23 +229,15 @@ impl LibraryBuilder {
         }
 
         if item.is_no_mangle() && abi.is_c() {
-            let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-                Ok(x) => x,
-                Err(msg) => {
-                    warn!("{}", msg);
-                    AnnotationSet::new()
-                }
-            };
-
             match Function::load(item.ident.to_string(),
-                                 annotations,
                                  decl,
                                  false,
-                                 item.get_doc_attr()) {
+                                 &item.attrs,
+                                 mod_cfg) {
                 Ok(func) => {
                     info!("take {}::{}", crate_name, &item.ident);
 
-                    self.functions.insert(func.name.clone(), func);
+                    self.functions.push(func);
                 }
                 Err(msg) => {
                     error!("cannot use fn {}::{} ({})",
@@ -256,56 +258,40 @@ impl LibraryBuilder {
     /// Loads a `struct` declaration
     fn load_syn_struct(&mut self,
                        crate_name: &str,
+                       mod_cfg: &Option<Cfg>,
                        item: &syn::Item,
                        variant: &syn::VariantData,
                        generics: &syn::Generics) {
         let struct_name = item.ident.to_string();
-        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-            Ok(x) => x,
-            Err(msg) => {
-                warn!("{}", msg);
-                AnnotationSet::new()
-            }
-        };
 
-        if item.is_repr_c() {
-            match Struct::load(struct_name.clone(),
-                               annotations.clone(),
-                               variant,
-                               generics,
-                               item.get_doc_attr()) {
-                Ok(st) => {
-                    info!("take {}::{}", crate_name, &item.ident);
-                    self.structs.insert(struct_name,
-                                        st);
-                }
-                Err(msg) => {
-                    info!("take {}::{} - opaque ({})",
-                          crate_name,
-                          &item.ident,
-                          msg);
-                    self.opaque_items.insert(struct_name.clone(),
-                                             OpaqueItem::new(struct_name,
-                                                             generics,
-                                                             annotations,
-                                                             item.get_doc_attr()));
-                }
+        match Struct::load(struct_name.clone(),
+                           variant,
+                           generics,
+                           &item.attrs,
+                           mod_cfg) {
+            Ok(st) => {
+                info!("take {}::{}", crate_name, &item.ident);
+                self.structs.insert(struct_name,
+                                    st);
             }
-        } else {
-            info!("take {}::{} - opaque (not marked as repr(C))",
-                  crate_name,
-                  &item.ident);
-            self.opaque_items.insert(struct_name.clone(),
-                                     OpaqueItem::new(struct_name,
-                                                     generics,
-                                                     annotations,
-                                                     item.get_doc_attr()));
+            Err(msg) => {
+                info!("take {}::{} - opaque ({})",
+                      crate_name,
+                      &item.ident,
+                      msg);
+                self.opaque_items.insert(struct_name.clone(),
+                                         OpaqueItem::new(struct_name,
+                                                         generics,
+                                                         &item.attrs,
+                                                         mod_cfg));
+            }
         }
     }
 
     /// Loads a `enum` declaration
     fn load_syn_enum(&mut self,
                      crate_name: &str,
+                     mod_cfg: &Option<Cfg>,
                      item: &syn::Item,
                      variants: &Vec<syn::Variant>,
                      generics: &syn::Generics) {
@@ -317,21 +303,12 @@ impl LibraryBuilder {
                   &item.ident);
             return;
         }
-
         let enum_name = item.ident.to_string();
-        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-            Ok(x) => x,
-            Err(msg) => {
-                warn!("{}", msg);
-                AnnotationSet::new()
-            }
-        };
 
         match Enum::load(enum_name.clone(),
-                         item.get_repr(),
-                         annotations.clone(),
                          variants,
-                         item.get_doc_attr()) {
+                         &item.attrs,
+                         mod_cfg) {
             Ok(en) => {
                 info!("take {}::{}", crate_name, &item.ident);
                 self.enums.insert(enum_name, en);
@@ -341,8 +318,8 @@ impl LibraryBuilder {
                 self.opaque_items.insert(enum_name.clone(),
                                          OpaqueItem::new(enum_name,
                                                          generics,
-                                                         annotations,
-                                                         item.get_doc_attr()));
+                                                         &item.attrs,
+                                                         mod_cfg));
             }
         }
     }
@@ -350,26 +327,19 @@ impl LibraryBuilder {
     /// Loads a `type` declaration
     fn load_syn_ty(&mut self,
                    crate_name: &str,
+                   mod_cfg: &Option<Cfg>,
                    item: &syn::Item,
                    ty: &syn::Ty,
                    generics: &syn::Generics) {
         let alias_name = item.ident.to_string();
-        let annotations = match AnnotationSet::parse(item.get_doc_attr()) {
-            Ok(x) => x,
-            Err(msg) => {
-                warn!("{}", msg);
-                AnnotationSet::new()
-            }
-        };
-
 
         let fail1 = if generics.lifetimes.is_empty() &&
                        generics.ty_params.is_empty()
         {
             match Typedef::load(alias_name.clone(),
-                                annotations.clone(),
                                 ty,
-                                item.get_doc_attr())
+                                &item.attrs,
+                                mod_cfg)
             {
                 Ok(typedef) => {
                     info!("take {}::{}", crate_name, &item.ident);
@@ -383,10 +353,10 @@ impl LibraryBuilder {
         };
 
         let fail2 = match Specialization::load(alias_name.clone(),
-                                               annotations.clone(),
                                                generics,
                                                ty,
-                                               item.get_doc_attr()) {
+                                               &item.attrs,
+                                               mod_cfg) {
             Ok(spec) => {
                 info!("take {}::{}", crate_name, &item.ident);
                 self.specializations.insert(alias_name, spec);

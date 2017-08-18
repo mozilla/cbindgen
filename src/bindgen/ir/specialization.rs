@@ -4,8 +4,8 @@
 
 use syn;
 
-use bindgen::ir::{AnnotationSet, Documentation, Enum, GenericPath};
-use bindgen::ir::{Item, OpaqueItem, PrimitiveType, Struct, Typedef};
+use bindgen::ir::{AnnotationSet, Cfg, Documentation, Enum};
+use bindgen::ir::{GenericPath, Item, OpaqueItem, PrimitiveType, Struct, Typedef};
 use bindgen::library::Library;
 
 /// A type alias that generates a copy of its aliasee with a new name. If the type
@@ -14,18 +14,19 @@ use bindgen::library::Library;
 #[derive(Debug, Clone)]
 pub struct Specialization {
     pub name: String,
-    pub annotations: AnnotationSet,
-    pub aliased: GenericPath,
     pub generic_params: Vec<String>,
+    pub aliased: GenericPath,
+    pub cfg: Option<Cfg>,
+    pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
 
 impl Specialization {
     pub fn load(name: String,
-                annotations: AnnotationSet,
                 generics: &syn::Generics,
                 ty: &syn::Ty,
-                doc: String) -> Result<Specialization, String>
+                attrs: &Vec<syn::Attribute>,
+                mod_cfg: &Option<Cfg>) -> Result<Specialization, String>
     {
         match ty {
             &syn::Ty::Path(ref _q, ref p) => {
@@ -41,10 +42,11 @@ impl Specialization {
 
                 Ok(Specialization {
                     name: name,
-                    annotations: annotations,
-                    aliased: path,
                     generic_params: generic_params,
-                    documentation: Documentation::load(doc),
+                    aliased: path,
+                    cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
+                    annotations: AnnotationSet::load(attrs)?,
+                    documentation: Documentation::load(attrs),
                 })
             }
             _ => {
@@ -66,6 +68,7 @@ impl Specialization {
                         Ok(Some(Item::OpaqueItem(OpaqueItem {
                             name: self.name.clone(),
                             generic_params: self.generic_params.clone(),
+                            cfg: self.cfg.clone(),
                             annotations: self.annotations.clone(),
                             documentation: self.documentation.clone(),
                         })))
@@ -82,29 +85,32 @@ impl Specialization {
 
                         Ok(Some(Item::Struct(Struct {
                             name: self.name.clone(),
-                            annotations: self.annotations.clone(),
+                            generic_params: self.generic_params.clone(),
                             fields: aliased.fields.iter()
                                                   .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                                                   .collect(),
                             tuple_struct: aliased.tuple_struct,
-                            generic_params: self.generic_params.clone(),
-                            documentation: aliased.documentation.clone(),
+                            cfg: self.cfg.clone(),
+                            annotations: self.annotations.clone(),
+                            documentation: self.documentation.clone(),
                         })))
                     }
                     Item::Enum(ref aliased) => {
                         Ok(Some(Item::Enum(Enum {
                             name: self.name.clone(),
                             repr: aliased.repr.clone(),
-                            annotations: self.annotations.clone(),
                             values: aliased.values.clone(),
-                            documentation: aliased.documentation.clone(),
+                            cfg: self.cfg.clone(),
+                            annotations: self.annotations.clone(),
+                            documentation: self.documentation.clone(),
                         })))
                     }
                     Item::Typedef(ref aliased) => {
                         Ok(Some(Item::Typedef(Typedef {
                             name: self.name.clone(),
-                            annotations: self.annotations.clone(),
                             aliased: aliased.aliased.clone(),
+                            cfg: self.cfg.clone(),
+                            annotations: self.annotations.clone(),
                             documentation: self.documentation.clone(),
                         })))
                     }
@@ -124,9 +130,10 @@ impl Specialization {
 
                         Specialization {
                             name: self.name.clone(),
-                            annotations: self.annotations.clone(),
-                            aliased: GenericPath::new(aliased.aliased.name.clone(), generics),
                             generic_params: self.generic_params.clone(),
+                            aliased: GenericPath::new(aliased.aliased.name.clone(), generics),
+                            cfg: self.cfg.clone(),
+                            annotations: self.annotations.clone(),
                             documentation: self.documentation.clone(),
                         }.specialize(library)
                     }

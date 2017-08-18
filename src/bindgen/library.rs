@@ -21,7 +21,7 @@ pub struct Library {
     opaque_items: BTreeMap<String, OpaqueItem>,
     typedefs: BTreeMap<String, Typedef>,
     specializations: BTreeMap<String, Specialization>,
-    functions: BTreeMap<String, Function>,
+    functions: Vec<Function>,
     template_specializations: Vec<TemplateSpecialization>,
 }
 
@@ -32,7 +32,7 @@ impl Library {
                opaque_items: BTreeMap<String, OpaqueItem>,
                typedefs: BTreeMap<String, Typedef>,
                specializations: BTreeMap<String, Specialization>,
-               functions: BTreeMap<String, Function>) -> Library {
+               functions: Vec<Function>) -> Library {
         Library {
             config: config,
             enums: enums,
@@ -53,7 +53,7 @@ impl Library {
 
         let mut dependencies = Dependencies::new();
 
-        for function in self.functions.values() {
+        for function in &self.functions {
             function.add_dependencies(&self, &mut dependencies);
         }
 
@@ -67,7 +67,7 @@ impl Library {
         dependencies.sort();
 
         let items = dependencies.order;
-        let functions = self.functions.values().map(|x| x.clone()).collect();
+        let functions = mem::replace(&mut self.functions, Vec::new());
         let template_specializations = mem::replace(&mut self.template_specializations, Vec::new());
 
         Ok(Bindings::new(self.config.clone(),
@@ -172,7 +172,7 @@ impl Library {
             item.rename_values(&self.config);
         }
 
-        for item in self.functions.values_mut() {
+        for item in &mut self.functions {
             item.rename_args(&self.config);
         }
     }
@@ -210,7 +210,7 @@ impl Library {
       for x in self.typedefs.values() {
         x.add_monomorphs(self, &mut monomorphs);
       }
-      for x in self.functions.values() {
+      for x in &self.functions {
         x.add_monomorphs(self, &mut monomorphs);
       }
 
@@ -243,7 +243,7 @@ impl Library {
       for x in self.typedefs.values_mut() {
         x.mangle_paths(&monomorphs);
       }
-      for x in self.functions.values_mut() {
+      for x in &mut self.functions {
         x.mangle_paths(&monomorphs);
       }
 

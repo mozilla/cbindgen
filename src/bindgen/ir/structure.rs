@@ -8,31 +8,36 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Documentation, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Repr, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
 use bindgen::rename::{IdentifierType, RenameRule};
-use bindgen::utilities::{find_first_some, IterHelpers, SynItemHelpers};
+use bindgen::utilities::{find_first_some, IterHelpers};
 use bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Struct {
     pub name: String,
-    pub annotations: AnnotationSet,
+    pub generic_params: Vec<String>,
     pub fields: Vec<(String, Type, Documentation)>,
     pub tuple_struct: bool,
-    pub generic_params: Vec<String>,
+    pub cfg: Option<Cfg>,
+    pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
 
 impl Struct {
     pub fn load(name: String,
-                annotations: AnnotationSet,
                 decl: &syn::VariantData,
                 generics: &syn::Generics,
-                doc: String) -> Result<Struct, String>
+                attrs: &Vec<syn::Attribute>,
+                mod_cfg: &Option<Cfg>) -> Result<Struct, String>
     {
+        if Repr::load(attrs) != Repr::C {
+            return Err("struct is not marked #[repr(C)]".to_owned());
+        }
+
         let (fields, tuple_struct) = match decl {
             &syn::VariantData::Struct(ref fields) => {
                 let out = fields.iter()
@@ -44,7 +49,7 @@ impl Struct {
                 let mut current = 0;
                 for field in fields {
                     if let Some(x) = Type::load(&field.ty)? {
-                        out.push((format!("{}", current), x, Documentation::load(field.get_doc_attr())));
+                        out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
                         current += 1;
                     }
                 }
@@ -61,11 +66,12 @@ impl Struct {
 
         Ok(Struct {
             name: name,
-            annotations: annotations,
+            generic_params: generic_params,
             fields: fields,
             tuple_struct: tuple_struct,
-            generic_params: generic_params,
-            documentation: Documentation::load(doc),
+            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
+            annotations: AnnotationSet::load(attrs)?,
+            documentation: Documentation::load(attrs),
         })
     }
 
@@ -101,12 +107,13 @@ impl Struct {
 
         let monomorph = Struct {
             name: mangle::mangle_path(&self.name, generic_values),
-            annotations: self.annotations.clone(),
+            generic_params: vec![],
             fields: self.fields.iter()
                                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                                .collect(),
             tuple_struct: self.tuple_struct,
-            generic_params: vec![],
+            cfg: self.cfg.clone(),
+            annotations: self.annotations.clone(),
             documentation: self.documentation.clone(),
         };
 
@@ -159,7 +166,10 @@ impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         assert!(self.generic_params.is_empty());
 
+        self.cfg.write_before(config, out);
+
         self.documentation.write(config, out);
+
         if config.language == Language::C {
             out.write("typedef struct");
         } else {
@@ -236,6 +246,8 @@ impl Source for Struct {
         } else {
             out.close_brace(true);
         }
+
+        self.cfg.write_after(config, out);
     }
 }
 
@@ -249,7 +261,7 @@ impl SynFieldHelpers for syn::Field {
         let converted_ty = Type::load(&self.ty)?;
 
         if let Some(x) = converted_ty {
-            Ok(Some((ident.to_string(), x, Documentation::load(self.get_doc_attr()))))
+            Ok(Some((ident.to_string(), x, Documentation::load(&self.attrs))))
         } else {
             Ok(None)
         }

@@ -1,0 +1,5 @@
+[defines]
+"unix" = "PLATFORM_UNIX"
+"windows" = "PLATFORM_WIN"
+"x11" = "X11"
+"target_pointer_width = 32" = "M_32"

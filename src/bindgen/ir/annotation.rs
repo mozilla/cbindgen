@@ -5,6 +5,8 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use syn;
+
 // A system for specifying properties on items. Annotations are
 // given through document comments and parsed by this code.
 //
@@ -43,11 +45,26 @@ impl AnnotationSet {
         self.annotations.is_empty()
     }
 
-    pub fn parse(text: String) -> Result<AnnotationSet, String> {
+    pub fn load(attrs: &Vec<syn::Attribute>) -> Result<AnnotationSet, String> {
+        let mut lines = Vec::new();
+
+        for attr in attrs {
+            if attr.style == syn::AttrStyle::Outer &&
+               attr.is_sugared_doc {
+                if let syn::MetaItem::NameValue(_, syn::Lit::Str(ref comment, _)) = attr.value {
+                    let line = comment.trim_left_matches("///").trim();
+
+                    if line.starts_with("cbindgen:") {
+                        lines.push(line.to_owned());
+                    }
+                }
+            }
+        }
+
         let mut annotations = HashMap::new();
 
         // Look at each line for an annotation
-        for line in text.lines().map(|x| x.trim_left_matches("///").trim()) {
+        for line in lines {
             // Skip lines that don't start with cbindgen
             if !line.starts_with("cbindgen:") {
                 continue;

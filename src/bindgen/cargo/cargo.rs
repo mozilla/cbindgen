@@ -113,22 +113,24 @@ impl Cargo {
             return None;
         }
 
-        for lock_package in &lock.package {
-            if lock_package.name == package.name &&
-               lock_package.version == package.version {
-                if let Some(ref deps) = lock_package.dependencies {
-                    for dep in deps {
-                        let (name, version) = parse_dep_string(dep);
+        if let &Some(ref lock_packages) = &lock.package {
+            for lock_package in lock_packages {
+                if lock_package.name == package.name &&
+                   lock_package.version == package.version {
+                    if let Some(ref deps) = lock_package.dependencies {
+                        for dep in deps {
+                            let (name, version) = parse_dep_string(dep);
 
-                        if name == dependency_name {
-                            return Some(PackageRef {
-                                name: name.to_owned(),
-                                version: version.to_owned(),
-                            });
+                            if name == dependency_name {
+                                return Some(PackageRef {
+                                    name: name.to_owned(),
+                                    version: version.to_owned(),
+                                });
+                            }
                         }
                     }
+                    return None;
                 }
-                return None;
             }
         }
         None

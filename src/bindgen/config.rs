@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::default::Default;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
@@ -322,6 +323,8 @@ pub struct Config {
     /// The configuration options for enums
     #[serde(rename = "enum")]
     pub enumeration: EnumConfig,
+    // Preprocessor defines to use when generating #ifdef's for #[cfg]
+    pub defines: HashMap<String, String>,
     /// Include doc comments from rust as documentation
     pub documentation: bool,
 }
@@ -344,6 +347,7 @@ impl Default for Config {
             function: FunctionConfig::default(),
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),
+            defines: HashMap::new(),
             documentation: true,
         }
     }

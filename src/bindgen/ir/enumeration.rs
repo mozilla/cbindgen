@@ -7,36 +7,29 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{AnnotationSet, Documentation};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Repr};
 use bindgen::rename::{IdentifierType, RenameRule};
-use bindgen::utilities::{find_first_some, SynItemHelpers};
+use bindgen::utilities::{find_first_some};
 use bindgen::writer::{Source, SourceWriter};
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Repr {
-    None,
-    C,
-    U8,
-    U16,
-    U32,
-}
 
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub name: String,
     pub repr: Repr,
-    pub annotations: AnnotationSet,
     pub values: Vec<(String, u64, Documentation)>,
+    pub cfg: Option<Cfg>,
+    pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
 
 impl Enum {
     pub fn load(name: String,
-                repr: Repr,
-                annotations: AnnotationSet,
                 variants: &Vec<syn::Variant>,
-                doc: String) -> Result<Enum, String>
+                attrs: &Vec<syn::Attribute>,
+                mod_cfg: &Option<Cfg>) -> Result<Enum, String>
     {
+        let repr = Repr::load(attrs);
+
         if repr != Repr::U32 &&
            repr != Repr::U16 &&
            repr != Repr::U8 {
@@ -63,7 +56,9 @@ impl Enum {
                         None => { /* okay, we just use current */ }
                     }
 
-                    values.push((variant.ident.to_string(), current, Documentation::load(variant.get_doc_attr())));
+                    values.push((variant.ident.to_string(),
+                                 current,
+                                 Documentation::load(&variant.attrs)));
                     current = current + 1;
                 }
                 _ => {
@@ -71,6 +66,8 @@ impl Enum {
                 }
             }
         }
+
+        let annotations = AnnotationSet::load(attrs)?;
 
         if let Some(variants) = annotations.list("enum-trailing-values") {
             for variant in variants {
@@ -82,9 +79,10 @@ impl Enum {
         Ok(Enum {
             name: name,
             repr: repr,
-            annotations: annotations,
             values: values,
-            documentation: Documentation::load(doc),
+            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
+            annotations: annotations,
+            documentation: Documentation::load(attrs),
         })
     }
 
@@ -114,13 +112,17 @@ impl Enum {
 
 impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        self.cfg.write_before(config, out);
+
+        self.documentation.write(config, out);
+
         let size = match self.repr {
             Repr::U32 => "uint32_t",
             Repr::U16 => "uint16_t",
             Repr::U8 => "uint8_t",
             _ => unreachable!(),
         };
-        self.documentation.write(config, out);
+
         if config.language == Language::C {
             out.write(&format!("enum {}", self.name));
         } else {
@@ -145,5 +147,7 @@ impl Source for Enum {
             out.new_line();
             out.write(&format!("typedef {} {};", size, self.name));
         }
+
+        self.cfg.write_after(config, out);
     }
 }

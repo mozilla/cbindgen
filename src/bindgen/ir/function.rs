@@ -9,7 +9,7 @@ use syn;
 use bindgen::cdecl;
 use bindgen::config::{Config, Layout};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Documentation, SynFnRetTyHelpers, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, SynFnRetTyHelpers, Type};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::rename::{IdentifierType, RenameRule};
@@ -19,19 +19,20 @@ use bindgen::writer::{Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct Function {
     pub name: String,
-    pub annotations: AnnotationSet,
     pub ret: Type,
     pub args: Vec<(String, Type)>,
     pub extern_decl: bool,
+    pub cfg: Option<Cfg>,
+    pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
 
 impl Function {
     pub fn load(name: String,
-                annotations: AnnotationSet,
                 decl: &syn::FnDecl,
                 extern_decl: bool,
-                doc: String) -> Result<Function, String>
+                attrs: &Vec<syn::Attribute>,
+                mod_cfg: &Option<Cfg>) -> Result<Function, String>
     {
         let args = decl.inputs.iter()
                               .try_skip_map(|x| x.as_ident_and_type())?;
@@ -39,11 +40,12 @@ impl Function {
 
         Ok(Function {
             name: name,
-            annotations: annotations,
             ret: ret,
             args: args,
             extern_decl: extern_decl,
-            documentation: Documentation::load(doc),
+            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
+            annotations: AnnotationSet::load(attrs)?,
+            documentation: Documentation::load(attrs),
         })
     }
 
@@ -88,7 +90,10 @@ impl Source for Function {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
+            func.cfg.write_before(config, out);
+
             func.documentation.write(config, out);
+
             if func.extern_decl {
                 out.write("extern ");
             } else {
@@ -105,13 +110,18 @@ impl Source for Function {
                 }
             }
             out.write(";");
+
+            func.cfg.write_after(config, out);
         }
 
         fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
+            func.cfg.write_before(config, out);
+
             func.documentation.write(config, out);
+
             if func.extern_decl {
                 out.write("extern ");
             } else {
@@ -128,6 +138,8 @@ impl Source for Function {
                 }
             }
             out.write(";");
+
+            func.cfg.write_after(config, out);
         };
 
         let option_1 = out.measure(|out| write_1(self, config, out));

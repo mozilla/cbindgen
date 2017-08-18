@@ -4,6 +4,8 @@
 
 use std::io::Write;
 
+use syn;
+
 use bindgen::config::Config;
 use bindgen::writer::{Source, SourceWriter};
 
@@ -13,15 +15,21 @@ pub struct Documentation {
 }
 
 impl Documentation {
-    pub fn load(doc: String) -> Self {
-        let doc = doc.lines().filter_map(|x|{
-            let x = x.trim_left_matches("///");
-            if x.trim().starts_with("cbindgen:") {
-                None
-            } else {
-                Some(x.into())
+    pub fn load(attrs: &Vec<syn::Attribute>) -> Self {
+        let mut doc = Vec::new();
+
+        for attr in attrs {
+            if attr.style == syn::AttrStyle::Outer &&
+               attr.is_sugared_doc {
+                if let syn::MetaItem::NameValue(_, syn::Lit::Str(ref comment, _)) = attr.value {
+                    let line = comment.trim_left_matches("///").trim();
+
+                    if !line.starts_with("cbindgen:") {
+                        doc.push(line.to_owned());
+                    }
+                }
             }
-        }).collect();
+        }
 
         Documentation {
             doc_comment: doc,
@@ -42,7 +50,7 @@ impl Source for Documentation {
         }
 
         for line in &self.doc_comment {
-            out.write("//");
+            out.write("// ");
             out.write(line);
             out.new_line();
         }

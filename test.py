@@ -5,11 +5,27 @@ import glob
 import subprocess
 import sys
 
-def cbindgen(rust_src, out, c):
+def build_cbindgen():
+    try:
+        subprocess.check_output(["cargo", "build"])
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+def cbindgen(rust_src, out, c, config):
+    bin = ["target/debug/cbindgen"]
+    compile = [rust_src, "-o", out]
+    flags = []
+
     if c:
-        subprocess.check_output(["cargo", "run", "--", "--lang", "c", rust_src, "-o", out])
-    else:
-        subprocess.check_output(["cargo", "run", "--", rust_src, "-o", out])
+        flags += ["--lang", "c"]
+
+    if config != None:
+        flags += ["--config", config]
+
+    command = bin + flags + compile
+    print(command)
+    subprocess.check_output(bin + flags + compile)
 
 def gcc(src):
     gcc_bin = os.environ.get('CC')
@@ -33,8 +49,12 @@ def run_compile_test(rust_src, leave_output, c):
     else:
         out = rust_src.replace(".rs", ".cpp")
 
+    config = rust_src.replace(".rs", ".toml")
+    if not os.path.exists(config):
+        config = None
+
     try:
-        cbindgen(rust_src, out, c)
+        cbindgen(rust_src, out, c, config)
 
         if c:
             gcc(out)
@@ -50,18 +70,30 @@ def run_compile_test(rust_src, leave_output, c):
 
     return True
 
-tests = glob.glob("compile-tests/*.rs")
-num_pass = 0
-num_fail = 0
+if not build_cbindgen():
+    exit()
 
-flags = sys.argv[1:]
+args = sys.argv[1:]
+files = [x for x in args if not x.startswith("-")]
+flags = [x for x in args if x.startswith("-")]
+
 leave_output = False
 c = False
+
 for flag in flags:
     if flag == "-l":
         leave_output = True
     elif flag == "-c":
         c = True
+
+tests = []
+if len(files) == 0:
+    tests = glob.glob("compile-tests/*.rs")
+else:
+    tests = files
+
+num_pass = 0
+num_fail = 0
 
 for test in tests:
     if run_compile_test(test, leave_output, c):
