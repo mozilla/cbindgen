@@ -5,7 +5,8 @@ use std::fmt::{self, Display};
 use std::collections::HashMap;
 
 use petgraph::{Graph, Direction};
-use petgraph::graph::{NodeIndex, EdgeIndex};
+use petgraph::graph::NodeIndex;
+use petgraph::visit::EdgeRef;
 
 use bindgen::ir::{Function, OpaqueItem, Item};
 use bindgen::library::Library;
@@ -84,8 +85,7 @@ impl DependencyList {
         id: NodeIndex,
         o: OpaqueItem,
         ret: &mut Vec<Item>,
-    ) -> Option<Vec<EdgeIndex>> {
-        use petgraph::visit::EdgeRef;
+    ) -> Option<NodeIndex> {
         // It is possible to have multiple edges with different
         // dependencies between nodes, so we need to group the edges by
         // theire source
@@ -100,28 +100,47 @@ impl DependencyList {
             .filter(|edges| {
                 edges.iter().all(|e| e.weight() == &DependencyKind::Ptr)
             })
-            .flat_map(|edges| edges.iter().map(|e| e.id()))
             .collect::<Vec<_>>();
         // If there is node ptr dependency we are done here
         if edges.is_empty() {
             None
         } else {
             ret.push(Item::OpaqueItem(o));
-            Some(edges)
+            Some(id)
         }
     }
 
     fn remove_cycle(&mut self, id: NodeIndex, ret: &mut Vec<Item>) {
-        let edges = {
+        let nid = {
             let node = self.graph.node_weight(id).expect("Got id from graph above");
             match *node {
                 Item::Struct(ref s) => self.generate_opaque_item(id, s.as_opaque(), ret),
                 _ => return,
             }
         };
-        if let Some(edges) = edges {
-            for e in edges {
-                self.graph.remove_edge(e);
+        if let Some(nid) = nid {
+            // We could not simply remove all edges in a given list here
+            // because the edge indices may change on removal
+            // Because of the borrow checker we could also not use
+            // a while let loop here…
+            let mut skip_counter = 0;
+            loop {
+                let id = if let Some(e) = self.graph
+                    .edges_directed(nid, Direction::Incoming)
+                    .skip(skip_counter)
+                    .next()
+                {
+                    if *e.weight() == DependencyKind::Ptr {
+                        e.id()
+                    } else {
+                        // Ignore edges with DependencyKind::Normal
+                        skip_counter += 1;
+                        continue;
+                    }
+                } else {
+                    break;
+                };
+                self.graph.remove_edge(id);
             }
         }
     }

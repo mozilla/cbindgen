@@ -7,6 +7,7 @@ pub struct Foo {
 #[repr(C)]
 pub struct Bar {
     a: *mut Foo,
+    b: Foo,
 }
 
 #[no_mangle]
