@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::env;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 extern crate clap;
 #[macro_use]
@@ -43,9 +44,7 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     }
 }
 
-fn load_library<'a>(input: &str, matches: &ArgMatches<'a>) -> Result<Library, String> {
-    let input = Path::new(input);
-
+fn load_library<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Library, String> {
     // If a file is specified then we load it as a single source
     if !input.is_dir() {
         // Load any config specified or search in the input directory
@@ -115,7 +114,7 @@ fn main() {
                          .help("Whether to parse dependencies when generating bindings"))
                     .arg(Arg::with_name("INPUT")
                          .help("A crate directory or source file to generate bindings for")
-                         .required(true)
+                         .required(false)
                          .index(1))
                     .arg(Arg::with_name("crate")
                          .long("crate")
@@ -138,13 +137,16 @@ fn main() {
     }
 
     // Find the input directory
-    let input = matches.value_of("INPUT").unwrap();
+    let input = match matches.value_of("INPUT") {
+        Some(input) => PathBuf::from(input),
+        None => env::current_dir().unwrap(),
+    };
 
-    let library = match load_library(input, &matches) {
+    let library = match load_library(&input, &matches) {
         Ok(library) => library,
         Err(msg) => {
             error!("{}", msg);
-            error!("couldn't generate bindings for {}", input);
+            error!("couldn't generate bindings for {}", input.display());
             return;
         }
     };
@@ -154,7 +156,7 @@ fn main() {
         Ok(x) => x,
         Err(msg) => {
             error!("{}", msg);
-            error!("couldn't generate bindings for {}", input);
+            error!("couldn't generate bindings for {}", input.display());
             return;
         },
     };
