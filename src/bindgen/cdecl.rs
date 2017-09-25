@@ -62,9 +62,6 @@ impl CDecl {
     fn build_type(&mut self, t: &Type, is_const: bool) {
         match t {
             &Type::Path(ref path) => {
-                // We should be assured that there are no generics by instantiating
-                // monomorphs and mangling paths.
-                assert!(path.generics.len() == 0);
 
                 if is_const {
                     assert!(self.type_qualifers.len() == 0);
@@ -72,7 +69,7 @@ impl CDecl {
                 }
 
                 assert!(self.type_name.len() == 0);
-                self.type_name = path.name.clone();
+                self.type_name = path.mangle();
             }
             &Type::Primitive(ref p) => {
                 if is_const {

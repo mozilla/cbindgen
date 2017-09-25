@@ -7,9 +7,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Path, Type};
-use bindgen::mangle;
-use bindgen::monomorph::Monomorphs;
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Path};
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -37,20 +35,6 @@ impl OpaqueItem {
             annotations: AnnotationSet::load(attrs).unwrap_or(AnnotationSet::new()),
             documentation: Documentation::load(attrs),
         }
-    }
-
-    pub fn instantiate_monomorph(&self, generic_values: &Vec<Type>, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() > 0);
-
-        let monomorph = OpaqueItem {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: vec![],
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        };
-
-        out.insert_opaque(self, monomorph, generic_values.clone());
     }
 }
 

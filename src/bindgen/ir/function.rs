@@ -8,13 +8,13 @@ use syn;
 
 use bindgen::cdecl;
 use bindgen::config::{Config, Layout};
-use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, SynFnRetTyHelpers, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, SynFnRetTyHelpers, Type, Item};
 use bindgen::library::Library;
-use bindgen::monomorph::Monomorphs;
 use bindgen::rename::{IdentifierType, RenameRule};
 use bindgen::utilities::{find_first_some, IterHelpers};
 use bindgen::writer::{Source, SourceWriter};
+use bindgen::dependencies::DependencyKind;
+use bindgen::config::Language;
 
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -49,27 +49,6 @@ impl Function {
         })
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.ret.add_dependencies(library, out);
-        for &(_, ref ty) in &self.args {
-            ty.add_dependencies(library, out);
-        }
-    }
-
-    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
-        self.ret.add_monomorphs(library, out);
-        for &(_, ref ty) in &self.args {
-            ty.add_monomorphs(library, out);
-        }
-    }
-
-    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        self.ret.mangle_paths(monomorphs);
-        for &mut (_, ref mut ty) in &mut self.args {
-            ty.mangle_paths(monomorphs);
-        }
-    }
-
     pub fn rename_args(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.function.rename_args];
@@ -81,6 +60,21 @@ impl Function {
                                            x.1.clone()))
                                   .collect()
         }
+    }
+
+    pub fn mangle_paths(&mut self) {
+        self.ret.mangle_paths();
+        for &mut (_, ref mut ty) in &mut self.args {
+            ty.mangle_paths();
+        }
+    }
+
+    pub fn get_deps(&self, library: &Library) -> Vec<(Item, DependencyKind)> {
+        let mut ret = self.ret.get_items(library, DependencyKind::Normal);
+        for &(_, ref arg) in &self.args {
+            ret.extend_from_slice(&arg.get_items(library, DependencyKind::Normal));
+        }
+        ret
     }
 }
 
@@ -97,6 +91,9 @@ impl Source for Function {
             if func.extern_decl {
                 out.write("extern ");
             } else {
+                if config.language == Language::Cxx {
+                    out.write("extern \"C\" ");
+                }
                 if let Some(ref prefix) = prefix {
                     out.write(prefix);
                     out.write(" ");
@@ -125,6 +122,9 @@ impl Source for Function {
             if func.extern_decl {
                 out.write("extern ");
             } else {
+                if config.language == Language::Cxx {
+                    out.write("extern \"C\" ");
+                }
                 if let Some(ref prefix) = prefix {
                     out.write(prefix);
                     out.new_line();

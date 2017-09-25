@@ -6,6 +6,7 @@ use syn;
 
 use bindgen::ir::Type;
 use bindgen::utilities::IterHelpers;
+use bindgen::mangle;
 
 pub type Path = String;
 
@@ -50,5 +51,9 @@ impl GenericPath {
         };
 
         Ok(GenericPath::new(name, generics))
+    }
+
+    pub fn mangle(&self) -> Path {
+        mangle::mangle_path(&self.name, &self.generics)
     }
 }
