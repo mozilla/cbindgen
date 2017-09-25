@@ -42,7 +42,6 @@ impl Library {
         self.transfer_annotations();
 
         let deps = DependencyList::new(&self.functions, &self, &self.config);
-        deps.print();
 
         // Gather only the items that we need for this
         // `extern "c"` interface

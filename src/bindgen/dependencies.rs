@@ -8,9 +8,16 @@ use petgraph::{Graph, Direction};
 use petgraph::graph::NodeIndex;
 use petgraph::visit::EdgeRef;
 
-use bindgen::ir::{Function, OpaqueItem, Item};
+use bindgen::ir::{Function, OpaqueItem, Item, ItemKind};
 use bindgen::library::Library;
 use bindgen::config::Config;
+
+const ITEM_ORDER: [ItemKind; 6] = [ItemKind::Enum,
+                                   ItemKind::OpaqueItem,
+                                   ItemKind::Struct,
+                                   ItemKind::Typedef,
+                                   ItemKind::Function,
+                                   ItemKind::Specialization];
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DependencyKind {
@@ -149,11 +156,37 @@ impl DependencyList {
         let mut ret = Vec::new();
         let mut cycle_counter = 0;
         while self.graph.node_count() > 0 {
-            // find structs without any dependency
-            let externals = self.graph
-                .externals(Direction::Outgoing)
-                .collect::<Vec<_>>();
-            if externals.is_empty() {
+            let mut all_empty = true;
+            let mut pos = 0;
+            while pos < ITEM_ORDER.len() {
+                let current_item_kind = ITEM_ORDER[pos];
+                // find structs without any dependency
+                let externals = self.graph
+                    .externals(Direction::Outgoing)
+                    .filter(|idx| {
+                        self.graph.node_weight(*idx)
+                            .expect("Node is there because we got the id from the graph above")
+                            == current_item_kind
+                    })
+                    .collect::<Vec<_>>();
+                if externals.is_empty() {
+                    pos += 1;
+                } else {
+                    pos = 0;
+                    all_empty = false;
+                    cycle_counter = 0;
+                    // Iterate over all nodes without dependency
+                    // 1. Remove them from the graph
+                    // 2. Push them to the orderd struct list
+                    for idx in externals {
+                        if let Some(mut s) = self.graph.remove_node(idx) {
+                            s.mangle_paths();
+                            ret.push(s);
+                        }
+                    }
+                }
+            }
+            if all_empty {
                 if cycle_counter >= self.graph.node_count() {
                     self.print();
                     panic!("Could not remove cycle");
@@ -167,17 +200,6 @@ impl DependencyList {
                     .expect("Graph is not empty");
                 self.remove_cycle(id, &mut ret);
                 cycle_counter += 1;
-            } else {
-                cycle_counter = 0;
-                // Iterate over all nodes without dependency
-                // 1. Remove them from the graph
-                // 2. Push them to the orderd struct list
-                for idx in externals {
-                    if let Some(mut s) = self.graph.remove_node(idx) {
-                        s.mangle_paths();
-                        ret.push(s);
-                    }
-                }
             }
         }
         ret

@@ -11,6 +11,16 @@ use std::hash::{Hash, Hasher};
 use std::fmt::{self, Display};
 use std::io::Write;
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ItemKind {
+    Enum,
+    Struct,
+    OpaqueItem,
+    Typedef,
+    Function,
+    Specialization
+}
+
 /// An item is any type of rust item
 #[derive(Debug, Clone)]
 pub enum Item {
@@ -66,6 +76,20 @@ impl Item {
                 f.rename_args(config);
             }
             _ => {}
+        }
+    }
+}
+
+impl<'a> PartialEq<ItemKind> for &'a Item {
+    fn eq(&self, rhs: &ItemKind) -> bool {
+        match (*self, *rhs) {
+            (&Item::Enum(_), ItemKind::Enum) |
+            (&Item::Specialization(_), ItemKind::Specialization) |
+            (&Item::Struct(_), ItemKind::Struct) |
+            (&Item::Typedef(_), ItemKind::Typedef) |
+            (&Item::OpaqueItem(_), ItemKind::OpaqueItem) |
+            (&Item::Function(_), ItemKind::Function) => true,
+            _ => false
         }
     }
 }
