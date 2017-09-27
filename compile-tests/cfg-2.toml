@@ -1,0 +1,3 @@
+[defines]
+"unix" = "__FILE__"
+"windows" = "PLATFORM_WIN"

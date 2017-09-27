@@ -56,92 +56,95 @@ impl Specialization {
     }
 
     pub fn specialize(&self, library: &Library) -> Result<Option<Item>, String> {
-        match library.get_item(&self.aliased.name) {
-            Some(aliased) => {
-                match aliased {
-                    Item::OpaqueItem(ref aliased) => {
-                        if self.aliased.generics.len() !=
-                           aliased.generic_params.len() {
-                            return Err(format!("incomplete specialization"));
-                        }
+        if let Some(items) = library.get_item(&self.aliased.name) {
+            assert!(items.len() > 0);
 
-                        Ok(Some(Item::OpaqueItem(OpaqueItem {
-                            name: self.name.clone(),
-                            generic_params: self.generic_params.clone(),
-                            cfg: self.cfg.clone(),
-                            annotations: self.annotations.clone(),
-                            documentation: self.documentation.clone(),
-                        })))
+            if items.len() > 1 {
+                warn!("specializing an aliased type with multiple definitions");
+            }
+
+            match items[0] {
+                Item::OpaqueItem(ref aliased) => {
+                    if self.aliased.generics.len() !=
+                       aliased.generic_params.len() {
+                        return Err(format!("incomplete specialization"));
                     }
-                    Item::Struct(ref aliased) => {
-                        if self.aliased.generics.len() !=
-                           aliased.generic_params.len() {
-                            return Err(format!("incomplete specialization"));
-                        }
 
-                        let mappings = aliased.generic_params.iter()
-                                                             .zip(self.aliased.generics.iter())
-                                                             .collect::<Vec<_>>();
-
-                        Ok(Some(Item::Struct(Struct {
-                            name: self.name.clone(),
-                            generic_params: self.generic_params.clone(),
-                            fields: aliased.fields.iter()
-                                                  .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
-                                                  .collect(),
-                            tuple_struct: aliased.tuple_struct,
-                            cfg: self.cfg.clone(),
-                            annotations: self.annotations.clone(),
-                            documentation: self.documentation.clone(),
-                        })))
+                    Ok(Some(Item::OpaqueItem(OpaqueItem {
+                        name: self.name.clone(),
+                        generic_params: self.generic_params.clone(),
+                        cfg: self.cfg.clone(),
+                        annotations: self.annotations.clone(),
+                        documentation: self.documentation.clone(),
+                    })))
+                }
+                Item::Struct(ref aliased) => {
+                    if self.aliased.generics.len() !=
+                       aliased.generic_params.len() {
+                        return Err(format!("incomplete specialization"));
                     }
-                    Item::Enum(ref aliased) => {
-                        Ok(Some(Item::Enum(Enum {
-                            name: self.name.clone(),
-                            repr: aliased.repr.clone(),
-                            values: aliased.values.clone(),
-                            cfg: self.cfg.clone(),
-                            annotations: self.annotations.clone(),
-                            documentation: self.documentation.clone(),
-                        })))
-                    }
-                    Item::Typedef(ref aliased) => {
-                        Ok(Some(Item::Typedef(Typedef {
-                            name: self.name.clone(),
-                            aliased: aliased.aliased.clone(),
-                            cfg: self.cfg.clone(),
-                            annotations: self.annotations.clone(),
-                            documentation: self.documentation.clone(),
-                        })))
-                    }
-                    Item::Specialization(ref aliased) => {
-                        if self.aliased.generics.len() !=
-                           aliased.generic_params.len() {
-                            return Err(format!("incomplete specialization"));
-                        }
 
-                        let mappings = aliased.generic_params.iter()
-                                                             .zip(self.aliased.generics.iter())
-                                                             .collect::<Vec<_>>();
+                    let mappings = aliased.generic_params.iter()
+                                                         .zip(self.aliased.generics.iter())
+                                                         .collect::<Vec<_>>();
 
-                        let generics = aliased.aliased.generics.iter()
-                                                               .map(|x| x.specialize(&mappings))
-                                                               .collect();
-
-                        Specialization {
-                            name: self.name.clone(),
-                            generic_params: self.generic_params.clone(),
-                            aliased: GenericPath::new(aliased.aliased.name.clone(), generics),
-                            cfg: self.cfg.clone(),
-                            annotations: self.annotations.clone(),
-                            documentation: self.documentation.clone(),
-                        }.specialize(library)
+                    Ok(Some(Item::Struct(Struct {
+                        name: self.name.clone(),
+                        generic_params: self.generic_params.clone(),
+                        fields: aliased.fields.iter()
+                                              .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
+                                              .collect(),
+                        tuple_struct: aliased.tuple_struct,
+                        cfg: self.cfg.clone(),
+                        annotations: self.annotations.clone(),
+                        documentation: self.documentation.clone(),
+                    })))
+                }
+                Item::Enum(ref aliased) => {
+                    Ok(Some(Item::Enum(Enum {
+                        name: self.name.clone(),
+                        repr: aliased.repr.clone(),
+                        values: aliased.values.clone(),
+                        cfg: self.cfg.clone(),
+                        annotations: self.annotations.clone(),
+                        documentation: self.documentation.clone(),
+                    })))
+                }
+                Item::Typedef(ref aliased) => {
+                    Ok(Some(Item::Typedef(Typedef {
+                        name: self.name.clone(),
+                        aliased: aliased.aliased.clone(),
+                        cfg: self.cfg.clone(),
+                        annotations: self.annotations.clone(),
+                        documentation: self.documentation.clone(),
+                    })))
+                }
+                Item::Specialization(ref aliased) => {
+                    if self.aliased.generics.len() !=
+                       aliased.generic_params.len() {
+                        return Err(format!("incomplete specialization"));
                     }
+
+                    let mappings = aliased.generic_params.iter()
+                                                         .zip(self.aliased.generics.iter())
+                                                         .collect::<Vec<_>>();
+
+                    let generics = aliased.aliased.generics.iter()
+                                                           .map(|x| x.specialize(&mappings))
+                                                           .collect();
+
+                    Specialization {
+                        name: self.name.clone(),
+                        generic_params: self.generic_params.clone(),
+                        aliased: GenericPath::new(aliased.aliased.name.clone(), generics),
+                        cfg: self.cfg.clone(),
+                        annotations: self.annotations.clone(),
+                        documentation: self.documentation.clone(),
+                    }.specialize(library)
                 }
             }
-            None => {
-                Err(format!("couldn't find aliased type"))
-            }
+        } else {
+            Err(format!("couldn't find aliased type"))
         }
     }
 }

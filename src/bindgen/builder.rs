@@ -21,8 +21,8 @@ pub struct LibraryBuilder {
     config: Config,
     srcs: Vec<path::PathBuf>,
     lib: Option<Cargo>,
-    enums: BTreeMap<String, Enum>,
-    structs: BTreeMap<String, Struct>,
+    enums: BTreeMap<String, Vec<Enum>>,
+    structs: BTreeMap<String, Vec<Struct>>,
     opaque_items: BTreeMap<String, OpaqueItem>,
     typedefs: BTreeMap<String, Typedef>,
     specializations: BTreeMap<String, Specialization>,
@@ -276,8 +276,16 @@ impl LibraryBuilder {
                            mod_cfg) {
             Ok(st) => {
                 info!("take {}::{}", crate_name, &item.ident);
-                self.structs.insert(struct_name,
-                                    st);
+
+                if !self.structs.contains_key(&struct_name) {
+                    self.structs.insert(struct_name.clone(),
+                                        Vec::new());
+                }
+                let structs = self.structs.get_mut(&struct_name).unwrap();
+                if structs.len() == 0 ||
+                   st.cfg.is_some() {
+                    structs.push(st);
+                }
             }
             Err(msg) => {
                 info!("take {}::{} - opaque ({})",
@@ -316,7 +324,15 @@ impl LibraryBuilder {
                          mod_cfg) {
             Ok(en) => {
                 info!("take {}::{}", crate_name, &item.ident);
-                self.enums.insert(enum_name, en);
+                if !self.enums.contains_key(&enum_name) {
+                    self.enums.insert(enum_name.clone(),
+                                        Vec::new());
+                }
+                let enums = self.enums.get_mut(&enum_name).unwrap();
+                if enums.len() == 0 ||
+                   en.cfg.is_some() {
+                    enums.push(en);
+                }
             }
             Err(msg) => {
                 info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);

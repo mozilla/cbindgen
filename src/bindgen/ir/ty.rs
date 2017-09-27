@@ -320,13 +320,16 @@ impl Type {
                     generic_value.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
                 if !generic_params.contains(&path.name) {
-                    if let Some(item) = library.get_item(&path.name) {
+                    if let Some(items) = library.get_item(&path.name) {
                         if !out.items.contains(&path.name) {
                             out.items.insert(path.name.clone());
 
-                            item.add_dependencies(library, out);
-
-                            out.order.push(item);
+                            for item in &items {
+                                item.add_dependencies(library, out);
+                            }
+                            for item in items {
+                                out.order.push(item);
+                            }
                         }
                     } else {
                         warn!("can't find {}", path.name);
@@ -364,24 +367,25 @@ impl Type {
                     return;
                 }
 
-                let item = library.get_item(&path.name);
-                if let Some(item) = item {
-                    match item {
-                        Item::OpaqueItem(ref x) => {
-                            x.instantiate_monomorph(&path.generics, out);
-                        },
-                        Item::Struct(ref x) => {
-                            x.instantiate_monomorph(library, &path.generics, out);
-                        },
-                        Item::Enum(..) => {
-                            warn!("cannot instantiate a generic enum")
-                        },
-                        Item::Typedef(..) => {
-                            warn!("cannot instantiate a generic typedef")
-                        },
-                        Item::Specialization(..) => {
-                            warn!("cannot instantiate a generic specialization")
-                        },
+                if let Some(items) = library.get_item(&path.name) {
+                    for item in items {
+                        match item {
+                            Item::OpaqueItem(ref x) => {
+                                x.instantiate_monomorph(&path.generics, out);
+                            },
+                            Item::Struct(ref x) => {
+                                x.instantiate_monomorph(library, &path.generics, out);
+                            },
+                            Item::Enum(..) => {
+                                warn!("cannot instantiate a generic enum")
+                            },
+                            Item::Typedef(..) => {
+                                warn!("cannot instantiate a generic typedef")
+                            },
+                            Item::Specialization(..) => {
+                                warn!("cannot instantiate a generic specialization")
+                            },
+                        }
                     }
                 }
             }
