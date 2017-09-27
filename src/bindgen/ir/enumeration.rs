@@ -30,14 +30,14 @@ impl Enum {
     {
         let repr = Repr::load(attrs);
 
-        if repr != Repr::U32 &&
+        if repr != Repr::C &&
+           repr != Repr::U32 &&
            repr != Repr::U16 &&
-           repr != Repr::U8 {
-            return if repr == Repr::C {
-                Err(format!("repr(C) is not FFI safe for enums"))
-            } else {
-                Err(format!("enum not marked with a repr(u32) or repr(u16) or repr(u8)"))
-            };
+           repr != Repr::U8 &&
+           repr != Repr::I32 &&
+           repr != Repr::I16 &&
+           repr != Repr::I8 {
+            return Err(format!("enum not marked with a valid repr(prim) or repr(C)"));
         }
 
         let mut values = Vec::new();
@@ -117,16 +117,24 @@ impl Source for Enum {
         self.documentation.write(config, out);
 
         let size = match self.repr {
-            Repr::U32 => "uint32_t",
-            Repr::U16 => "uint16_t",
-            Repr::U8 => "uint8_t",
+            Repr::C => None,
+            Repr::U32 => Some("uint32_t"),
+            Repr::U16 => Some("uint16_t"),
+            Repr::U8 => Some("uint8_t"),
+            Repr::I32 => Some("int32_t"),
+            Repr::I16 => Some("int16_t"),
+            Repr::I8 => Some("int8_t"),
             _ => unreachable!(),
         };
 
         if config.language == Language::C {
             out.write(&format!("enum {}", self.name));
         } else {
-            out.write(&format!("enum class {} : {}", self.name, size));
+            if let Some(prim) = size {
+                out.write(&format!("enum class {} : {}", self.name, prim));
+            } else {
+                out.write(&format!("enum class {}", self.name));
+            }
         }
         out.open_brace();
         for (i, value) in self.values.iter().enumerate() {
@@ -144,8 +152,10 @@ impl Source for Enum {
         out.close_brace(true);
 
         if config.language == Language::C {
-            out.new_line();
-            out.write(&format!("typedef {} {};", size, self.name));
+            if let Some(prim) = size {
+                out.new_line();
+                out.write(&format!("typedef {} {};", prim, self.name));
+            }
         }
 
         self.cfg.write_after(config, out);

@@ -11,6 +11,9 @@ pub enum Repr {
     U8,
     U16,
     U32,
+    I8,
+    I16,
+    I32,
 }
 
 impl Repr {
@@ -23,6 +26,12 @@ impl Repr {
             Repr::U16
         } else if Repr::has_attr(Repr::repr_u8(), attrs) {
             Repr::U8
+        } else if Repr::has_attr(Repr::repr_i32(), attrs) {
+            Repr::I32
+        } else if Repr::has_attr(Repr::repr_i16(), attrs) {
+            Repr::I16
+        } else if Repr::has_attr(Repr::repr_i8(), attrs) {
+            Repr::I8
         } else {
             Repr::None
         }
@@ -50,5 +59,20 @@ impl Repr {
     fn repr_u8() -> syn::MetaItem {
         syn::MetaItem::List(syn::Ident::new("repr"),
                             vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u8")))])
+    }
+
+    fn repr_i32() -> syn::MetaItem {
+        syn::MetaItem::List(syn::Ident::new("repr"),
+                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i32")))])
+    }
+
+    fn repr_i16() -> syn::MetaItem {
+        syn::MetaItem::List(syn::Ident::new("repr"),
+                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i16")))])
+    }
+
+    fn repr_i8() -> syn::MetaItem {
+        syn::MetaItem::List(syn::Ident::new("repr"),
+                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i8")))])
     }
 }
