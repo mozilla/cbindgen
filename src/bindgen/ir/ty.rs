@@ -44,6 +44,7 @@ pub enum PrimitiveType {
     Int64,
     Float,
     Double,
+    SizeT,
 }
 
 impl PrimitiveType {
@@ -77,6 +78,7 @@ impl PrimitiveType {
             "i64" => Some(PrimitiveType::Int64),
             "f32" => Some(PrimitiveType::Float),
             "f64" => Some(PrimitiveType::Double),
+            "size_t" => Some(PrimitiveType::SizeT),
             _ => None,
         }
     }
@@ -109,6 +111,7 @@ impl PrimitiveType {
             &PrimitiveType::Int64 => "i64",
             &PrimitiveType::Float => "f32",
             &PrimitiveType::Double => "f64",
+            &PrimitiveType::SizeT => "size_t",
         }
     }
 
@@ -140,6 +143,7 @@ impl PrimitiveType {
             &PrimitiveType::Int64 => "int64_t",
             &PrimitiveType::Float => "float",
             &PrimitiveType::Double => "double",
+            &PrimitiveType::SizeT => "size_t",
         }
     }
 
