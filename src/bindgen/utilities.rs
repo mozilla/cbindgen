@@ -75,16 +75,23 @@ impl SynItemHelpers for syn::Field {
 /// Helper function for accessing Abi information
 pub trait SynAbiHelpers {
     fn is_c(&self) -> bool;
+    fn is_omitted(&self) -> bool;
 }
 
 impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
         self == &Some(syn::Abi::Named(String::from("C")))
     }
+    fn is_omitted(&self) -> bool {
+        self == &Some(syn::Abi::Rust)
+    }
 }
 
 impl SynAbiHelpers for syn::Abi {
     fn is_c(&self) -> bool {
         self == &syn::Abi::Named(String::from("C"))
+    }
+    fn is_omitted(&self) -> bool {
+        self == &syn::Abi::Rust
     }
 }

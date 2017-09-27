@@ -228,7 +228,7 @@ impl LibraryBuilder {
             return;
         }
 
-        if item.is_no_mangle() && abi.is_c() {
+        if item.is_no_mangle() && (abi.is_omitted() || abi.is_c()) {
             match Function::load(item.ident.to_string(),
                                  decl,
                                  false,
@@ -247,8 +247,13 @@ impl LibraryBuilder {
                 },
             }
         } else {
-            if item.is_no_mangle() != abi.is_c() {
-                warn!("skip {}::{} - (not both `no_mangle` and `extern \"C\"`)",
+            if (abi.is_omitted() || abi.is_c()) && !item.is_no_mangle() {
+                warn!("skip {}::{} - (`extern` but not `no_mangle`)",
+                      crate_name,
+                      &item.ident);
+            }
+            if abi.is_some() && !(abi.is_omitted() || abi.is_c()) {
+                warn!("skip {}::{} - (non `extern \"C\"`)",
                       crate_name,
                       &item.ident);
             }
