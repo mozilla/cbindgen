@@ -30,6 +30,7 @@ features = ["full"]
 [[bin]]
 name = "cbindgen"
 path = "src/main.rs"
+doc = false
 
 [lib]
 name = "cbindgen"
