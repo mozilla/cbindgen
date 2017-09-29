@@ -36,11 +36,6 @@ impl GenericPath {
 
         let generics = match &path.segments[0].parameters {
             &syn::PathParameters::AngleBracketed(ref d) => {
-                if !d.lifetimes.is_empty() ||
-                   !d.bindings.is_empty() {
-                    return Err(format!("path generic parameter contains bindings, or lifetimes"));
-                }
-
                 d.types.iter()
                        .try_skip_map(|x| Type::load(x))?
             }
