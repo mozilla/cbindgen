@@ -128,6 +128,14 @@ rename_variants = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|Snak
 
 See `compile-tests/` for some examples of rust source that can be handled.
 
+## Major differences between `cbindgen` and `rusty-cheddar`
+
+1. `cbindgen` supports generics
+2. `cbindgen` supports C++ output using `enum class` and `template specialization`
+3. `cbindgen` supports generating bindings including multiple modules and crates
+
+There may be other differences, but those are the ones that I know of. Please correct me if I misrepresented anything.
+
 ## How it works
 
 1. All the structs, enums, type aliases, and functions that are representable in C are gathered
