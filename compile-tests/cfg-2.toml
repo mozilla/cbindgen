@@ -1,3 +1,4 @@
 [defines]
-"unix" = "__FILE__"
-"windows" = "PLATFORM_WIN"
+"unix" = "DEFINED"
+"macos" = "NOT_DEFINED"
+"windows" = "NOT_DEFINED"
