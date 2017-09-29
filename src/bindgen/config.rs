@@ -336,7 +336,7 @@ impl Default for Config {
             trailer: None,
             include_guard: None,
             autogen_warning: None,
-            include_version: true,
+            include_version: false,
             namespace: None,
             namespaces: None,
             braces: Braces::SameLine,
