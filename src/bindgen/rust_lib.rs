@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -57,6 +57,7 @@ pub fn parse_lib<F>(lib: Cargo,
         include: include.clone(),
         exclude: exclude.clone(),
         expand: expand.clone(),
+        parsed_crates: HashSet::new(),
         cache_src: HashMap::new(),
         cache_expanded_crate: HashMap::new(),
 
@@ -73,9 +74,12 @@ struct ParseLibContext<F>
 {
     lib: Cargo,
     parse_deps: bool,
+
     include: Option<Vec<String>>,
     exclude: Vec<String>,
     expand: Vec<String>,
+
+    parsed_crates: HashSet<String>,
     cache_src: HashMap<PathBuf, Vec<syn::Item>>,
     cache_expanded_crate: HashMap<String, Vec<syn::Item>>,
 
@@ -88,6 +92,10 @@ impl<F> ParseLibContext<F>
     where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
     fn should_parse_dependency(&self, pkg_name: &String) -> bool {
+        if self.parsed_crates.contains(pkg_name) {
+            return false;
+        }
+
         if !self.parse_deps {
             return false;
         }
@@ -113,6 +121,8 @@ impl<F> ParseLibContext<F>
 fn parse_crate<F>(pkg: &PackageRef, context: &mut ParseLibContext<F>) -> ParseResult
     where F: FnMut(&str, &str, Option<Cfg>, &Vec<syn::Item>)
 {
+    context.parsed_crates.insert(pkg.name.clone());
+
     // Check if we should use cargo expand for this crate
     if context.expand.contains(&pkg.name) {
         return parse_expand_crate(pkg, context);
