@@ -6,7 +6,7 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::config::Config;
+use bindgen::config::{Config, Language};
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -44,14 +44,26 @@ impl Documentation {
 }
 
 impl Source for Documentation {
-    fn write<F: Write>(&self,config: &Config, out: &mut SourceWriter<F>) {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if self.doc_comment.is_empty() || !config.documentation {
             return;
         }
 
+        if config.language == Language::C {
+            out.write("/*");
+            out.new_line();
+        }
         for line in &self.doc_comment {
-            out.write("// ");
+            if config.language != Language::C {
+                out.write("// ");
+            } else {
+                out.write(" * ");
+            }
             out.write(line);
+            out.new_line();
+        }
+        if config.language == Language::C {
+            out.write(" */");
             out.new_line();
         }
     }
