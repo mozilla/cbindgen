@@ -102,7 +102,7 @@ impl RenameRule {
                     }
                 }
 
-                result.push_str(&RenameRule::SnakeCase.apply_to_pascal_case(
+                result.push_str(&RenameRule::ScreamingSnakeCase.apply_to_pascal_case(
                     &text, context));
                 result
             }
@@ -181,7 +181,7 @@ impl RenameRule {
                     }
                 }
 
-                result.push_str(&RenameRule::SnakeCase.apply_to_snake_case(
+                result.push_str(&RenameRule::ScreamingSnakeCase.apply_to_snake_case(
                     &text, context));
                 result
             }
