@@ -49,13 +49,15 @@ impl AnnotationSet {
         let mut lines = Vec::new();
 
         for attr in attrs {
-            if attr.style == syn::AttrStyle::Outer &&
-               attr.is_sugared_doc {
-                if let syn::MetaItem::NameValue(_, syn::Lit::Str(ref comment, _)) = attr.value {
-                    let line = comment.trim_left_matches("///").trim();
-
-                    if line.starts_with("cbindgen:") {
-                        lines.push(line.to_owned());
+            if attr.style == syn::AttrStyle::Outer {
+                if let syn::MetaItem::NameValue(
+                    ref name, syn::Lit::Str(ref comment, _)) = attr.value
+                {
+                    if &*name == "doc" {
+                        let line = comment.trim_left_matches("///").trim();
+                        if line.starts_with("cbindgen:") {
+                            lines.push(line.to_owned());
+                        }
                     }
                 }
             }
