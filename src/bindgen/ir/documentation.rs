@@ -19,13 +19,28 @@ impl Documentation {
         let mut doc = Vec::new();
 
         for attr in attrs {
-            if attr.style == syn::AttrStyle::Outer &&
-               attr.is_sugared_doc {
-                if let syn::MetaItem::NameValue(_, syn::Lit::Str(ref comment, _)) = attr.value {
-                    let line = comment.trim_left_matches("///").trim();
-
-                    if !line.starts_with("cbindgen:") {
-                        doc.push(line.to_owned());
+            if attr.style == syn::AttrStyle::Outer {
+                // This requires a bit of explanation.  The syn intended way to
+                // deal with doc strings is to use the is_sugared_doc attribute.
+                // This however is not set when we go through the macro expansion
+                // step through rust.  In that case they are stored as doc
+                // attributes and the leading three slashes (and optional space)
+                // are not included.
+                if let syn::MetaItem::NameValue(
+                    ref name, syn::Lit::Str(ref comment, _)) = attr.value
+                {
+                    if &*name == "doc" {
+                        let line = if attr.is_sugared_doc {
+                            comment
+                                .trim_left_matches("/// ")
+                                .trim_left_matches("///")
+                                .trim_right()
+                        } else {
+                            comment.trim_left_matches(" ").trim_right()
+                        };
+                        if !line.starts_with("cbindgen:") {
+                            doc.push(line.to_owned());
+                        }
                     }
                 }
             }
