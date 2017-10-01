@@ -163,7 +163,11 @@ impl Bindings {
         }
         if let Some(ref f) = self.config.include_guard {
             out.new_line_if_not_start();
-            out.write(&format!("#endif // {}", f));
+            if self.config.language == Language::C {
+                out.write(&format!("#endif /* {} */", f));
+            } else {
+                out.write(&format!("#endif // {}", f));
+            }
             out.new_line();
         }
         if let Some(ref f) = self.config.trailer {
