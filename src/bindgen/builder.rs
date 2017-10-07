@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::mem;
 use std::path;
 
 use syn;
@@ -20,12 +19,7 @@ pub struct LibraryBuilder {
     config: Config,
     srcs: Vec<path::PathBuf>,
     lib: Option<Cargo>,
-    enums: ItemMap<Enum>,
-    structs: ItemMap<Struct>,
-    opaque_items: ItemMap<OpaqueItem>,
-    typedefs: ItemMap<Typedef>,
-    specializations: ItemMap<Specialization>,
-    functions: Vec<Function>,
+    std_types: bool,
 }
 
 impl LibraryBuilder {
@@ -34,12 +28,7 @@ impl LibraryBuilder {
             config: Config::default(),
             srcs: Vec::new(),
             lib: None,
-            enums: ItemMap::new(),
-            structs: ItemMap::new(),
-            opaque_items: ItemMap::new(),
-            typedefs: ItemMap::new(),
-            specializations: ItemMap::new(),
-            functions: Vec::new(),
+            std_types: false,
         }
     }
 
@@ -49,6 +38,80 @@ impl LibraryBuilder {
     }
 
     pub fn with_std_types(mut self) -> LibraryBuilder {
+        self.std_types = true;
+        self
+    }
+
+    pub fn with_src(mut self, src: &path::Path) -> LibraryBuilder {
+        self.srcs.push(src.to_owned());
+        self
+    }
+
+    pub fn with_crate(mut self, lib: Cargo) -> LibraryBuilder {
+        debug_assert!(self.lib.is_none());
+        self.lib = Some(lib);
+        self
+    }
+
+    pub fn build(self) -> Result<Library, String> {
+        let mut result = LibraryParseResult::new();
+
+        if self.std_types {
+            result.add_std_types();
+        }
+
+        for x in &self.srcs {
+            rust_lib::parse_src(x, &mut |crate_name, items| {
+                result.load_syn_crate_mod("", &crate_name, &None, items);
+            })?;
+        }
+
+        if let Some(x) = self.lib.clone() {
+            rust_lib::parse_lib(x,
+                                self.config.parse.parse_deps,
+                                &self.config.parse.include,
+                                &self.config.parse.exclude,
+                                &self.config.parse.expand,
+                                &mut |binding_crate_name, crate_name, mod_cfg, items| {
+                result.load_syn_crate_mod(binding_crate_name, &crate_name, &mod_cfg, items);
+            })?;
+        }
+
+        result.functions.sort_by(|x, y| x.name.cmp(&y.name));
+
+        Ok(Library::new(self.config,
+                        result.enums,
+                        result.structs,
+                        result.opaque_items,
+                        result.typedefs,
+                        result.specializations,
+                        result.functions))
+    }
+}
+
+#[derive(Debug, Clone)]
+struct LibraryParseResult {
+    enums: ItemMap<Enum>,
+    structs: ItemMap<Struct>,
+    opaque_items: ItemMap<OpaqueItem>,
+    typedefs: ItemMap<Typedef>,
+    specializations: ItemMap<Specialization>,
+    functions: Vec<Function>,
+}
+
+impl LibraryParseResult {
+    fn new() -> LibraryParseResult {
+        LibraryParseResult {
+            enums: ItemMap::new(),
+            structs: ItemMap::new(),
+            opaque_items: ItemMap::new(),
+            typedefs: ItemMap::new(),
+            specializations: ItemMap::new(),
+            functions: Vec::new(),
+        }
+    }
+
+    fn add_std_types(&mut self) {
         {
             let mut add_opaque = |name: &str, generic_params: Vec<&str>| {
                 self.opaque_items.try_insert(OpaqueItem {
@@ -76,53 +139,6 @@ impl LibraryBuilder {
             add_opaque("LinkedList", vec!["T"]);
             add_opaque("VecDeque", vec!["T"]);
         }
-
-        self
-    }
-
-    pub fn with_src(mut self, src: &path::Path) -> LibraryBuilder {
-        self.srcs.push(src.to_owned());
-        self
-    }
-
-    pub fn with_crate(mut self, lib: Cargo) -> LibraryBuilder {
-        debug_assert!(self.lib.is_none());
-        self.lib = Some(lib);
-        self
-    }
-
-    pub fn build(mut self) -> Result<Library, String> {
-        // Workaround the borrow checker
-        let srcs = mem::replace(&mut self.srcs, Vec::new());
-        let lib = mem::replace(&mut self.lib, None);
-        let config = self.config.clone();
-
-        for x in &srcs {
-            rust_lib::parse_src(x, &mut |crate_name, items| {
-                self.load_syn_crate_mod("", &crate_name, &None, items);
-            })?;
-        }
-
-        if let Some(x) = lib {
-            rust_lib::parse_lib(x,
-                                config.parse.parse_deps,
-                                &config.parse.include,
-                                &config.parse.exclude,
-                                &config.parse.expand,
-                                &mut |binding_crate_name, crate_name, mod_cfg, items| {
-                self.load_syn_crate_mod(binding_crate_name, &crate_name, &mod_cfg, items);
-            })?;
-        }
-
-        self.functions.sort_by(|x, y| x.name.cmp(&y.name));
-
-        Ok(Library::new(self.config,
-                        self.enums,
-                        self.structs,
-                        self.opaque_items,
-                        self.typedefs,
-                        self.specializations,
-                        self.functions))
     }
 
     fn load_syn_crate_mod(&mut self,
