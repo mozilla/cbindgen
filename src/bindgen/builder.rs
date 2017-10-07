@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::BTreeMap;
 use std::mem;
 use std::path;
 
@@ -11,7 +10,7 @@ use syn;
 use bindgen::cargo::Cargo;
 use bindgen::config::Config;
 use bindgen::ir::{AnnotationSet, Cfg, Documentation, Enum, Function};
-use bindgen::ir::{OpaqueItem, Specialization, Struct, Typedef};
+use bindgen::ir::{ItemMap, OpaqueItem, Specialization, Struct, Typedef};
 use bindgen::library::Library;
 use bindgen::rust_lib;
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
@@ -21,11 +20,11 @@ pub struct LibraryBuilder {
     config: Config,
     srcs: Vec<path::PathBuf>,
     lib: Option<Cargo>,
-    enums: BTreeMap<String, Vec<Enum>>,
-    structs: BTreeMap<String, Vec<Struct>>,
-    opaque_items: BTreeMap<String, OpaqueItem>,
-    typedefs: BTreeMap<String, Typedef>,
-    specializations: BTreeMap<String, Specialization>,
+    enums: ItemMap<Enum>,
+    structs: ItemMap<Struct>,
+    opaque_items: ItemMap<OpaqueItem>,
+    typedefs: ItemMap<Typedef>,
+    specializations: ItemMap<Specialization>,
     functions: Vec<Function>,
 }
 
@@ -35,11 +34,11 @@ impl LibraryBuilder {
             config: Config::default(),
             srcs: Vec::new(),
             lib: None,
-            enums: BTreeMap::new(),
-            structs: BTreeMap::new(),
-            opaque_items: BTreeMap::new(),
-            typedefs: BTreeMap::new(),
-            specializations: BTreeMap::new(),
+            enums: ItemMap::new(),
+            structs: ItemMap::new(),
+            opaque_items: ItemMap::new(),
+            typedefs: ItemMap::new(),
+            specializations: ItemMap::new(),
             functions: Vec::new(),
         }
     }
@@ -52,7 +51,7 @@ impl LibraryBuilder {
     pub fn with_std_types(mut self) -> LibraryBuilder {
         {
             let mut add_opaque = |name: &str, generic_params: Vec<&str>| {
-                self.opaque_items.insert(name.to_owned(), OpaqueItem {
+                self.opaque_items.try_insert(OpaqueItem {
                     name: name.to_owned(),
                     generic_params: generic_params.iter()
                                                   .map(|x| (*x).to_owned())
@@ -277,26 +276,17 @@ impl LibraryBuilder {
             Ok(st) => {
                 info!("take {}::{}", crate_name, &item.ident);
 
-                if !self.structs.contains_key(&struct_name) {
-                    self.structs.insert(struct_name.clone(),
-                                        Vec::new());
-                }
-                let structs = self.structs.get_mut(&struct_name).unwrap();
-                if structs.len() == 0 ||
-                   st.cfg.is_some() {
-                    structs.push(st);
-                }
+                self.structs.try_insert(st);
             }
             Err(msg) => {
                 info!("take {}::{} - opaque ({})",
                       crate_name,
                       &item.ident,
                       msg);
-                self.opaque_items.insert(struct_name.clone(),
-                                         OpaqueItem::new(struct_name,
-                                                         generics,
-                                                         &item.attrs,
-                                                         mod_cfg));
+                self.opaque_items.try_insert(OpaqueItem::new(struct_name,
+                                                             generics,
+                                                             &item.attrs,
+                                                             mod_cfg));
             }
         }
     }
@@ -324,23 +314,14 @@ impl LibraryBuilder {
                          mod_cfg) {
             Ok(en) => {
                 info!("take {}::{}", crate_name, &item.ident);
-                if !self.enums.contains_key(&enum_name) {
-                    self.enums.insert(enum_name.clone(),
-                                        Vec::new());
-                }
-                let enums = self.enums.get_mut(&enum_name).unwrap();
-                if enums.len() == 0 ||
-                   en.cfg.is_some() {
-                    enums.push(en);
-                }
+                self.enums.try_insert(en);
             }
             Err(msg) => {
                 info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
-                self.opaque_items.insert(enum_name.clone(),
-                                         OpaqueItem::new(enum_name,
-                                                         generics,
-                                                         &item.attrs,
-                                                         mod_cfg));
+                self.opaque_items.try_insert(OpaqueItem::new(enum_name,
+                                                             generics,
+                                                             &item.attrs,
+                                                             mod_cfg));
             }
         }
     }
@@ -364,7 +345,7 @@ impl LibraryBuilder {
             {
                 Ok(typedef) => {
                     info!("take {}::{}", crate_name, &item.ident);
-                    self.typedefs.insert(alias_name, typedef);
+                    self.typedefs.try_insert(typedef);
                     return;
                 }
                 Err(msg) => msg,
@@ -380,7 +361,7 @@ impl LibraryBuilder {
                                                mod_cfg) {
             Ok(spec) => {
                 info!("take {}::{}", crate_name, &item.ident);
-                self.specializations.insert(alias_name, spec);
+                self.specializations.try_insert(spec);
                 return;
             }
             Err(msg) => msg,

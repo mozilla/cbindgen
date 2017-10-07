@@ -7,7 +7,9 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Path, Type};
+use bindgen::dependencies::Dependencies;
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Path, Specialization, Type};
+use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
 use bindgen::writer::{Source, SourceWriter};
@@ -51,6 +53,46 @@ impl OpaqueItem {
         };
 
         out.insert_opaque(self, monomorph, generic_values.clone());
+    }
+}
+
+impl Item for OpaqueItem {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn cfg(&self) -> &Option<Cfg> {
+        &self.cfg
+    }
+
+    fn annotations(&self) -> &AnnotationSet {
+        &self.annotations
+    }
+
+    fn annotations_mut(&mut self) -> &mut AnnotationSet {
+        &mut self.annotations
+    }
+
+    fn container(&self) -> ItemContainer {
+        ItemContainer::OpaqueItem(self.clone())
+    }
+
+    fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
+        if aliasee.aliased.generics.len() !=
+           self.generic_params.len() {
+            return Err(format!("incomplete specialization"));
+        }
+
+        Ok(Box::new(OpaqueItem {
+            name: aliasee.name.clone(),
+            generic_params: aliasee.generic_params.clone(),
+            cfg: aliasee.cfg.clone(),
+            annotations: aliasee.annotations.clone(),
+            documentation: aliasee.documentation.clone(),
+        }))
+    }
+
+    fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {
     }
 }
 

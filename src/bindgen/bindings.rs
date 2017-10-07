@@ -8,20 +8,20 @@ use std::path;
 use std::fs;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{Item, Function};
+use bindgen::ir::{ItemContainer, Function};
 use bindgen::monomorph::TemplateSpecialization;
 use bindgen::writer::{ListType, Source, SourceWriter};
 
 pub struct Bindings {
     config: Config,
-    items: Vec<Item>,
+    items: Vec<ItemContainer>,
     functions: Vec<Function>,
     template_specializations: Vec<TemplateSpecialization>,
 }
 
 impl Bindings {
     pub fn new(config: Config,
-               items: Vec<Item>,
+               items: Vec<ItemContainer>,
                functions: Vec<Function>,
                template_specializations: Vec<TemplateSpecialization>) -> Bindings {
         Bindings {
@@ -92,11 +92,11 @@ impl Bindings {
         for item in &self.items {
             out.new_line_if_not_start();
             match item {
-                &Item::Enum(ref x) => x.write(&self.config, &mut out),
-                &Item::Struct(ref x) => x.write(&self.config, &mut out),
-                &Item::OpaqueItem(ref x) => x.write(&self.config, &mut out),
-                &Item::Typedef(ref x) => x.write(&self.config, &mut out),
-                &Item::Specialization(_) => {
+                &ItemContainer::Enum(ref x) => x.write(&self.config, &mut out),
+                &ItemContainer::Struct(ref x) => x.write(&self.config, &mut out),
+                &ItemContainer::OpaqueItem(ref x) => x.write(&self.config, &mut out),
+                &ItemContainer::Typedef(ref x) => x.write(&self.config, &mut out),
+                &ItemContainer::Specialization(_) => {
                     unreachable!("should not encounter a specialization in a generated library")
                 }
             }

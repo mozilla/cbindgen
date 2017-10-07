@@ -9,7 +9,7 @@ use syn;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Path, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Path, Specialization, Type};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::writer::{Source, SourceWriter};
@@ -62,16 +62,48 @@ impl Typedef {
         }
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.aliased.add_dependencies(library, out);
-    }
-
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         self.aliased.add_monomorphs(library, out);
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         self.aliased.mangle_paths(monomorphs);
+    }
+}
+
+impl Item for Typedef {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn cfg(&self) -> &Option<Cfg> {
+        &self.cfg
+    }
+
+    fn annotations(&self) -> &AnnotationSet {
+        &self.annotations
+    }
+
+    fn annotations_mut(&mut self) -> &mut AnnotationSet {
+        &mut self.annotations
+    }
+
+    fn container(&self) -> ItemContainer {
+        ItemContainer::Typedef(self.clone())
+    }
+
+    fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
+        Ok(Box::new(Typedef {
+            name: aliasee.name.clone(),
+            aliased: self.aliased.clone(),
+            cfg: aliasee.cfg.clone(),
+            annotations: aliasee.annotations.clone(),
+            documentation: aliasee.documentation.clone(),
+        }))
+    }
+
+    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+        self.aliased.add_dependencies(library, out);
     }
 }
 

@@ -70,7 +70,7 @@ impl Function {
         }
     }
 
-    pub fn rename_args(&mut self, config: &Config) {
+    pub fn rename_for_config(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.function.rename_args];
 

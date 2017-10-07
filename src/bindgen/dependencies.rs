@@ -5,11 +5,11 @@
 use std::collections::HashSet;
 use std::cmp::Ordering;
 
-use bindgen::ir::{Item, Path};
+use bindgen::ir::{ItemContainer, Path};
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct Dependencies {
-    pub order: Vec<Item>,
+    pub order: Vec<ItemContainer>,
     pub items: HashSet<Path>,
 }
 
@@ -24,15 +24,15 @@ impl Dependencies {
     pub fn sort(&mut self) {
         // Sort enums and opaque structs into their own layers because they don't
         // depend on each other or anything else.
-        let ordering = |a: &Item, b: &Item| {
+        let ordering = |a: &ItemContainer, b: &ItemContainer| {
             match (a, b) {
-                (&Item::Enum(ref x), &Item::Enum(ref y)) => x.name.cmp(&y.name),
-                (&Item::Enum(_), _) => Ordering::Less,
-                (_, &Item::Enum(_)) => Ordering::Greater,
+                (&ItemContainer::Enum(ref x), &ItemContainer::Enum(ref y)) => x.name.cmp(&y.name),
+                (&ItemContainer::Enum(_), _) => Ordering::Less,
+                (_, &ItemContainer::Enum(_)) => Ordering::Greater,
 
-                (&Item::OpaqueItem(ref x), &Item::OpaqueItem(ref y)) => x.name.cmp(&y.name),
-                (&Item::OpaqueItem(_), _) => Ordering::Less,
-                (_, &Item::OpaqueItem(_)) => Ordering::Greater,
+                (&ItemContainer::OpaqueItem(ref x), &ItemContainer::OpaqueItem(ref y)) => x.name.cmp(&y.name),
+                (&ItemContainer::OpaqueItem(_), _) => Ordering::Less,
+                (_, &ItemContainer::OpaqueItem(_)) => Ordering::Greater,
 
                 _ => Ordering::Equal,
             }

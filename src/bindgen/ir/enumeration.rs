@@ -7,7 +7,8 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Repr};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Repr, Specialization};
+use bindgen::library::Library;
 use bindgen::rename::{IdentifierType, RenameRule};
 use bindgen::utilities::{find_first_some};
 use bindgen::writer::{Source, SourceWriter};
@@ -85,8 +86,41 @@ impl Enum {
             documentation: Documentation::load(attrs),
         })
     }
+}
 
-    pub fn rename_values(&mut self, config: &Config) {
+impl Item for Enum {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn cfg(&self) -> &Option<Cfg> {
+        &self.cfg
+    }
+
+    fn annotations(&self) -> &AnnotationSet {
+        &self.annotations
+    }
+
+    fn annotations_mut(&mut self) -> &mut AnnotationSet {
+        &mut self.annotations
+    }
+
+    fn container(&self) -> ItemContainer {
+        ItemContainer::Enum(self.clone())
+    }
+
+    fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
+        Ok(Box::new(Enum {
+            name: aliasee.name.clone(),
+            repr: self.repr.clone(),
+            values: self.values.clone(),
+            cfg: aliasee.cfg.clone(),
+            annotations: aliasee.annotations.clone(),
+            documentation: aliasee.documentation.clone(),
+        }))
+    }
+
+    fn rename_for_config(&mut self, config: &Config) {
         if config.enumeration.prefix_with_name ||
            self.annotations.bool("prefix-with-name").unwrap_or(false)
         {

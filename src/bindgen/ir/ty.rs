@@ -10,7 +10,7 @@ use syn;
 use bindgen::cdecl;
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{Documentation, GenericPath, Item, Path};
+use bindgen::ir::{Documentation, GenericPath, ItemContainer, Item, Path};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::utilities::IterHelpers;
@@ -320,12 +320,12 @@ impl Type {
                     generic_value.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
                 if !generic_params.contains(&path.name) {
-                    if let Some(items) = library.get_item(&path.name) {
+                    if let Some(items) = library.get_items(&path.name) {
                         if !out.items.contains(&path.name) {
                             out.items.insert(path.name.clone());
 
                             for item in &items {
-                                item.add_dependencies(library, out);
+                                item.deref().add_dependencies(library, out);
                             }
                             for item in items {
                                 out.order.push(item);
@@ -367,22 +367,22 @@ impl Type {
                     return;
                 }
 
-                if let Some(items) = library.get_item(&path.name) {
+                if let Some(items) = library.get_items(&path.name) {
                     for item in items {
                         match item {
-                            Item::OpaqueItem(ref x) => {
+                            ItemContainer::OpaqueItem(ref x) => {
                                 x.instantiate_monomorph(&path.generics, out);
                             },
-                            Item::Struct(ref x) => {
-                                x.instantiate_monomorph(library, &path.generics, out);
+                            ItemContainer::Struct(ref x) => {
+                                x.instantiate_monomorph(&path.generics, library, out);
                             },
-                            Item::Enum(..) => {
+                            ItemContainer::Enum(..) => {
                                 warn!("cannot instantiate a generic enum")
                             },
-                            Item::Typedef(..) => {
+                            ItemContainer::Typedef(..) => {
                                 warn!("cannot instantiate a generic typedef")
                             },
-                            Item::Specialization(..) => {
+                            ItemContainer::Specialization(..) => {
                                 warn!("cannot instantiate a generic specialization")
                             },
                         }

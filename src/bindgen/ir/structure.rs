@@ -8,7 +8,7 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Repr, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Repr, Specialization, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -79,12 +79,6 @@ impl Struct {
         self.generic_params.len() > 0
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        for &(_, ref ty, _) in &self.fields {
-            ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
-        }
-    }
-
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
@@ -97,39 +91,35 @@ impl Struct {
         }
     }
 
-    pub fn instantiate_monomorph(&self, library: &Library, generic_values: &Vec<Type>, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() > 0 &&
-                self.generic_params.len() == generic_values.len());
-
-        let mappings = self.generic_params.iter()
-                                          .zip(generic_values.iter())
-                                          .collect::<Vec<_>>();
-
-        let monomorph = Struct {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: vec![],
-            fields: self.fields.iter()
-                               .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
-                               .collect(),
-            tuple_struct: self.tuple_struct,
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        };
-
-        // Instantiate any monomorphs for any generic paths we may have just created.
-        monomorph.add_monomorphs(library, out);
-
-        out.insert_struct(self, monomorph, generic_values.clone());
-    }
-
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         for &mut (_, ref mut ty, _) in &mut self.fields {
             ty.mangle_paths(monomorphs);
         }
     }
+}
 
-    pub fn rename_fields(&mut self, config: &Config) {
+impl Item for Struct {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn cfg(&self) -> &Option<Cfg> {
+        &self.cfg
+    }
+
+    fn annotations(&self) -> &AnnotationSet {
+        &self.annotations
+    }
+
+    fn annotations_mut(&mut self) -> &mut AnnotationSet {
+        &mut self.annotations
+    }
+
+    fn container(&self) -> ItemContainer {
+        ItemContainer::Struct(self.clone())
+    }
+
+    fn rename_for_config(&mut self, config: &Config) {
         let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
                      config.structure.rename_fields];
 
@@ -159,6 +149,61 @@ impl Struct {
                 name.insert(0, '_');
             }
         }
+    }
+
+    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+        for &(_, ref ty, _) in &self.fields {
+            ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
+        }
+    }
+
+    fn instantiate_monomorph(&self, generic_values: &Vec<Type>, library: &Library, out: &mut Monomorphs) {
+        assert!(self.generic_params.len() > 0 &&
+                self.generic_params.len() == generic_values.len());
+
+        let mappings = self.generic_params.iter()
+                                          .zip(generic_values.iter())
+                                          .collect::<Vec<_>>();
+
+        let monomorph = Struct {
+            name: mangle::mangle_path(&self.name, generic_values),
+            generic_params: vec![],
+            fields: self.fields.iter()
+                               .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
+                               .collect(),
+            tuple_struct: self.tuple_struct,
+            cfg: self.cfg.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        };
+
+        // Instantiate any monomorphs for any generic paths we may have just created.
+        monomorph.add_monomorphs(library, out);
+
+        out.insert_struct(self, monomorph, generic_values.clone());
+    }
+
+    fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
+        if aliasee.aliased.generics.len() !=
+           self.generic_params.len() {
+            return Err(format!("incomplete specialization"));
+        }
+
+        let mappings = self.generic_params.iter()
+                                          .zip(aliasee.aliased.generics.iter())
+                                          .collect::<Vec<_>>();
+
+        Ok(Box::new(Struct {
+            name: aliasee.name.clone(),
+            generic_params: aliasee.generic_params.clone(),
+            fields: self.fields.iter()
+                                  .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
+                                  .collect(),
+            tuple_struct: self.tuple_struct,
+            cfg: aliasee.cfg.clone(),
+            annotations: aliasee.annotations.clone(),
+            documentation: aliasee.documentation.clone(),
+        }))
     }
 }
 

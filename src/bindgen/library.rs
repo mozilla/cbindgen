@@ -2,36 +2,35 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::mem;
 
 use bindgen::bindings::Bindings;
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{Enum, Function, Item, OpaqueItem};
+use bindgen::ir::{Enum, Function, ItemContainer, ItemMap, Item, OpaqueItem};
 use bindgen::ir::{Path, Specialization, Struct, Typedef};
 use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
 
 #[derive(Debug, Clone)]
 pub struct Library {
     config: Config,
-    enums: BTreeMap<String, Vec<Enum>>,
-    structs: BTreeMap<String, Vec<Struct>>,
-    opaque_items: BTreeMap<String, OpaqueItem>,
-    typedefs: BTreeMap<String, Typedef>,
-    specializations: BTreeMap<String, Specialization>,
+    enums: ItemMap<Enum>,
+    structs: ItemMap<Struct>,
+    opaque_items: ItemMap<OpaqueItem>,
+    typedefs: ItemMap<Typedef>,
+    specializations: ItemMap<Specialization>,
     functions: Vec<Function>,
     template_specializations: Vec<TemplateSpecialization>,
 }
 
 impl Library {
     pub fn new(config: Config,
-               enums: BTreeMap<String, Vec<Enum>>,
-               structs: BTreeMap<String, Vec<Struct>>,
-               opaque_items: BTreeMap<String, OpaqueItem>,
-               typedefs: BTreeMap<String, Typedef>,
-               specializations: BTreeMap<String, Specialization>,
+               enums: ItemMap<Enum>,
+               structs: ItemMap<Struct>,
+               opaque_items: ItemMap<OpaqueItem>,
+               typedefs: ItemMap<Typedef>,
+               specializations: ItemMap<Specialization>,
                functions: Vec<Function>) -> Library {
         Library {
             config: config,
@@ -76,150 +75,146 @@ impl Library {
                          template_specializations))
     }
 
-    pub fn get_item(&self, p: &Path) -> Option<Vec<Item>> {
-        if let Some(x) = self.enums.get(p) {
-            return Some(x.iter().map(|x| Item::Enum(x.clone())).collect());
+    pub fn get_items(&self, p: &Path) -> Option<Vec<ItemContainer>> {
+        if let Some(x) = self.enums.get_items(p) {
+            return Some(x);
         }
-        if let Some(x) = self.structs.get(p) {
-            return Some(x.iter().map(|x| Item::Struct(x.clone())).collect());
+        if let Some(x) = self.structs.get_items(p) {
+            return Some(x);
         }
-        if let Some(x) = self.opaque_items.get(p) {
-            return Some(vec![Item::OpaqueItem(x.clone())]);
+        if let Some(x) = self.opaque_items.get_items(p) {
+            return Some(x);
         }
-        if let Some(x) = self.typedefs.get(p) {
-            return Some(vec![Item::Typedef(x.clone())]);
+        if let Some(x) = self.typedefs.get_items(p) {
+            return Some(x);
         }
-        if let Some(x) = self.specializations.get(p) {
-            return Some(vec![Item::Specialization(x.clone())]);
+        if let Some(x) = self.specializations.get_items(p) {
+            return Some(x);
         }
 
         None
     }
 
-    fn insert_item(&mut self, item: Item) {
+    fn insert_item(&mut self, item: ItemContainer) {
         match item {
-            Item::OpaqueItem(x) => { self.opaque_items.insert(x.name.clone(), x); },
-            Item::Struct(x) => {
-                if !self.structs.contains_key(&x.name) {
-                    self.structs.insert(x.name.clone(), Vec::new());
-                }
-                let structs = self.structs.get_mut(&x.name).unwrap();
-                if structs.len() == 0 ||
-                   x.cfg.is_some() {
-                    structs.push(x);
-                }
+            ItemContainer::OpaqueItem(x) => {
+                self.opaque_items.try_insert(x);
             },
-            Item::Enum(x) => {
-                if !self.enums.contains_key(&x.name) {
-                    self.enums.insert(x.name.clone(), Vec::new());
-                }
-                let enums = self.enums.get_mut(&x.name).unwrap();
-                if enums.len() == 0 ||
-                   x.cfg.is_some() {
-                    enums.push(x);
-                }
+            ItemContainer::Struct(x) => {
+                self.structs.try_insert(x);
             },
-            Item::Typedef(x) => { self.typedefs.insert(x.name.clone(), x); },
-            Item::Specialization(x) => { self.specializations.insert(x.name.clone(), x); },
+            ItemContainer::Enum(x) => {
+                self.enums.try_insert(x);
+            },
+            ItemContainer::Typedef(x) => {
+                self.typedefs.try_insert(x);
+            },
+            ItemContainer::Specialization(x) => {
+                self.specializations.try_insert(x);
+            },
         };
     }
 
     fn transfer_annotations(&mut self) {
         let mut annotations = HashMap::new();
 
-        for (_, ref mut typedef) in &mut self.typedefs {
-            typedef.transfer_annotations(&mut annotations);
-        }
+        self.typedefs.for_all_items_mut(|x| {
+            x.transfer_annotations(&mut annotations);
+        });
 
         for (alias_path, annotations) in annotations {
             // TODO
-            if let Some(x) = self.enums.get_mut(&alias_path) {
-                for x in x {
-                    if !x.annotations.is_empty() {
-                        warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                              alias_path);
-                        continue;
-                    }
-                    x.annotations = annotations.clone();
-                }
-                continue;
-            }
-            if let Some(x) = self.structs.get_mut(&alias_path) {
-                for x in x {
-                    if !x.annotations.is_empty() {
-                        warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                              alias_path);
-                        continue;
-                    }
-                    x.annotations = annotations.clone();
-                }
-                continue;
-            }
-            if let Some(x) = self.opaque_items.get_mut(&alias_path) {
-                if !x.annotations.is_empty() {
+            let mut transferred = false;
+
+            self.enums.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
+                    *x.annotations_mut() = annotations.clone();
+                    transferred = true;
+                } else {
                     warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
                           alias_path);
-                    continue;
                 }
-                x.annotations = annotations;
+            });
+            if transferred {
                 continue;
             }
-            if let Some(x) = self.typedefs.get_mut(&alias_path) {
-                if !x.annotations.is_empty() {
+            self.structs.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
+                    *x.annotations_mut() = annotations.clone();
+                    transferred = true;
+                } else {
                     warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
                           alias_path);
-                    continue;
                 }
-                x.annotations = annotations;
+            });
+            if transferred {
                 continue;
             }
-            if let Some(x) = self.specializations.get_mut(&alias_path) {
-                if !x.annotations.is_empty() {
+            self.opaque_items.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
+                    *x.annotations_mut() = annotations.clone();
+                    transferred = true;
+                } else {
                     warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
                           alias_path);
-                    continue;
                 }
-                x.annotations = annotations;
+            });
+            if transferred {
+                continue;
+            }
+            self.specializations.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
+                    *x.annotations_mut() = annotations.clone();
+                    transferred = true;
+                } else {
+                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                          alias_path);
+                }
+            });
+            if transferred {
+                continue;
+            }
+            self.typedefs.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
+                    *x.annotations_mut() = annotations.clone();
+                    transferred = true;
+                } else {
+                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                          alias_path);
+                }
+            });
+            if transferred {
                 continue;
             }
         }
     }
 
     fn rename_items(&mut self) {
-        for items in self.structs.values_mut() {
-            for item in items {
-                item.rename_fields(&self.config);
-            }
-        }
-
-        for items in self.enums.values_mut() {
-            for item in items {
-                item.rename_values(&self.config);
-            }
-        }
+        let config = &self.config;
+        self.structs.for_all_items_mut(|x| x.rename_for_config(config));
+        self.enums.for_all_items_mut(|x| x.rename_for_config(config));
 
         for item in &mut self.functions {
-            item.rename_args(&self.config);
+            item.rename_for_config(&self.config);
         }
     }
 
     fn specialize_items(&mut self) {
         let mut specializations = Vec::new();
 
-        for specialization in self.specializations.values() {
-            match specialization.specialize(&self) {
-                Ok(Some(specialization)) => {
+        self.specializations.for_all_items(|x| {
+            match x.resolve_specialization(&self) {
+                Ok(specialization) => {
                     specializations.push(specialization);
                 }
-                Ok(None) => { }
                 Err(msg) => {
-                    warn!("specializing {} failed - ({})", specialization.name.clone(), msg);
+                    warn!("specializing {} failed - ({})", x.name.clone(), msg);
                 }
             }
-        }
+        });
 
         for specialization in specializations {
-            self.insert_item(specialization);
+            self.insert_item(specialization.container());
         }
 
         self.specializations.clear();
@@ -231,69 +226,31 @@ impl Library {
         // Collect a list of monomorphs
         let mut monomorphs = Monomorphs::new();
 
-        for x in self.structs.values() {
-            for x in x {
-                x.add_monomorphs(self, &mut monomorphs);
-            }
-        }
-        for x in self.typedefs.values() {
+        self.structs.for_all_items(|x| {
             x.add_monomorphs(self, &mut monomorphs);
-        }
+        });
+        self.typedefs.for_all_items(|x| {
+            x.add_monomorphs(self, &mut monomorphs);
+        });
         for x in &self.functions {
             x.add_monomorphs(self, &mut monomorphs);
         }
 
         // Insert the monomorphs into self
         for monomorph in monomorphs.drain_structs() {
-            if !self.structs.contains_key(&monomorph.name) {
-                self.structs.insert(monomorph.name.clone(), Vec::new());
-            }
-            let structs = self.structs.get_mut(&monomorph.name).unwrap();
-            if structs.len() == 0 ||
-               monomorph.cfg.is_some() {
-                structs.push(monomorph);
-            }
+            self.structs.try_insert(monomorph);
         }
         for monomorph in monomorphs.drain_opaques() {
-            self.opaque_items.insert(monomorph.name.clone(), monomorph);
+            self.opaque_items.try_insert(monomorph);
         }
 
         // Remove structs and opaque items that are generic
-        let opaque_items = mem::replace(&mut self.opaque_items, BTreeMap::new());
-        for (path, item) in opaque_items {
-            if item.generic_params.len() != 0 {
-                continue;
-            }
-            self.opaque_items.insert(path, item);
-        }
-
-        let structs = mem::replace(&mut self.structs, BTreeMap::new());
-        for (path, items) in structs {
-            for item in items {
-                if item.generic_params.len() != 0 {
-                    continue;
-                }
-
-                if !self.structs.contains_key(&path) {
-                    self.structs.insert(path.clone(), Vec::new());
-                }
-                let structs = self.structs.get_mut(&path).unwrap();
-                if structs.len() == 0 ||
-                   item.cfg.is_some() {
-                    structs.push(item);
-                }
-            }
-        }
+        self.opaque_items.filter(|x| x.generic_params.len() > 0);
+        self.structs.filter(|x| x.generic_params.len() > 0);
 
         // Mangle the paths that remain
-        for x in self.structs.values_mut() {
-            for x in x {
-                x.mangle_paths(&monomorphs);
-            }
-        }
-        for x in self.typedefs.values_mut() {
-            x.mangle_paths(&monomorphs);
-        }
+        self.structs.for_all_items_mut(|x| x.mangle_paths(&monomorphs));
+        self.typedefs.for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         for x in &mut self.functions {
             x.mangle_paths(&monomorphs);
         }

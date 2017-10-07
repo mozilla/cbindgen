@@ -4,8 +4,9 @@
 
 use syn;
 
-use bindgen::ir::{AnnotationSet, Cfg, Documentation, Enum};
-use bindgen::ir::{GenericPath, Item, OpaqueItem, PrimitiveType, Struct, Typedef};
+use bindgen::dependencies::Dependencies;
+use bindgen::ir::{AnnotationSet, Cfg, Documentation};
+use bindgen::ir::{GenericPath, ItemContainer, Item, PrimitiveType};
 use bindgen::library::Library;
 
 /// A type alias that generates a copy of its aliasee with a new name. If the type
@@ -55,8 +56,8 @@ impl Specialization {
         }
     }
 
-    pub fn specialize(&self, library: &Library) -> Result<Option<Item>, String> {
-        if let Some(items) = library.get_item(&self.aliased.name) {
+    pub fn resolve_specialization(&self, library: &Library) -> Result<Box<Item>, String> {
+        if let Some(items) = library.get_items(&self.aliased.name) {
             assert!(items.len() > 0);
 
             if items.len() > 1 {
@@ -64,87 +65,74 @@ impl Specialization {
             }
 
             match items[0] {
-                Item::OpaqueItem(ref aliased) => {
-                    if self.aliased.generics.len() !=
-                       aliased.generic_params.len() {
-                        return Err(format!("incomplete specialization"));
-                    }
-
-                    Ok(Some(Item::OpaqueItem(OpaqueItem {
-                        name: self.name.clone(),
-                        generic_params: self.generic_params.clone(),
-                        cfg: self.cfg.clone(),
-                        annotations: self.annotations.clone(),
-                        documentation: self.documentation.clone(),
-                    })))
+                ItemContainer::OpaqueItem(ref aliased) => {
+                    aliased.specialize(library, self)
                 }
-                Item::Struct(ref aliased) => {
-                    if self.aliased.generics.len() !=
-                       aliased.generic_params.len() {
-                        return Err(format!("incomplete specialization"));
-                    }
-
-                    let mappings = aliased.generic_params.iter()
-                                                         .zip(self.aliased.generics.iter())
-                                                         .collect::<Vec<_>>();
-
-                    Ok(Some(Item::Struct(Struct {
-                        name: self.name.clone(),
-                        generic_params: self.generic_params.clone(),
-                        fields: aliased.fields.iter()
-                                              .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
-                                              .collect(),
-                        tuple_struct: aliased.tuple_struct,
-                        cfg: self.cfg.clone(),
-                        annotations: self.annotations.clone(),
-                        documentation: self.documentation.clone(),
-                    })))
+                ItemContainer::Struct(ref aliased) => {
+                    aliased.specialize(library, self)
                 }
-                Item::Enum(ref aliased) => {
-                    Ok(Some(Item::Enum(Enum {
-                        name: self.name.clone(),
-                        repr: aliased.repr.clone(),
-                        values: aliased.values.clone(),
-                        cfg: self.cfg.clone(),
-                        annotations: self.annotations.clone(),
-                        documentation: self.documentation.clone(),
-                    })))
+                ItemContainer::Enum(ref aliased) => {
+                    aliased.specialize(library, self)
                 }
-                Item::Typedef(ref aliased) => {
-                    Ok(Some(Item::Typedef(Typedef {
-                        name: self.name.clone(),
-                        aliased: aliased.aliased.clone(),
-                        cfg: self.cfg.clone(),
-                        annotations: self.annotations.clone(),
-                        documentation: self.documentation.clone(),
-                    })))
+                ItemContainer::Typedef(ref aliased) => {
+                    aliased.specialize(library, self)
                 }
-                Item::Specialization(ref aliased) => {
-                    if self.aliased.generics.len() !=
-                       aliased.generic_params.len() {
-                        return Err(format!("incomplete specialization"));
-                    }
-
-                    let mappings = aliased.generic_params.iter()
-                                                         .zip(self.aliased.generics.iter())
-                                                         .collect::<Vec<_>>();
-
-                    let generics = aliased.aliased.generics.iter()
-                                                           .map(|x| x.specialize(&mappings))
-                                                           .collect();
-
-                    Specialization {
-                        name: self.name.clone(),
-                        generic_params: self.generic_params.clone(),
-                        aliased: GenericPath::new(aliased.aliased.name.clone(), generics),
-                        cfg: self.cfg.clone(),
-                        annotations: self.annotations.clone(),
-                        documentation: self.documentation.clone(),
-                    }.specialize(library)
+                ItemContainer::Specialization(ref aliased) => {
+                    aliased.specialize(library, self)
                 }
             }
         } else {
             Err(format!("couldn't find aliased type"))
         }
+    }
+}
+
+impl Item for Specialization {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn cfg(&self) -> &Option<Cfg> {
+        &self.cfg
+    }
+
+    fn annotations(&self) -> &AnnotationSet {
+        &self.annotations
+    }
+
+    fn annotations_mut(&mut self) -> &mut AnnotationSet {
+        &mut self.annotations
+    }
+
+    fn container(&self) -> ItemContainer {
+        ItemContainer::Specialization(self.clone())
+    }
+
+    fn specialize(&self, library: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
+        if aliasee.aliased.generics.len() !=
+           self.generic_params.len() {
+            return Err(format!("incomplete specialization"));
+        }
+
+        let mappings = self.generic_params.iter()
+                                          .zip(aliasee.aliased.generics.iter())
+                                          .collect::<Vec<_>>();
+
+        let generics = self.aliased.generics.iter()
+                                            .map(|x| x.specialize(&mappings))
+                                            .collect();
+
+        Specialization {
+            name: aliasee.name.clone(),
+            generic_params: aliasee.generic_params.clone(),
+            aliased: GenericPath::new(self.aliased.name.clone(), generics),
+            cfg: aliasee.cfg.clone(),
+            annotations: aliasee.annotations.clone(),
+            documentation: aliasee.documentation.clone(),
+        }.resolve_specialization(library)
+    }
+
+    fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {
+        unreachable!("Specialization's must be specialized before dependency gathering.");
     }
 }
