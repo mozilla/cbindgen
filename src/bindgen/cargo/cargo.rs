@@ -152,6 +152,7 @@ impl Cargo {
     pub fn find_crate_src(&self, package: &PackageRef) -> Option<PathBuf> {
         let kind_lib = String::from("lib");
         let kind_staticlib = String::from("staticlib");
+        let kind_rlib = String::from("rlib");
         let kind_cdylib = String::from("cdylib");
 
         for meta_package in &self.metadata.packages {
@@ -160,6 +161,7 @@ impl Cargo {
                 for target in &meta_package.targets {
                     if target.kind.contains(&kind_lib) ||
                        target.kind.contains(&kind_staticlib) ||
+                       target.kind.contains(&kind_rlib) ||
                        target.kind.contains(&kind_cdylib) {
                         return Some(PathBuf::from(&target.src_path));
                     }
