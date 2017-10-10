@@ -24,17 +24,16 @@ impl GenericPath {
     }
 
     pub fn load(path: &syn::Path) -> Result<GenericPath, String> {
-        if path.segments.len() != 1 {
-            return Err(format!("path contains more than one segment"));
-        }
+        assert!(path.segments.len() > 0);
+        let last_segment = path.segments.last().unwrap();
 
-        let name = path.segments[0].ident.to_string();
+        let name = last_segment.ident.to_string();
 
         if name == "PhantomData" {
             return Ok(GenericPath::new(name, Vec::new()));
         }
 
-        let generics = match &path.segments[0].parameters {
+        let generics = match &last_segment.parameters {
             &syn::PathParameters::AngleBracketed(ref d) => {
                 d.types.iter()
                        .try_skip_map(|x| Type::load(x))?
