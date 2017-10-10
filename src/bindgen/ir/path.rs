@@ -39,7 +39,7 @@ impl GenericPath {
                        .try_skip_map(|x| Type::load(x))?
             }
             &syn::PathParameters::Parenthesized(_) => {
-                return Err(format!("path contains parentheses"));
+                return Err("Path contains parentheses.".to_owned());
             }
         };
 

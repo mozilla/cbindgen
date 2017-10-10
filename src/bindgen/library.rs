@@ -131,7 +131,7 @@ impl Library {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
                           alias_path);
                 }
             });
@@ -143,7 +143,7 @@ impl Library {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
                           alias_path);
                 }
             });
@@ -155,7 +155,7 @@ impl Library {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
                           alias_path);
                 }
             });
@@ -167,7 +167,7 @@ impl Library {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
                           alias_path);
                 }
             });
@@ -179,7 +179,7 @@ impl Library {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
                           alias_path);
                 }
             });
@@ -208,7 +208,7 @@ impl Library {
                     specializations.push(specialization);
                 }
                 Err(msg) => {
-                    warn!("specializing {} failed - ({})", x.name.clone(), msg);
+                    warn!("Specializing {} failed - ({}).", x.name.clone(), msg);
                 }
             }
         });

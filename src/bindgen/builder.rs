@@ -190,7 +190,7 @@ impl LibraryParseResult {
                             item: &syn::Item,
                             block: &syn::ForeignMod) {
         if !block.abi.is_c() {
-            info!("skip {}::{} - (extern block must be extern C)", crate_name, &item.ident);
+            info!("Skip {}::{} - (extern block must be extern C).", crate_name, &item.ident);
             return;
         }
 
@@ -199,7 +199,7 @@ impl LibraryParseResult {
                 syn::ForeignItemKind::Fn(ref decl,
                                          ref _generic) => {
                     if crate_name != binding_crate_name {
-                        info!("skip {}::{} - (fn's outside of the binding crate are not used)",
+                        info!("Skip {}::{} - (fn's outside of the binding crate are not used).",
                               crate_name,
                               &foreign_item.ident);
                         return;
@@ -211,12 +211,12 @@ impl LibraryParseResult {
                                          &foreign_item.attrs,
                                          mod_cfg) {
                         Ok(func) => {
-                            info!("take {}::{}", crate_name, &foreign_item.ident);
+                            info!("Take {}::{}.", crate_name, &foreign_item.ident);
 
                             self.functions.push(func);
                         }
                         Err(msg) => {
-                            error!("Cannot use fn {}::{} ({})",
+                            error!("Cannot use fn {}::{} ({}).",
                                    crate_name,
                                    &foreign_item.ident,
                                    msg);
@@ -237,7 +237,7 @@ impl LibraryParseResult {
                    decl: &syn::FnDecl,
                    abi: &Option<syn::Abi>) {
         if crate_name != binding_crate_name {
-            info!("skip {}::{} - (fn's outside of the binding crate are not used)",
+            info!("Skip {}::{} - (fn's outside of the binding crate are not used).",
                   crate_name,
                   &item.ident);
             return;
@@ -250,12 +250,12 @@ impl LibraryParseResult {
                                  &item.attrs,
                                  mod_cfg) {
                 Ok(func) => {
-                    info!("take {}::{}", crate_name, &item.ident);
+                    info!("Take {}::{}.", crate_name, &item.ident);
 
                     self.functions.push(func);
                 }
                 Err(msg) => {
-                    error!("cannot use fn {}::{} ({})",
+                    error!("Cannot use fn {}::{} ({}).",
                            crate_name,
                            &item.ident,
                            msg);
@@ -263,12 +263,12 @@ impl LibraryParseResult {
             }
         } else {
             if (abi.is_omitted() || abi.is_c()) && !item.is_no_mangle() {
-                warn!("skip {}::{} - (`extern` but not `no_mangle`)",
+                warn!("Skip {}::{} - (`extern` but not `no_mangle`).",
                       crate_name,
                       &item.ident);
             }
             if abi.is_some() && !(abi.is_omitted() || abi.is_c()) {
-                warn!("skip {}::{} - (non `extern \"C\"`)",
+                warn!("Skip {}::{} - (non `extern \"C\"`).",
                       crate_name,
                       &item.ident);
             }
@@ -290,12 +290,12 @@ impl LibraryParseResult {
                            &item.attrs,
                            mod_cfg) {
             Ok(st) => {
-                info!("take {}::{}", crate_name, &item.ident);
+                info!("Take {}::{}.", crate_name, &item.ident);
 
                 self.structs.try_insert(st);
             }
             Err(msg) => {
-                info!("take {}::{} - opaque ({})",
+                info!("Take {}::{} - opaque ({}).",
                       crate_name,
                       &item.ident,
                       msg);
@@ -317,7 +317,7 @@ impl LibraryParseResult {
         if !generics.lifetimes.is_empty() ||
            !generics.ty_params.is_empty() ||
            !generics.where_clause.predicates.is_empty() {
-            info!("skip {}::{} - (has generics or lifetimes or where bounds)",
+            info!("Skip {}::{} - (has generics or lifetimes or where bounds).",
                   crate_name,
                   &item.ident);
             return;
@@ -329,11 +329,11 @@ impl LibraryParseResult {
                          &item.attrs,
                          mod_cfg) {
             Ok(en) => {
-                info!("take {}::{}", crate_name, &item.ident);
+                info!("Take {}::{}.", crate_name, &item.ident);
                 self.enums.try_insert(en);
             }
             Err(msg) => {
-                info!("take {}::{} - opaque ({})", crate_name, &item.ident, msg);
+                info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
                 self.opaque_items.try_insert(OpaqueItem::new(enum_name,
                                                              generics,
                                                              &item.attrs,
@@ -360,14 +360,14 @@ impl LibraryParseResult {
                                 mod_cfg)
             {
                 Ok(typedef) => {
-                    info!("take {}::{}", crate_name, &item.ident);
+                    info!("Take {}::{}.", crate_name, &item.ident);
                     self.typedefs.try_insert(typedef);
                     return;
                 }
                 Err(msg) => msg,
             }
         } else {
-            format!("cannot have generics in typedef")
+            format!("Cannot have generics in typedef.")
         };
 
         let fail2 = match Specialization::load(alias_name.clone(),
@@ -376,14 +376,14 @@ impl LibraryParseResult {
                                                &item.attrs,
                                                mod_cfg) {
             Ok(spec) => {
-                info!("take {}::{}", crate_name, &item.ident);
+                info!("Take {}::{}.", crate_name, &item.ident);
                 self.specializations.try_insert(spec);
                 return;
             }
             Err(msg) => msg,
         };
 
-        info!("skip {}::{} - ({} and {})",
+        info!("Skip {}::{} - ({} and {}).",
               crate_name,
               &item.ident,
               fail1,

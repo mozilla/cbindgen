@@ -80,7 +80,7 @@ impl Item for OpaqueItem {
     fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
         if aliasee.aliased.generics.len() !=
            self.generic_params.len() {
-            return Err(format!("incomplete specialization"));
+            return Err("Incomplete specialization, the amount of generics in the path doesn't match the amount of generics in the item.".to_owned());
         }
 
         Ok(Box::new(OpaqueItem {

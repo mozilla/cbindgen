@@ -35,7 +35,7 @@ impl Struct {
                 mod_cfg: &Option<Cfg>) -> Result<Struct, String>
     {
         if Repr::load(attrs) != Repr::C {
-            return Err("struct is not marked #[repr(C)]".to_owned());
+            return Err("Struct is not marked #[repr(C)].".to_owned());
         }
 
         let (fields, tuple_struct) = match decl {
@@ -186,7 +186,7 @@ impl Item for Struct {
     fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
         if aliasee.aliased.generics.len() !=
            self.generic_params.len() {
-            return Err(format!("incomplete specialization"));
+            return Err("Incomplete specialization, the amount of generics in the path doesn't match the amount of generics in the item.".to_owned());
         }
 
         let mappings = self.generic_params.iter()

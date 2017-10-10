@@ -167,7 +167,7 @@ impl SynFnArgHelpers for syn::FnArg {
                     Ok(None)
                 }
             }
-            _ => Err(format!("parameter has unexpected type")),
+            _ => Err("Parameter has an unsupported type.".to_owned()),
         }
     }
 }

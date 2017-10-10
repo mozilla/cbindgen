@@ -38,7 +38,7 @@ impl Enum {
            repr != Repr::I32 &&
            repr != Repr::I16 &&
            repr != Repr::I8 {
-            return Err(format!("enum not marked with a valid repr(prim) or repr(C)"));
+            return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }
 
         let mut values = Vec::new();
@@ -52,7 +52,7 @@ impl Enum {
                             current = i;
                         }
                         Some(_) => {
-                            return Err(format!("unsupported discriminant"));
+                            return Err("Unsupported discriminant.".to_owned());
                         }
                         None => { /* okay, we just use current */ }
                     }
@@ -63,7 +63,7 @@ impl Enum {
                     current = current + 1;
                 }
                 _ => {
-                    return Err(format!("unsupported variant"));
+                    return Err("Unsupported variant.".to_owned());
                 }
             }
         }

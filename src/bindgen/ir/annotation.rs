@@ -81,7 +81,7 @@ impl AnnotationSet {
                                             .collect();
 
             if parts.len() > 2 {
-                return Err(format!("couldn't parse {}", line));
+                return Err(format!("Couldn't parse {}.", line));
             }
 
             // Grab the name that this annotation is modifying

@@ -38,7 +38,7 @@ impl Typedef {
                 documentation: Documentation::load(attrs),
             })
         } else {
-            Err(format!("cannot have a typedef of a zero sized type"))
+            Err("Cannot have a typedef of a zero sized type.".to_owned())
         }
     }
 
@@ -50,7 +50,7 @@ impl Typedef {
         match self.aliased.get_root_path() {
             Some(alias_path) => {
                 if out.contains_key(&alias_path) {
-                    warn!("multiple typedef's with annotations for {}. ignoring annotations from {}.",
+                    warn!("Multiple typedef's with annotations for {}. Ignoring annotations from {}.",
                           alias_path, self.name);
                     return;
                 }

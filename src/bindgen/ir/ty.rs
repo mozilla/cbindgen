@@ -183,7 +183,7 @@ impl Type {
 
                 let converted = match converted {
                     Some(converted) => converted,
-                    None => return Err(format!("cannot have a pointer to a zero sized type")),
+                    None => return Err("Cannot have a pointer to a zero sized type. If you are trying to represent `void*` use `c_void*`.".to_owned()),
                 };
 
                 match mut_ty.mutability {
@@ -196,7 +196,7 @@ impl Type {
 
                 let converted = match converted {
                     Some(converted) => converted,
-                    None => return Err(format!("cannot have a pointer to a zero sized type")),
+                    None => return Err("Cannot have a pointer to a zero sized type. If you are trying to represent `void*` use `c_void*`.".to_owned()),
                 };
 
                 match mut_ty.mutability {
@@ -213,7 +213,7 @@ impl Type {
 
                 if let Some(prim) = PrimitiveType::maybe(&path.name) {
                     if path.generics.len() > 0 {
-                        return Err(format!("primitive has generics"));
+                        return Err("Primitive has generics.".to_owned());
                     }
                     Type::Primitive(prim)
                 } else {
@@ -225,7 +225,7 @@ impl Type {
 
                 let converted = match converted {
                     Some(converted) => converted,
-                    None => return Err(format!("cannot have an array of zero sized types")),
+                    None => return Err("Cannot have an array of zero sized types.".to_owned()),
                 };
 
                 Type::Array(Box::new(converted), size)
@@ -241,9 +241,9 @@ impl Type {
                 if fields.len() == 0 {
                     return Ok(None);
                 }
-                return Err(format!("tuples are not supported as types"))
+                return Err("Tuples are not supported types.".to_owned())
             }
-            _ => return Err(format!("unexpected type")),
+            _ => return Err("Unsupported type.".to_owned()),
         };
 
         return Ok(Some(converted));
@@ -332,7 +332,7 @@ impl Type {
                             }
                         }
                     } else {
-                        warn!("can't find {}", path.name);
+                        warn!("Can't find {}. This usually means that this type was incompatible or not found.", path.name);
                     }
                 }
             }
@@ -377,13 +377,13 @@ impl Type {
                                 x.instantiate_monomorph(&path.generics, library, out);
                             },
                             ItemContainer::Enum(..) => {
-                                warn!("cannot instantiate a generic enum")
+                                warn!("Cannot instantiate a generic enum.")
                             },
                             ItemContainer::Typedef(..) => {
-                                warn!("cannot instantiate a generic typedef")
+                                warn!("Cannot instantiate a generic typedef.")
                             },
                             ItemContainer::Specialization(..) => {
-                                warn!("cannot instantiate a generic specialization")
+                                warn!("Cannot instantiate a generic specialization.")
                             },
                         }
                     }
@@ -419,7 +419,7 @@ impl Type {
                     path.name = mangled.clone();
                     path.generics = Vec::new();
                 } else {
-                    warn!("cannot find a monomorph for {:?}", path);
+                    error!("Cannot find a mangling for generic path {:?}. This usually means that a type referenced by this generic was incompatible or not found.", path);
                 }
             }
             &mut Type::Primitive(_) => { }

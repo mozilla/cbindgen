@@ -33,7 +33,7 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
             "C"=> Language::C,
             "c"=> Language::C,
             _ => {
-                error!("unknown language specified");
+                error!("Unknown language specified.");
                 return;
             }
         };
@@ -146,7 +146,7 @@ fn main() {
         Ok(library) => library,
         Err(msg) => {
             error!("{}", msg);
-            error!("couldn't generate bindings for {}", input.display());
+            error!("Couldn't generate bindings for {}.", input.display());
             return;
         }
     };
@@ -156,7 +156,7 @@ fn main() {
         Ok(x) => x,
         Err(msg) => {
             error!("{}", msg);
-            error!("couldn't generate bindings for {}", input.display());
+            error!("Couldn't generate bindings for {}.", input.display());
             return;
         },
     };

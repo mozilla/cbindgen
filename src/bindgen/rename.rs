@@ -233,7 +233,7 @@ impl FromStr for RenameRule {
             "QualifiedScreamingSnakeCase" => Ok(RenameRule::QualifiedScreamingSnakeCase),
             "qualified_screaming_snake_case" => Ok(RenameRule::QualifiedScreamingSnakeCase),
 
-            _ => Err(format!("unrecognized RenameRule: '{}'", s)),
+            _ => Err(format!("Unrecognized RenameRule: '{}'.", s)),
         }
     }
 }

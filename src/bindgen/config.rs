@@ -39,7 +39,7 @@ impl FromStr for Language {
             "C++" => Ok(Language::Cxx),
             "c" => Ok(Language::C),
             "C" => Ok(Language::C),
-            _ => Err(format!("unrecognized Language: '{}'", s)),
+            _ => Err(format!("Unrecognized Language: '{}'.", s)),
         }
     }
 }
@@ -62,7 +62,7 @@ impl FromStr for Braces {
             "same_line" => Ok(Braces::SameLine),
             "NextLine" => Ok(Braces::NextLine),
             "next_line" => Ok(Braces::NextLine),
-            _ => Err(format!("unrecognized Braces: '{}'", s)),
+            _ => Err(format!("Unrecognized Braces: '{}'.", s)),
         }
     }
 }
@@ -88,7 +88,7 @@ impl FromStr for Layout {
             "vertical" => Ok(Layout::Vertical),
             "Auto" => Ok(Layout::Auto),
             "auto" => Ok(Layout::Auto),
-            _ => Err(format!("unrecognized Layout: '{}'", s)),
+            _ => Err(format!("Unrecognized Layout: '{}'.", s)),
         }
     }
 }
@@ -367,7 +367,7 @@ impl Config {
 
         match toml::from_str::<Config>(&config_text) {
             Ok(x) => Ok(x),
-            Err(e) => Err(format!("couldn't parse config file: {}", e)),
+            Err(e) => Err(format!("Couldn't parse config file: {}.", e)),
         }
     }
 

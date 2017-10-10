@@ -38,7 +38,7 @@ impl Specialization {
                 let path = GenericPath::load(p)?;
 
                 if PrimitiveType::maybe(&path.name).is_some() {
-                    return Err(format!("can't specialize a primitive"));
+                    return Err("Definition is a primitive, which cannot be specialized.".to_owned());
                 }
 
                 Ok(Specialization {
@@ -51,7 +51,7 @@ impl Specialization {
                 })
             }
             _ => {
-                Err(format!("not a path"))
+                Err("Definition is not a path.".to_owned())
             }
         }
     }
@@ -61,7 +61,7 @@ impl Specialization {
             assert!(items.len() > 0);
 
             if items.len() > 1 {
-                warn!("specializing an aliased type with multiple definitions");
+                warn!("Specializing an aliased type with multiple definitions is possible but unsupported currently.");
             }
 
             match items[0] {
@@ -82,7 +82,7 @@ impl Specialization {
                 }
             }
         } else {
-            Err(format!("couldn't find aliased type"))
+            Err(format!("Couldn't find aliased type {:?} for specializing.", self.aliased))
         }
     }
 }
@@ -111,7 +111,7 @@ impl Item for Specialization {
     fn specialize(&self, library: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
         if aliasee.aliased.generics.len() !=
            self.generic_params.len() {
-            return Err(format!("incomplete specialization"));
+            return Err("Incomplete specialization, the amount of generics in the path doesn't match the amount of generics in the item.".to_owned());
         }
 
         let mappings = self.generic_params.iter()
@@ -133,6 +133,6 @@ impl Item for Specialization {
     }
 
     fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {
-        unreachable!("Specialization's must be specialized before dependency gathering.");
+        unreachable!("Specializations must be specialized before dependency gathering.");
     }
 }
