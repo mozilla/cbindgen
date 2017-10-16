@@ -90,6 +90,10 @@ impl Bindings {
         }
 
         for item in &self.items {
+            if item.deref().annotations().bool("no-export").unwrap_or(false) {
+                continue;
+            }
+
             out.new_line_if_not_start();
             match item {
                 &ItemContainer::Enum(ref x) => x.write(&self.config, &mut out),
