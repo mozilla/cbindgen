@@ -70,9 +70,12 @@ impl Source for Documentation {
         }
         for line in &self.doc_comment {
             if config.language != Language::C {
-                out.write("// ");
+                out.write("//");
             } else {
-                out.write(" * ");
+                out.write(" *");
+            }
+            if line.len() != 0 {
+                out.write(" ");
             }
             out.write(line);
             out.new_line();
