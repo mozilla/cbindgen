@@ -171,7 +171,7 @@ pub enum Type {
     Ptr(Box<Type>),
     Path(GenericPath),
     Primitive(PrimitiveType),
-    Array(Box<Type>, u64),
+    Array(Box<Type>, String),
     FuncPtr(Box<Type>, Vec<Type>),
 }
 
@@ -228,7 +228,19 @@ impl Type {
                     None => return Err("Cannot have an array of zero sized types.".to_owned()),
                 };
 
-                Type::Array(Box::new(converted), size)
+                Type::Array(Box::new(converted), format!("{}", size))
+            },
+            &syn::Ty::Array(ref ty, syn::ConstExpr::Path(ref path)) => {
+                let converted = Type::load(ty)?;
+
+                let converted = match converted {
+                    Some(converted) => converted,
+                    None => return Err("Cannot have an array of zero sized types.".to_owned()),
+                };
+
+                let path = GenericPath::load(path)?;
+
+                Type::Array(Box::new(converted), path.name)
             },
             &syn::Ty::BareFn(ref function) => {
                 let args = function.inputs.iter()
@@ -247,6 +259,19 @@ impl Type {
         };
 
         return Ok(Some(converted));
+    }
+
+    pub fn is_primitive_or_ptr_primitive(&self) -> bool {
+        match self {
+            &Type::Primitive(..) => true,
+            &Type::ConstPtr(ref x) => {
+                match x.as_ref() {
+                    &Type::Primitive(..) => true,
+                    _ => false,
+                }
+            },
+            _ => false,
+        }
     }
 
     pub fn get_root_path(&self) -> Option<Path> {
@@ -295,8 +320,8 @@ impl Type {
             &Type::Primitive(ref primitive) => {
                 Type::Primitive(primitive.clone())
             }
-            &Type::Array(ref ty, ref size) => {
-                Type::Array(Box::new(ty.specialize(mappings)), *size)
+            &Type::Array(ref ty, ref constant) => {
+                Type::Array(Box::new(ty.specialize(mappings)), constant.clone())
             }
             &Type::FuncPtr(ref ret, ref args) => {
                 Type::FuncPtr(Box::new(ret.specialize(mappings)),
@@ -370,6 +395,9 @@ impl Type {
                 if let Some(items) = library.get_items(&path.name) {
                     for item in items {
                         match item {
+                            ItemContainer::Constant(..) => {
+                                warn!("Cannot instantiate a generic constant.")
+                            },
                             ItemContainer::OpaqueItem(ref x) => {
                                 x.instantiate_monomorph(&path.generics, out);
                             },

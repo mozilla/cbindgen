@@ -7,7 +7,7 @@ use std::mem;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Enum, OpaqueItem, Specialization, Struct, Type, Typedef};
+use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Specialization, Struct, Type, Typedef};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 
@@ -29,6 +29,7 @@ pub trait Item {
 
 #[derive(Debug, Clone)]
 pub enum ItemContainer {
+    Constant(Constant),
     OpaqueItem(OpaqueItem),
     Struct(Struct),
     Enum(Enum),
@@ -39,6 +40,7 @@ pub enum ItemContainer {
 impl ItemContainer {
     pub fn deref(&self) -> &Item {
         match self {
+            &ItemContainer::Constant(ref x) => x,
             &ItemContainer::OpaqueItem(ref x) => x,
             &ItemContainer::Struct(ref x) => x,
             &ItemContainer::Enum(ref x) => x,
@@ -59,7 +61,7 @@ pub struct ItemMap<T: Item> {
     data: BTreeMap<String, ItemValue<T>>,
 }
 
-impl<T: Item> ItemMap<T> {
+impl<T: Item + Clone> ItemMap<T> {
     pub fn new() -> ItemMap<T> {
         ItemMap {
             data: BTreeMap::new(),
@@ -101,6 +103,21 @@ impl<T: Item> ItemMap<T> {
         }
 
         true
+    }
+
+    pub fn to_vec(&self) -> Vec<T> {
+        let mut result = Vec::with_capacity(self.data.len());
+        for container in self.data.values() {
+            match container {
+                &ItemValue::Cfg(ref items) => {
+                    result.extend_from_slice(items)
+                }
+                &ItemValue::Single(ref item) => {
+                    result.push(item.clone());
+                }
+            }
+        }
+        result
     }
 
     pub fn get_items(&self, name: &str) -> Option<Vec<ItemContainer>> {

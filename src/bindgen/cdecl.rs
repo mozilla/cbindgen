@@ -13,7 +13,7 @@ use bindgen::writer::SourceWriter;
 
 enum CDeclarator {
     Ptr(bool),
-    Array(u64),
+    Array(String),
     Func(Vec<(Option<String>, CDecl)>, bool),
 }
 
@@ -92,8 +92,8 @@ impl CDecl {
                 self.declarators.push(CDeclarator::Ptr(is_const));
                 self.build_type(t, false);
             }
-            &Type::Array(ref t, sz) => {
-                self.declarators.push(CDeclarator::Array(sz));
+            &Type::Array(ref t, ref constant) => {
+                self.declarators.push(CDeclarator::Array(constant.clone()));
                 self.build_type(t, false);
             }
             &Type::FuncPtr(ref ret, ref args) => {
@@ -164,11 +164,11 @@ impl CDecl {
                 &CDeclarator::Ptr(..) => {
                     last_was_pointer = true;
                 },
-                &CDeclarator::Array(sz) => {
+                &CDeclarator::Array(ref constant) => {
                     if last_was_pointer {
                         out.write(")");
                     }
-                    out.write(&format!("[{}]", sz));
+                    out.write(&format!("[{}]", constant));
 
                     last_was_pointer = false;
                 },

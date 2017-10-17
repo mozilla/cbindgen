@@ -8,12 +8,13 @@ use std::path;
 use std::fs;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{ItemContainer, Function};
+use bindgen::ir::{Constant, ItemContainer, Function};
 use bindgen::monomorph::TemplateSpecialization;
 use bindgen::writer::{ListType, Source, SourceWriter};
 
 pub struct Bindings {
     config: Config,
+    constants: Vec<Constant>,
     items: Vec<ItemContainer>,
     functions: Vec<Function>,
     template_specializations: Vec<TemplateSpecialization>,
@@ -21,11 +22,13 @@ pub struct Bindings {
 
 impl Bindings {
     pub fn new(config: Config,
+               constants: Vec<Constant>,
                items: Vec<ItemContainer>,
                functions: Vec<Function>,
                template_specializations: Vec<TemplateSpecialization>) -> Bindings {
         Bindings {
             config: config,
+            constants: constants,
             items: items,
             functions: functions,
             template_specializations: template_specializations,
@@ -89,6 +92,12 @@ impl Bindings {
             self.open_namespaces(&mut out);
         }
 
+        for constant in &self.constants {
+            out.new_line_if_not_start();
+            constant.write(&self.config, &mut out);
+            out.new_line();
+        }
+
         for item in &self.items {
             if item.deref().annotations().bool("no-export").unwrap_or(false) {
                 continue;
@@ -96,6 +105,7 @@ impl Bindings {
 
             out.new_line_if_not_start();
             match item {
+                &ItemContainer::Constant(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::Enum(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::Struct(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::OpaqueItem(ref x) => x.write(&self.config, &mut out),

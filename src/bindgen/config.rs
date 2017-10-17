@@ -217,7 +217,7 @@ impl StructConfig {
 }
 
 /// Settings to apply to generated enums.
-#[derive( Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
@@ -247,6 +247,24 @@ impl EnumConfig {
             return x;
         }
         self.add_sentinel
+    }
+}
+
+/// Settings to apply to generated constants.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct ConstantConfig {
+    /// Whether a generated constant can be a static const in C++ mode.
+    pub allow_static_const: bool,
+}
+
+impl Default for ConstantConfig {
+    fn default() -> ConstantConfig {
+        ConstantConfig {
+            allow_static_const: true,
+        }
     }
 }
 
@@ -323,6 +341,8 @@ pub struct Config {
     /// The configuration options for enums
     #[serde(rename = "enum")]
     pub enumeration: EnumConfig,
+    #[serde(rename = "const")]
+    pub constant: ConstantConfig,
     // Preprocessor defines to use when generating #ifdef's for #[cfg]
     pub defines: HashMap<String, String>,
     /// Include doc comments from rust as documentation
@@ -347,6 +367,7 @@ impl Default for Config {
             function: FunctionConfig::default(),
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),
+            constant: ConstantConfig::default(),
             defines: HashMap::new(),
             documentation: true,
         }

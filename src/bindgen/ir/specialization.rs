@@ -65,6 +65,9 @@ impl Specialization {
             }
 
             match items[0] {
+                ItemContainer::Constant(ref aliased) => {
+                    aliased.specialize(library, self)
+                }
                 ItemContainer::OpaqueItem(ref aliased) => {
                     aliased.specialize(library, self)
                 }

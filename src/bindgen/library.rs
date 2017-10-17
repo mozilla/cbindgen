@@ -8,13 +8,14 @@ use std::mem;
 use bindgen::bindings::Bindings;
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{Enum, Function, ItemContainer, ItemMap, Item, OpaqueItem};
-use bindgen::ir::{Path, Specialization, Struct, Typedef};
+use bindgen::ir::{Constant, Enum, Function, ItemContainer, ItemMap, Item};
+use bindgen::ir::{OpaqueItem, Path, Specialization, Struct, Typedef};
 use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
 
 #[derive(Debug, Clone)]
 pub struct Library {
     config: Config,
+    constants: ItemMap<Constant>,
     enums: ItemMap<Enum>,
     structs: ItemMap<Struct>,
     opaque_items: ItemMap<OpaqueItem>,
@@ -26,6 +27,7 @@ pub struct Library {
 
 impl Library {
     pub fn new(config: Config,
+               constants: ItemMap<Constant>,
                enums: ItemMap<Enum>,
                structs: ItemMap<Struct>,
                opaque_items: ItemMap<OpaqueItem>,
@@ -34,6 +36,7 @@ impl Library {
                functions: Vec<Function>) -> Library {
         Library {
             config: config,
+            constants: constants,
             enums: enums,
             structs: structs,
             opaque_items: opaque_items,
@@ -66,10 +69,12 @@ impl Library {
         dependencies.sort();
 
         let items = dependencies.order;
+        let constants = self.constants.to_vec();
         let functions = mem::replace(&mut self.functions, Vec::new());
         let template_specializations = mem::replace(&mut self.template_specializations, Vec::new());
 
         Ok(Bindings::new(self.config.clone(),
+                         constants,
                          items,
                          functions,
                          template_specializations))
@@ -97,6 +102,9 @@ impl Library {
 
     fn insert_item(&mut self, item: ItemContainer) {
         match item {
+            ItemContainer::Constant(x) => {
+                self.constants.try_insert(x);
+            },
             ItemContainer::OpaqueItem(x) => {
                 self.opaque_items.try_insert(x);
             },

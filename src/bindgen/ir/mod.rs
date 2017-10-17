@@ -4,6 +4,7 @@
 
 pub mod annotation;
 pub mod cfg;
+pub mod constant;
 pub mod enumeration;
 pub mod function;
 pub mod item;
@@ -18,6 +19,7 @@ pub mod documentation;
 
 pub use self::annotation::{AnnotationSet, AnnotationValue};
 pub use self::cfg::*;
+pub use self::constant::*;
 pub use self::enumeration::*;
 pub use self::function::*;
 pub use self::item::*;

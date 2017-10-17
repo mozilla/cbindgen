@@ -8,7 +8,7 @@ use syn;
 
 use bindgen::cargo::Cargo;
 use bindgen::config::Config;
-use bindgen::ir::{AnnotationSet, Cfg, Documentation, Enum, Function};
+use bindgen::ir::{AnnotationSet, Cfg, Constant, Documentation, Enum, Function};
 use bindgen::ir::{ItemMap, OpaqueItem, Specialization, Struct, Typedef};
 use bindgen::library::Library;
 use bindgen::rust_lib;
@@ -80,6 +80,7 @@ impl LibraryBuilder {
         result.functions.sort_by(|x, y| x.name.cmp(&y.name));
 
         Ok(Library::new(self.config,
+                        result.constants,
                         result.enums,
                         result.structs,
                         result.opaque_items,
@@ -91,6 +92,7 @@ impl LibraryBuilder {
 
 #[derive(Debug, Clone)]
 struct LibraryParseResult {
+    constants: ItemMap<Constant>,
     enums: ItemMap<Enum>,
     structs: ItemMap<Struct>,
     opaque_items: ItemMap<OpaqueItem>,
@@ -103,6 +105,7 @@ impl LibraryParseResult {
     fn new() -> LibraryParseResult {
         LibraryParseResult {
             enums: ItemMap::new(),
+            constants: ItemMap::new(),
             structs: ItemMap::new(),
             opaque_items: ItemMap::new(),
             typedefs: ItemMap::new(),
@@ -167,6 +170,14 @@ impl LibraryParseResult {
                                      item,
                                      decl,
                                      abi);
+                }
+                syn::ItemKind::Const(ref ty, ref expr) => {
+                    self.load_syn_const(binding_crate_name,
+                                        crate_name,
+                                        mod_cfg,
+                                        item,
+                                        ty,
+                                        expr);
                 }
                 syn::ItemKind::Struct(ref variant, ref generics) => {
                     self.load_syn_struct(crate_name, mod_cfg, item, variant, generics);
@@ -271,6 +282,42 @@ impl LibraryParseResult {
                 warn!("Skip {}::{} - (non `extern \"C\"`).",
                       crate_name,
                       &item.ident);
+            }
+        }
+    }
+
+    /// Loads a `const` declaration
+    fn load_syn_const(&mut self,
+                      binding_crate_name: &str,
+                      crate_name: &str,
+                      mod_cfg: &Option<Cfg>,
+                      item: &syn::Item,
+                      ty: &syn::Ty,
+                      expr: &syn::Expr) {
+        if crate_name != binding_crate_name {
+            info!("Skip {}::{} - (const's outside of the binding crate are not used).",
+                  crate_name,
+                  &item.ident);
+            return;
+        }
+
+        let const_name = item.ident.to_string();
+
+        match Constant::load(const_name.clone(),
+                             ty,
+                             expr,
+                             &item.attrs,
+                             mod_cfg) {
+            Ok(constant) => {
+                info!("Take {}::{}.", crate_name, &item.ident);
+
+                self.constants.try_insert(constant);
+            }
+            Err(msg) => {
+                warn!("Skip {}::{} - ({})",
+                      crate_name,
+                      &item.ident,
+                      msg);
             }
         }
     }
