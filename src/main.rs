@@ -147,7 +147,7 @@ fn main() {
         Err(msg) => {
             error!("{}", msg);
             error!("Couldn't generate bindings for {}.", input.display());
-            return;
+            std::process::exit(1);
         }
     };
 
@@ -157,7 +157,7 @@ fn main() {
         Err(msg) => {
             error!("{}", msg);
             error!("Couldn't generate bindings for {}.", input.display());
-            return;
+            std::process::exit(1);
         },
     };
 
