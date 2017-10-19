@@ -9,7 +9,7 @@ use syn;
 use bindgen::cargo::Cargo;
 use bindgen::config::Config;
 use bindgen::ir::{AnnotationSet, Cfg, Constant, Documentation, Enum, Function};
-use bindgen::ir::{ItemMap, OpaqueItem, Specialization, Struct, Typedef};
+use bindgen::ir::{ItemMap, OpaqueItem, Specialization, Static, Struct, Typedef};
 use bindgen::library::Library;
 use bindgen::rust_lib;
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
@@ -81,6 +81,7 @@ impl LibraryBuilder {
 
         Ok(Library::new(self.config,
                         result.constants,
+                        result.globals,
                         result.enums,
                         result.structs,
                         result.opaque_items,
@@ -93,6 +94,7 @@ impl LibraryBuilder {
 #[derive(Debug, Clone)]
 struct LibraryParseResult {
     constants: ItemMap<Constant>,
+    globals: ItemMap<Static>,
     enums: ItemMap<Enum>,
     structs: ItemMap<Struct>,
     opaque_items: ItemMap<OpaqueItem>,
@@ -106,6 +108,7 @@ impl LibraryParseResult {
         LibraryParseResult {
             enums: ItemMap::new(),
             constants: ItemMap::new(),
+            globals: ItemMap::new(),
             structs: ItemMap::new(),
             opaque_items: ItemMap::new(),
             typedefs: ItemMap::new(),
@@ -178,6 +181,14 @@ impl LibraryParseResult {
                                         item,
                                         ty,
                                         expr);
+                }
+                syn::ItemKind::Static(ref ty, ref mutability, ref _expr) => {
+                    self.load_syn_static(binding_crate_name,
+                                         crate_name,
+                                         mod_cfg,
+                                         item,
+                                         ty,
+                                         mutability);
                 }
                 syn::ItemKind::Struct(ref variant, ref generics) => {
                     self.load_syn_struct(crate_name, mod_cfg, item, variant, generics);
@@ -312,6 +323,42 @@ impl LibraryParseResult {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
                 self.constants.try_insert(constant);
+            }
+            Err(msg) => {
+                warn!("Skip {}::{} - ({})",
+                      crate_name,
+                      &item.ident,
+                      msg);
+            }
+        }
+    }
+
+    /// Loads a `static` declaration
+    fn load_syn_static(&mut self,
+                       binding_crate_name: &str,
+                       crate_name: &str,
+                       mod_cfg: &Option<Cfg>,
+                       item: &syn::Item,
+                       ty: &syn::Ty,
+                       mutability: &syn::Mutability) {
+        if crate_name != binding_crate_name {
+            info!("Skip {}::{} - (static's outside of the binding crate are not used).",
+                  crate_name,
+                  &item.ident);
+            return;
+        }
+
+        let static_name = item.ident.to_string();
+
+        match Static::load(static_name.clone(),
+                           ty,
+                           mutability,
+                           &item.attrs,
+                            mod_cfg) {
+            Ok(constant) => {
+                info!("Take {}::{}.", crate_name, &item.ident);
+
+                self.globals.try_insert(constant);
             }
             Err(msg) => {
                 warn!("Skip {}::{} - ({})",

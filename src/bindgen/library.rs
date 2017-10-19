@@ -9,13 +9,14 @@ use bindgen::bindings::Bindings;
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{Constant, Enum, Function, ItemContainer, ItemMap, Item};
-use bindgen::ir::{OpaqueItem, Path, Specialization, Struct, Typedef};
+use bindgen::ir::{OpaqueItem, Path, Specialization, Static, Struct, Typedef};
 use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
 
 #[derive(Debug, Clone)]
 pub struct Library {
     config: Config,
     constants: ItemMap<Constant>,
+    globals: ItemMap<Static>,
     enums: ItemMap<Enum>,
     structs: ItemMap<Struct>,
     opaque_items: ItemMap<OpaqueItem>,
@@ -28,6 +29,7 @@ pub struct Library {
 impl Library {
     pub fn new(config: Config,
                constants: ItemMap<Constant>,
+               globals: ItemMap<Static>,
                enums: ItemMap<Enum>,
                structs: ItemMap<Struct>,
                opaque_items: ItemMap<OpaqueItem>,
@@ -37,6 +39,7 @@ impl Library {
         Library {
             config: config,
             constants: constants,
+            globals: globals,
             enums: enums,
             structs: structs,
             opaque_items: opaque_items,
@@ -58,6 +61,9 @@ impl Library {
         for function in &self.functions {
             function.add_dependencies(&self, &mut dependencies);
         }
+        self.globals.for_all_items(|global| {
+            global.add_dependencies(&self, &mut dependencies);
+        });
 
         if self.config.structure.generic_template_specialization &&
            self.config.language == Language::Cxx {
@@ -70,11 +76,13 @@ impl Library {
 
         let items = dependencies.order;
         let constants = self.constants.to_vec();
+        let globals = self.globals.to_vec();
         let functions = mem::replace(&mut self.functions, Vec::new());
         let template_specializations = mem::replace(&mut self.template_specializations, Vec::new());
 
         Ok(Bindings::new(self.config.clone(),
                          constants,
+                         globals,
                          items,
                          functions,
                          template_specializations))
@@ -104,6 +112,9 @@ impl Library {
         match item {
             ItemContainer::Constant(x) => {
                 self.constants.try_insert(x);
+            },
+            ItemContainer::Static(x) => {
+                self.globals.try_insert(x);
             },
             ItemContainer::OpaqueItem(x) => {
                 self.opaque_items.try_insert(x);

@@ -7,7 +7,7 @@ use std::mem;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Specialization, Struct, Type, Typedef};
+use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Specialization, Static, Struct, Type, Typedef};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 
@@ -30,6 +30,7 @@ pub trait Item {
 #[derive(Debug, Clone)]
 pub enum ItemContainer {
     Constant(Constant),
+    Static(Static),
     OpaqueItem(OpaqueItem),
     Struct(Struct),
     Enum(Enum),
@@ -41,6 +42,7 @@ impl ItemContainer {
     pub fn deref(&self) -> &Item {
         match self {
             &ItemContainer::Constant(ref x) => x,
+            &ItemContainer::Static(ref x) => x,
             &ItemContainer::OpaqueItem(ref x) => x,
             &ItemContainer::Struct(ref x) => x,
             &ItemContainer::Enum(ref x) => x,

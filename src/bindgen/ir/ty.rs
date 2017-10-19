@@ -398,6 +398,9 @@ impl Type {
                             ItemContainer::Constant(..) => {
                                 warn!("Cannot instantiate a generic constant.")
                             },
+                            ItemContainer::Static(..) => {
+                                warn!("Cannot instantiate a generic static.")
+                            },
                             ItemContainer::OpaqueItem(ref x) => {
                                 x.instantiate_monomorph(&path.generics, out);
                             },
