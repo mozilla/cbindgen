@@ -16,6 +16,7 @@ pub mod specialization;
 pub mod structure;
 pub mod ty;
 pub mod typedef;
+pub mod union;
 pub mod documentation;
 
 pub use self::annotation::{AnnotationSet, AnnotationValue};
@@ -32,4 +33,5 @@ pub use self::specialization::*;
 pub use self::structure::*;
 pub use self::ty::*;
 pub use self::typedef::*;
+pub use self::union::*;
 pub use self::documentation::Documentation;

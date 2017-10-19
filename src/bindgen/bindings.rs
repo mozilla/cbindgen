@@ -112,6 +112,7 @@ impl Bindings {
                 &ItemContainer::Static(..) => unreachable!(),
                 &ItemContainer::Enum(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::Struct(ref x) => x.write(&self.config, &mut out),
+                &ItemContainer::Union(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::OpaqueItem(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::Typedef(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::Specialization(_) => {

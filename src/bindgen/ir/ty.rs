@@ -404,6 +404,9 @@ impl Type {
                             ItemContainer::OpaqueItem(ref x) => {
                                 x.instantiate_monomorph(&path.generics, out);
                             },
+                            ItemContainer::Union(ref x) => {
+                                x.instantiate_monomorph(&path.generics, library, out);
+                            },
                             ItemContainer::Struct(ref x) => {
                                 x.instantiate_monomorph(&path.generics, library, out);
                             },

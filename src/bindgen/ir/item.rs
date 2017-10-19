@@ -7,7 +7,7 @@ use std::mem;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Specialization, Static, Struct, Type, Typedef};
+use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Specialization, Static, Struct, Type, Typedef, Union};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 
@@ -33,6 +33,7 @@ pub enum ItemContainer {
     Static(Static),
     OpaqueItem(OpaqueItem),
     Struct(Struct),
+    Union(Union),
     Enum(Enum),
     Typedef(Typedef),
     Specialization(Specialization),
@@ -45,6 +46,7 @@ impl ItemContainer {
             &ItemContainer::Static(ref x) => x,
             &ItemContainer::OpaqueItem(ref x) => x,
             &ItemContainer::Struct(ref x) => x,
+            &ItemContainer::Union(ref x) => x,
             &ItemContainer::Enum(ref x) => x,
             &ItemContainer::Typedef(ref x) => x,
             &ItemContainer::Specialization(ref x) => x,

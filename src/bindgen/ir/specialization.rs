@@ -77,6 +77,9 @@ impl Specialization {
                 ItemContainer::Struct(ref aliased) => {
                     aliased.specialize(library, self)
                 }
+                ItemContainer::Union(ref aliased) => {
+                    aliased.specialize(library, self)
+                }
                 ItemContainer::Enum(ref aliased) => {
                     aliased.specialize(library, self)
                 }

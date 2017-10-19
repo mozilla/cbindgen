@@ -9,7 +9,7 @@ use bindgen::bindings::Bindings;
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{Constant, Enum, Function, ItemContainer, ItemMap, Item};
-use bindgen::ir::{OpaqueItem, Path, Specialization, Static, Struct, Typedef};
+use bindgen::ir::{OpaqueItem, Path, Specialization, Static, Struct, Typedef, Union};
 use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
 
 #[derive(Debug, Clone)]
@@ -19,6 +19,7 @@ pub struct Library {
     globals: ItemMap<Static>,
     enums: ItemMap<Enum>,
     structs: ItemMap<Struct>,
+    unions: ItemMap<Union>,
     opaque_items: ItemMap<OpaqueItem>,
     typedefs: ItemMap<Typedef>,
     specializations: ItemMap<Specialization>,
@@ -32,6 +33,7 @@ impl Library {
                globals: ItemMap<Static>,
                enums: ItemMap<Enum>,
                structs: ItemMap<Struct>,
+               unions: ItemMap<Union>,
                opaque_items: ItemMap<OpaqueItem>,
                typedefs: ItemMap<Typedef>,
                specializations: ItemMap<Specialization>,
@@ -42,6 +44,7 @@ impl Library {
             globals: globals,
             enums: enums,
             structs: structs,
+            unions: unions,
             opaque_items: opaque_items,
             typedefs: typedefs,
             specializations: specializations,
@@ -95,6 +98,9 @@ impl Library {
         if let Some(x) = self.structs.get_items(p) {
             return Some(x);
         }
+        if let Some(x) = self.unions.get_items(p) {
+            return Some(x);
+        }
         if let Some(x) = self.opaque_items.get_items(p) {
             return Some(x);
         }
@@ -121,6 +127,9 @@ impl Library {
             },
             ItemContainer::Struct(x) => {
                 self.structs.try_insert(x);
+            },
+            ItemContainer::Union(x) => {
+                self.unions.try_insert(x);
             },
             ItemContainer::Enum(x) => {
                 self.enums.try_insert(x);
@@ -158,6 +167,18 @@ impl Library {
                 continue;
             }
             self.structs.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
+                    *x.annotations_mut() = annotations.clone();
+                    transferred = true;
+                } else {
+                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
+                          alias_path);
+                }
+            });
+            if transferred {
+                continue;
+            }
+            self.unions.for_items_mut(&alias_path, |x| {
                 if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
@@ -211,6 +232,7 @@ impl Library {
     fn rename_items(&mut self) {
         let config = &self.config;
         self.structs.for_all_items_mut(|x| x.rename_for_config(config));
+        self.unions.for_all_items_mut(|x| x.rename_for_config(config));
         self.enums.for_all_items_mut(|x| x.rename_for_config(config));
 
         for item in &mut self.functions {
@@ -248,6 +270,9 @@ impl Library {
         self.structs.for_all_items(|x| {
             x.add_monomorphs(self, &mut monomorphs);
         });
+        self.unions.for_all_items(|x| {
+            x.add_monomorphs(self, &mut monomorphs);
+        });
         self.typedefs.for_all_items(|x| {
             x.add_monomorphs(self, &mut monomorphs);
         });
@@ -259,6 +284,9 @@ impl Library {
         for monomorph in monomorphs.drain_structs() {
             self.structs.try_insert(monomorph);
         }
+        for monomorph in monomorphs.drain_unions() {
+            self.unions.try_insert(monomorph);
+        }
         for monomorph in monomorphs.drain_opaques() {
             self.opaque_items.try_insert(monomorph);
         }
@@ -266,8 +294,10 @@ impl Library {
         // Remove structs and opaque items that are generic
         self.opaque_items.filter(|x| x.generic_params.len() > 0);
         self.structs.filter(|x| x.generic_params.len() > 0);
+        self.unions.filter(|x| x.generic_params.len() > 0);
 
         // Mangle the paths that remain
+        self.unions.for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         self.structs.for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         self.typedefs.for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         for x in &mut self.functions {

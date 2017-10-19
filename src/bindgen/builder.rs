@@ -9,7 +9,7 @@ use syn;
 use bindgen::cargo::Cargo;
 use bindgen::config::Config;
 use bindgen::ir::{AnnotationSet, Cfg, Constant, Documentation, Enum, Function};
-use bindgen::ir::{ItemMap, OpaqueItem, Specialization, Static, Struct, Typedef};
+use bindgen::ir::{ItemMap, OpaqueItem, Specialization, Static, Struct, Typedef, Union};
 use bindgen::library::Library;
 use bindgen::rust_lib;
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
@@ -84,6 +84,7 @@ impl LibraryBuilder {
                         result.globals,
                         result.enums,
                         result.structs,
+                        result.unions,
                         result.opaque_items,
                         result.typedefs,
                         result.specializations,
@@ -97,6 +98,7 @@ struct LibraryParseResult {
     globals: ItemMap<Static>,
     enums: ItemMap<Enum>,
     structs: ItemMap<Struct>,
+    unions: ItemMap<Union>,
     opaque_items: ItemMap<OpaqueItem>,
     typedefs: ItemMap<Typedef>,
     specializations: ItemMap<Specialization>,
@@ -110,6 +112,7 @@ impl LibraryParseResult {
             constants: ItemMap::new(),
             globals: ItemMap::new(),
             structs: ItemMap::new(),
+            unions: ItemMap::new(),
             opaque_items: ItemMap::new(),
             typedefs: ItemMap::new(),
             specializations: ItemMap::new(),
@@ -192,6 +195,9 @@ impl LibraryParseResult {
                 }
                 syn::ItemKind::Struct(ref variant, ref generics) => {
                     self.load_syn_struct(crate_name, mod_cfg, item, variant, generics);
+                }
+                syn::ItemKind::Union(ref variant, ref generics) => {
+                    self.load_syn_union(crate_name, mod_cfg, item, variant, generics);
                 }
                 syn::ItemKind::Enum(ref variants, ref generics) => {
                     self.load_syn_enum(crate_name, mod_cfg, item, variants, generics);
@@ -394,6 +400,38 @@ impl LibraryParseResult {
                       &item.ident,
                       msg);
                 self.opaque_items.try_insert(OpaqueItem::new(struct_name,
+                                                             generics,
+                                                             &item.attrs,
+                                                             mod_cfg));
+            }
+        }
+    }
+
+    /// Loads a `union` declaration
+    fn load_syn_union(&mut self,
+                      crate_name: &str,
+                      mod_cfg: &Option<Cfg>,
+                      item: &syn::Item,
+                      variant: &syn::VariantData,
+                      generics: &syn::Generics) {
+        let union_name = item.ident.to_string();
+
+        match Union::load(union_name.clone(),
+                          variant,
+                          generics,
+                          &item.attrs,
+                          mod_cfg) {
+            Ok(st) => {
+                info!("Take {}::{}.", crate_name, &item.ident);
+
+                self.unions.try_insert(st);
+            }
+            Err(msg) => {
+                info!("Take {}::{} - opaque ({}).",
+                      crate_name,
+                      &item.ident,
+                      msg);
+                self.opaque_items.try_insert(OpaqueItem::new(union_name,
                                                              generics,
                                                              &item.attrs,
                                                              mod_cfg));

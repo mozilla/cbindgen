@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::mem;
 
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{GenericPath, OpaqueItem, Path, Struct, Type};
+use bindgen::ir::{GenericPath, OpaqueItem, Path, Struct, Type, Union};
 use bindgen::library::Library;
 
 #[derive(Clone, Debug)]
@@ -37,6 +37,7 @@ pub struct Monomorphs {
     replacements: HashMap<GenericPath, Path>,
     opaques: Vec<OpaqueItem>,
     structs: Vec<Struct>,
+    unions: Vec<Union>,
     templates: HashMap<Path, TemplateSpecialization>,
 }
 
@@ -46,6 +47,7 @@ impl Monomorphs {
             replacements: HashMap::new(),
             opaques: Vec::new(),
             structs: Vec::new(),
+            unions: Vec::new(),
             templates: HashMap::new(),
         }
     }
@@ -55,9 +57,9 @@ impl Monomorphs {
     }
 
     pub fn insert_struct(&mut self,
-                                             generic: &Struct,
-                                             monomorph: Struct,
-                                             parameters: Vec<Type>) {
+                         generic: &Struct,
+                         monomorph: Struct,
+                         parameters: Vec<Type>) {
         // Add extra information for struct instantiations so we can use template
         // specialization to make using the type more ergonomic.
         self.templates.entry(generic.name.clone())
@@ -71,6 +73,19 @@ impl Monomorphs {
 
         self.replacements.insert(replacement_path, monomorph.name.clone());
         self.structs.push(monomorph);
+    }
+
+    pub fn insert_union(&mut self,
+                        generic: &Union,
+                        monomorph: Union,
+                        parameters: Vec<Type>) {
+        let replacement_path = GenericPath::new(generic.name.clone(), parameters);
+
+        debug_assert!(generic.generic_params.len() > 0);
+        debug_assert!(!self.contains(&replacement_path));
+
+        self.replacements.insert(replacement_path, monomorph.name.clone());
+        self.unions.push(monomorph);
     }
 
     pub fn insert_opaque(&mut self,
@@ -96,6 +111,10 @@ impl Monomorphs {
 
     pub fn drain_structs(&mut self) -> Vec<Struct> {
         mem::replace(&mut self.structs, Vec::new())
+    }
+
+    pub fn drain_unions(&mut self) -> Vec<Union> {
+        mem::replace(&mut self.unions, Vec::new())
     }
 
     pub fn drain_template_specializations(&mut self) -> Vec<TemplateSpecialization> {
