@@ -14,7 +14,8 @@ This project can be used to generate C bindings for Rust code. It is currently b
   * Builds bindings for a crate, its mods, its dependent crates, and their mods
   * Only the necessary types for exposed functions are given bindings
   * Can specify annotations for controlling some aspects of binding
-  * Support for generic structs
+  * Support for generic structs and unions
+  * Support for exporting constants and statics
   * Customizable formatting, can be used in C or C++ projects
   * Support for generating `#ifdef`'s for `#[cfg]` attributes
 
@@ -138,7 +139,7 @@ There may be other differences, but those are the ones that I know of. Please co
 
 ## How it works
 
-1. All the structs, enums, type aliases, and functions that are representable in C are gathered
+1. All the structs, unions, enums, type aliases, constants, statics, and functions that are representable in C are gathered
 2. A dependency graph is built using the extern "C" functions as roots
     * This removes unneeded types from the bindings and sorts the structs that depend on each other
 3. Some code generation is done to specialize generics that are specified as type aliases
