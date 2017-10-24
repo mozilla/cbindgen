@@ -96,13 +96,16 @@ impl Cargo {
         }
         let lock = self.lock.as_ref().unwrap();
 
-        if lock.root.name == package.name &&
-           lock.root.version == package.version {
+        // the name in Cargo.lock could use '-' instead of '_', so we need to
+        // look for that too.
+        let replaced_name = dependency_name.replace("_", "-");
+
+        if lock.root.name == package.name && lock.root.version == package.version {
             if let Some(ref deps) = lock.root.dependencies {
                 for dep in deps {
                     let (name, version) = parse_dep_string(dep);
 
-                    if name == dependency_name {
+                    if name == dependency_name || name == &replaced_name {
                         return Some(PackageRef {
                             name: name.to_owned(),
                             version: version.to_owned(),
@@ -115,13 +118,12 @@ impl Cargo {
 
         if let &Some(ref lock_packages) = &lock.package {
             for lock_package in lock_packages {
-                if lock_package.name == package.name &&
-                   lock_package.version == package.version {
+                if lock_package.name == package.name && lock_package.version == package.version {
                     if let Some(ref deps) = lock_package.dependencies {
                         for dep in deps {
                             let (name, version) = parse_dep_string(dep);
 
-                            if name == dependency_name {
+                            if name == dependency_name || name == &replaced_name {
                                 return Some(PackageRef {
                                     name: name.to_owned(),
                                     version: version.to_owned(),
