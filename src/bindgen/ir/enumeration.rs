@@ -162,7 +162,11 @@ impl Source for Enum {
         };
 
         if config.language == Language::C {
-            out.write(&format!("enum {}", self.name));
+            if size.is_none() {
+                out.write("typedef enum");
+            } else {
+                out.write(&format!("enum {}", self.name));
+            }
         } else {
             if let Some(prim) = size {
                 out.write(&format!("enum class {} : {}", self.name, prim));
@@ -183,7 +187,13 @@ impl Source for Enum {
             out.new_line();
             out.write("Sentinel /* this must be last for serialization purposes. */");
         }
-        out.close_brace(true);
+
+        if config.language == Language::C && size.is_none() {
+            out.close_brace(false);
+            out.write(&format!(" {};", self.name));
+        } else {
+            out.close_brace(true);
+        }
 
         if config.language == Language::C {
             if let Some(prim) = size {
