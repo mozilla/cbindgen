@@ -291,8 +291,12 @@ fn process_mod<F>(pkg: &PackageRef,
                     context.cfg_stack.pop();
                 }
             }
-            syn::ItemKind::ExternCrate(_) => {
-                let dep_pkg_name = item.ident.to_string();
+            syn::ItemKind::ExternCrate(ref cr) => {
+                let dep_pkg_name = if let Some(ref name) = *cr {
+                    name.to_string()
+                } else {
+                    item.ident.to_string()
+                };
 
                 let cfg = Cfg::load(&item.attrs);
                 if let &Some(ref cfg) = &cfg {
