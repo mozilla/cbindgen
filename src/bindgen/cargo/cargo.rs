@@ -100,20 +100,22 @@ impl Cargo {
         // look for that too.
         let replaced_name = dependency_name.replace("_", "-");
 
-        if lock.root.name == package.name && lock.root.version == package.version {
-            if let Some(ref deps) = lock.root.dependencies {
-                for dep in deps {
-                    let (name, version) = parse_dep_string(dep);
+        if let &Some(ref root) = &lock.root {
+            if root.name == package.name && root.version == package.version {
+                if let Some(ref deps) = root.dependencies {
+                    for dep in deps {
+                        let (name, version) = parse_dep_string(dep);
 
-                    if name == dependency_name || name == &replaced_name {
-                        return Some(PackageRef {
-                            name: name.to_owned(),
-                            version: version.to_owned(),
-                        });
+                        if name == dependency_name || name == &replaced_name {
+                            return Some(PackageRef {
+                                name: name.to_owned(),
+                                version: version.to_owned(),
+                            });
+                        }
                     }
                 }
+                return None;
             }
-            return None;
         }
 
         if let &Some(ref lock_packages) = &lock.package {
