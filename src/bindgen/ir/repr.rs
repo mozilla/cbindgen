@@ -11,21 +11,27 @@ pub enum Repr {
     U8,
     U16,
     U32,
+    USize,
     I8,
     I16,
     I32,
+    ISize,
 }
 
 impl Repr {
     pub fn load(attrs: &Vec<syn::Attribute>) -> Repr {
         if Repr::has_attr(Repr::repr_c(), attrs) {
             Repr::C
+        } else if Repr::has_attr(Repr::repr_usize(), attrs) {
+            Repr::USize
         } else if Repr::has_attr(Repr::repr_u32(), attrs) {
             Repr::U32
         } else if Repr::has_attr(Repr::repr_u16(), attrs) {
             Repr::U16
         } else if Repr::has_attr(Repr::repr_u8(), attrs) {
             Repr::U8
+        } else if Repr::has_attr(Repr::repr_isize(), attrs) {
+            Repr::ISize
         } else if Repr::has_attr(Repr::repr_i32(), attrs) {
             Repr::I32
         } else if Repr::has_attr(Repr::repr_i16(), attrs) {
@@ -46,6 +52,11 @@ impl Repr {
                             vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("C")))])
     }
 
+    fn repr_usize() -> syn::MetaItem {
+        syn::MetaItem::List(syn::Ident::new("repr"),
+                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("usize")))])
+    }
+
     fn repr_u32() -> syn::MetaItem {
         syn::MetaItem::List(syn::Ident::new("repr"),
                             vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u32")))])
@@ -59,6 +70,11 @@ impl Repr {
     fn repr_u8() -> syn::MetaItem {
         syn::MetaItem::List(syn::Ident::new("repr"),
                             vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u8")))])
+    }
+
+    fn repr_isize() -> syn::MetaItem {
+        syn::MetaItem::List(syn::Ident::new("repr"),
+                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("isize")))])
     }
 
     fn repr_i32() -> syn::MetaItem {
