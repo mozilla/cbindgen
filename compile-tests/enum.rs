@@ -27,9 +27,27 @@ enum C {
     c4 = 5,
 }
 
+#[repr(usize)]
+enum D {
+    d1 = 0,
+    d2 = 2,
+    d3,
+    d4 = 5,
+}
+
+#[repr(isize)]
+enum E {
+    e1 = 0,
+    e2 = 2,
+    e3,
+    e4 = 5,
+}
+
 #[no_mangle]
-extern "C" fn root(x: *mut Opaque,
-                   y: A,
-                   z: B,
-                   w: C)
+extern "C" fn root(o: *mut Opaque,
+                   a: A,
+                   b: B,
+                   c: C,
+                   d: D,
+                   e: E)
 { }
