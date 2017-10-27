@@ -32,9 +32,11 @@ impl Enum {
         let repr = Repr::load(attrs);
 
         if repr != Repr::C &&
+           repr != Repr::USize &&
            repr != Repr::U32 &&
            repr != Repr::U16 &&
            repr != Repr::U8 &&
+           repr != Repr::ISize &&
            repr != Repr::I32 &&
            repr != Repr::I16 &&
            repr != Repr::I8 {
@@ -152,9 +154,11 @@ impl Source for Enum {
 
         let size = match self.repr {
             Repr::C => None,
+            Repr::USize => Some("uintptr_t"),
             Repr::U32 => Some("uint32_t"),
             Repr::U16 => Some("uint16_t"),
             Repr::U8 => Some("uint8_t"),
+            Repr::ISize => Some("intptr_t"),
             Repr::I32 => Some("int32_t"),
             Repr::I16 => Some("int16_t"),
             Repr::I8 => Some("int8_t"),
