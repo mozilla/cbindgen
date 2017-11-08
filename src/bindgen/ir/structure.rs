@@ -75,6 +75,12 @@ impl Struct {
         })
     }
 
+    pub fn simplify_option_to_ptr(&mut self) {
+        for &mut (_, ref mut ty, _) in &mut self.fields {
+            ty.simplify_option_to_ptr();
+        }
+    }
+
     pub fn is_generic(&self) -> bool {
         self.generic_params.len() > 0
     }

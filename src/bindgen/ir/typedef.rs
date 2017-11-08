@@ -42,6 +42,10 @@ impl Typedef {
         }
     }
 
+    pub fn simplify_option_to_ptr(&mut self) {
+        self.aliased.simplify_option_to_ptr();
+    }
+
     pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {
         if self.annotations.is_empty() {
             return;

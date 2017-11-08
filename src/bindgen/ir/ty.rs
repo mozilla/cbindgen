@@ -274,6 +274,31 @@ impl Type {
         }
     }
 
+    pub fn is_repr_ptr(&self) -> bool {
+        match self {
+            &Type::Ptr(..) => true,
+            &Type::ConstPtr(..) => true,
+            &Type::FuncPtr(..) => true,
+            _ => false,
+        }
+    }
+
+    pub fn simplify_option_to_ptr(&mut self) {
+        let mut simplified = None;
+
+        if let &mut Type::Path(ref mut path) = self {
+            if path.name == "Option" &&
+               path.generics.len() == 1 &&
+               path.generics[0].is_repr_ptr() {
+                simplified = Some(path.generics.pop().unwrap());
+            }
+        }
+
+        if let Some(ty) = simplified {
+            *self = ty;
+        }
+    }
+
     pub fn get_root_path(&self) -> Option<Path> {
         let mut current = self;
         loop {

@@ -49,6 +49,13 @@ impl Function {
         })
     }
 
+    pub fn simplify_option_to_ptr(&mut self) {
+        self.ret.simplify_option_to_ptr();
+        for &mut (_, ref mut ty) in &mut self.args {
+            ty.simplify_option_to_ptr();
+        }
+    }
+
     pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ret.add_dependencies(library, out);
         for &(_, ref ty) in &self.args {
