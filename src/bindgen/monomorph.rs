@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::mem;
 
 use bindgen::dependencies::Dependencies;
@@ -38,7 +39,7 @@ pub struct Monomorphs {
     opaques: Vec<OpaqueItem>,
     structs: Vec<Struct>,
     unions: Vec<Union>,
-    templates: HashMap<Path, TemplateSpecialization>,
+    templates: BTreeMap<Path, TemplateSpecialization>,
 }
 
 impl Monomorphs {
@@ -48,7 +49,7 @@ impl Monomorphs {
             opaques: Vec::new(),
             structs: Vec::new(),
             unions: Vec::new(),
-            templates: HashMap::new(),
+            templates: BTreeMap::new(),
         }
     }
 
@@ -118,18 +119,18 @@ impl Monomorphs {
     }
 
     pub fn drain_template_specializations(&mut self) -> Vec<TemplateSpecialization> {
-        let mut not_mangled = mem::replace(&mut self.templates, HashMap::new());
+        let mut not_mangled = mem::replace(&mut self.templates, BTreeMap::new());
         let mut mangled = Vec::new();
 
         // The generic type arguments in `templates` need to be mangled
-        for (_, mut template) in not_mangled.drain() {
+        for (_, template) in &mut not_mangled {
             for &mut (_, ref mut generic_values) in &mut template.monomorphs {
                 for generic_value in generic_values {
                     generic_value.mangle_paths(&self);
                 }
             }
 
-            mangled.push(template);
+            mangled.push(template.clone());
         }
 
         mangled
