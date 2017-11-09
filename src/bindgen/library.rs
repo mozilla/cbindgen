@@ -54,6 +54,8 @@ impl Library {
     }
 
     pub fn generate(mut self) -> Result<Bindings, String> {
+        self.functions.sort_by(|x, y| x.name.cmp(&y.name));
+
         self.transfer_annotations();
         self.rename_items();
         self.specialize_items();
