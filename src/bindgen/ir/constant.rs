@@ -19,7 +19,7 @@ impl LiteralExpr {
     pub fn load(expr: &syn::Expr) -> Result<LiteralExpr, String> {
         match &expr.node {
             &syn::ExprKind::Lit(syn::Lit::Str(ref text, ..)) => {
-                Ok(LiteralExpr(format!("\"{}\"", text)))
+                Ok(LiteralExpr(format!("u8\"{}\"", text)))
             }
             &syn::ExprKind::Lit(syn::Lit::Byte(value)) => {
                 Ok(LiteralExpr(format!("{}", value)))
