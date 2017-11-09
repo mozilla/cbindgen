@@ -7,19 +7,21 @@ use std::path;
 use bindgen::cargo::Cargo;
 use bindgen::config::Config;
 use bindgen::library::Library;
+use bindgen::bindings::Bindings;
 use bindgen::parser::{self, Parse};
 
+/// A builder for generating a bindings header.
 #[derive(Debug, Clone)]
-pub struct LibraryBuilder {
+pub struct Builder {
     config: Config,
     srcs: Vec<path::PathBuf>,
     lib: Option<Cargo>,
     std_types: bool,
 }
 
-impl LibraryBuilder {
-    pub fn new() -> LibraryBuilder {
-        LibraryBuilder {
+impl Builder {
+    pub fn new() -> Builder {
+        Builder {
             config: Config::default(),
             srcs: Vec::new(),
             lib: None,
@@ -27,28 +29,28 @@ impl LibraryBuilder {
         }
     }
 
-    pub fn with_config(mut self, config: Config) -> LibraryBuilder {
+    pub fn with_config(mut self, config: Config) -> Builder {
         self.config = config;
         self
     }
 
-    pub fn with_std_types(mut self) -> LibraryBuilder {
+    pub fn with_std_types(mut self) -> Builder {
         self.std_types = true;
         self
     }
 
-    pub fn with_src(mut self, src: &path::Path) -> LibraryBuilder {
+    pub fn with_src(mut self, src: &path::Path) -> Builder {
         self.srcs.push(src.to_owned());
         self
     }
 
-    pub fn with_crate(mut self, lib: Cargo) -> LibraryBuilder {
+    pub fn with_crate(mut self, lib: Cargo) -> Builder {
         debug_assert!(self.lib.is_none());
         self.lib = Some(lib);
         self
     }
 
-    pub fn build(self) -> Result<Library, String> {
+    pub fn generate(self) -> Result<Bindings, String> {
         let mut result = Parse::new();
 
         if self.std_types {
@@ -67,17 +69,15 @@ impl LibraryBuilder {
                                                   &self.config.parse.expand)?);
         }
 
-        result.functions.sort_by(|x, y| x.name.cmp(&y.name));
-
-        Ok(Library::new(self.config,
-                        result.constants,
-                        result.globals,
-                        result.enums,
-                        result.structs,
-                        result.unions,
-                        result.opaque_items,
-                        result.typedefs,
-                        result.specializations,
-                        result.functions))
+        Library::new(self.config,
+                     result.constants,
+                     result.globals,
+                     result.enums,
+                     result.structs,
+                     result.unions,
+                     result.opaque_items,
+                     result.typedefs,
+                     result.specializations,
+                     result.functions).generate()
     }
 }

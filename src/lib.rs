@@ -32,8 +32,8 @@ pub fn generate_with_config<P: AsRef<Path>>(crate_dir: P, config: Config) -> Res
                             None,
                             config.parse.parse_deps)?;
 
-    LibraryBuilder::new().with_config(config)
-                         .with_std_types()
-                         .with_crate(cargo)
-                         .build()?.generate()
+    Builder::new().with_config(config)
+                  .with_std_types()
+                  .with_crate(cargo)
+                  .generate()
 }

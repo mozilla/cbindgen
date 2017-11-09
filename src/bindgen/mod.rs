@@ -52,5 +52,4 @@ mod writer;
 pub use self::cargo::*;
 pub use self::config::*;
 pub use self::bindings::Bindings;
-pub use self::builder::LibraryBuilder;
-pub use self::library::Library;
+pub use self::builder::Builder;

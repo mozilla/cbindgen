@@ -12,7 +12,7 @@ use std::str::FromStr;
 
 use toml;
 
-pub use bindgen::ir::annotation::AnnotationSet;
+use bindgen::ir::annotation::AnnotationSet;
 pub use bindgen::rename::RenameRule;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -123,14 +123,14 @@ impl Default for FunctionConfig {
 }
 
 impl FunctionConfig {
-    pub fn prefix(&self, annotations: &AnnotationSet) -> Option<String> {
+    pub(crate) fn prefix(&self, annotations: &AnnotationSet) -> Option<String> {
         if let Some(x) = annotations.atom("prefix") {
             return x;
         }
         self.prefix.clone()
     }
 
-    pub fn postfix(&self, annotations: &AnnotationSet) -> Option<String> {
+    pub(crate) fn postfix(&self, annotations: &AnnotationSet) -> Option<String> {
         if let Some(x) = annotations.atom("postfix") {
             return x;
         }
@@ -178,37 +178,37 @@ impl Default for StructConfig {
 }
 
 impl StructConfig {
-    pub fn derive_eq(&self, annotations: &AnnotationSet) -> bool {
+    pub(crate) fn derive_eq(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("derive-eq") {
             return x;
         }
         self.derive_eq
     }
-    pub fn derive_neq(&self, annotations: &AnnotationSet) -> bool {
+    pub(crate) fn derive_neq(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("derive-neq") {
             return x;
         }
         self.derive_neq
     }
-    pub fn derive_lt(&self, annotations: &AnnotationSet) -> bool {
+    pub(crate) fn derive_lt(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("derive-lt") {
             return x;
         }
         self.derive_lt
     }
-    pub fn derive_lte(&self, annotations: &AnnotationSet) -> bool {
+    pub(crate) fn derive_lte(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("derive-lte") {
             return x;
         }
         self.derive_lte
     }
-    pub fn derive_gt(&self, annotations: &AnnotationSet) -> bool {
+    pub(crate) fn derive_gt(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("derive-gt") {
             return x;
         }
         self.derive_gt
     }
-    pub fn derive_gte(&self, annotations: &AnnotationSet) -> bool {
+    pub(crate) fn derive_gte(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("derive-gte") {
             return x;
         }
@@ -242,7 +242,7 @@ impl Default for EnumConfig {
 }
 
 impl EnumConfig {
-    pub fn add_sentinel(&self, annotations: &AnnotationSet) -> bool {
+    pub(crate) fn add_sentinel(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("add-sentinel") {
             return x;
         }
@@ -341,9 +341,10 @@ pub struct Config {
     /// The configuration options for enums
     #[serde(rename = "enum")]
     pub enumeration: EnumConfig,
+    /// The configuration options for constants
     #[serde(rename = "const")]
     pub constant: ConstantConfig,
-    // Preprocessor defines to use when generating #ifdef's for #[cfg]
+    /// Preprocessor defines to use when generating #ifdef's for #[cfg]
     pub defines: HashMap<String, String>,
     /// Include doc comments from rust as documentation
     pub documentation: bool,
