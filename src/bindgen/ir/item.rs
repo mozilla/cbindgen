@@ -109,6 +109,12 @@ impl<T: Item + Clone> ItemMap<T> {
         true
     }
 
+    pub fn extend_with(&mut self, other: &ItemMap<T>) {
+        other.for_all_items(|x| {
+            self.try_insert(x.clone());
+        });
+    }
+
     pub fn to_vec(&self) -> Vec<T> {
         let mut result = Vec::with_capacity(self.data.len());
         for container in self.data.values() {

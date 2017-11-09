@@ -44,8 +44,8 @@ mod ir;
 mod library;
 mod mangle;
 mod monomorph;
+mod parser;
 mod rename;
-mod rust_lib;
 mod utilities;
 mod writer;
 
