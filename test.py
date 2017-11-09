@@ -4,6 +4,7 @@ import os
 import glob
 import subprocess
 import sys
+import filecmp
 
 def build_cbindgen():
     try:
@@ -43,25 +44,44 @@ def gxx(src):
     subprocess.check_output([gxx_bin, "-D", "DEFINED", "-std=c++11", "-c", src, "-o", "tests/expectations/tmp.o"])
     os.remove("tests/expectations/tmp.o")
 
-def run_compile_test(rust_src, c):
+def run_compile_test(rust_src, should_verify, c):
+    rust_src_name = os.path.basename(rust_src)
+
     if c:
-        out = os.path.join('tests/expectations/', os.path.basename(rust_src).replace(".rs", ".c"))
+        out = os.path.join('tests/expectations/', rust_src_name.replace(".rs", ".c"))
+        verify = 'tests/expectations/__verify__.c'
     else:
-        out = os.path.join('tests/expectations/', os.path.basename(rust_src).replace(".rs", ".cpp"))
+        out = os.path.join('tests/expectations/', rust_src_name.replace(".rs", ".cpp"))
+        verify = 'tests/expectations/__verify__.cpp'
 
     config = rust_src.replace(".rs", ".toml")
     if not os.path.exists(config):
         config = None
 
     try:
-        cbindgen(rust_src, out, c, config)
+        if should_verify:
+            cbindgen(rust_src, verify, c, config)
 
-        if c:
-            gcc(out)
+            if c:
+                gcc(verify)
+            else:
+                gxx(verify)
+
+            if not filecmp.cmp(out, verify):
+                os.remove(verify)
+                return False
+            os.remove(verify)
         else:
-            gxx(out)
+            cbindgen(rust_src, out, c, config)
+
+            if c:
+                gcc(out)
+            else:
+                gxx(out)
 
     except subprocess.CalledProcessError:
+        if os.exists(verify):
+            os.remove(verify)
         return False
 
     return True
@@ -71,6 +91,13 @@ if not build_cbindgen():
 
 args = sys.argv[1:]
 files = [x for x in args if not x.startswith("-")]
+flags = [x for x in args if x.startswith("-")]
+
+should_verify = False
+
+for flag in flags:
+    if flag == "-v":
+        should_verify = True
 
 tests = []
 if len(files) == 0:
@@ -84,7 +111,7 @@ num_fail = 0
 # C
 
 for test in tests:
-    if run_compile_test(test, True):
+    if run_compile_test(test, should_verify, True):
         num_pass += 1
         print("Pass - %s" % test)
     else:
@@ -94,7 +121,7 @@ for test in tests:
 # C++
 
 for test in tests:
-    if run_compile_test(test, False):
+    if run_compile_test(test, should_verify, False):
         num_pass += 1
         print("Pass - %s" % test)
     else:

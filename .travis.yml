@@ -19,4 +19,3 @@ script:
   - cargo build --verbose
   - cargo test --verbose
   - python test.py
-  - python test.py -c
