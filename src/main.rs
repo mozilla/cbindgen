@@ -21,7 +21,7 @@ use clap::{Arg, ArgMatches, App};
 mod logging;
 mod bindgen;
 
-use bindgen::{Cargo, Config, Language, Library, LibraryBuilder};
+use bindgen::{Bindings, Builder, Cargo, Config, Language};
 
 fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // We allow specifying a language to override the config default. This is
@@ -44,7 +44,7 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     }
 }
 
-fn load_library<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Library, String> {
+fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings, String> {
     // If a file is specified then we load it as a single source
     if !input.is_dir() {
         // Load any config specified or search in the input directory
@@ -55,10 +55,10 @@ fn load_library<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Library, S
 
         apply_config_overrides(&mut config, &matches);
 
-        return LibraryBuilder::new().with_config(config)
-                                    .with_std_types()
-                                    .with_src(input)
-                                    .build();
+        return Builder::new().with_config(config)
+                             .with_std_types()
+                             .with_src(input)
+                             .generate();
     }
 
     // We have to load a whole crate, so we use cargo to gather metadata
@@ -83,10 +83,10 @@ fn load_library<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Library, S
 
     apply_config_overrides(&mut config, &matches);
 
-    LibraryBuilder::new().with_config(config)
-                         .with_std_types()
-                         .with_crate(lib)
-                         .build()
+    Builder::new().with_config(config)
+                  .with_std_types()
+                  .with_crate(lib)
+                  .generate()
 }
 
 fn main() {
@@ -142,32 +142,22 @@ fn main() {
         None => env::current_dir().unwrap(),
     };
 
-    let library = match load_library(&input, &matches) {
-        Ok(library) => library,
+    let bindings = match load_bindings(&input, &matches) {
+        Ok(bindings) => bindings,
         Err(msg) => {
             error!("{}", msg);
             error!("Couldn't generate bindings for {}.", input.display());
             std::process::exit(1);
         }
-    };
-
-    // Generate a bindings file
-    let built = match library.generate() {
-        Ok(x) => x,
-        Err(msg) => {
-            error!("{}", msg);
-            error!("Couldn't generate bindings for {}.", input.display());
-            std::process::exit(1);
-        },
     };
 
     // Write the bindings file
     match matches.value_of("out") {
         Some(file) => {
-            built.write_to_file(file);
+            bindings.write_to_file(file);
         }
         _ => {
-            built.write(io::stdout());
+            bindings.write(io::stdout());
         }
     }
 }

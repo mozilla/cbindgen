@@ -12,6 +12,7 @@ use bindgen::ir::{Constant, ItemContainer, Function, Static};
 use bindgen::monomorph::TemplateSpecialization;
 use bindgen::writer::{ListType, Source, SourceWriter};
 
+/// A bindings header that can be written.
 pub struct Bindings {
     config: Config,
     globals: Vec<Static>,
@@ -22,12 +23,12 @@ pub struct Bindings {
 }
 
 impl Bindings {
-    pub fn new(config: Config,
-               constants: Vec<Constant>,
-               globals: Vec<Static>,
-               items: Vec<ItemContainer>,
-               functions: Vec<Function>,
-               template_specializations: Vec<TemplateSpecialization>) -> Bindings {
+    pub(crate) fn new(config: Config,
+                      constants: Vec<Constant>,
+                      globals: Vec<Static>,
+                      items: Vec<ItemContainer>,
+                      functions: Vec<Function>,
+                      template_specializations: Vec<TemplateSpecialization>) -> Bindings {
         Bindings {
             config: config,
             globals: globals,
@@ -202,7 +203,7 @@ impl Bindings {
         }
     }
 
-    pub fn open_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
+    pub(crate) fn open_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
         let mut wrote_namespace: bool = false;
         if let Some(ref namespace) = self.config.namespace {
             wrote_namespace = true;
@@ -226,7 +227,7 @@ impl Bindings {
         }
     }
 
-    pub fn close_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
+    pub(crate) fn close_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
         let mut wrote_namespace: bool = false;
         if let Some(ref namespaces) = self.config.namespaces {
             wrote_namespace = true;

@@ -17,7 +17,7 @@ fn parse_dep_string(dep_string: &str) -> (&str, &str) {
 }
 
 /// A reference to a package including it's name and the specific version.
-pub struct PackageRef {
+pub(crate) struct PackageRef {
     pub name: String,
     pub version: String,
 }
@@ -66,11 +66,11 @@ impl Cargo {
         })
     }
 
-    pub fn binding_crate_name(&self) -> &str {
+    pub(crate) fn binding_crate_name(&self) -> &str {
         &self.binding_crate_name
     }
 
-    pub fn binding_crate_ref(&self) -> PackageRef {
+    pub(crate) fn binding_crate_ref(&self) -> PackageRef {
         self.find_pkg_ref(&self.binding_crate_name).unwrap()
     }
 
@@ -90,7 +90,7 @@ impl Cargo {
 
     /// Finds the package reference for a dependency of a crate using
     /// `Cargo.lock`.
-    pub fn find_dep_ref(&self, package: &PackageRef, dependency_name: &str) -> Option<PackageRef> {
+    pub(crate) fn find_dep_ref(&self, package: &PackageRef, dependency_name: &str) -> Option<PackageRef> {
         if self.lock.is_none() {
             return None;
         }
@@ -141,7 +141,8 @@ impl Cargo {
     }
 
     /// Finds the directory for a specified package reference.
-    pub fn find_crate_dir(&self, package: &PackageRef) -> Option<PathBuf> {
+    #[allow(unused)]
+    pub(crate) fn find_crate_dir(&self, package: &PackageRef) -> Option<PathBuf> {
         for meta_package in &self.metadata.packages {
             if meta_package.name == package.name &&
                meta_package.version == package.version {
@@ -153,7 +154,7 @@ impl Cargo {
     }
 
     /// Finds `src/lib.rs` for a specified package reference.
-    pub fn find_crate_src(&self, package: &PackageRef) -> Option<PathBuf> {
+    pub(crate) fn find_crate_src(&self, package: &PackageRef) -> Option<PathBuf> {
         let kind_lib = String::from("lib");
         let kind_staticlib = String::from("staticlib");
         let kind_rlib = String::from("rlib");
@@ -176,7 +177,7 @@ impl Cargo {
         None
     }
 
-    pub fn expand_crate(&self, package: &PackageRef) -> Result<String, String> {
+    pub(crate) fn expand_crate(&self, package: &PackageRef) -> Result<String, String> {
         cargo_expand::expand(&self.manifest_path, &package.name, &package.version)
     }
 }
