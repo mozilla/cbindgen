@@ -9,7 +9,7 @@ pub fn mangle_path(name: &str, generic_values: &[Type]) -> String {
 }
 
 fn internal_mangle_path(name: &str, generic_values: &[Type], last_in_parent: bool) -> String {
-    assert!(!name.contains("_"));
+    assert!(!name.contains("_"), format!("name '{}' contains an underscore", name));
 
     if generic_values.is_empty() {
         return String::from(name);
@@ -51,7 +51,7 @@ fn internal_mangle_path(name: &str, generic_values: &[Type], last_in_parent: boo
 }
 
 #[test]
-fn mangle_test() {
+fn generics() {
     use bindgen::ir::{GenericPath, PrimitiveType};
 
     fn float() -> Type {
@@ -66,29 +66,40 @@ fn mangle_test() {
         Type::Path(GenericPath::new(path.to_owned(), generics.to_owned()))
     }
 
-    /* Foo<f32> => Foo_f32 */
+    // Foo<f32> => Foo_f32
     assert_eq!(mangle_path("Foo", &vec![float()]),
                "Foo_f32");
 
-    /* Foo<Bar<f32>> => Foo_Bar_f32 */
+    // Foo<Bar<f32>> => Foo_Bar_f32
     assert_eq!(mangle_path("Foo", &vec![generic_path("Bar", &[float()])]),
                "Foo_Bar_f32");
 
-    /* Foo<Bar> => Foo_Bar */
+    // Foo<Bar> => Foo_Bar
     assert_eq!(mangle_path("Foo", &[path("Bar")]),
                "Foo_Bar");
 
-    /* Foo<Bar<T>> => Foo_Bar_T */
+    // Foo<Bar<T>> => Foo_Bar_T
     assert_eq!(mangle_path("Foo", &[generic_path("Bar", &[path("T")])]),
                "Foo_Bar_T");
 
-    // /* Foo<Bar<T>, E> => Foo_Bar_T_____E */
+    // Foo<Bar<T>, E> => Foo_Bar_T_____E
     assert_eq!(mangle_path("Foo", &[generic_path("Bar", &[path("T")]),
                                     path("E")]),
                "Foo_Bar_T_____E");
 
-    // /* Foo<Bar<T>, Bar<E>> => Foo_Bar_T_____Bar_E */
+    // Foo<Bar<T>, Bar<E>> => Foo_Bar_T_____Bar_E
     assert_eq!(mangle_path("Foo", &[generic_path("Bar", &[path("T")]),
                                     generic_path("Bar", &[path("E")])]),
                "Foo_Bar_T_____Bar_E");
+}
+
+#[test]
+#[should_panic(expected = "name 'foo_bar' contains an underscore")]
+fn invalid() {
+    use bindgen::ir::PrimitiveType;
+
+    // foo_bar<u32> => foo_bar_f32
+    let t = Type::Primitive(PrimitiveType::UInt32);
+    assert_eq!(mangle_path("foo_bar", &vec![t]),
+               "foo_bar_u32");
 }
