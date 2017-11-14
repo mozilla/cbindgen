@@ -85,7 +85,7 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
 
     Builder::new().with_config(config)
                   .with_std_types()
-                  .with_crate(lib)
+                  .with_cargo(lib)
                   .generate()
 }
 

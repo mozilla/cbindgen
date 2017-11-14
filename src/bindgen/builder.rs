@@ -15,7 +15,8 @@ use bindgen::parser::{self, Parse};
 pub struct Builder {
     config: Config,
     srcs: Vec<path::PathBuf>,
-    lib: Option<Cargo>,
+    lib: Option<(path::PathBuf, Option<String>)>,
+    lib_cargo: Option<Cargo>,
     std_types: bool,
 }
 
@@ -25,6 +26,7 @@ impl Builder {
             config: Config::default(),
             srcs: Vec::new(),
             lib: None,
+            lib_cargo: None,
             std_types: false,
         }
     }
@@ -44,9 +46,32 @@ impl Builder {
         self
     }
 
-    pub fn with_crate(mut self, lib: Cargo) -> Builder {
+    #[allow(unused)]
+    pub fn with_crate<P: AsRef<path::Path>>(mut self, lib_dir: P) -> Builder {
         debug_assert!(self.lib.is_none());
-        self.lib = Some(lib);
+        debug_assert!(self.lib_cargo.is_none());
+        self.lib = Some((path::PathBuf::from(lib_dir.as_ref()), None));
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_crate_and_name<P: AsRef<path::Path>,
+                               S: AsRef<str>>(mut self,
+                                              lib_dir: P,
+                                              binding_lib_name: S) -> Builder
+    {
+        debug_assert!(self.lib.is_none());
+        debug_assert!(self.lib_cargo.is_none());
+        self.lib = Some((path::PathBuf::from(lib_dir.as_ref()),
+                         Some(String::from(binding_lib_name.as_ref()))));
+        self
+    }
+
+    #[allow(unused)]
+    pub(crate) fn with_cargo(mut self, lib: Cargo) -> Builder {
+        debug_assert!(self.lib.is_none());
+        debug_assert!(self.lib_cargo.is_none());
+        self.lib_cargo = Some(lib);
         self
     }
 
@@ -61,8 +86,24 @@ impl Builder {
             result.extend_with(&parser::parse_src(x)?);
         }
 
-        if let Some(x) = self.lib.clone() {
-            result.extend_with(&parser::parse_lib(x,
+        if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
+            let cargo = if let Some(binding_lib_name) = binding_lib_name {
+                Cargo::load(&lib_dir,
+                            Some(&binding_lib_name),
+                            self.config.parse.parse_deps)?
+            } else {
+                Cargo::load(&lib_dir,
+                            None,
+                            self.config.parse.parse_deps)?
+            };
+
+            result.extend_with(&parser::parse_lib(cargo,
+                                                  self.config.parse.parse_deps,
+                                                  &self.config.parse.include,
+                                                  &self.config.parse.exclude,
+                                                  &self.config.parse.expand)?);
+        } else if let Some(cargo) = self.lib_cargo.clone() {
+            result.extend_with(&parser::parse_lib(cargo,
                                                   self.config.parse.parse_deps,
                                                   &self.config.parse.include,
                                                   &self.config.parse.exclude,

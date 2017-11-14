@@ -8,4 +8,4 @@ mod cargo_lock;
 mod cargo_metadata;
 mod cargo_toml;
 
-pub use self::cargo::*;
+pub(crate) use self::cargo::*;

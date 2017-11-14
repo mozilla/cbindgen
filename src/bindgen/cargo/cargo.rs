@@ -24,7 +24,7 @@ pub(crate) struct PackageRef {
 
 /// A collection of metadata for a library from cargo.
 #[derive(Clone, Debug)]
-pub struct Cargo {
+pub(crate) struct Cargo {
     manifest_path: PathBuf,
     binding_crate_name: String,
 
@@ -36,9 +36,9 @@ impl Cargo {
     /// Gather metadata from cargo for a specific library and binding crate
     /// name. If dependency finding isn't needed then Cargo.lock files don't
     /// need to be parsed.
-    pub fn load(crate_dir: &Path,
-                binding_crate_name: Option<&str>,
-                use_cargo_lock: bool) -> Result<Cargo, String> {
+    pub(crate) fn load(crate_dir: &Path,
+                       binding_crate_name: Option<&str>,
+                       use_cargo_lock: bool) -> Result<Cargo, String> {
         let toml_path = crate_dir.join("Cargo.toml");
         let lock_path = crate_dir.join("Cargo.lock");
 

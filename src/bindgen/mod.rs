@@ -49,7 +49,9 @@ mod rename;
 mod utilities;
 mod writer;
 
-pub use self::cargo::*;
+#[allow(unused)]
+pub(crate) use self::cargo::*;
+
 pub use self::config::*;
 pub use self::bindings::Bindings;
 pub use self::builder::Builder;

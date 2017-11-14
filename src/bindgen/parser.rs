@@ -42,11 +42,11 @@ pub fn parse_src(src_file: &Path) -> ParseResult {
 /// Inside a crate, `mod` and `extern crate` declarations are followed
 /// and parsed. To find an external crate, the parser uses the `cargo metadata`
 /// command to find the location of dependencies.
-pub fn parse_lib(lib: Cargo,
-                 parse_deps: bool,
-                 include: &Option<Vec<String>>,
-                 exclude: &Vec<String>,
-                 expand: &Vec<String>) -> ParseResult {
+pub(crate) fn parse_lib(lib: Cargo,
+                        parse_deps: bool,
+                        include: &Option<Vec<String>>,
+                        exclude: &Vec<String>,
+                        expand: &Vec<String>) -> ParseResult {
     let mut context = Parser {
         lib: lib,
         parse_deps: parse_deps,
