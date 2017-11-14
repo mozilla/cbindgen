@@ -25,16 +25,29 @@ type ParseResult = Result<Parse, String>;
 
 /// Parses a single rust source file, not following `mod` or `extern crate`.
 pub fn parse_src(src_file: &Path) -> ParseResult {
-    let src_parsed = {
-        let mut s = String::new();
-        let mut f = File::open(src_file).map_err(|_| format!("Parsing: cannot open file `{:?}`.", src_file))?;
-        f.read_to_string(&mut s).map_err(|_| format!("Parsing: cannot open file `{:?}`.", src_file))?;
-        syn::parse_crate(&s).map_err(|msg| format!("Parsing:\n{}.", msg))?
+    let mod_name = src_file.file_stem().unwrap().to_str().unwrap();
+
+    let mut context = Parser {
+        binding_crate_name: mod_name.to_owned(),
+        lib: None,
+        parse_deps: true,
+        include: None,
+        exclude: Vec::new(),
+        expand: Vec::new(),
+        parsed_crates: HashSet::new(),
+        cache_src: HashMap::new(),
+        cache_expanded_crate: HashMap::new(),
+        cfg_stack: Vec::new(),
+        out: Parse::new(),
     };
 
-    let mut parsed = Parse::new();
-    parsed.load_syn_crate_mod("", "", &None, &src_parsed.items);
-    Ok(parsed)
+    let pkg_ref = PackageRef {
+        name: mod_name.to_owned(),
+        version: "0.0.0".to_owned(),
+    };
+
+    context.parse_mod(&pkg_ref, src_file)?;
+    Ok(context.out)
 }
 
 /// Recursively parses a rust library starting at the root crate's directory.
@@ -48,7 +61,8 @@ pub(crate) fn parse_lib(lib: Cargo,
                         exclude: &Vec<String>,
                         expand: &Vec<String>) -> ParseResult {
     let mut context = Parser {
-        lib: lib,
+        binding_crate_name: lib.binding_crate_name().to_owned(),
+        lib: Some(lib),
         parse_deps: parse_deps,
         include: include.clone(),
         exclude: exclude.clone(),
@@ -60,14 +74,15 @@ pub(crate) fn parse_lib(lib: Cargo,
         out: Parse::new(),
     };
 
-    let binding_crate = context.lib.binding_crate_ref();
+    let binding_crate = context.lib.as_ref().unwrap().binding_crate_ref();
     context.parse_crate(&binding_crate)?;
     Ok(context.out)
 }
 
 #[derive(Debug, Clone)]
 struct Parser {
-    lib: Cargo,
+    binding_crate_name: String,
+    lib: Option<Cargo>,
     parse_deps: bool,
 
     include: Option<Vec<String>>,
@@ -111,6 +126,7 @@ impl Parser {
     }
 
     fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), String> {
+        assert!(self.lib.is_some());
         self.parsed_crates.insert(pkg.name.clone());
 
         // Check if we should use cargo expand for this crate
@@ -119,7 +135,7 @@ impl Parser {
         }
 
         // Otherwise do our normal parse
-        let crate_src = self.lib.find_crate_src(pkg);
+        let crate_src = self.lib.as_ref().unwrap().find_crate_src(pkg);
 
         match crate_src {
             Some(crate_src) => {
@@ -134,9 +150,11 @@ impl Parser {
     }
 
     fn parse_expand_crate(&mut self, pkg: &PackageRef) -> Result<(), String> {
+        assert!(self.lib.is_some());
+
         let mod_parsed = {
             if !self.cache_expanded_crate.contains_key(&pkg.name) {
-                let s = self.lib.expand_crate(pkg)?;
+                let s = self.lib.as_ref().unwrap().expand_crate(pkg)?;
                 let i = syn::parse_crate(&s).map_err(|msg| format!("Parsing crate `{}`:\n{}.", pkg.name, msg))?;
                 self.cache_expanded_crate.insert(pkg.name.clone(), i.items);
             }
@@ -150,10 +168,10 @@ impl Parser {
     fn process_expanded_mod(&mut self,
                             pkg: &PackageRef,
                             items: &Vec<syn::Item>) -> Result<(), String> {
-        self.out.load_syn_crate_mod(self.lib.binding_crate_name(),
-                                       &pkg.name,
-                                       &Cfg::join(&self.cfg_stack),
-                                       items);
+        self.out.load_syn_crate_mod(&self.binding_crate_name,
+                                    &pkg.name,
+                                    &Cfg::join(&self.cfg_stack),
+                                    items);
 
         for item in items {
             match item.node {
@@ -182,12 +200,16 @@ impl Parser {
                     }
 
                     if self.should_parse_dependency(&dep_pkg_name) {
-                        let dep_pkg_ref = self.lib.find_dep_ref(pkg, &dep_pkg_name);
+                        if self.lib.is_some() {
+                            let dep_pkg_ref = self.lib.as_ref().unwrap().find_dep_ref(pkg, &dep_pkg_name);
 
-                        if let Some(dep_pkg_ref) = dep_pkg_ref {
-                            self.parse_crate(&dep_pkg_ref)?;
+                            if let Some(dep_pkg_ref) = dep_pkg_ref {
+                                self.parse_crate(&dep_pkg_ref)?;
+                            } else {
+                                error!("Parsing crate `{}`: can't find dependency version for `{}`.", pkg.name, dep_pkg_name);
+                            }
                         } else {
-                            error!("Parsing crate `{}`: can't find dependency version for {}`.", pkg.name, dep_pkg_name);
+                            error!("Parsing crate `{}`: cannot parse external crate `{}` because cbindgen is in single source mode. Consider specifying a crate directory instead of a source file.", pkg.name, dep_pkg_name);
                         }
                     }
 
@@ -230,10 +252,10 @@ impl Parser {
                    pkg: &PackageRef,
                    mod_dir: &Path,
                    items: &Vec<syn::Item>) -> Result<(), String> {
-        self.out.load_syn_crate_mod(self.lib.binding_crate_name(),
-                                       &pkg.name,
-                                       &Cfg::join(&self.cfg_stack),
-                                       items);
+        self.out.load_syn_crate_mod(&self.binding_crate_name,
+                                    &pkg.name,
+                                    &Cfg::join(&self.cfg_stack),
+                                    items);
 
         for item in items {
             match item.node {
@@ -282,12 +304,16 @@ impl Parser {
                     }
 
                     if self.should_parse_dependency(&dep_pkg_name) {
-                        let dep_pkg_ref = self.lib.find_dep_ref(pkg, &dep_pkg_name);
+                        if self.lib.is_some() {
+                            let dep_pkg_ref = self.lib.as_ref().unwrap().find_dep_ref(pkg, &dep_pkg_name);
 
-                        if let Some(dep_pkg_ref) = dep_pkg_ref {
-                            self.parse_crate(&dep_pkg_ref)?;
+                            if let Some(dep_pkg_ref) = dep_pkg_ref {
+                                self.parse_crate(&dep_pkg_ref)?;
+                            } else {
+                                error!("Parsing crate `{}`: can't find dependency version for `{}`.", pkg.name, dep_pkg_name);
+                            }
                         } else {
-                            error!("Parsing crate `{}`: can't find dependency version for {}`.", pkg.name, dep_pkg_name);
+                            error!("Parsing crate `{}`: cannot parse external crate `{}` because cbindgen is in single source mode. Consider specifying a crate directory instead of a source file.", pkg.name, dep_pkg_name);
                         }
                     }
 
