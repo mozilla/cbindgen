@@ -150,3 +150,7 @@ There may be other differences, but those are the ones that I know of. Please co
 1. Better support for types with fully specified names
 2. Support for generating a FFI interface for a Struct+Impl
 3. ...
+
+## Prominent users
+* [milksnake](https://github.com/getsentry/milksnake)
+* [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings/webrender_ffi_generated.h)
