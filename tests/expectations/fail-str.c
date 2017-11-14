@@ -2,12 +2,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define FOO 10
-
-#define ZOM 3.14
-
 typedef struct {
-  int32_t x[FOO];
+  const str *x;
 } Foo;
 
-void root(Foo x);
+void root(Foo a, const str *b);

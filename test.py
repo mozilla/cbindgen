@@ -47,6 +47,10 @@ def gxx(src):
 def run_compile_test(rust_src, should_verify, c):
     rust_src_name = os.path.basename(rust_src)
 
+    expectation = True
+    if rust_src_name.startswith("fail-"):
+        expectation = False
+
     if c:
         out = os.path.join('tests/expectations/', rust_src_name.replace(".rs", ".c"))
         verify = 'tests/expectations/__verify__.c'
@@ -80,11 +84,11 @@ def run_compile_test(rust_src, should_verify, c):
                 gxx(out)
 
     except subprocess.CalledProcessError:
-        if os.exists(verify):
+        if os.path.exists(verify):
             os.remove(verify)
-        return False
+        return expectation == False
 
-    return True
+    return expectation == True
 
 if not build_cbindgen():
     exit()

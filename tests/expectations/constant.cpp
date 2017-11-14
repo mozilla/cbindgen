@@ -3,8 +3,6 @@
 
 extern "C" {
 
-static const char* BAR = u8"hello world";
-
 static const int32_t FOO = 10;
 
 static const float ZOM = 3.14;
