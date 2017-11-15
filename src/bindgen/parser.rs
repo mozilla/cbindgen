@@ -231,10 +231,20 @@ impl Parser {
             let owned_mod_path = mod_path.to_path_buf();
 
             if !self.cache_src.contains_key(&owned_mod_path) {
+                fn limit_string(text: &str) -> &str {
+                    if text.len() <= 30 {
+                        text
+                    } else {
+                        &text[..30]
+                    }
+                }
+
                 let mut s = String::new();
                 let mut f = File::open(mod_path).map_err(|_| format!("Parsing crate `{}`: cannot open file `{:?}`.", pkg.name, mod_path))?;
                 f.read_to_string(&mut s).map_err(|_| format!("Parsing crate `{}`: cannot open file `{:?}`.", pkg.name, mod_path))?;
-                let i = syn::parse_crate(&s).map_err(|msg| format!("Parsing crate `{}`:\n{}.", pkg.name, msg))?;
+
+                let i = syn::parse_crate(&s).map_err(|msg| format!("Parsing crate `{}`:\n{}.", pkg.name, limit_string(&msg)))?;
+
                 self.cache_src.insert(owned_mod_path.clone(), i.items);
             }
 
