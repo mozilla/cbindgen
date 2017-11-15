@@ -22,6 +22,7 @@ pub struct Struct {
     pub name: String,
     pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
+    pub is_variant: bool,
     pub tuple_struct: bool,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -63,6 +64,7 @@ impl Struct {
             name: name,
             generic_params: GenericParams::new(generics),
             fields: fields,
+            is_variant: false,
             tuple_struct: tuple_struct,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
@@ -131,33 +133,25 @@ impl Item for Struct {
             config.structure.rename_fields,
         ];
 
-        if let Some(o) = self.annotations.list("field-names") {
-            let mut overriden_fields = Vec::new();
+        let mut names = self.fields.iter_mut().map(|field| &mut field.0);
 
-            for (i, &(ref name, ref ty, ref doc)) in self.fields.iter().enumerate() {
-                if i >= o.len() {
-                    overriden_fields.push((name.clone(), ty.clone(), doc.clone()));
-                } else {
-                    overriden_fields.push((o[i].clone(), ty.clone(), doc.clone()));
-                }
+        if let Some(o) = self.annotations.list("field-names") {
+            for (dest, src) in names.zip(o) {
+                *dest = src;
+            }
+        } else if let Some(r) = find_first_some(&field_rules) {
+            for name in names {
+                *name = r.apply_to_snake_case(name, IdentifierType::StructMember);
+            }
+        } else if self.tuple_struct {
+            // If there is a tag field, skip it
+            if self.is_variant {
+                names.next();
             }
 
-            self.fields = overriden_fields;
-        } else if let Some(r) = find_first_some(&field_rules) {
-            self.fields = self.fields
-                .iter()
-                .map(|x| {
-                    (
-                        r.apply_to_snake_case(&x.0, IdentifierType::StructMember),
-                        x.1.clone(),
-                        x.2.clone(),
-                    )
-                })
-                .collect();
-        } else if self.tuple_struct {
             // If we don't have any rules for a tuple struct, prefix them with
             // an underscore so it still compiles
-            for &mut (ref mut name, ..) in &mut self.fields {
+            for name in names {
                 name.insert(0, '_');
             }
         }
@@ -189,6 +183,7 @@ impl Item for Struct {
                 .iter()
                 .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                 .collect(),
+            is_variant: self.is_variant,
             tuple_struct: self.tuple_struct,
             cfg: self.cfg.clone(),
             annotations: self.annotations.clone(),

@@ -43,6 +43,13 @@ enum E {
     e4 = 5,
 }
 
+#[repr(u8)]
+enum F {
+    Foo(i16),
+    Bar { x: u8, y: i16 },
+    Baz
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     o: *mut Opaque,
@@ -50,5 +57,6 @@ pub extern "C" fn root(
     b: B,
     c: C,
     d: D,
-    e: E
+    e: E,
+    f: F
 ) { }

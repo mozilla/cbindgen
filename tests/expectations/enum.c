@@ -42,6 +42,30 @@ enum E {
 };
 typedef intptr_t E;
 
+enum F_Tag {
+  Foo = 0,
+  Bar = 1,
+  Baz = 2,
+};
+typedef uint8_t F_Tag;
+
+typedef struct {
+  F_Tag tag;
+  int16_t _0;
+} Foo_Body;
+
+typedef struct {
+  F_Tag tag;
+  uint8_t x;
+  int16_t y;
+} Bar_Body;
+
+typedef union {
+  F_Tag tag;
+  Foo_Body Foo;
+  Bar_Body Bar;
+} F;
+
 typedef struct Opaque Opaque;
 
-void root(Opaque *o, A a, B b, C c, D d, E e);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f);

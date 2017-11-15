@@ -36,10 +36,33 @@ enum class E : intptr_t {
   e4 = 5,
 };
 
+union F {
+  enum class Tag : uint8_t {
+    Foo = 0,
+    Bar = 1,
+    Baz = 2,
+  };
+
+  struct Foo_Body {
+    Tag tag;
+    int16_t _0;
+  };
+
+  struct Bar_Body {
+    Tag tag;
+    uint8_t x;
+    int16_t y;
+  };
+
+  Tag tag;
+  Foo_Body Foo;
+  Bar_Body Bar;
+};
+
 struct Opaque;
 
 extern "C" {
 
-void root(Opaque *o, A a, B b, C c, D d, E e);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f);
 
 } // extern "C"
