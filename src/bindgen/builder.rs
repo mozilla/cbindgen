@@ -62,6 +62,12 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_namespace<S: AsRef<str>>(mut self, namespace: S) -> Builder {
+      self.config.namespace = Some(String::from(namespace.as_ref()));
+      self
+    }
+
+    #[allow(unused)]
     pub fn with_namespaces<S: AsRef<str>>(mut self, namespaces: &[S]) -> Builder {
       self.config.namespaces = Some(namespaces.iter().map(|x| String::from(x.as_ref())).collect());
       self
