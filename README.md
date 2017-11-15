@@ -40,8 +40,10 @@ use std::env;
 fn main() {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
 
-    cbindgen::generate(&crate_dir)
-      .unwrap()
+    cbindgen::Builder::new()
+      .with_crate(crate_dir)
+      .generate()
+      .expect("Unable to generate bindings")
       .write_to_file("bindings.h");
 }
 
@@ -49,7 +51,11 @@ fn main() {
 
 ## Configuration
 
-There are some options that can be used to configure the binding generation. They can be specified by creating a `cbindgen.toml` with the options in the binding crate root or at a path manually specified through the command line. Alternatively, build scripts can specify them using `cbindgen::generate_with_config`.
+There are some options that can be used to configure the binding generation.
+
+For the command line, they can be specified by creating a `cbindgen.toml` with the options. This can be placed in the binding crate root or at a path manually specified.
+
+For build scripts, options can be specified on the builder or by writing a `cbindgen.toml` and using the helper function `cbindgen::generate_with_config`.
 
 Here is a description of the options available in a config.
 
