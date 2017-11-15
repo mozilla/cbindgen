@@ -62,16 +62,18 @@ impl Enum {
                         name: format!("{}_Body", variant.ident),
                         generic_params: GenericParams::default(),
                         fields: {
-                            let mut res = vec![
-                                (
+                            let mut res = Vec::new();
+
+                            if repr != Repr::C {
+                                res.push((
                                     "tag".to_string(),
                                     Type::Path(GenericPath {
                                         name: "Tag".to_string(),
                                         generics: vec![],
                                     }),
                                     Documentation::none(),
-                                ),
-                            ];
+                                ));
+                            }
 
                             for (i, field) in fields.iter().enumerate() {
                                 if let Some(ty) = Type::load(&field.ty)? {
@@ -88,7 +90,7 @@ impl Enum {
 
                             res
                         },
-                        is_variant: true,
+                        is_variant: repr != Repr::C,
                         tuple_struct: match variant.data {
                             syn::VariantData::Tuple(_) => true,
                             _ => false,
@@ -158,12 +160,14 @@ impl Item for Enum {
         if config.language == Language::C && self.tag.is_some() {
             // it makes sense to always prefix Tag with type name in C
             let new_tag = format!("{}_Tag", self.name);
-            for value in &mut self.values {
-                if let Some(ref mut body) = value.2 {
-                    body.fields[0].1 = Type::Path(GenericPath {
-                        name: new_tag.clone(),
-                        generics: vec![],
-                    });
+            if self.repr != Repr::C {
+                for value in &mut self.values {
+                    if let Some(ref mut body) = value.2 {
+                        body.fields[0].1 = Type::Path(GenericPath {
+                            name: new_tag.clone(),
+                            generics: vec![],
+                        });
+                    }
                 }
             }
             self.tag = Some(new_tag);
@@ -209,23 +213,6 @@ impl Item for Enum {
 
 impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.cfg.write_before(config, out);
-
-        self.documentation.write(config, out);
-
-        let is_tagged = self.tag.is_some();
-
-        if is_tagged && config.language == Language::Cxx {
-            write!(out, "union {}", self.name);
-            out.open_brace();
-        }
-
-        let enum_name = if let Some(ref tag) = self.tag {
-            tag
-        } else {
-            &self.name
-        };
-
         let size = match self.repr {
             Repr::C => None,
             Repr::USize => Some("uintptr_t"),
@@ -237,6 +224,24 @@ impl Source for Enum {
             Repr::I16 => Some("int16_t"),
             Repr::I8 => Some("int8_t"),
             _ => unreachable!(),
+        };
+
+        self.cfg.write_before(config, out);
+
+        self.documentation.write(config, out);
+
+        let is_tagged = self.tag.is_some();
+
+        if is_tagged && config.language == Language::Cxx {
+            out.write(if size.is_some() { "union " } else { "struct " });
+            write!(out, "{}", self.name);
+            out.open_brace();
+        }
+
+        let enum_name = if let Some(ref tag) = self.tag {
+            tag
+        } else {
+            &self.name
         };
 
         if config.language == Language::C {
@@ -299,12 +304,24 @@ impl Source for Enum {
             }
 
             write!(out, "{} tag;", enum_name);
+            out.new_line();
 
-            for value in &self.values {
+            if size.is_none() {
+                out.write("union");
+                out.open_brace();
+            }
+
+            for (i, value) in self.values.iter().enumerate() {
                 if let Some(ref body) = value.2 {
-                    out.new_line();
+                    if i != 0 {
+                        out.new_line();
+                    }
                     write!(out, "{} {};", body.name, value.0);
                 }
+            }
+
+            if size.is_none() {
+                out.close_brace(true);
             }
 
             if config.language == Language::C {

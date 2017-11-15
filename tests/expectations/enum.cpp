@@ -59,10 +59,33 @@ union F {
   Bar_Body Bar;
 };
 
+struct G {
+  enum class Tag {
+    G_Foo = 0,
+    G_Bar = 1,
+    G_Baz = 2,
+  };
+
+  struct G_Foo_Body {
+    int16_t _0;
+  };
+
+  struct G_Bar_Body {
+    uint8_t x;
+    int16_t y;
+  };
+
+  Tag tag;
+  union {
+    G_Foo_Body G_Foo;
+    G_Bar_Body G_Bar;
+  };
+};
+
 struct Opaque;
 
 extern "C" {
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g);
 
 } // extern "C"
