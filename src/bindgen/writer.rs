@@ -193,30 +193,6 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
     }
 
-    pub fn write_vertical_list<'b>(&mut self, items: &Vec<String>, list_type: ListType<'b>) {
-        let align_length = self.line_length_for_align();
-        self.push_set_spaces(align_length);
-        for (i, item) in items.iter().enumerate() {
-            write!(self, "{}", item);
-
-            match list_type {
-                ListType::Join(text) => {
-                    if i != items.len() - 1 {
-                        write!(self, "{}", text);
-                    }
-                }
-                ListType::Cap(text) => {
-                    write!(self, "{}", text);
-                }
-            }
-
-            if i != items.len() - 1 {
-                self.new_line();
-            }
-        }
-        self.pop_tab();
-    }
-
     pub fn write_vertical_source_list<'b, S: Source>(&mut self, items: &Vec<S>, list_type: ListType<'b>) {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);

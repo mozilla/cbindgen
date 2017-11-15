@@ -5,7 +5,7 @@
 use std::io::Write;
 
 use bindgen::ir::{Function, Type};
-use bindgen::writer::SourceWriter;
+use bindgen::writer::{ListType, SourceWriter};
 
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.
@@ -30,6 +30,7 @@ impl CDeclarator {
 struct CDecl {
     type_qualifers: String,
     type_name: String,
+    type_generic_args: Vec<Type>,
     declarators: Vec<CDeclarator>
 }
 
@@ -38,6 +39,7 @@ impl CDecl {
         CDecl {
             type_qualifers: String::new(),
             type_name: String::new(),
+            type_generic_args: Vec::new(),
             declarators: Vec::new(),
         }
     }
@@ -62,10 +64,6 @@ impl CDecl {
     fn build_type(&mut self, t: &Type, is_const: bool) {
         match t {
             &Type::Path(ref path) => {
-                // We should be assured that there are no generics by instantiating
-                // monomorphs and mangling paths.
-                assert!(path.generics.len() == 0);
-
                 if is_const {
                     assert!(self.type_qualifers.len() == 0);
                     self.type_qualifers = "const".to_owned();
@@ -73,6 +71,8 @@ impl CDecl {
 
                 assert!(self.type_name.len() == 0);
                 self.type_name = path.name.clone();
+                assert!(self.type_generic_args.len() == 0);
+                self.type_generic_args = path.generics.clone();
             }
             &Type::Primitive(ref p) => {
                 if is_const {
@@ -113,6 +113,12 @@ impl CDecl {
         } else {
             write!(out, "{}", self.type_name);
         };
+
+        if !self.type_generic_args.is_empty() {
+            out.write("<");
+            out.write_horizontal_source_list(&self.type_generic_args, ListType::Join(", "));
+            out.write(">");
+        }
 
         // When we have an identifier, put a space between the type and the declarators
         if ident.is_some() {

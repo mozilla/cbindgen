@@ -89,12 +89,9 @@ impl Bindings {
         out.new_line();
 
         if self.config.language == Language::Cxx {
-            out.new_line_if_not_start();
-            out.write("extern \"C\" {");
-            out.new_line();
-
             self.open_namespaces(&mut out);
         }
+
 
         for constant in &self.constants {
             out.new_line_if_not_start();
@@ -120,6 +117,12 @@ impl Bindings {
                     unreachable!("should not encounter a specialization in a generated library")
                 }
             }
+            out.new_line();
+        }
+
+        if self.config.language == Language::Cxx {
+            out.new_line_if_not_start();
+            out.write("extern \"C\" {");
             out.new_line();
         }
 

@@ -10,7 +10,7 @@ use syn;
 use bindgen::cdecl;
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{Documentation, GenericPath, ItemContainer, Item, Path};
+use bindgen::ir::{Documentation, GenericParams, GenericPath, ItemContainer, Item, Path};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::utilities::IterHelpers;
@@ -357,7 +357,7 @@ impl Type {
         }
     }
 
-    pub fn add_dependencies_ignoring_generics(&self, generic_params: &Vec<String>, library: &Library, out: &mut Dependencies) {
+    pub fn add_dependencies_ignoring_generics(&self, generic_params: &GenericParams, library: &Library, out: &mut Dependencies) {
         match self {
             &Type::ConstPtr(ref ty) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
@@ -400,7 +400,7 @@ impl Type {
     }
 
     pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.add_dependencies_ignoring_generics(&Vec::new(), library, out)
+        self.add_dependencies_ignoring_generics(&GenericParams::default(), library, out)
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -514,6 +514,12 @@ impl Type {
             &Type::Array(..) => false,
             &Type::FuncPtr(..) => true,
         }
+    }
+}
+
+impl Source for String {
+    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
+        write!(out, "{}", self);
     }
 }
 

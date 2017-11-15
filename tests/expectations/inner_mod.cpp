@@ -1,11 +1,11 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 struct Foo {
   float x;
 };
+
+extern "C" {
 
 void root(Foo a);
 
