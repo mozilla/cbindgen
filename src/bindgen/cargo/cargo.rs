@@ -43,8 +43,13 @@ impl Cargo {
         let lock_path = crate_dir.join("Cargo.lock");
 
         let lock = if use_cargo_lock {
-            Some(cargo_lock::lock(&lock_path)
-                            .map_err(|x| format!("couldn't load {:?}: {:?}", lock_path, x))?)
+            match cargo_lock::lock(&lock_path) {
+                Ok(lock) => Some(lock),
+                Err(x) => {
+                    warn!("couldn't load lock file {:?}: {:?}", lock_path, x);
+                    None
+                }
+            }
         } else {
             None
         };
