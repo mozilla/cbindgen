@@ -224,7 +224,7 @@ impl Source for Struct {
         if config.language == Language::C {
             out.write("typedef struct");
         } else {
-            out.write(&format!("struct {}", self.name));
+            write!(out, "struct {}", self.name);
         }
         out.open_brace();
 
@@ -254,7 +254,7 @@ impl Source for Struct {
 
                 out.new_line();
 
-                out.write(&format!("bool operator{}(const {}& {}) const", op, self.name, other));
+                write!(out, "bool operator{}(const {}& {}) const", op, self.name, other);
                 out.open_brace();
                 out.write("return ");
                 out.write_vertical_list(&self.fields.iter()
@@ -293,7 +293,7 @@ impl Source for Struct {
 
         if config.language == Language::C {
             out.close_brace(false);
-            out.write(&format!(" {};", self.name));
+            write!(out, " {};", self.name);
         } else {
             out.close_brace(true);
         }

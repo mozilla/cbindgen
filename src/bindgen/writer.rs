@@ -28,6 +28,34 @@ impl Write for NullFile {
     }
 }
 
+/// A utility wrapper to write unbuffered data and correctly adjust positions.
+struct InnerWriter<'a, 'b: 'a, F: 'a + Write>(&'a mut SourceWriter<'b, F>);
+
+impl<'a, 'b, F: Write> Write for InnerWriter<'a, 'b, F> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let writer = &mut self.0;
+
+        if !writer.line_started {
+            for _ in 0..writer.spaces() {
+                write!(writer.out, " ").unwrap();
+            }
+            writer.line_started = true;
+            writer.line_length += writer.spaces();
+        }
+
+        debug_assert!(!buf.contains(&b'\n'));
+
+        let written = writer.out.write(buf)?;
+        writer.line_length += written;
+        writer.max_line_length = cmp::max(writer.max_line_length, writer.line_length);
+        Ok(written)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.0.out.flush()
+    }
+}
+
 /// A utility writer for generating code easier.
 pub struct SourceWriter<'a, F: Write> {
     out: F,
@@ -91,7 +119,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
 
     pub fn push_tab(&mut self) {
         let spaces = self.spaces() -
-                     (self.spaces() % self.config.tab_width) + 
+                     (self.spaces() % self.config.tab_width) +
                      self.config.tab_width;
         self.spaces.push(spaces);
     }
@@ -140,18 +168,12 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
     }
 
-    pub fn write(&mut self, text: &str) {
-        if !self.line_started {
-            for _ in 0..self.spaces() {
-                write!(self.out, " ").unwrap();
-            }
-            self.line_started = true;
-            self.line_length += self.spaces();
-        }
+    pub fn write(&mut self, text: &'static str) {
+        write!(self, "{}", text);
+    }
 
-        write!(self.out, "{}", text).unwrap();
-        self.line_length += text.len();
-        self.max_line_length = cmp::max(self.max_line_length, self.line_length);
+    pub fn write_fmt(&mut self, fmt: ::std::fmt::Arguments) {
+        InnerWriter(self).write_fmt(fmt).unwrap();
     }
 
     pub fn write_horizontal_source_list<'b, S: Source>(&mut self, items: &Vec<S>, list_type: ListType<'b>) {
@@ -161,11 +183,11 @@ impl<'a, F: Write> SourceWriter<'a, F> {
             match list_type {
                 ListType::Join(text) => {
                     if i != items.len() - 1 {
-                        self.write(&text);
+                        write!(self, "{}", text);
                     }
                 }
                 ListType::Cap(text) => {
-                    self.write(&text);
+                    write!(self, "{}", text);
                 }
             }
         }
@@ -175,16 +197,16 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
         for (i, item) in items.iter().enumerate() {
-            self.write(&item);
+            write!(self, "{}", item);
 
             match list_type {
                 ListType::Join(text) => {
                     if i != items.len() - 1 {
-                        self.write(&text);
+                        write!(self, "{}", text);
                     }
                 }
                 ListType::Cap(text) => {
-                    self.write(&text);
+                    write!(self, "{}", text);
                 }
             }
 
@@ -204,11 +226,11 @@ impl<'a, F: Write> SourceWriter<'a, F> {
             match list_type {
                 ListType::Join(text) => {
                     if i != items.len() - 1 {
-                        self.write(&text);
+                        write!(self, "{}", text);
                     }
                 }
                 ListType::Cap(text) => {
-                    self.write(&text);
+                    write!(self, "{}", text);
                 }
             }
 

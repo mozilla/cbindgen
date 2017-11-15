@@ -245,7 +245,7 @@ impl Cfg {
                 }
 
                 out.write("defined(");
-                out.write(define);
+                write!(out, "{}", define);
                 out.write(")");
             }
             &Cfg::Named(ref cfg_name, ref cfg_value) => {
@@ -266,7 +266,7 @@ impl Cfg {
                 }
 
                 out.write("defined(");
-                out.write(define);
+                write!(out, "{}", define);
                 out.write(")");
             }
             &Cfg::Any(ref cfgs) => {

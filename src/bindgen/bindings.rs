@@ -52,25 +52,25 @@ impl Bindings {
 
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
-            out.write(&f);
+            write!(out, "{}", f);
             out.new_line();
         }
         if let Some(ref f) = self.config.include_guard {
             out.new_line_if_not_start();
-            out.write(&format!("#ifndef {}", f));
+            write!(out, "#ifndef {}", f);
             out.new_line();
-            out.write(&format!("#define {}", f));
+            write!(out, "#define {}", f);
             out.new_line();
         }
         if self.config.include_version {
             out.new_line_if_not_start();
-            out.write(&format!("/* Generated with cbindgen:{} */",
-                      ::bindgen::config::VERSION));
+            write!(out, "/* Generated with cbindgen:{} */",
+                        ::bindgen::config::VERSION);
             out.new_line();
         }
         if let Some(ref f) = self.config.autogen_warning {
             out.new_line_if_not_start();
-            out.write(&f);
+            write!(out, "{}", f);
             out.new_line();
         }
 
@@ -131,7 +131,7 @@ impl Bindings {
 
         if let Some(ref f) = self.config.autogen_warning {
             out.new_line_if_not_start();
-            out.write(&f);
+            write!(out, "{}", f);
             out.new_line();
         }
 
@@ -159,21 +159,20 @@ impl Bindings {
                   if i != 0 {
                       out.write(", ")
                   }
-                  out.write("typename ");
-                  out.write(param);
+                  write!(out, "typename {}", param);
               }
               out.write(">");
               out.new_line();
-              out.write(&format!("struct {};", template.generic.name));
+              write!(out, "struct {};", template.generic.name);
               out.new_line();
 
               for &(ref monomorph_path, ref generic_values) in &template.monomorphs {
                 out.new_line();
                 out.write("template<>");
                 out.new_line();
-                out.write(&format!("struct {}<", template.generic.name));
+                write!(out, "struct {}<", template.generic.name);
                 out.write_horizontal_source_list(generic_values, ListType::Join(", "));
-                out.write(&format!("> : public {}", monomorph_path));
+                write!(out, "> : public {}", monomorph_path);
                 out.open_brace();
                 out.close_brace(true);
                 out.new_line();
@@ -184,21 +183,21 @@ impl Bindings {
 
         if let Some(ref f) = self.config.autogen_warning {
             out.new_line_if_not_start();
-            out.write(&f);
+            write!(out, "{}", f);
             out.new_line();
         }
         if let Some(ref f) = self.config.include_guard {
             out.new_line_if_not_start();
             if self.config.language == Language::C {
-                out.write(&format!("#endif /* {} */", f));
+                write!(out, "#endif /* {} */", f);
             } else {
-                out.write(&format!("#endif // {}", f));
+                write!(out, "#endif // {}", f);
             }
             out.new_line();
         }
         if let Some(ref f) = self.config.trailer {
             out.new_line_if_not_start();
-            out.write(&f);
+            write!(out, "{}", f);
             out.new_line();
         }
     }
@@ -209,17 +208,13 @@ impl Bindings {
             wrote_namespace = true;
 
             out.new_line();
-            out.write("namespace ");
-            out.write(namespace);
-            out.write(" {");
+            write!(out, "namespace {} {{", namespace);
         }
         if let Some(ref namespaces) = self.config.namespaces {
             wrote_namespace = true;
             for namespace in namespaces {
                 out.new_line();
-                out.write("namespace ");
-                out.write(namespace);
-                out.write(" {");
+                write!(out, "namespace {} {{", namespace);
             }
         }
         if wrote_namespace {
@@ -234,16 +229,14 @@ impl Bindings {
 
             for namespace in namespaces.iter().rev() {
                 out.new_line_if_not_start();
-                out.write("} // namespace ");
-                out.write(namespace);
+                write!(out, "}} // namespace {}", namespace);
             }
         }
         if let Some(ref namespace) = self.config.namespace {
             wrote_namespace = true;
 
             out.new_line_if_not_start();
-            out.write("} // namespace ");
-            out.write(namespace);
+            write!(out, "}} // namespace {}", namespace);
         }
         if wrote_namespace {
             out.new_line();

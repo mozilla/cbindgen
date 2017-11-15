@@ -105,7 +105,7 @@ impl Source for Function {
                 out.write("extern ");
             } else {
                 if let Some(ref prefix) = prefix {
-                    out.write(prefix);
+                    write!(out, "{}", prefix);
                     out.write(" ");
                 }
             }
@@ -113,7 +113,7 @@ impl Source for Function {
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.write(" ");
-                    out.write(postfix);
+                    write!(out, "{}", postfix);
                 }
             }
             out.write(";");
@@ -133,7 +133,7 @@ impl Source for Function {
                 out.write("extern ");
             } else {
                 if let Some(ref prefix) = prefix {
-                    out.write(prefix);
+                    write!(out, "{}", prefix);
                     out.new_line();
                 }
             }
@@ -141,7 +141,7 @@ impl Source for Function {
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.new_line();
-                    out.write(postfix);
+                    write!(out, "{}", postfix);
                 }
             }
             out.write(";");

@@ -103,11 +103,11 @@ impl Source for OpaqueItem {
         self.documentation.write(config, out);
 
         if config.language == Language::C {
-            out.write(&format!("struct {};", self.name));
+            write!(out, "struct {};", self.name);
             out.new_line();
-            out.write(&format!("typedef struct {} {};", self.name, self.name));
+            write!(out, "typedef struct {} {};", self.name, self.name);
         } else {
-            out.write(&format!("struct {};", self.name));
+            write!(out, "struct {};", self.name);
         }
 
         self.cfg.write_after(config, out);

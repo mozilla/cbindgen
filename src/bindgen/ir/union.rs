@@ -225,7 +225,7 @@ impl Source for Union {
         if config.language == Language::C {
             out.write("typedef union");
         } else {
-            out.write(&format!("union {}", self.name));
+            write!(out, "union {}", self.name);
         }
         out.open_brace();
 
@@ -240,7 +240,7 @@ impl Source for Union {
 
         if config.language == Language::C {
             out.close_brace(false);
-            out.write(&format!(" {};", self.name));
+            write!(out, " {};", self.name);
         } else {
             out.close_brace(true);
         }
