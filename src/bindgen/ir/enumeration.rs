@@ -169,13 +169,13 @@ impl Source for Enum {
             if size.is_none() {
                 out.write("typedef enum");
             } else {
-                out.write(&format!("enum {}", self.name));
+                write!(out, "enum {}", self.name);
             }
         } else {
             if let Some(prim) = size {
-                out.write(&format!("enum class {} : {}", self.name, prim));
+                write!(out, "enum class {} : {}", self.name, prim);
             } else {
-                out.write(&format!("enum class {}", self.name));
+                write!(out, "enum class {}", self.name);
             }
         }
         out.open_brace();
@@ -184,7 +184,7 @@ impl Source for Enum {
                 out.new_line()
             }
             value.2.write(config, out);
-            out.write(&format!("{} = {},", value.0, value.1));
+            write!(out, "{} = {},", value.0, value.1);
         }
         if config.enumeration.add_sentinel(&self.annotations) {
             out.new_line();
@@ -194,7 +194,7 @@ impl Source for Enum {
 
         if config.language == Language::C && size.is_none() {
             out.close_brace(false);
-            out.write(&format!(" {};", self.name));
+            write!(out, " {};", self.name);
         } else {
             out.close_brace(true);
         }
@@ -202,7 +202,7 @@ impl Source for Enum {
         if config.language == Language::C {
             if let Some(prim) = size {
                 out.new_line();
-                out.write(&format!("typedef {} {};", prim, self.name));
+                write!(out, "typedef {} {};", prim, self.name);
             }
         }
 

@@ -77,7 +77,7 @@ impl Source for Documentation {
             if line.len() != 0 {
                 out.write(" ");
             }
-            out.write(line);
+            write!(out, "{}", line);
             out.new_line();
         }
         if config.language == Language::C {

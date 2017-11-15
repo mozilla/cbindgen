@@ -137,9 +137,9 @@ impl Source for Constant {
                 out.write("static const ");
             }
             self.ty.write(config, out);
-            out.write(&format!(" {} = {};", self.name, self.value.0))
+            write!(out, " {} = {};", self.name, self.value.0)
         } else {
-            out.write(&format!("#define {} {}", self.name, self.value.0))
+            write!(out, "#define {} {}", self.name, self.value.0)
         }
     }
 }

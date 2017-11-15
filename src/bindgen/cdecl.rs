@@ -109,11 +109,9 @@ impl CDecl {
 
         // Write the type-specifier and type-qualifier first
         if self.type_qualifers.len() != 0 {
-            out.write(&self.type_qualifers);
-            out.write(" ");
-            out.write(&self.type_name);
+            write!(out, "{} {}", self.type_qualifers, self.type_name);
         } else {
-            out.write(&self.type_name);
+            write!(out, "{}", self.type_name);
         };
 
         // When we have an identifier, put a space between the type and the declarators
@@ -152,7 +150,7 @@ impl CDecl {
 
         // Write the identifier
         if let Some(ident) = ident {
-            out.write(ident);
+            write!(out, "{}", ident);
         }
 
         // Write the right part of declarators after the identifier
@@ -168,7 +166,7 @@ impl CDecl {
                     if last_was_pointer {
                         out.write(")");
                     }
-                    out.write(&format!("[{}]", constant));
+                    write!(out, "[{}]", constant);
 
                     last_was_pointer = false;
                 },

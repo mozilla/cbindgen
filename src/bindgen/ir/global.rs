@@ -93,6 +93,6 @@ impl Source for Static {
             }
         }
         self.ty.write(config, out);
-        out.write(&format!(" {};", self.name));
+        write!(out, " {};", self.name);
     }
 }
