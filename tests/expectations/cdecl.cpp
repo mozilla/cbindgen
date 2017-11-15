@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 typedef void (*A)();
 
 typedef void (*B)();
@@ -30,6 +28,8 @@ typedef const int32_t *L[16];
 typedef bool (*M[16])(int32_t, int32_t);
 
 typedef void (*N[16])(int32_t, int32_t);
+
+extern "C" {
 
 void (*O())();
 

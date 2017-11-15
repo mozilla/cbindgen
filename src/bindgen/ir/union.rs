@@ -8,7 +8,7 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Repr, Specialization, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Repr, Specialization, Type};
 use bindgen::ir::SynFieldHelpers;
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -20,7 +20,7 @@ use bindgen::writer::{ListType, Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct Union {
     pub name: String,
-    pub generic_params: Vec<String>,
+    pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
     pub tuple_union: bool,
     pub cfg: Option<Cfg>,
@@ -61,13 +61,9 @@ impl Union {
             }
         };
 
-        let generic_params = generics.ty_params.iter()
-                                               .map(|x| x.ident.to_string())
-                                               .collect::<Vec<_>>();
-
         Ok(Union {
             name: name,
-            generic_params: generic_params,
+            generic_params: GenericParams::new(generics),
             fields: fields,
             tuple_union: tuple_union,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
@@ -174,7 +170,7 @@ impl Item for Union {
 
         let monomorph = Union {
             name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: vec![],
+            generic_params: GenericParams::default(),
             fields: self.fields.iter()
                                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                                .collect(),
@@ -216,11 +212,11 @@ impl Item for Union {
 
 impl Source for Union {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        assert!(self.generic_params.is_empty());
-
         self.cfg.write_before(config, out);
 
         self.documentation.write(config, out);
+
+        self.generic_params.write(config, out);
 
         if config.language == Language::C {
             out.write("typedef union");

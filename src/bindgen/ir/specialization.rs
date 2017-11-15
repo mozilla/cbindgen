@@ -6,7 +6,7 @@ use syn;
 
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{AnnotationSet, Cfg, Documentation};
-use bindgen::ir::{GenericPath, ItemContainer, Item, PrimitiveType};
+use bindgen::ir::{GenericParams, GenericPath, ItemContainer, Item, PrimitiveType};
 use bindgen::library::Library;
 
 /// A type alias that generates a copy of its aliasee with a new name. If the type
@@ -15,7 +15,7 @@ use bindgen::library::Library;
 #[derive(Debug, Clone)]
 pub struct Specialization {
     pub name: String,
-    pub generic_params: Vec<String>,
+    pub generic_params: GenericParams,
     pub aliased: GenericPath,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -31,10 +31,6 @@ impl Specialization {
     {
         match ty {
             &syn::Ty::Path(ref _q, ref p) => {
-                let generic_params = generics.ty_params.iter()
-                                                       .map(|x| x.ident.to_string())
-                                                       .collect::<Vec<_>>();
-
                 let path = GenericPath::load(p)?;
 
                 if PrimitiveType::maybe(&path.name).is_some() {
@@ -43,7 +39,7 @@ impl Specialization {
 
                 Ok(Specialization {
                     name: name,
-                    generic_params: generic_params,
+                    generic_params: GenericParams::new(generics),
                     aliased: path,
                     cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
                     annotations: AnnotationSet::load(attrs)?,

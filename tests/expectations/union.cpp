@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 struct Opaque;
 
 union Normal {
@@ -14,6 +12,8 @@ union NormalWithZST {
   int32_t x;
   float y;
 };
+
+extern "C" {
 
 void root(Opaque *a, Normal b, NormalWithZST c);
 

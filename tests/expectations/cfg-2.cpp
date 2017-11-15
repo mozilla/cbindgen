@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 #if (defined(NOT_DEFINED) || defined(DEFINED))
 struct Foo {
   int32_t x;
@@ -24,6 +22,8 @@ struct Bar {
 struct Root {
   Bar w;
 };
+
+extern "C" {
 
 void root(Root a);
 

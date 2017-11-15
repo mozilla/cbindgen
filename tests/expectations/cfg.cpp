@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 #if (defined(PLATFORM_WIN) || defined(M_32))
 enum class BarType : uint32_t {
   A = 0,
@@ -34,6 +32,8 @@ struct BarHandle {
   float y;
 };
 #endif
+
+extern "C" {
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
 void root(FooHandle a);

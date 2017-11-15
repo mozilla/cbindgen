@@ -60,7 +60,10 @@ impl Library {
         self.rename_items();
         self.specialize_items();
         self.simplify_option_to_ptr();
-        self.instantiate_monomorphs();
+
+        if self.config.language == Language::C {
+            self.instantiate_monomorphs();
+        }
 
         let mut dependencies = Dependencies::new();
 

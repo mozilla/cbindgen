@@ -1,14 +1,19 @@
 #include <cstdint>
 #include <cstdlib>
 
+template<typename T>
+struct Option;
+
+template<typename T, typename E>
+struct Result;
+
+struct String;
+
+template<typename T>
+struct Vec;
+
 extern "C" {
 
-struct Option_i32;
-
-struct Result_i32__String;
-
-struct Vec_String;
-
-void root(const Vec_String *a, const Option_i32 *b, const Result_i32__String *c);
+void root(const Vec<String> *a, const Option<int32_t> *b, const Result<int32_t, String> *c);
 
 } // extern "C"

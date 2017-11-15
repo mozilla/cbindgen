@@ -1,12 +1,12 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 struct Normal {
   int32_t x;
   float y;
 };
+
+extern "C" {
 
 extern void bar(Normal a);
 

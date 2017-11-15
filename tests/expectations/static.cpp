@@ -1,13 +1,13 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 struct Bar;
 
 struct Foo {
 
 };
+
+extern "C" {
 
 extern const Bar BAR;
 

@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use syn;
 
 use bindgen::cargo::{Cargo, PackageRef};
-use bindgen::ir::{AnnotationSet, Cfg, Constant, Documentation, Enum, Function};
+use bindgen::ir::{AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams};
 use bindgen::ir::{ItemMap, OpaqueItem, Specialization, Static, Struct, Typedef, Union};
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 
@@ -371,9 +371,11 @@ impl Parse {
         let mut add_opaque = |name: &str, generic_params: Vec<&str>| {
             self.opaque_items.try_insert(OpaqueItem {
                 name: name.to_owned(),
-                generic_params: generic_params.iter()
-                                              .map(|x| (*x).to_owned())
-                                              .collect(),
+                generic_params: GenericParams(
+                    generic_params.iter()
+                                  .map(|x| (*x).to_owned())
+                                  .collect()
+                ),
                 cfg: None,
                 annotations: AnnotationSet::new(),
                 documentation: Documentation::none(),

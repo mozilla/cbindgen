@@ -1,37 +1,20 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 struct A;
 
 struct B;
 
-struct List_B {
-  B *members;
+template<typename T>
+struct List {
+  T *members;
   size_t count;
 };
 
-struct List_A {
-  A *members;
-  size_t count;
-};
+extern "C" {
 
-void bar(List_B b);
+void bar(List<B> b);
 
-void foo(List_A a);
+void foo(List<A> a);
 
 } // extern "C"
-
-template<typename T>
-struct List;
-
-template<>
-struct List<B> : public List_B {
-
-};
-
-template<>
-struct List<A> : public List_A {
-
-};

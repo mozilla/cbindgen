@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 struct Opaque;
 
 struct Foo {
@@ -16,6 +14,8 @@ union Bar {
   Opaque *y;
   void (*z)();
 };
+
+extern "C" {
 
 void root(const Opaque *a, Opaque *b, Foo c, Bar d);
 

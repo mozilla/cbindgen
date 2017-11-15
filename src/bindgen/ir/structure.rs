@@ -8,7 +8,7 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Repr, Specialization, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Repr, Specialization, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -19,7 +19,7 @@ use bindgen::writer::{ListType, Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct Struct {
     pub name: String,
-    pub generic_params: Vec<String>,
+    pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
     pub tuple_struct: bool,
     pub cfg: Option<Cfg>,
@@ -60,13 +60,9 @@ impl Struct {
             }
         };
 
-        let generic_params = generics.ty_params.iter()
-                                               .map(|x| x.ident.to_string())
-                                               .collect::<Vec<_>>();
-
         Ok(Struct {
             name: name,
-            generic_params: generic_params,
+            generic_params: GenericParams::new(generics),
             fields: fields,
             tuple_struct: tuple_struct,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
@@ -173,7 +169,7 @@ impl Item for Struct {
 
         let monomorph = Struct {
             name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: vec![],
+            generic_params: GenericParams::default(),
             fields: self.fields.iter()
                                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                                .collect(),
@@ -215,11 +211,11 @@ impl Item for Struct {
 
 impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        assert!(self.generic_params.is_empty());
-
         self.cfg.write_before(config, out);
 
         self.documentation.write(config, out);
+
+        self.generic_params.write(config, out);
 
         if config.language == Language::C {
             out.write("typedef struct");
@@ -257,7 +253,7 @@ impl Source for Struct {
                 write!(out, "bool operator{}(const {}& {}) const", op, self.name, other);
                 out.open_brace();
                 out.write("return ");
-                out.write_vertical_list(&self.fields.iter()
+                out.write_vertical_source_list(&self.fields.iter()
                                                     .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
                                                     .collect(),
                                         ListType::Join(&format!(" {}", conjuc)));

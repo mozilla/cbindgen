@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 enum class C : uint32_t {
   X = 2,
   Y = 3,
@@ -23,6 +21,8 @@ struct B {
   int32_t x;
   float y;
 };
+
+extern "C" {
 
 void root(A x, B y, C z);
 

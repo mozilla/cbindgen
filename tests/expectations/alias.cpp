@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 enum class Status : uint32_t {
   Ok = 0,
   Err = 1,
@@ -13,39 +11,23 @@ struct Dep {
   float b;
 };
 
-struct Foo_i32 {
-  int32_t a;
-  int32_t b;
+template<typename X>
+struct Foo {
+  X a;
+  X b;
   Dep c;
 };
 
-typedef Foo_i32 IntFoo;
+typedef Foo<int32_t> IntFoo;
 
-struct Foo_f64 {
-  double a;
-  double b;
-  Dep c;
-};
-
-typedef Foo_f64 DoubleFoo;
+typedef Foo<double> DoubleFoo;
 
 typedef int32_t Unit;
 
 typedef Status SpecialStatus;
 
+extern "C" {
+
 void root(IntFoo x, DoubleFoo y, Unit z, SpecialStatus w);
 
 } // extern "C"
-
-template<typename X>
-struct Foo;
-
-template<>
-struct Foo<double> : public Foo_f64 {
-
-};
-
-template<>
-struct Foo<int32_t> : public Foo_i32 {
-
-};

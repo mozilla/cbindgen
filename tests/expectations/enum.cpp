@@ -1,8 +1,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" {
-
 enum class A : uint32_t {
   a1 = 0,
   a2 = 2,
@@ -39,6 +37,8 @@ enum class E : intptr_t {
 };
 
 struct Opaque;
+
+extern "C" {
 
 void root(Opaque *o, A a, B b, C c, D d, E e);
 

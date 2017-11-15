@@ -8,7 +8,7 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Path, Specialization, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Path, Specialization, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -17,7 +17,7 @@ use bindgen::writer::{Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct OpaqueItem {
     pub name: Path,
-    pub generic_params: Vec<String>,
+    pub generic_params: GenericParams,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
@@ -28,13 +28,9 @@ impl OpaqueItem {
                generics: &syn::Generics,
                attrs: &Vec<syn::Attribute>,
                mod_cfg: &Option<Cfg>) -> OpaqueItem {
-        let generic_params = generics.ty_params.iter()
-                                               .map(|x| x.ident.to_string())
-                                               .collect::<Vec<_>>();
-
         OpaqueItem {
             name: name,
-            generic_params: generic_params,
+            generic_params: GenericParams::new(generics),
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs).unwrap_or(AnnotationSet::new()),
             documentation: Documentation::load(attrs),
@@ -46,7 +42,7 @@ impl OpaqueItem {
 
         let monomorph = OpaqueItem {
             name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: vec![],
+            generic_params: GenericParams::default(),
             cfg: self.cfg.clone(),
             annotations: self.annotations.clone(),
             documentation: self.documentation.clone(),
@@ -101,6 +97,8 @@ impl Source for OpaqueItem {
         self.cfg.write_before(config, out);
 
         self.documentation.write(config, out);
+
+        self.generic_params.write(config, out);
 
         if config.language == Language::C {
             write!(out, "typedef struct {} {};", self.name, self.name);
