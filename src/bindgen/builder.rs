@@ -122,12 +122,6 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_generic_template_specialization(mut self, generic_template_specialization: bool) -> Builder {
-      self.config.structure.generic_template_specialization = generic_template_specialization;
-      self
-    }
-
-    #[allow(unused)]
     pub fn with_documentation(mut self, documentation: bool) -> Builder {
       self.config.documentation = documentation;
       self
