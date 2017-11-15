@@ -50,6 +50,14 @@ enum F {
     Baz
 }
 
+/// cbindgen:prefix-with-name
+#[repr(C)]
+enum G {
+    Foo(i16),
+    Bar { x: u8, y: i16 },
+    Baz
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     o: *mut Opaque,
@@ -58,5 +66,6 @@ pub extern "C" fn root(
     c: C,
     d: D,
     e: E,
-    f: F
+    f: F,
+    g: G
 ) { }
