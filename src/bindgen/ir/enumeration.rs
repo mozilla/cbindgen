@@ -123,8 +123,9 @@ impl Item for Enum {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        if config.enumeration.prefix_with_name ||
-           self.annotations.bool("prefix-with-name").unwrap_or(false)
+        if config.language == Language::C
+            && (config.enumeration.prefix_with_name
+                || self.annotations.bool("prefix-with-name").unwrap_or(false))
         {
             let old = ::std::mem::replace(&mut self.values, Vec::new());
             for (name, value, doc) in old {
