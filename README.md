@@ -55,7 +55,7 @@ There are some options that can be used to configure the binding generation.
 
 For the command line, they can be specified by creating a `cbindgen.toml` with the options. This can be placed in the binding crate root or at a path manually specified.
 
-For build scripts, options can be specified on the builder or by writing a `cbindgen.toml` and using the helper function `cbindgen::generate_with_config`.
+For build scripts, options can be specified on the builder or by writing a `cbindgen.toml` and using the helper function `cbindgen::generate`.
 
 Here is a description of the options available in a config.
 
