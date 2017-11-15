@@ -56,7 +56,6 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
         apply_config_overrides(&mut config, &matches);
 
         return Builder::new().with_config(config)
-                             .with_std_types()
                              .with_src(input)
                              .generate();
     }
@@ -84,7 +83,6 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
     apply_config_overrides(&mut config, &matches);
 
     Builder::new().with_config(config)
-                  .with_std_types()
                   .with_cargo(lib)
                   .generate()
 }

@@ -27,7 +27,7 @@ impl Builder {
             srcs: Vec::new(),
             lib: None,
             lib_cargo: None,
-            std_types: false,
+            std_types: true,
         }
     }
 
@@ -140,8 +140,8 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_std_types(mut self) -> Builder {
-        self.std_types = true;
+    pub fn with_std_types(mut self, std_types: bool) -> Builder {
+        self.std_types = std_types;
         self
     }
 

@@ -29,7 +29,6 @@ pub fn generate<P: AsRef<Path>>(crate_dir: P) -> Result<Bindings, String> {
 /// custom config.
 pub fn generate_with_config<P: AsRef<Path>>(crate_dir: P, config: Config) -> Result<Bindings, String> {
     Builder::new().with_config(config)
-                  .with_std_types()
                   .with_crate(crate_dir)
                   .generate()
 }
