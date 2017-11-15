@@ -10,7 +10,7 @@ use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{Constant, Enum, Function, ItemContainer, ItemMap, Item};
 use bindgen::ir::{OpaqueItem, Path, Specialization, Static, Struct, Typedef, Union};
-use bindgen::monomorph::{Monomorphs, TemplateSpecialization};
+use bindgen::monomorph::Monomorphs;
 
 #[derive(Debug, Clone)]
 pub struct Library {
@@ -24,7 +24,6 @@ pub struct Library {
     typedefs: ItemMap<Typedef>,
     specializations: ItemMap<Specialization>,
     functions: Vec<Function>,
-    template_specializations: Vec<TemplateSpecialization>,
 }
 
 impl Library {
@@ -49,7 +48,6 @@ impl Library {
             typedefs: typedefs,
             specializations: specializations,
             functions: functions,
-            template_specializations: Vec::new(),
         }
     }
 
@@ -74,27 +72,18 @@ impl Library {
             global.add_dependencies(&self, &mut dependencies);
         });
 
-        if self.config.structure.generic_template_specialization &&
-           self.config.language == Language::Cxx {
-            for template_specialization in &self.template_specializations {
-              template_specialization.add_dependencies(&self, &mut dependencies);
-            }
-        }
-
         dependencies.sort();
 
         let items = dependencies.order;
         let constants = self.constants.to_vec();
         let globals = self.globals.to_vec();
         let functions = mem::replace(&mut self.functions, Vec::new());
-        let template_specializations = mem::replace(&mut self.template_specializations, Vec::new());
 
         Ok(Bindings::new(self.config.clone(),
                          constants,
                          globals,
                          items,
-                         functions,
-                         template_specializations))
+                         functions))
     }
 
     pub fn get_items(&self, p: &Path) -> Option<Vec<ItemContainer>> {
@@ -327,7 +316,5 @@ impl Library {
         for x in &mut self.functions {
             x.mangle_paths(&monomorphs);
         }
-
-        self.template_specializations = monomorphs.drain_template_specializations();
     }
 }

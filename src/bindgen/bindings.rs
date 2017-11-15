@@ -9,8 +9,7 @@ use std::fs;
 
 use bindgen::config::{Config, Language};
 use bindgen::ir::{Constant, ItemContainer, Function, Static};
-use bindgen::monomorph::TemplateSpecialization;
-use bindgen::writer::{ListType, Source, SourceWriter};
+use bindgen::writer::{Source, SourceWriter};
 
 /// A bindings header that can be written.
 pub struct Bindings {
@@ -19,7 +18,6 @@ pub struct Bindings {
     constants: Vec<Constant>,
     items: Vec<ItemContainer>,
     functions: Vec<Function>,
-    template_specializations: Vec<TemplateSpecialization>,
 }
 
 impl Bindings {
@@ -27,15 +25,13 @@ impl Bindings {
                       constants: Vec<Constant>,
                       globals: Vec<Static>,
                       items: Vec<ItemContainer>,
-                      functions: Vec<Function>,
-                      template_specializations: Vec<TemplateSpecialization>) -> Bindings {
+                      functions: Vec<Function>) -> Bindings {
         Bindings {
             config: config,
             globals: globals,
             constants: constants,
             items: items,
             functions: functions,
-            template_specializations: template_specializations,
         }
     }
 
@@ -150,38 +146,6 @@ impl Bindings {
             out.new_line_if_not_start();
             out.write("} // extern \"C\"");
             out.new_line();
-        }
-
-        if self.config.structure.generic_template_specialization &&
-           self.config.language == Language::Cxx {
-            self.open_namespaces(&mut out);
-            for template in &self.template_specializations {
-              out.new_line_if_not_start();
-              out.write("template<");
-              for (i, param) in template.generic.generic_params.iter().enumerate() {
-                  if i != 0 {
-                      out.write(", ")
-                  }
-                  write!(out, "typename {}", param);
-              }
-              out.write(">");
-              out.new_line();
-              write!(out, "struct {};", template.generic.name);
-              out.new_line();
-
-              for &(ref monomorph_path, ref generic_values) in &template.monomorphs {
-                out.new_line();
-                out.write("template<>");
-                out.new_line();
-                write!(out, "struct {}<", template.generic.name);
-                out.write_horizontal_source_list(generic_values, ListType::Join(", "));
-                write!(out, "> : public {}", monomorph_path);
-                out.open_brace();
-                out.close_brace(true);
-                out.new_line();
-              }
-            }
-            self.close_namespaces(&mut out);
         }
 
         if let Some(ref f) = self.config.autogen_warning {
