@@ -127,7 +127,7 @@ rename_variants = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|Snak
 
 ## Examples
 
-See `compile-tests/` for some examples of rust source that can be handled.
+See `tests/rust/` for some examples of rust source that can be handled.
 
 ## Major differences between `cbindgen` and `rusty-cheddar`
 
@@ -137,20 +137,9 @@ See `compile-tests/` for some examples of rust source that can be handled.
 
 There may be other differences, but those are the ones that I know of. Please correct me if I misrepresented anything.
 
-## How it works
-
-1. All the structs, unions, enums, type aliases, constants, statics, and functions that are representable in C are gathered
-2. A dependency graph is built using the extern "C" functions as roots
-    * This removes unneeded types from the bindings and sorts the structs that depend on each other
-3. Some code generation is done to specialize generics that are specified as type aliases
-4. The items are printed in dependency order in C syntax
-
-## Future work
-
-1. Better support for types with fully specified names
-2. Support for generating a FFI interface for a Struct+Impl
-3. ...
-
 ## Prominent users
+
 * [milksnake](https://github.com/getsentry/milksnake)
 * [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings/webrender_ffi_generated.h)
+
+If you're using `cbindgen` and would like to be added to this list, please open a pull request!
