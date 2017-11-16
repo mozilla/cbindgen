@@ -16,10 +16,7 @@ union Tuple {
 };
 
 template<typename T>
-union Indirection {
-  const T *a;
-  const float *b;
-};
+using Indirection = Tuple<T, float>;
 
 extern "C" {
 

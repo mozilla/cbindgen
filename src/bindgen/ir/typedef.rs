@@ -7,10 +7,11 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::config::Config;
+use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Path, Specialization, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Path, Type};
 use bindgen::library::Library;
+use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
 use bindgen::writer::{Source, SourceWriter};
 
@@ -18,6 +19,7 @@ use bindgen::writer::{Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct Typedef {
     pub name: String,
+    pub generic_params: GenericParams,
     pub aliased: Type,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -27,11 +29,13 @@ pub struct Typedef {
 impl Typedef {
     pub fn load(name: String,
                 ty: &syn::Ty,
+                generics: &syn::Generics,
                 attrs: &Vec<syn::Attribute>,
                 mod_cfg: &Option<Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(ty)? {
             Ok(Typedef {
                 name: name,
+                generic_params: GenericParams::new(generics),
                 aliased: x,
                 cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
                 annotations: AnnotationSet::load(attrs)?,
@@ -66,7 +70,17 @@ impl Typedef {
         }
     }
 
+    pub fn is_generic(&self) -> bool {
+        self.generic_params.len() > 0
+    }
+
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
+        // Generic structs can instantiate monomorphs only once they've been
+        // instantiated. See `instantiate_monomorph` for more details.
+        if self.is_generic() {
+            return;
+        }
+
         self.aliased.add_monomorphs(library, out);
     }
 
@@ -96,18 +110,31 @@ impl Item for Typedef {
         ItemContainer::Typedef(self.clone())
     }
 
-    fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
-        Ok(Box::new(Typedef {
-            name: aliasee.name.clone(),
-            aliased: self.aliased.clone(),
-            cfg: aliasee.cfg.clone(),
-            annotations: aliasee.annotations.clone(),
-            documentation: aliasee.documentation.clone(),
-        }))
+    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+        self.aliased.add_dependencies_ignoring_generics(&self.generic_params, library, out);
     }
 
-    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.aliased.add_dependencies(library, out);
+    fn instantiate_monomorph(&self, generic_values: &Vec<Type>, library: &Library, out: &mut Monomorphs) {
+        assert!(self.generic_params.len() > 0 &&
+                self.generic_params.len() == generic_values.len());
+
+        let mappings = self.generic_params.iter()
+                                          .zip(generic_values.iter())
+                                          .collect::<Vec<_>>();
+
+        let monomorph = Typedef {
+            name: mangle::mangle_path(&self.name, generic_values),
+            generic_params: GenericParams::default(),
+            aliased: self.aliased.specialize(&mappings),
+            cfg: self.cfg.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        };
+
+        // Instantiate any monomorphs for any generic paths we may have just created.
+        monomorph.add_monomorphs(library, out);
+
+        out.insert_typedef(self, monomorph, generic_values.clone());
     }
 }
 
@@ -117,8 +144,15 @@ impl Source for Typedef {
 
         self.documentation.write(config, out);
 
-        out.write("typedef ");
-        (self.name.clone(), self.aliased.clone()).write(config, out);
+        self.generic_params.write(config, out);
+
+        if config.language == Language::C {
+            out.write("typedef ");
+            (self.name.clone(), self.aliased.clone()).write(config, out);
+        } else {
+            write!(out, "using {} = ", self.name);
+            self.aliased.write(config, out);
+        }
         out.write(";");
 
         self.cfg.write_after(config, out);

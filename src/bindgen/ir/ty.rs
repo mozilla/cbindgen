@@ -438,11 +438,8 @@ impl Type {
                             ItemContainer::Enum(..) => {
                                 warn!("Cannot instantiate a generic enum.")
                             },
-                            ItemContainer::Typedef(..) => {
-                                warn!("Cannot instantiate a generic typedef.")
-                            },
-                            ItemContainer::Specialization(..) => {
-                                warn!("Cannot instantiate a generic specialization.")
+                            ItemContainer::Typedef(ref x) => {
+                                x.instantiate_monomorph(&path.generics, library, out);
                             },
                         }
                     }

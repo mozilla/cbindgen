@@ -9,7 +9,7 @@ use bindgen::bindings::Bindings;
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{Constant, Enum, Function, ItemContainer, ItemMap, Item};
-use bindgen::ir::{OpaqueItem, Path, Specialization, Static, Struct, Typedef, Union};
+use bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use bindgen::monomorph::Monomorphs;
 
 #[derive(Debug, Clone)]
@@ -22,7 +22,6 @@ pub struct Library {
     unions: ItemMap<Union>,
     opaque_items: ItemMap<OpaqueItem>,
     typedefs: ItemMap<Typedef>,
-    specializations: ItemMap<Specialization>,
     functions: Vec<Function>,
 }
 
@@ -35,7 +34,6 @@ impl Library {
                unions: ItemMap<Union>,
                opaque_items: ItemMap<OpaqueItem>,
                typedefs: ItemMap<Typedef>,
-               specializations: ItemMap<Specialization>,
                functions: Vec<Function>) -> Library {
         Library {
             config: config,
@@ -46,7 +44,6 @@ impl Library {
             unions: unions,
             opaque_items: opaque_items,
             typedefs: typedefs,
-            specializations: specializations,
             functions: functions,
         }
     }
@@ -56,7 +53,6 @@ impl Library {
 
         self.transfer_annotations();
         self.rename_items();
-        self.specialize_items();
         self.simplify_option_to_ptr();
 
         if self.config.language == Language::C {
@@ -102,40 +98,8 @@ impl Library {
         if let Some(x) = self.typedefs.get_items(p) {
             return Some(x);
         }
-        if let Some(x) = self.specializations.get_items(p) {
-            return Some(x);
-        }
 
         None
-    }
-
-    fn insert_item(&mut self, item: ItemContainer) {
-        match item {
-            ItemContainer::Constant(x) => {
-                self.constants.try_insert(x);
-            },
-            ItemContainer::Static(x) => {
-                self.globals.try_insert(x);
-            },
-            ItemContainer::OpaqueItem(x) => {
-                self.opaque_items.try_insert(x);
-            },
-            ItemContainer::Struct(x) => {
-                self.structs.try_insert(x);
-            },
-            ItemContainer::Union(x) => {
-                self.unions.try_insert(x);
-            },
-            ItemContainer::Enum(x) => {
-                self.enums.try_insert(x);
-            },
-            ItemContainer::Typedef(x) => {
-                self.typedefs.try_insert(x);
-            },
-            ItemContainer::Specialization(x) => {
-                self.specializations.try_insert(x);
-            },
-        };
     }
 
     fn transfer_annotations(&mut self) {
@@ -197,18 +161,6 @@ impl Library {
             if transferred {
                 continue;
             }
-            self.specializations.for_items_mut(&alias_path, |x| {
-                if x.annotations().is_empty() {
-                    *x.annotations_mut() = annotations.clone();
-                    transferred = true;
-                } else {
-                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                }
-            });
-            if transferred {
-                continue;
-            }
             self.typedefs.for_items_mut(&alias_path, |x| {
                 if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
@@ -235,27 +187,6 @@ impl Library {
         }
     }
 
-    fn specialize_items(&mut self) {
-        let mut specializations = Vec::new();
-
-        self.specializations.for_all_items(|x| {
-            match x.resolve_specialization(&self) {
-                Ok(specialization) => {
-                    specializations.push(specialization);
-                }
-                Err(msg) => {
-                    warn!("Specializing {} failed - ({}).", x.name.clone(), msg);
-                }
-            }
-        });
-
-        for specialization in specializations {
-            self.insert_item(specialization.container());
-        }
-
-        self.specializations.clear();
-    }
-
     fn simplify_option_to_ptr(&mut self) {
         self.structs.for_all_items_mut(|x| {
             x.simplify_option_to_ptr();
@@ -275,10 +206,8 @@ impl Library {
     }
 
     fn instantiate_monomorphs(&mut self) {
-        assert!(self.specializations.len() == 0);
-
         // Collect a list of monomorphs
-        let mut monomorphs = Monomorphs::new();
+        let mut monomorphs = Monomorphs::default();
 
         self.structs.for_all_items(|x| {
             x.add_monomorphs(self, &mut monomorphs);
@@ -303,11 +232,15 @@ impl Library {
         for monomorph in monomorphs.drain_opaques() {
             self.opaque_items.try_insert(monomorph);
         }
+        for monomorph in monomorphs.drain_typedefs() {
+            self.typedefs.try_insert(monomorph);
+        }
 
         // Remove structs and opaque items that are generic
         self.opaque_items.filter(|x| x.generic_params.len() > 0);
         self.structs.filter(|x| x.generic_params.len() > 0);
         self.unions.filter(|x| x.generic_params.len() > 0);
+        self.typedefs.filter(|x| x.generic_params.len() > 0);
 
         // Mangle the paths that remain
         self.unions.for_all_items_mut(|x| x.mangle_paths(&monomorphs));

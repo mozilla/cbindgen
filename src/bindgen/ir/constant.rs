@@ -8,8 +8,7 @@ use std::mem;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Specialization, Type};
-use bindgen::library::Library;
+use bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Type};
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -119,10 +118,6 @@ impl Item for Constant {
 
     fn container(&self) -> ItemContainer {
         ItemContainer::Constant(self.clone())
-    }
-
-    fn specialize(&self, _library: &Library, _aliasee: &Specialization) -> Result<Box<Item>, String> {
-        unreachable!();
     }
 }
 

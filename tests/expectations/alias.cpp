@@ -18,13 +18,13 @@ struct Foo {
   Dep c;
 };
 
-typedef Foo<int32_t> IntFoo;
+using IntFoo = Foo<int32_t>;
 
-typedef Foo<double> DoubleFoo;
+using DoubleFoo = Foo<double>;
 
-typedef int32_t Unit;
+using Unit = int32_t;
 
-typedef Status SpecialStatus;
+using SpecialStatus = Status;
 
 extern "C" {
 

@@ -217,7 +217,6 @@ impl Builder {
                      result.unions,
                      result.opaque_items,
                      result.typedefs,
-                     result.specializations,
                      result.functions).generate()
     }
 }

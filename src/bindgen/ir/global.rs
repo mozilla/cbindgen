@@ -8,7 +8,7 @@ use syn;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Specialization, Type};
+use bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Type};
 use bindgen::library::Library;
 use bindgen::writer::{Source, SourceWriter};
 
@@ -73,10 +73,6 @@ impl Item for Static {
 
     fn container(&self) -> ItemContainer {
         ItemContainer::Static(self.clone())
-    }
-
-    fn specialize(&self, _library: &Library, _aliasee: &Specialization) -> Result<Box<Item>, String> {
-        unreachable!();
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {

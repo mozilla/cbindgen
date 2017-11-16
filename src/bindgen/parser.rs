@@ -11,7 +11,7 @@ use syn;
 
 use bindgen::cargo::{Cargo, PackageRef};
 use bindgen::ir::{AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams};
-use bindgen::ir::{ItemMap, OpaqueItem, Specialization, Static, Struct, Typedef, Union};
+use bindgen::ir::{ItemMap, OpaqueItem, Static, Struct, Typedef, Union};
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 
 const STD_CRATES: &'static [&'static str] = &["std",
@@ -348,7 +348,6 @@ pub struct Parse {
     pub unions: ItemMap<Union>,
     pub opaque_items: ItemMap<OpaqueItem>,
     pub typedefs: ItemMap<Typedef>,
-    pub specializations: ItemMap<Specialization>,
     pub functions: Vec<Function>,
 }
 
@@ -362,7 +361,6 @@ impl Parse {
             unions: ItemMap::new(),
             opaque_items: ItemMap::new(),
             typedefs: ItemMap::new(),
-            specializations: ItemMap::new(),
             functions: Vec::new(),
         }
     }
@@ -405,7 +403,6 @@ impl Parse {
         self.unions.extend_with(&other.unions);
         self.opaque_items.extend_with(&other.opaque_items);
         self.typedefs.extend_with(&other.typedefs);
-        self.specializations.extend_with(&other.specializations);
         self.functions.extend_from_slice(&other.functions);
     }
 
@@ -742,42 +739,26 @@ impl Parse {
                    generics: &syn::Generics) {
         let alias_name = item.ident.to_string();
 
-        let fail1 = if generics.lifetimes.is_empty() &&
-                       generics.ty_params.is_empty()
-        {
-            match Typedef::load(alias_name.clone(),
-                                ty,
-                                &item.attrs,
-                                mod_cfg)
-            {
-                Ok(typedef) => {
-                    info!("Take {}::{}.", crate_name, &item.ident);
-                    self.typedefs.try_insert(typedef);
-                    return;
-                }
-                Err(msg) => msg,
-            }
-        } else {
-            format!("Cannot have generics in typedef.")
-        };
-
-        let fail2 = match Specialization::load(alias_name.clone(),
-                                               generics,
-                                               ty,
-                                               &item.attrs,
-                                               mod_cfg) {
-            Ok(spec) => {
+        match Typedef::load(alias_name.clone(),
+                          ty,
+                          generics,
+                          &item.attrs,
+                          mod_cfg) {
+            Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
-                self.specializations.try_insert(spec);
-                return;
-            }
-            Err(msg) => msg,
-        };
 
-        info!("Skip {}::{} - ({} and {}).",
-              crate_name,
-              &item.ident,
-              fail1,
-              fail2);
+                self.typedefs.try_insert(st);
+            }
+            Err(msg) => {
+                info!("Take {}::{} - opaque ({}).",
+                      crate_name,
+                      &item.ident,
+                      msg);
+                self.opaque_items.try_insert(OpaqueItem::new(alias_name,
+                                                             generics,
+                                                             &item.attrs,
+                                                             mod_cfg));
+            }
+        }
     }
 }

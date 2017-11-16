@@ -11,11 +11,9 @@ struct TypedLength {
 };
 
 template<typename T>
-struct Length {
-  T _0;
-};
+using Length = TypedLength<T, UnknownUnit>;
 
-typedef TypedLength<float, LayoutUnit> LayoutLength;
+using LayoutLength = TypedLength<float, LayoutUnit>;
 
 template<typename T, typename U>
 struct TypedSideOffsets2D {
@@ -26,14 +24,9 @@ struct TypedSideOffsets2D {
 };
 
 template<typename T>
-struct SideOffsets2D {
-  T top;
-  T right;
-  T bottom;
-  T left;
-};
+using SideOffsets2D = TypedSideOffsets2D<T, UnknownUnit>;
 
-typedef TypedSideOffsets2D<float, LayoutUnit> LayoutSideOffsets2D;
+using LayoutSideOffsets2D = TypedSideOffsets2D<float, LayoutUnit>;
 
 template<typename T, typename U>
 struct TypedSize2D {
@@ -42,12 +35,9 @@ struct TypedSize2D {
 };
 
 template<typename T>
-struct Size2D {
-  T width;
-  T height;
-};
+using Size2D = TypedSize2D<T, UnknownUnit>;
 
-typedef TypedSize2D<float, LayoutUnit> LayoutSize2D;
+using LayoutSize2D = TypedSize2D<float, LayoutUnit>;
 
 template<typename T, typename U>
 struct TypedPoint2D {
@@ -56,12 +46,9 @@ struct TypedPoint2D {
 };
 
 template<typename T>
-struct Point2D {
-  T x;
-  T y;
-};
+using Point2D = TypedPoint2D<T, UnknownUnit>;
 
-typedef TypedPoint2D<float, LayoutUnit> LayoutPoint2D;
+using LayoutPoint2D = TypedPoint2D<float, LayoutUnit>;
 
 template<typename T, typename U>
 struct TypedRect {
@@ -70,12 +57,9 @@ struct TypedRect {
 };
 
 template<typename T>
-struct Rect {
-  TypedPoint2D<T, UnknownUnit> origin;
-  TypedSize2D<T, UnknownUnit> size;
-};
+using Rect = TypedRect<T, UnknownUnit>;
 
-typedef TypedRect<float, LayoutUnit> LayoutRect;
+using LayoutRect = TypedRect<float, LayoutUnit>;
 
 template<typename T, typename Src, typename Dst>
 struct TypedTransform2D {

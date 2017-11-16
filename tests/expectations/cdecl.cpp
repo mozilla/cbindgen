@@ -1,33 +1,33 @@
 #include <cstdint>
 #include <cstdlib>
 
-typedef void (*A)();
+using A = void(*)();
 
-typedef void (*B)();
+using B = void(*)();
 
-typedef bool (*C)(int32_t, int32_t);
+using C = bool(*)(int32_t, int32_t);
 
-typedef bool (*(*D)(int32_t))(float);
+using D = bool(*(*)(int32_t))(float);
 
-typedef int32_t (*(*E)())[16];
+using E = int32_t(*(*)())[16];
 
-typedef const int32_t *F;
+using F = const int32_t*;
 
-typedef const int32_t *const *G;
+using G = const int32_t*const *;
 
-typedef int32_t *const *H;
+using H = int32_t*const *;
 
-typedef int32_t (*I)[16];
+using I = int32_t(*)[16];
 
-typedef double (**J)(float);
+using J = double(**)(float);
 
-typedef int32_t K[16];
+using K = int32_t[16];
 
-typedef const int32_t *L[16];
+using L = const int32_t*[16];
 
-typedef bool (*M[16])(int32_t, int32_t);
+using M = bool(*[16])(int32_t, int32_t);
 
-typedef void (*N[16])(int32_t, int32_t);
+using N = void(*[16])(int32_t, int32_t);
 
 extern "C" {
 
