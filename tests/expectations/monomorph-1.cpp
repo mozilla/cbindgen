@@ -16,10 +16,7 @@ struct Tuple {
 };
 
 template<typename T>
-struct Indirection {
-  const T *a;
-  const float *b;
-};
+using Indirection = Tuple<T, float>;
 
 extern "C" {
 

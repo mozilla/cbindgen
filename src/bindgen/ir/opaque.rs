@@ -8,7 +8,7 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Path, Specialization, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Path, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -71,21 +71,6 @@ impl Item for OpaqueItem {
 
     fn container(&self) -> ItemContainer {
         ItemContainer::OpaqueItem(self.clone())
-    }
-
-    fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
-        if aliasee.aliased.generics.len() !=
-           self.generic_params.len() {
-            return Err("Incomplete specialization, the amount of generics in the path doesn't match the amount of generics in the item.".to_owned());
-        }
-
-        Ok(Box::new(OpaqueItem {
-            name: aliasee.name.clone(),
-            generic_params: aliasee.generic_params.clone(),
-            cfg: aliasee.cfg.clone(),
-            annotations: aliasee.annotations.clone(),
-            documentation: aliasee.documentation.clone(),
-        }))
     }
 
     fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {

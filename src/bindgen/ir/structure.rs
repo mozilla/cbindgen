@@ -8,7 +8,7 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Repr, Specialization, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Repr, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -183,29 +183,6 @@ impl Item for Struct {
         monomorph.add_monomorphs(library, out);
 
         out.insert_struct(self, monomorph, generic_values.clone());
-    }
-
-    fn specialize(&self, _: &Library, aliasee: &Specialization) -> Result<Box<Item>, String> {
-        if aliasee.aliased.generics.len() !=
-           self.generic_params.len() {
-            return Err("Incomplete specialization, the amount of generics in the path doesn't match the amount of generics in the item.".to_owned());
-        }
-
-        let mappings = self.generic_params.iter()
-                                          .zip(aliasee.aliased.generics.iter())
-                                          .collect::<Vec<_>>();
-
-        Ok(Box::new(Struct {
-            name: aliasee.name.clone(),
-            generic_params: aliasee.generic_params.clone(),
-            fields: self.fields.iter()
-                                  .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
-                                  .collect(),
-            tuple_struct: self.tuple_struct,
-            cfg: aliasee.cfg.clone(),
-            annotations: aliasee.annotations.clone(),
-            documentation: aliasee.documentation.clone(),
-        }))
     }
 }
 

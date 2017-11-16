@@ -10,9 +10,7 @@ typedef struct {
   float _0;
 } TypedLength_f32__LayoutUnit;
 
-typedef struct {
-  float _0;
-} Length_f32;
+typedef TypedLength_f32__UnknownUnit Length_f32;
 
 typedef TypedLength_f32__LayoutUnit LayoutLength;
 
@@ -30,12 +28,7 @@ typedef struct {
   float left;
 } TypedSideOffsets2D_f32__LayoutUnit;
 
-typedef struct {
-  float top;
-  float right;
-  float bottom;
-  float left;
-} SideOffsets2D_f32;
+typedef TypedSideOffsets2D_f32__UnknownUnit SideOffsets2D_f32;
 
 typedef TypedSideOffsets2D_f32__LayoutUnit LayoutSideOffsets2D;
 
@@ -49,10 +42,7 @@ typedef struct {
   float height;
 } TypedSize2D_f32__LayoutUnit;
 
-typedef struct {
-  float width;
-  float height;
-} Size2D_f32;
+typedef TypedSize2D_f32__UnknownUnit Size2D_f32;
 
 typedef TypedSize2D_f32__LayoutUnit LayoutSize2D;
 
@@ -66,10 +56,7 @@ typedef struct {
   float y;
 } TypedPoint2D_f32__LayoutUnit;
 
-typedef struct {
-  float x;
-  float y;
-} Point2D_f32;
+typedef TypedPoint2D_f32__UnknownUnit Point2D_f32;
 
 typedef TypedPoint2D_f32__LayoutUnit LayoutPoint2D;
 
@@ -83,10 +70,7 @@ typedef struct {
   TypedSize2D_f32__LayoutUnit size;
 } TypedRect_f32__LayoutUnit;
 
-typedef struct {
-  TypedPoint2D_f32__UnknownUnit origin;
-  TypedSize2D_f32__UnknownUnit size;
-} Rect_f32;
+typedef TypedRect_f32__UnknownUnit Rect_f32;
 
 typedef TypedRect_f32__LayoutUnit LayoutRect;
 

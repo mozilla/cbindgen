@@ -28,7 +28,9 @@ typedef struct {
 typedef struct {
   const float *a;
   const float *b;
-} Indirection_f32;
+} Tuple_f32__f32;
+
+typedef Tuple_f32__f32 Indirection_f32;
 
 void root(Foo_i32 a,
           Foo_f32 b,

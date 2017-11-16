@@ -1,11 +1,14 @@
 #include <cstdint>
 #include <cstdlib>
 
-template<typename T>
-struct IntFoo {
-  int32_t x;
-  T y;
+template<typename T, typename U>
+struct Foo {
+  T x;
+  U y;
 };
+
+template<typename T>
+using IntFoo = Foo<int32_t, T>;
 
 extern "C" {
 

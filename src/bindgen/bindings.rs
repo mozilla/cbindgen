@@ -109,9 +109,6 @@ impl Bindings {
                 &ItemContainer::Union(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::OpaqueItem(ref x) => x.write(&self.config, &mut out),
                 &ItemContainer::Typedef(ref x) => x.write(&self.config, &mut out),
-                &ItemContainer::Specialization(_) => {
-                    unreachable!("should not encounter a specialization in a generated library")
-                }
             }
             out.new_line();
         }

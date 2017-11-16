@@ -7,7 +7,7 @@ use std::mem;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Specialization, Static, Struct, Type, Typedef, Union};
+use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Static, Struct, Type, Typedef, Union};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 
@@ -19,8 +19,6 @@ pub trait Item {
     fn annotations_mut(&mut self) -> &mut AnnotationSet;
 
     fn container(&self) -> ItemContainer;
-
-    fn specialize(&self, library: &Library, aliasee: &Specialization) -> Result<Box<Item>, String>;
 
     fn rename_for_config(&mut self, _config: &Config) { }
     fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) { }
@@ -36,7 +34,6 @@ pub enum ItemContainer {
     Union(Union),
     Enum(Enum),
     Typedef(Typedef),
-    Specialization(Specialization),
 }
 
 impl ItemContainer {
@@ -49,7 +46,6 @@ impl ItemContainer {
             &ItemContainer::Union(ref x) => x,
             &ItemContainer::Enum(ref x) => x,
             &ItemContainer::Typedef(ref x) => x,
-            &ItemContainer::Specialization(ref x) => x,
         }
     }
 }
@@ -70,14 +66,6 @@ impl<T: Item + Clone> ItemMap<T> {
         ItemMap {
             data: BTreeMap::new(),
         }
-    }
-
-    pub fn clear(&mut self) {
-        self.data.clear();
-    }
-
-    pub fn len(&self) -> usize {
-        self.data.len()
     }
 
     pub fn try_insert(&mut self, item: T) -> bool {
