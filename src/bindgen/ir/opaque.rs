@@ -103,8 +103,6 @@ impl Source for OpaqueItem {
         self.documentation.write(config, out);
 
         if config.language == Language::C {
-            write!(out, "struct {};", self.name);
-            out.new_line();
             write!(out, "typedef struct {} {};", self.name, self.name);
         } else {
             write!(out, "struct {};", self.name);

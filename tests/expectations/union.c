@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-struct Opaque;
 typedef struct Opaque Opaque;
 
 typedef union {

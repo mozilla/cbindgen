@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-struct Bar;
 typedef struct Bar Bar;
 
 typedef struct {

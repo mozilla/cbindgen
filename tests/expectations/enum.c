@@ -42,7 +42,6 @@ enum E {
 };
 typedef intptr_t E;
 
-struct Opaque;
 typedef struct Opaque Opaque;
 
 void root(Opaque *o, A a, B b, C c, D d, E e);
