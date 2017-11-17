@@ -2,10 +2,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-struct A;
 typedef struct A A;
 
-struct B;
 typedef struct B B;
 
 typedef struct {

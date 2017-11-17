@@ -2,13 +2,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-struct Bar_Bar_f32;
 typedef struct Bar_Bar_f32 Bar_Bar_f32;
 
-struct Bar_Foo_f32;
 typedef struct Bar_Foo_f32 Bar_Foo_f32;
 
-struct Bar_f32;
 typedef struct Bar_f32 Bar_f32;
 
 typedef union {
