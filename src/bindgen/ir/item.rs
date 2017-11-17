@@ -22,7 +22,9 @@ pub trait Item {
 
     fn rename_for_config(&mut self, _config: &Config) { }
     fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) { }
-    fn instantiate_monomorph(&self, _generics: &Vec<Type>, _library: &Library, _out: &mut Monomorphs) { }
+    fn instantiate_monomorph(&self, _generics: &Vec<Type>, _library: &Library, _out: &mut Monomorphs) {
+        unreachable!("Cannot instantiate {} as a generic.", self.name())
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -10,7 +10,7 @@ use syn;
 use bindgen::cdecl;
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{Documentation, GenericParams, GenericPath, ItemContainer, Item, Path};
+use bindgen::ir::{Documentation, GenericParams, GenericPath, Path};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::utilities::IterHelpers;
@@ -419,29 +419,7 @@ impl Type {
 
                 if let Some(items) = library.get_items(&path.name) {
                     for item in items {
-                        match item {
-                            ItemContainer::Constant(..) => {
-                                warn!("Cannot instantiate a generic constant.")
-                            },
-                            ItemContainer::Static(..) => {
-                                warn!("Cannot instantiate a generic static.")
-                            },
-                            ItemContainer::OpaqueItem(ref x) => {
-                                x.instantiate_monomorph(&path.generics, out);
-                            },
-                            ItemContainer::Union(ref x) => {
-                                x.instantiate_monomorph(&path.generics, library, out);
-                            },
-                            ItemContainer::Struct(ref x) => {
-                                x.instantiate_monomorph(&path.generics, library, out);
-                            },
-                            ItemContainer::Enum(..) => {
-                                warn!("Cannot instantiate a generic enum.")
-                            },
-                            ItemContainer::Typedef(ref x) => {
-                                x.instantiate_monomorph(&path.generics, library, out);
-                            },
-                        }
+                        item.deref().instantiate_monomorph(&path.generics, library, out);
                     }
                 }
             }
