@@ -36,20 +36,6 @@ impl OpaqueItem {
             documentation: Documentation::load(attrs),
         }
     }
-
-    pub fn instantiate_monomorph(&self, generic_values: &Vec<Type>, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() > 0);
-
-        let monomorph = OpaqueItem {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: GenericParams::default(),
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        };
-
-        out.insert_opaque(self, monomorph, generic_values.clone());
-    }
 }
 
 impl Item for OpaqueItem {
@@ -74,6 +60,21 @@ impl Item for OpaqueItem {
     }
 
     fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {
+    }
+
+    fn instantiate_monomorph(&self, generic_values: &Vec<Type>, _library: &Library, out: &mut Monomorphs) {
+        assert!(self.generic_params.len() > 0 &&
+                self.generic_params.len() == generic_values.len());
+
+        let monomorph = OpaqueItem {
+            name: mangle::mangle_path(&self.name, generic_values),
+            generic_params: GenericParams::default(),
+            cfg: self.cfg.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        };
+
+        out.insert_opaque(self, monomorph, generic_values.clone());
     }
 }
 
