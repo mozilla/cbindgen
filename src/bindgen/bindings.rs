@@ -138,11 +138,11 @@ impl Bindings {
         }
 
         if self.config.language == Language::Cxx {
-            self.close_namespaces(&mut out);
-
             out.new_line_if_not_start();
             out.write("} // extern \"C\"");
             out.new_line();
+
+            self.close_namespaces(&mut out);
         }
 
         if let Some(ref f) = self.config.autogen_warning {
