@@ -6,7 +6,7 @@ use std::cmp;
 use std::io;
 use std::io::Write;
 
-use bindgen::config::{Config, Braces};
+use bindgen::config::{Braces, Config};
 
 /// A type of way to format a list.
 pub enum ListType<'a> {
@@ -84,7 +84,8 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     /// Takes a function that writes source and returns the maximum line length
     /// written.
     pub fn measure<T>(&self, func: T) -> usize
-        where T: Fn(&mut MeasureWriter)
+    where
+        T: Fn(&mut MeasureWriter),
     {
         let mut measurer = SourceWriter {
             out: NullFile,
@@ -118,9 +119,8 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn push_tab(&mut self) {
-        let spaces = self.spaces() -
-                     (self.spaces() % self.config.tab_width) +
-                     self.config.tab_width;
+        let spaces =
+            self.spaces() - (self.spaces() % self.config.tab_width) + self.config.tab_width;
         self.spaces.push(spaces);
     }
 
@@ -176,16 +176,18 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         InnerWriter(self).write_fmt(fmt).unwrap();
     }
 
-    pub fn write_horizontal_source_list<'b, S: Source>(&mut self, items: &Vec<S>, list_type: ListType<'b>) {
+    pub fn write_horizontal_source_list<'b, S: Source>(
+        &mut self,
+        items: &Vec<S>,
+        list_type: ListType<'b>,
+    ) {
         for (i, ref item) in items.iter().enumerate() {
             item.write(self.config, self);
 
             match list_type {
-                ListType::Join(text) => {
-                    if i != items.len() - 1 {
-                        write!(self, "{}", text);
-                    }
-                }
+                ListType::Join(text) => if i != items.len() - 1 {
+                    write!(self, "{}", text);
+                },
                 ListType::Cap(text) => {
                     write!(self, "{}", text);
                 }
@@ -193,18 +195,20 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
     }
 
-    pub fn write_vertical_source_list<'b, S: Source>(&mut self, items: &Vec<S>, list_type: ListType<'b>) {
+    pub fn write_vertical_source_list<'b, S: Source>(
+        &mut self,
+        items: &Vec<S>,
+        list_type: ListType<'b>,
+    ) {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
         for (i, ref item) in items.iter().enumerate() {
             item.write(self.config, self);
 
             match list_type {
-                ListType::Join(text) => {
-                    if i != items.len() - 1 {
-                        write!(self, "{}", text);
-                    }
-                }
+                ListType::Join(text) => if i != items.len() - 1 {
+                    write!(self, "{}", text);
+                },
                 ListType::Cap(text) => {
                     write!(self, "{}", text);
                 }

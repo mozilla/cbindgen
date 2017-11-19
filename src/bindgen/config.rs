@@ -266,7 +266,7 @@ impl Default for ConstantConfig {
 }
 
 /// Settings to apply when parsing.
-#[derive( Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]

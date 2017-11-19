@@ -24,18 +24,18 @@ impl Dependencies {
     pub fn sort(&mut self) {
         // Sort enums and opaque structs into their own layers because they don't
         // depend on each other or anything else.
-        let ordering = |a: &ItemContainer, b: &ItemContainer| {
-            match (a, b) {
-                (&ItemContainer::Enum(ref x), &ItemContainer::Enum(ref y)) => x.name.cmp(&y.name),
-                (&ItemContainer::Enum(_), _) => Ordering::Less,
-                (_, &ItemContainer::Enum(_)) => Ordering::Greater,
+        let ordering = |a: &ItemContainer, b: &ItemContainer| match (a, b) {
+            (&ItemContainer::Enum(ref x), &ItemContainer::Enum(ref y)) => x.name.cmp(&y.name),
+            (&ItemContainer::Enum(_), _) => Ordering::Less,
+            (_, &ItemContainer::Enum(_)) => Ordering::Greater,
 
-                (&ItemContainer::OpaqueItem(ref x), &ItemContainer::OpaqueItem(ref y)) => x.name.cmp(&y.name),
-                (&ItemContainer::OpaqueItem(_), _) => Ordering::Less,
-                (_, &ItemContainer::OpaqueItem(_)) => Ordering::Greater,
-
-                _ => Ordering::Equal,
+            (&ItemContainer::OpaqueItem(ref x), &ItemContainer::OpaqueItem(ref y)) => {
+                x.name.cmp(&y.name)
             }
+            (&ItemContainer::OpaqueItem(_), _) => Ordering::Less,
+            (_, &ItemContainer::OpaqueItem(_)) => Ordering::Greater,
+
+            _ => Ordering::Equal,
         };
 
         self.order.sort_by(ordering);

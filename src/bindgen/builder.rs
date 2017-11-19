@@ -33,98 +33,104 @@ impl Builder {
 
     #[allow(unused)]
     pub fn with_header<S: AsRef<str>>(mut self, header: S) -> Builder {
-      self.config.header = Some(String::from(header.as_ref()));
-      self
+        self.config.header = Some(String::from(header.as_ref()));
+        self
     }
 
     #[allow(unused)]
     pub fn with_trailer<S: AsRef<str>>(mut self, trailer: S) -> Builder {
-      self.config.trailer = Some(String::from(trailer.as_ref()));
-      self
+        self.config.trailer = Some(String::from(trailer.as_ref()));
+        self
     }
 
     #[allow(unused)]
     pub fn with_include_guard<S: AsRef<str>>(mut self, include_guard: S) -> Builder {
-      self.config.include_guard = Some(String::from(include_guard.as_ref()));
-      self
+        self.config.include_guard = Some(String::from(include_guard.as_ref()));
+        self
     }
 
     #[allow(unused)]
     pub fn with_autogen_warning<S: AsRef<str>>(mut self, autogen_warning: S) -> Builder {
-      self.config.autogen_warning = Some(String::from(autogen_warning.as_ref()));
-      self
+        self.config.autogen_warning = Some(String::from(autogen_warning.as_ref()));
+        self
     }
 
     #[allow(unused)]
     pub fn with_include_version(mut self, include_version: bool) -> Builder {
-      self.config.include_version = include_version;
-      self
+        self.config.include_version = include_version;
+        self
     }
 
     #[allow(unused)]
     pub fn with_namespace<S: AsRef<str>>(mut self, namespace: S) -> Builder {
-      self.config.namespace = Some(String::from(namespace.as_ref()));
-      self
+        self.config.namespace = Some(String::from(namespace.as_ref()));
+        self
     }
 
     #[allow(unused)]
     pub fn with_namespaces<S: AsRef<str>>(mut self, namespaces: &[S]) -> Builder {
-      self.config.namespaces = Some(namespaces.iter().map(|x| String::from(x.as_ref())).collect());
-      self
+        self.config.namespaces = Some(
+            namespaces
+                .iter()
+                .map(|x| String::from(x.as_ref()))
+                .collect(),
+        );
+        self
     }
 
     #[allow(unused)]
     pub fn with_braces(mut self, braces: Braces) -> Builder {
-      self.config.braces = braces;
-      self
+        self.config.braces = braces;
+        self
     }
 
     #[allow(unused)]
     pub fn with_line_length(mut self, line_length: usize) -> Builder {
-      self.config.line_length = line_length;
-      self
+        self.config.line_length = line_length;
+        self
     }
 
     #[allow(unused)]
     pub fn with_tab_width(mut self, tab_width: usize) -> Builder {
-      self.config.tab_width = tab_width;
-      self
+        self.config.tab_width = tab_width;
+        self
     }
 
     #[allow(unused)]
     pub fn with_language(mut self, language: Language) -> Builder {
-      self.config.language = language;
-      self
+        self.config.language = language;
+        self
     }
 
     #[allow(unused)]
     pub fn with_parse_deps(mut self, parse_deps: bool) -> Builder {
-      self.config.parse.parse_deps = parse_deps;
-      self
+        self.config.parse.parse_deps = parse_deps;
+        self
     }
 
     #[allow(unused)]
     pub fn with_parse_include<S: AsRef<str>>(mut self, include: &[S]) -> Builder {
-      self.config.parse.include = Some(include.iter().map(|x| String::from(x.as_ref())).collect());
-      self
+        self.config.parse.include =
+            Some(include.iter().map(|x| String::from(x.as_ref())).collect());
+        self
     }
 
     #[allow(unused)]
     pub fn with_parse_exclude<S: AsRef<str>>(mut self, exclude: &[S]) -> Builder {
-      self.config.parse.exclude = exclude.iter().map(|x| String::from(x.as_ref())).collect();
-      self
+        self.config.parse.exclude = exclude.iter().map(|x| String::from(x.as_ref())).collect();
+        self
     }
 
     #[allow(unused)]
     pub fn with_parse_expand<S: AsRef<str>>(mut self, expand: &[S]) -> Builder {
-      self.config.parse.expand = expand.iter().map(|x| String::from(x.as_ref())).collect();
-      self
+        self.config.parse.expand = expand.iter().map(|x| String::from(x.as_ref())).collect();
+        self
     }
 
     #[allow(unused)]
     pub fn with_documentation(mut self, documentation: bool) -> Builder {
-      self.config.documentation = documentation;
-      self
+        self.config.documentation = documentation;
+        self
     }
 
     #[allow(unused)]
@@ -154,15 +160,17 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_crate_and_name<P: AsRef<path::Path>,
-                               S: AsRef<str>>(mut self,
-                                              lib_dir: P,
-                                              binding_lib_name: S) -> Builder
-    {
+    pub fn with_crate_and_name<P: AsRef<path::Path>, S: AsRef<str>>(
+        mut self,
+        lib_dir: P,
+        binding_lib_name: S,
+    ) -> Builder {
         debug_assert!(self.lib.is_none());
         debug_assert!(self.lib_cargo.is_none());
-        self.lib = Some((path::PathBuf::from(lib_dir.as_ref()),
-                         Some(String::from(binding_lib_name.as_ref()))));
+        self.lib = Some((
+            path::PathBuf::from(lib_dir.as_ref()),
+            Some(String::from(binding_lib_name.as_ref())),
+        ));
         self
     }
 
@@ -187,36 +195,42 @@ impl Builder {
 
         if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
             let cargo = if let Some(binding_lib_name) = binding_lib_name {
-                Cargo::load(&lib_dir,
-                            Some(&binding_lib_name),
-                            self.config.parse.parse_deps)?
+                Cargo::load(
+                    &lib_dir,
+                    Some(&binding_lib_name),
+                    self.config.parse.parse_deps,
+                )?
             } else {
-                Cargo::load(&lib_dir,
-                            None,
-                            self.config.parse.parse_deps)?
+                Cargo::load(&lib_dir, None, self.config.parse.parse_deps)?
             };
 
-            result.extend_with(&parser::parse_lib(cargo,
-                                                  self.config.parse.parse_deps,
-                                                  &self.config.parse.include,
-                                                  &self.config.parse.exclude,
-                                                  &self.config.parse.expand)?);
+            result.extend_with(&parser::parse_lib(
+                cargo,
+                self.config.parse.parse_deps,
+                &self.config.parse.include,
+                &self.config.parse.exclude,
+                &self.config.parse.expand,
+            )?);
         } else if let Some(cargo) = self.lib_cargo.clone() {
-            result.extend_with(&parser::parse_lib(cargo,
-                                                  self.config.parse.parse_deps,
-                                                  &self.config.parse.include,
-                                                  &self.config.parse.exclude,
-                                                  &self.config.parse.expand)?);
+            result.extend_with(&parser::parse_lib(
+                cargo,
+                self.config.parse.parse_deps,
+                &self.config.parse.include,
+                &self.config.parse.exclude,
+                &self.config.parse.expand,
+            )?);
         }
 
-        Library::new(self.config,
-                     result.constants,
-                     result.globals,
-                     result.enums,
-                     result.structs,
-                     result.unions,
-                     result.opaque_items,
-                     result.typedefs,
-                     result.functions).generate()
+        Library::new(
+            self.config,
+            result.constants,
+            result.globals,
+            result.enums,
+            result.structs,
+            result.unions,
+            result.opaque_items,
+            result.typedefs,
+            result.functions,
+        ).generate()
     }
 }

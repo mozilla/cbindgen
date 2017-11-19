@@ -35,8 +35,7 @@ impl GenericPath {
 
         let generics = match &last_segment.parameters {
             &syn::PathParameters::AngleBracketed(ref d) => {
-                d.types.iter()
-                       .try_skip_map(|x| Type::load(x))?
+                d.types.iter().try_skip_map(|x| Type::load(x))?
             }
             &syn::PathParameters::Parenthesized(_) => {
                 return Err("Path contains parentheses.".to_owned());

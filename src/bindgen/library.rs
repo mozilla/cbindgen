@@ -8,7 +8,7 @@ use std::mem;
 use bindgen::bindings::Bindings;
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{Constant, Enum, Function, ItemContainer, ItemMap, Item};
+use bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use bindgen::monomorph::Monomorphs;
 
@@ -26,15 +26,17 @@ pub struct Library {
 }
 
 impl Library {
-    pub fn new(config: Config,
-               constants: ItemMap<Constant>,
-               globals: ItemMap<Static>,
-               enums: ItemMap<Enum>,
-               structs: ItemMap<Struct>,
-               unions: ItemMap<Union>,
-               opaque_items: ItemMap<OpaqueItem>,
-               typedefs: ItemMap<Typedef>,
-               functions: Vec<Function>) -> Library {
+    pub fn new(
+        config: Config,
+        constants: ItemMap<Constant>,
+        globals: ItemMap<Static>,
+        enums: ItemMap<Enum>,
+        structs: ItemMap<Struct>,
+        unions: ItemMap<Union>,
+        opaque_items: ItemMap<OpaqueItem>,
+        typedefs: ItemMap<Typedef>,
+        functions: Vec<Function>,
+    ) -> Library {
         Library {
             config: config,
             constants: constants,
@@ -75,11 +77,13 @@ impl Library {
         let globals = self.globals.to_vec();
         let functions = mem::replace(&mut self.functions, Vec::new());
 
-        Ok(Bindings::new(self.config.clone(),
-                         constants,
-                         globals,
-                         items,
-                         functions))
+        Ok(Bindings::new(
+            self.config.clone(),
+            constants,
+            globals,
+            items,
+            functions,
+        ))
     }
 
     pub fn get_items(&self, p: &Path) -> Option<Vec<ItemContainer>> {
@@ -113,63 +117,73 @@ impl Library {
             // TODO
             let mut transferred = false;
 
-            self.enums.for_items_mut(&alias_path, |x| {
-                if x.annotations().is_empty() {
+            self.enums
+                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                }
-            });
+                    warn!(
+                        "Can't transfer annotations from typedef to alias ({}) \
+                         that already has annotations.",
+                        alias_path
+                    );
+                });
             if transferred {
                 continue;
             }
-            self.structs.for_items_mut(&alias_path, |x| {
-                if x.annotations().is_empty() {
+            self.structs
+                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                }
-            });
+                    warn!(
+                        "Can't transfer annotations from typedef to alias ({}) \
+                         that already has annotations.",
+                        alias_path
+                    );
+                });
             if transferred {
                 continue;
             }
-            self.unions.for_items_mut(&alias_path, |x| {
-                if x.annotations().is_empty() {
+            self.unions
+                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                }
-            });
+                    warn!(
+                        "Can't transfer annotations from typedef to alias ({}) \
+                         that already has annotations.",
+                        alias_path
+                    );
+                });
             if transferred {
                 continue;
             }
-            self.opaque_items.for_items_mut(&alias_path, |x| {
-                if x.annotations().is_empty() {
+            self.opaque_items
+                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                }
-            });
+                    warn!(
+                        "Can't transfer annotations from typedef to alias ({}) \
+                         that already has annotations.",
+                        alias_path
+                    );
+                });
             if transferred {
                 continue;
             }
-            self.typedefs.for_items_mut(&alias_path, |x| {
-                if x.annotations().is_empty() {
+            self.typedefs
+                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
-                    warn!("Can't transfer annotations from typedef to alias ({}) that already has annotations.",
-                          alias_path);
-                }
-            });
+                    warn!(
+                        "Can't transfer annotations from typedef to alias ({}) \
+                         that already has annotations.",
+                        alias_path
+                    );
+                });
             if transferred {
                 continue;
             }
@@ -178,9 +192,12 @@ impl Library {
 
     fn rename_items(&mut self) {
         let config = &self.config;
-        self.structs.for_all_items_mut(|x| x.rename_for_config(config));
-        self.unions.for_all_items_mut(|x| x.rename_for_config(config));
-        self.enums.for_all_items_mut(|x| x.rename_for_config(config));
+        self.structs
+            .for_all_items_mut(|x| x.rename_for_config(config));
+        self.unions
+            .for_all_items_mut(|x| x.rename_for_config(config));
+        self.enums
+            .for_all_items_mut(|x| x.rename_for_config(config));
 
         for item in &mut self.functions {
             item.rename_for_config(&self.config);
@@ -202,7 +219,7 @@ impl Library {
         });
         for x in &mut self.functions {
             x.simplify_option_to_ptr();
-        };
+        }
     }
 
     fn instantiate_monomorphs(&mut self) {
@@ -243,9 +260,12 @@ impl Library {
         self.typedefs.filter(|x| x.generic_params.len() > 0);
 
         // Mangle the paths that remain
-        self.unions.for_all_items_mut(|x| x.mangle_paths(&monomorphs));
-        self.structs.for_all_items_mut(|x| x.mangle_paths(&monomorphs));
-        self.typedefs.for_all_items_mut(|x| x.mangle_paths(&monomorphs));
+        self.unions
+            .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
+        self.structs
+            .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
+        self.typedefs
+            .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         for x in &mut self.functions {
             x.mangle_paths(&monomorphs);
         }

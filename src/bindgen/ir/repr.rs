@@ -48,47 +48,83 @@ impl Repr {
     }
 
     fn repr_c() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("C")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("C"))),
+            ],
+        )
     }
 
     fn repr_usize() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("usize")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("usize"))),
+            ],
+        )
     }
 
     fn repr_u32() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u32")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u32"))),
+            ],
+        )
     }
 
     fn repr_u16() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u16")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u16"))),
+            ],
+        )
     }
 
     fn repr_u8() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u8")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u8"))),
+            ],
+        )
     }
 
     fn repr_isize() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("isize")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("isize"))),
+            ],
+        )
     }
 
     fn repr_i32() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i32")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i32"))),
+            ],
+        )
     }
 
     fn repr_i16() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i16")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i16"))),
+            ],
+        )
     }
 
     fn repr_i8() -> syn::MetaItem {
-        syn::MetaItem::List(syn::Ident::new("repr"),
-                            vec![syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i8")))])
+        syn::MetaItem::List(
+            syn::Ident::new("repr"),
+            vec![
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i8"))),
+            ],
+        )
     }
 }

@@ -7,7 +7,8 @@ use std::mem;
 
 use bindgen::config::Config;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Static, Struct, Type, Typedef, Union};
+use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Static, Struct, Type, Typedef,
+                  Union};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 
@@ -20,9 +21,14 @@ pub trait Item {
 
     fn container(&self) -> ItemContainer;
 
-    fn rename_for_config(&mut self, _config: &Config) { }
-    fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) { }
-    fn instantiate_monomorph(&self, _generics: &Vec<Type>, _library: &Library, _out: &mut Monomorphs) {
+    fn rename_for_config(&mut self, _config: &Config) {}
+    fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) {}
+    fn instantiate_monomorph(
+        &self,
+        _generics: &Vec<Type>,
+        _library: &Library,
+        _out: &mut Monomorphs,
+    ) {
         unreachable!("Cannot instantiate {} as a generic.", self.name())
     }
 }
@@ -55,7 +61,7 @@ impl ItemContainer {
 #[derive(Debug, Clone)]
 pub enum ItemValue<T: Item> {
     Cfg(Vec<T>),
-    Single(T)
+    Single(T),
 }
 
 #[derive(Debug, Clone)]
@@ -85,15 +91,15 @@ impl<T: Item + Clone> ItemMap<T> {
             (false, Some(&mut ItemValue::Single(_))) => {
                 return false;
             }
-            _ => { }
+            _ => {}
         }
 
         if item.cfg().is_some() {
-            self.data.insert(item.name().to_owned(),
-                             ItemValue::Cfg(vec![item]));
+            self.data
+                .insert(item.name().to_owned(), ItemValue::Cfg(vec![item]));
         } else {
-            self.data.insert(item.name().to_owned(),
-                             ItemValue::Single(item));
+            self.data
+                .insert(item.name().to_owned(), ItemValue::Single(item));
         }
 
         true
@@ -109,9 +115,7 @@ impl<T: Item + Clone> ItemMap<T> {
         let mut result = Vec::with_capacity(self.data.len());
         for container in self.data.values() {
             match container {
-                &ItemValue::Cfg(ref items) => {
-                    result.extend_from_slice(items)
-                }
+                &ItemValue::Cfg(ref items) => result.extend_from_slice(items),
                 &ItemValue::Single(ref item) => {
                     result.push(item.clone());
                 }
@@ -122,20 +126,15 @@ impl<T: Item + Clone> ItemMap<T> {
 
     pub fn get_items(&self, name: &str) -> Option<Vec<ItemContainer>> {
         match self.data.get(name) {
-            Some(&ItemValue::Cfg(ref items)) => {
-                Some(items.iter()
-                          .map(|x| x.container())
-                          .collect())
-            }
-            Some(&ItemValue::Single(ref item)) => {
-                Some(vec![item.container()])
-            }
+            Some(&ItemValue::Cfg(ref items)) => Some(items.iter().map(|x| x.container()).collect()),
+            Some(&ItemValue::Single(ref item)) => Some(vec![item.container()]),
             None => None,
         }
     }
 
     pub fn filter<F>(&mut self, callback: F)
-        where F: Fn(&T) -> bool
+    where
+        F: Fn(&T) -> bool,
     {
         let data = mem::replace(&mut self.data, BTreeMap::new());
 
@@ -152,79 +151,69 @@ impl<T: Item + Clone> ItemMap<T> {
                         self.data.insert(name, ItemValue::Cfg(new_items));
                     }
                 }
-                ItemValue::Single(item) => {
-                    if !callback(&item) {
-                        self.data.insert(name, ItemValue::Single(item));
-                    }
-                }
+                ItemValue::Single(item) => if !callback(&item) {
+                    self.data.insert(name, ItemValue::Single(item));
+                },
             }
         }
     }
 
     pub fn for_all_items<F>(&self, mut callback: F)
-        where F: FnMut(&T)
+    where
+        F: FnMut(&T),
     {
         for container in self.data.values() {
             match container {
-                &ItemValue::Cfg(ref items) => {
-                    for item in items {
-                        callback(item);
-                    }
-                }
-                &ItemValue::Single(ref item) => {
-                    callback(item)
-                }
+                &ItemValue::Cfg(ref items) => for item in items {
+                    callback(item);
+                },
+                &ItemValue::Single(ref item) => callback(item),
             }
         }
     }
 
     pub fn for_all_items_mut<F>(&mut self, mut callback: F)
-        where F: FnMut(&mut T)
+    where
+        F: FnMut(&mut T),
     {
         for container in self.data.values_mut() {
             match container {
-                &mut ItemValue::Cfg(ref mut items) => {
-                    for item in items {
-                        callback(item);
-                    }
-                }
-                &mut ItemValue::Single(ref mut item) => {
-                    callback(item)
-                }
+                &mut ItemValue::Cfg(ref mut items) => for item in items {
+                    callback(item);
+                },
+                &mut ItemValue::Single(ref mut item) => callback(item),
             }
         }
     }
 
     #[allow(dead_code)]
     pub fn for_items<F>(&self, name: &str, mut callback: F)
-        where F: FnMut(&T)
+    where
+        F: FnMut(&T),
     {
         match self.data.get(name) {
-            Some(&ItemValue::Cfg(ref items)) => {
-                for item in items {
-                    callback(item);
-                }
-            }
+            Some(&ItemValue::Cfg(ref items)) => for item in items {
+                callback(item);
+            },
             Some(&ItemValue::Single(ref item)) => {
                 callback(item);
             }
-            None => { }
+            None => {}
         }
     }
 
     pub fn for_items_mut<F>(&mut self, name: &str, mut callback: F)
-        where F: FnMut(&mut T)
+    where
+        F: FnMut(&mut T),
     {
         match self.data.get_mut(name) {
-            Some(&mut ItemValue::Cfg(ref mut items)) => {
-                for item in items {
-                    callback(item);
-                }
-            }
+            Some(&mut ItemValue::Cfg(ref mut items)) => for item in items {
+                callback(item);
+            },
             Some(&mut ItemValue::Single(ref mut item)) => {
                 callback(item);
             }
-            None => { }
+            None => {}
         }
     }
 }

@@ -31,7 +31,7 @@ impl<'a> IdentifierType<'a> {
 pub enum RenameRule {
     /// Do not apply any renaming. The default.
     None,
-    /// Converts the identifier to PascalCase and adds a prefix based on where the identifier is used.
+    /// Converts the identifier to PascalCase and adds a context dependent prefix
     GeckoCase,
     /// Converts the identifier to lower case.
     LowerCase,
@@ -63,9 +63,7 @@ impl RenameRule {
             RenameRule::LowerCase => text.to_lowercase(),
             RenameRule::UpperCase => text.to_uppercase(),
             RenameRule::PascalCase => text.to_owned(),
-            RenameRule::CamelCase => {
-                text[..1].to_lowercase() + &text[1..]
-            }
+            RenameRule::CamelCase => text[..1].to_lowercase() + &text[1..],
             RenameRule::SnakeCase => {
                 let mut result = String::new();
                 for (i, c) in text.char_indices() {
@@ -96,14 +94,14 @@ impl RenameRule {
 
                 if let IdentifierType::EnumVariant(e) = context {
                     if let &RenameRule::QualifiedScreamingSnakeCase = self {
-                        result.push_str(&RenameRule::ScreamingSnakeCase.apply_to_pascal_case(
-                            &e.name, IdentifierType::Enum));
+                        result.push_str(&RenameRule::ScreamingSnakeCase
+                            .apply_to_pascal_case(&e.name, IdentifierType::Enum));
                         result.push_str("_");
                     }
                 }
 
-                result.push_str(&RenameRule::ScreamingSnakeCase.apply_to_pascal_case(
-                    &text, context));
+                result.push_str(&RenameRule::ScreamingSnakeCase
+                    .apply_to_pascal_case(&text, context));
                 result
             }
         }
@@ -122,8 +120,8 @@ impl RenameRule {
                     text = &text[1..];
                 }
 
-                context.to_str().to_owned() +
-                    &RenameRule::PascalCase.apply_to_snake_case(text, context)
+                context.to_str().to_owned()
+                    + &RenameRule::PascalCase.apply_to_snake_case(text, context)
             }
             RenameRule::LowerCase => text.to_lowercase(),
             RenameRule::UpperCase => text.to_uppercase(),
@@ -175,14 +173,14 @@ impl RenameRule {
 
                 if let IdentifierType::EnumVariant(e) = context {
                     if let &RenameRule::QualifiedScreamingSnakeCase = self {
-                        result.push_str(&RenameRule::ScreamingSnakeCase.apply_to_snake_case(
-                            &e.name, IdentifierType::Enum));
+                        result.push_str(&RenameRule::ScreamingSnakeCase
+                            .apply_to_snake_case(&e.name, IdentifierType::Enum));
                         result.push_str("_");
                     }
                 }
 
-                result.push_str(&RenameRule::ScreamingSnakeCase.apply_to_snake_case(
-                    &text, context));
+                result.push_str(&RenameRule::ScreamingSnakeCase
+                    .apply_to_snake_case(&text, context));
                 result
             }
         }

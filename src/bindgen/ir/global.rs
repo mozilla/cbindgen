@@ -24,12 +24,13 @@ pub struct Static {
 
 
 impl Static {
-    pub fn load(name: String,
-                ty: &syn::Ty,
-                mutable: &syn::Mutability,
-                attrs: &Vec<syn::Attribute>,
-                mod_cfg: &Option<Cfg>) -> Result<Static, String>
-    {
+    pub fn load(
+        name: String,
+        ty: &syn::Ty,
+        mutable: &syn::Mutability,
+        attrs: &Vec<syn::Attribute>,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Static, String> {
         let ty = Type::load(ty)?;
 
         if ty.is_none() {
@@ -83,7 +84,8 @@ impl Item for Static {
 impl Source for Static {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         out.write("extern ");
-        if let Type::ConstPtr(..) = self.ty { } else {
+        if let Type::ConstPtr(..) = self.ty {
+        } else {
             if !self.mutable {
                 out.write("const ");
             }

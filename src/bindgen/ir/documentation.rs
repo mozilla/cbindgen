@@ -11,7 +11,7 @@ use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Documentation {
-    pub doc_comment: Vec<String>
+    pub doc_comment: Vec<String>,
 }
 
 impl Documentation {
@@ -26,8 +26,8 @@ impl Documentation {
                 // step through rust.  In that case they are stored as doc
                 // attributes and the leading three slashes (and optional space)
                 // are not included.
-                if let syn::MetaItem::NameValue(
-                    ref name, syn::Lit::Str(ref comment, _)) = attr.value
+                if let syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref comment, _)) =
+                    attr.value
                 {
                     if &*name == "doc" {
                         let line = if attr.is_sugared_doc {
@@ -46,9 +46,7 @@ impl Documentation {
             }
         }
 
-        Documentation {
-            doc_comment: doc,
-        }
+        Documentation { doc_comment: doc }
     }
 
     pub fn none() -> Self {

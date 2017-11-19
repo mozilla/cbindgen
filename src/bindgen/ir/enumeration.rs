@@ -7,9 +7,9 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, ItemContainer, Item, Repr};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Item, ItemContainer, Repr};
 use bindgen::rename::{IdentifierType, RenameRule};
-use bindgen::utilities::{find_first_some};
+use bindgen::utilities::find_first_some;
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -23,22 +23,18 @@ pub struct Enum {
 }
 
 impl Enum {
-    pub fn load(name: String,
-                variants: &Vec<syn::Variant>,
-                attrs: &Vec<syn::Attribute>,
-                mod_cfg: &Option<Cfg>) -> Result<Enum, String>
-    {
+    pub fn load(
+        name: String,
+        variants: &Vec<syn::Variant>,
+        attrs: &Vec<syn::Attribute>,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Enum, String> {
         let repr = Repr::load(attrs);
 
-        if repr != Repr::C &&
-           repr != Repr::USize &&
-           repr != Repr::U32 &&
-           repr != Repr::U16 &&
-           repr != Repr::U8 &&
-           repr != Repr::ISize &&
-           repr != Repr::I32 &&
-           repr != Repr::I16 &&
-           repr != Repr::I8 {
+        if repr != Repr::C && repr != Repr::USize && repr != Repr::U32 && repr != Repr::U16
+            && repr != Repr::U8 && repr != Repr::ISize && repr != Repr::I32
+            && repr != Repr::I16 && repr != Repr::I8
+        {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }
 
@@ -58,9 +54,11 @@ impl Enum {
                         None => { /* okay, we just use current */ }
                     }
 
-                    values.push((variant.ident.to_string(),
-                                 current,
-                                 Documentation::load(&variant.attrs)));
+                    values.push((
+                        variant.ident.to_string(),
+                        current,
+                        Documentation::load(&variant.attrs),
+                    ));
                     current = current + 1;
                 }
                 _ => {
@@ -117,20 +115,27 @@ impl Item for Enum {
         {
             let old = ::std::mem::replace(&mut self.values, Vec::new());
             for (name, value, doc) in old {
-                self.values.push((format!("{}_{}", self.name, name), value, doc));
+                self.values
+                    .push((format!("{}_{}", self.name, name), value, doc));
             }
         }
 
-        let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
-                     config.enumeration.rename_variants];
+        let rules = [
+            self.annotations.parse_atom::<RenameRule>("rename-all"),
+            config.enumeration.rename_variants,
+        ];
 
         if let Some(r) = find_first_some(&rules) {
-            self.values = self.values.iter()
-                                     .map(|x| (r.apply_to_pascal_case(&x.0,
-                                                                      IdentifierType::EnumVariant(self)),
-                                               x.1.clone(),
-                                               x.2.clone()))
-                                     .collect();
+            self.values = self.values
+                .iter()
+                .map(|x| {
+                    (
+                        r.apply_to_pascal_case(&x.0, IdentifierType::EnumVariant(self)),
+                        x.1.clone(),
+                        x.2.clone(),
+                    )
+                })
+                .collect();
         }
     }
 }

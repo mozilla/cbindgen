@@ -21,55 +21,52 @@ impl Monomorphs {
         self.replacements.contains_key(path)
     }
 
-    pub fn insert_struct(&mut self,
-                         generic: &Struct,
-                         monomorph: Struct,
-                         parameters: Vec<Type>) {
+    pub fn insert_struct(&mut self, generic: &Struct, monomorph: Struct, parameters: Vec<Type>) {
         let replacement_path = GenericPath::new(generic.name.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
-        self.replacements.insert(replacement_path, monomorph.name.clone());
+        self.replacements
+            .insert(replacement_path, monomorph.name.clone());
         self.structs.push(monomorph);
     }
 
-    pub fn insert_union(&mut self,
-                        generic: &Union,
-                        monomorph: Union,
-                        parameters: Vec<Type>) {
+    pub fn insert_union(&mut self, generic: &Union, monomorph: Union, parameters: Vec<Type>) {
         let replacement_path = GenericPath::new(generic.name.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
-        self.replacements.insert(replacement_path, monomorph.name.clone());
+        self.replacements
+            .insert(replacement_path, monomorph.name.clone());
         self.unions.push(monomorph);
     }
 
-    pub fn insert_opaque(&mut self,
-                         generic: &OpaqueItem,
-                         monomorph: OpaqueItem,
-                         parameters: Vec<Type>) {
+    pub fn insert_opaque(
+        &mut self,
+        generic: &OpaqueItem,
+        monomorph: OpaqueItem,
+        parameters: Vec<Type>,
+    ) {
         let replacement_path = GenericPath::new(generic.name.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
-        self.replacements.insert(replacement_path, monomorph.name.clone());
+        self.replacements
+            .insert(replacement_path, monomorph.name.clone());
         self.opaques.push(monomorph);
     }
 
-    pub fn insert_typedef(&mut self,
-                         generic: &Typedef,
-                         monomorph: Typedef,
-                         parameters: Vec<Type>) {
+    pub fn insert_typedef(&mut self, generic: &Typedef, monomorph: Typedef, parameters: Vec<Type>) {
         let replacement_path = GenericPath::new(generic.name.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
-        self.replacements.insert(replacement_path, monomorph.name.clone());
+        self.replacements
+            .insert(replacement_path, monomorph.name.clone());
         self.typedefs.push(monomorph);
     }
 

@@ -183,7 +183,13 @@ impl Type {
 
                 let converted = match converted {
                     Some(converted) => converted,
-                    None => return Err("Cannot have a pointer to a zero sized type. If you are trying to represent `void*` use `c_void*`.".to_owned()),
+                    None => {
+                        return Err(
+                            "Cannot have a pointer to a zero sized type. If you are \
+                             trying to represent `void*` use `c_void*`."
+                                .to_owned(),
+                        )
+                    }
                 };
 
                 match mut_ty.mutability {
@@ -196,7 +202,13 @@ impl Type {
 
                 let converted = match converted {
                     Some(converted) => converted,
-                    None => return Err("Cannot have a pointer to a zero sized type. If you are trying to represent `void*` use `c_void*`.".to_owned()),
+                    None => {
+                        return Err(
+                            "Cannot have a pointer to a zero sized type. If you are \
+                             trying to represent `void*` use `c_void*`."
+                                .to_owned(),
+                        )
+                    }
                 };
 
                 match mut_ty.mutability {
@@ -229,7 +241,7 @@ impl Type {
                 };
 
                 Type::Array(Box::new(converted), format!("{}", size))
-            },
+            }
             &syn::Ty::Array(ref ty, syn::ConstExpr::Path(ref path)) => {
                 let converted = Type::load(ty)?;
 
@@ -241,19 +253,18 @@ impl Type {
                 let path = GenericPath::load(path)?;
 
                 Type::Array(Box::new(converted), path.name)
-            },
+            }
             &syn::Ty::BareFn(ref function) => {
-                let args = function.inputs.iter()
-                                          .try_skip_map(|x| Type::load(&x.ty))?;
+                let args = function.inputs.iter().try_skip_map(|x| Type::load(&x.ty))?;
                 let ret = function.output.as_type()?;
 
                 Type::FuncPtr(Box::new(ret), args)
-            },
+            }
             &syn::Ty::Tup(ref fields) => {
                 if fields.len() == 0 {
                     return Ok(None);
                 }
-                return Err("Tuples are not supported types.".to_owned())
+                return Err("Tuples are not supported types.".to_owned());
             }
             _ => return Err("Unsupported type.".to_owned()),
         };
@@ -264,11 +275,9 @@ impl Type {
     pub fn is_primitive_or_ptr_primitive(&self) -> bool {
         match self {
             &Type::Primitive(..) => true,
-            &Type::ConstPtr(ref x) => {
-                match x.as_ref() {
-                    &Type::Primitive(..) => true,
-                    _ => false,
-                }
+            &Type::ConstPtr(ref x) => match x.as_ref() {
+                &Type::Primitive(..) => true,
+                _ => false,
             },
             _ => false,
         }
@@ -287,9 +296,7 @@ impl Type {
         let mut simplified = None;
 
         if let &mut Type::Path(ref mut path) = self {
-            if path.name == "Option" &&
-               path.generics.len() == 1 &&
-               path.generics[0].is_repr_ptr() {
+            if path.name == "Option" && path.generics.len() == 1 && path.generics[0].is_repr_ptr() {
                 simplified = Some(path.generics.pop().unwrap());
             }
         }
@@ -303,32 +310,28 @@ impl Type {
         let mut current = self;
         loop {
             match current {
-                &Type::ConstPtr(ref ty) => { current = ty },
-                &Type::Ptr(ref ty) => { current = ty },
+                &Type::ConstPtr(ref ty) => current = ty,
+                &Type::Ptr(ref ty) => current = ty,
                 &Type::Path(ref path) => {
                     return Some(path.name.clone());
-                },
+                }
                 &Type::Primitive(..) => {
                     return None;
-                },
+                }
                 &Type::Array(..) => {
                     return None;
-                },
+                }
                 &Type::FuncPtr(..) => {
                     return None;
-                },
+                }
             };
-        };
+        }
     }
 
     pub fn specialize(&self, mappings: &Vec<(&String, &Type)>) -> Type {
         match self {
-            &Type::ConstPtr(ref ty) => {
-                Type::ConstPtr(Box::new(ty.specialize(mappings)))
-            }
-            &Type::Ptr(ref ty) => {
-                Type::Ptr(Box::new(ty.specialize(mappings)))
-            }
+            &Type::ConstPtr(ref ty) => Type::ConstPtr(Box::new(ty.specialize(mappings))),
+            &Type::Ptr(ref ty) => Type::Ptr(Box::new(ty.specialize(mappings))),
             &Type::Path(ref path) => {
                 for &(param, value) in mappings {
                     if *path.name == *param {
@@ -336,28 +339,32 @@ impl Type {
                     }
                 }
 
-                let specialized = GenericPath::new(path.name.clone(),
-                                                   path.generics.iter()
-                                                                .map(|x| x.specialize(mappings))
-                                                                .collect());
+                let specialized = GenericPath::new(
+                    path.name.clone(),
+                    path.generics
+                        .iter()
+                        .map(|x| x.specialize(mappings))
+                        .collect(),
+                );
                 Type::Path(specialized)
             }
-            &Type::Primitive(ref primitive) => {
-                Type::Primitive(primitive.clone())
-            }
+            &Type::Primitive(ref primitive) => Type::Primitive(primitive.clone()),
             &Type::Array(ref ty, ref constant) => {
                 Type::Array(Box::new(ty.specialize(mappings)), constant.clone())
             }
-            &Type::FuncPtr(ref ret, ref args) => {
-                Type::FuncPtr(Box::new(ret.specialize(mappings)),
-                              args.iter()
-                                  .map(|x| x.specialize(mappings))
-                                  .collect())
-            }
+            &Type::FuncPtr(ref ret, ref args) => Type::FuncPtr(
+                Box::new(ret.specialize(mappings)),
+                args.iter().map(|x| x.specialize(mappings)).collect(),
+            ),
         }
     }
 
-    pub fn add_dependencies_ignoring_generics(&self, generic_params: &GenericParams, library: &Library, out: &mut Dependencies) {
+    pub fn add_dependencies_ignoring_generics(
+        &self,
+        generic_params: &GenericParams,
+        library: &Library,
+        out: &mut Dependencies,
+    ) {
         match self {
             &Type::ConstPtr(ref ty) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
@@ -382,11 +389,15 @@ impl Type {
                             }
                         }
                     } else {
-                        warn!("Can't find {}. This usually means that this type was incompatible or not found.", path.name);
+                        warn!(
+                            "Can't find {}. This usually means that this type was incompatible or \
+                             not found.",
+                            path.name
+                        );
                     }
                 }
             }
-            &Type::Primitive(_) => { }
+            &Type::Primitive(_) => {}
             &Type::Array(ref ty, _) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
@@ -412,18 +423,18 @@ impl Type {
                 ty.add_monomorphs(library, out);
             }
             &Type::Path(ref path) => {
-                if path.generics.len() == 0 ||
-                   out.contains(&path) {
+                if path.generics.len() == 0 || out.contains(&path) {
                     return;
                 }
 
                 if let Some(items) = library.get_items(&path.name) {
                     for item in items {
-                        item.deref().instantiate_monomorph(&path.generics, library, out);
+                        item.deref()
+                            .instantiate_monomorph(&path.generics, library, out);
                     }
                 }
             }
-            &Type::Primitive(_) => { }
+            &Type::Primitive(_) => {}
             &Type::Array(ref ty, _) => {
                 ty.add_monomorphs(library, out);
             }
@@ -453,10 +464,14 @@ impl Type {
                     path.name = mangled.clone();
                     path.generics = Vec::new();
                 } else {
-                    error!("Cannot find a mangling for generic path {:?}. This usually means that a type referenced by this generic was incompatible or not found.", path);
+                    error!(
+                        "Cannot find a mangling for generic path {:?}. This usually means that a \
+                         type referenced by this generic was incompatible or not found.",
+                        path
+                    );
                 }
             }
-            &mut Type::Primitive(_) => { }
+            &mut Type::Primitive(_) => {}
             &mut Type::Array(ref mut ty, _) => {
                 ty.mangle_paths(monomorphs);
             }
@@ -525,12 +540,10 @@ impl SynFnRetTyHelpers for syn::FunctionRetTy {
     fn as_type(&self) -> Result<Type, String> {
         match self {
             &syn::FunctionRetTy::Default => Ok(Type::Primitive(PrimitiveType::Void)),
-            &syn::FunctionRetTy::Ty(ref t) => {
-                if let Some(x) = Type::load(t)? {
-                    Ok(x)
-                } else {
-                    Ok(Type::Primitive(PrimitiveType::Void))
-                }
+            &syn::FunctionRetTy::Ty(ref t) => if let Some(x) = Type::load(t)? {
+                Ok(x)
+            } else {
+                Ok(Type::Primitive(PrimitiveType::Void))
             },
         }
     }

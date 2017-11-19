@@ -31,7 +31,7 @@ struct CDecl {
     type_qualifers: String,
     type_name: String,
     type_generic_args: Vec<Type>,
-    declarators: Vec<CDeclarator>
+    declarators: Vec<CDeclarator>,
 }
 
 impl CDecl {
@@ -56,8 +56,14 @@ impl CDecl {
     }
 
     fn build_func(&mut self, f: &Function, layout_vertical: bool) {
-        let args = f.args.iter().map(|&(ref arg_name, ref arg_ty)| (Some(arg_name.clone()), CDecl::from_type(arg_ty))).collect();
-        self.declarators.push(CDeclarator::Func(args, layout_vertical));
+        let args = f.args
+            .iter()
+            .map(|&(ref arg_name, ref arg_ty)| {
+                (Some(arg_name.clone()), CDecl::from_type(arg_ty))
+            })
+            .collect();
+        self.declarators
+            .push(CDeclarator::Func(args, layout_vertical));
         self.build_type(&f.ret, false);
     }
 
@@ -84,7 +90,7 @@ impl CDecl {
                 self.type_name = p.to_string();
             }
 
-            &Type::ConstPtr(ref t)  => {
+            &Type::ConstPtr(ref t) => {
                 self.declarators.push(CDeclarator::Ptr(is_const));
                 self.build_type(t, true);
             }
@@ -106,7 +112,6 @@ impl CDecl {
     }
 
     fn write<F: Write>(&self, out: &mut SourceWriter<F>, ident: Option<&str>) {
-
         // Write the type-specifier and type-qualifier first
         if self.type_qualifers.len() != 0 {
             write!(out, "{} {}", self.type_qualifers, self.type_name);
@@ -126,30 +131,22 @@ impl CDecl {
         }
 
         // Write the left part of declarators before the identifier
-        let mut iter_rev = self.declarators.iter()
-                                       .rev()
-                                       .peekable();
+        let mut iter_rev = self.declarators.iter().rev().peekable();
 
         while let Some(declarator) = iter_rev.next() {
             let next_is_pointer = iter_rev.peek().map_or(false, |x| x.is_ptr());
 
             match declarator {
-                &CDeclarator::Ptr(ref is_const) => {
-                    if *is_const {
-                        out.write("*const ");
-                    } else {
-                        out.write("*");
-                    }
+                &CDeclarator::Ptr(ref is_const) => if *is_const {
+                    out.write("*const ");
+                } else {
+                    out.write("*");
                 },
-                &CDeclarator::Array(..) => {
-                    if next_is_pointer {
-                        out.write("(");
-                    }
+                &CDeclarator::Array(..) => if next_is_pointer {
+                    out.write("(");
                 },
-                &CDeclarator::Func(..) => {
-                    if next_is_pointer {
-                        out.write("(");
-                    }
+                &CDeclarator::Func(..) => if next_is_pointer {
+                    out.write("(");
                 },
             }
         }
@@ -167,7 +164,7 @@ impl CDecl {
             match declarator {
                 &CDeclarator::Ptr(..) => {
                     last_was_pointer = true;
-                },
+                }
                 &CDeclarator::Array(ref constant) => {
                     if last_was_pointer {
                         out.write(")");
@@ -175,7 +172,7 @@ impl CDecl {
                     write!(out, "[{}]", constant);
 
                     last_was_pointer = false;
-                },
+                }
                 &CDeclarator::Func(ref args, layout_vertical) => {
                     if last_was_pointer {
                         out.write(")");
@@ -212,7 +209,7 @@ impl CDecl {
                     out.write(")");
 
                     last_was_pointer = true;
-                },
+                }
             }
         }
     }

@@ -20,40 +20,30 @@ impl LiteralExpr {
             &syn::ExprKind::Lit(syn::Lit::Str(ref text, ..)) => {
                 Ok(LiteralExpr(format!("u8\"{}\"", text)))
             }
-            &syn::ExprKind::Lit(syn::Lit::Byte(value)) => {
-                Ok(LiteralExpr(format!("{}", value)))
-            }
-            &syn::ExprKind::Lit(syn::Lit::Char(value)) => {
-                Ok(LiteralExpr(format!("{}", value)))
-            }
-            &syn::ExprKind::Lit(syn::Lit::Int(value, ref ty)) => {
-                match ty {
-                    &syn::IntTy::Usize |
-                    &syn::IntTy::U8 |
-                    &syn::IntTy::U16 |
-                    &syn::IntTy::U32 |
-                    &syn::IntTy::U64 |
-                    &syn::IntTy::Unsuffixed => {
-                        Ok(LiteralExpr(format!("{}", value)))
-                    }
-                    &syn::IntTy::Isize |
-                    &syn::IntTy::I8 |
-                    &syn::IntTy::I16 |
-                    &syn::IntTy::I32 |
-                    &syn::IntTy::I64 => {
-                        unsafe {
-                            Ok(LiteralExpr(format!("{}", mem::transmute::<u64, i64>(value))))
-                        }
-                    }
-                }
-            }
+            &syn::ExprKind::Lit(syn::Lit::Byte(value)) => Ok(LiteralExpr(format!("{}", value))),
+            &syn::ExprKind::Lit(syn::Lit::Char(value)) => Ok(LiteralExpr(format!("{}", value))),
+            &syn::ExprKind::Lit(syn::Lit::Int(value, ref ty)) => match ty {
+                &syn::IntTy::Usize |
+                &syn::IntTy::U8 |
+                &syn::IntTy::U16 |
+                &syn::IntTy::U32 |
+                &syn::IntTy::U64 |
+                &syn::IntTy::Unsuffixed => Ok(LiteralExpr(format!("{}", value))),
+                &syn::IntTy::Isize |
+                &syn::IntTy::I8 |
+                &syn::IntTy::I16 |
+                &syn::IntTy::I32 |
+                &syn::IntTy::I64 => unsafe {
+                    Ok(LiteralExpr(
+                        format!("{}", mem::transmute::<u64, i64>(value)),
+                    ))
+                },
+            },
             &syn::ExprKind::Lit(syn::Lit::Float(ref value, ref _ty)) => {
                 Ok(LiteralExpr(format!("{}", value)))
             }
-            &syn::ExprKind::Lit(syn::Lit::Bool(value)) => {
-                Ok(LiteralExpr(format!("{}", value)))
-            }
-            _ => Err("Unsupported literal expression.".to_owned())
+            &syn::ExprKind::Lit(syn::Lit::Bool(value)) => Ok(LiteralExpr(format!("{}", value))),
+            _ => Err("Unsupported literal expression.".to_owned()),
         }
     }
 }
@@ -70,12 +60,13 @@ pub struct Constant {
 
 
 impl Constant {
-    pub fn load(name: String,
-                ty: &syn::Ty,
-                expr: &syn::Expr,
-                attrs: &Vec<syn::Attribute>,
-                mod_cfg: &Option<Cfg>) -> Result<Constant, String>
-    {
+    pub fn load(
+        name: String,
+        ty: &syn::Ty,
+        expr: &syn::Expr,
+        attrs: &Vec<syn::Attribute>,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Constant, String> {
         let ty = Type::load(ty)?;
 
         if ty.is_none() {
@@ -123,9 +114,7 @@ impl Item for Constant {
 
 impl Source for Constant {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if config.constant.allow_static_const &&
-           config.language == Language::Cxx
-        {
+        if config.constant.allow_static_const && config.language == Language::Cxx {
             if let Type::ConstPtr(..) = self.ty {
                 out.write("static ");
             } else {

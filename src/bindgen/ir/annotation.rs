@@ -31,7 +31,7 @@ pub enum AnnotationValue {
 /// A set of annotations specified by a document comment.
 #[derive(Debug, Clone)]
 pub struct AnnotationSet {
-    annotations: HashMap<String, AnnotationValue>
+    annotations: HashMap<String, AnnotationValue>,
 }
 
 impl AnnotationSet {
@@ -50,8 +50,8 @@ impl AnnotationSet {
 
         for attr in attrs {
             if attr.style == syn::AttrStyle::Outer {
-                if let syn::MetaItem::NameValue(
-                    ref name, syn::Lit::Str(ref comment, _)) = attr.value
+                if let syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref comment, _)) =
+                    attr.value
                 {
                     if &*name == "doc" {
                         let line = comment.trim_left_matches("///").trim();
@@ -76,9 +76,7 @@ impl AnnotationSet {
             let annotation = &line[9..];
 
             // Split the annotation in two
-            let parts: Vec<&str> = annotation.split("=")
-                                            .map(|x| x.trim())
-                                            .collect();
+            let parts: Vec<&str> = annotation.split("=").map(|x| x.trim()).collect();
 
             if parts.len() > 2 {
                 return Err(format!("Couldn't parse {}.", line));
@@ -104,15 +102,18 @@ impl AnnotationSet {
                 annotations.insert(name.to_string(), AnnotationValue::Bool(x));
                 continue;
             }
-            annotations.insert(name.to_string(), if value.len() == 0 {
-                AnnotationValue::Atom(None)
-            } else {
-                AnnotationValue::Atom(Some(value.to_string()))
-            });
+            annotations.insert(
+                name.to_string(),
+                if value.len() == 0 {
+                    AnnotationValue::Atom(None)
+                } else {
+                    AnnotationValue::Atom(Some(value.to_string()))
+                },
+            );
         }
 
         Ok(AnnotationSet {
-            annotations: annotations
+            annotations: annotations,
         })
     }
 
@@ -136,12 +137,14 @@ impl AnnotationSet {
     }
 
     pub fn parse_atom<T>(&self, name: &str) -> Option<T>
-        where T: Default + FromStr
+    where
+        T: Default + FromStr,
     {
         match self.annotations.get(name) {
-            Some(&AnnotationValue::Atom(ref x)) => {
-                Some(x.as_ref().map_or(T::default(), |y| { y.parse::<T>().ok().unwrap() }))
-            }
+            Some(&AnnotationValue::Atom(ref x)) => Some(
+                x.as_ref()
+                    .map_or(T::default(), |y| y.parse::<T>().ok().unwrap()),
+            ),
             _ => None,
         }
     }
@@ -154,11 +157,12 @@ fn parse_list(list: &str) -> Option<Vec<String>> {
     }
 
     match (list.chars().next(), list.chars().last()) {
-        (Some('['), Some(']')) => {
-            Some(list[1..list.len() - 1].split(',')
-                                        .map(|x| x.trim().to_string())
-                                        .collect())
-        }
-        _ => None
+        (Some('['), Some(']')) => Some(
+            list[1..list.len() - 1]
+                .split(',')
+                .map(|x| x.trim().to_string())
+                .collect(),
+        ),
+        _ => None,
     }
 }

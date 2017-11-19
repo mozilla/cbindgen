@@ -4,14 +4,19 @@
 
 use syn;
 
-pub trait IterHelpers : Iterator {
+pub trait IterHelpers: Iterator {
     fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
-        where F: FnMut(&Self::Item) -> Result<Option<T>, E>;
+    where
+        F: FnMut(&Self::Item) -> Result<Option<T>, E>;
 }
 
-impl<I> IterHelpers for I where I: Iterator {
+impl<I> IterHelpers for I
+where
+    I: Iterator,
+{
     fn try_skip_map<F, T, E>(&mut self, mut f: F) -> Result<Vec<T>, E>
-        where F: FnMut(&Self::Item) -> Result<Option<T>, E>
+    where
+        F: FnMut(&Self::Item) -> Result<Option<T>, E>,
     {
         let mut out = Vec::new();
         while let Some(item) = self.next() {
@@ -42,33 +47,33 @@ pub trait SynItemHelpers {
 
 impl SynItemHelpers for syn::Item {
     fn has_attr(&self, target: syn::MetaItem) -> bool {
-        return self.attrs
-                   .iter()
-                   .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
+        return self.attrs.iter().any(|ref attr| {
+            attr.style == syn::AttrStyle::Outer && attr.value == target
+        });
     }
 }
 
 impl SynItemHelpers for syn::ForeignItem {
     fn has_attr(&self, target: syn::MetaItem) -> bool {
-        return self.attrs
-                   .iter()
-                   .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
+        return self.attrs.iter().any(|ref attr| {
+            attr.style == syn::AttrStyle::Outer && attr.value == target
+        });
     }
 }
 
 impl SynItemHelpers for syn::Variant {
     fn has_attr(&self, target: syn::MetaItem) -> bool {
-        return self.attrs
-                   .iter()
-                   .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
+        return self.attrs.iter().any(|ref attr| {
+            attr.style == syn::AttrStyle::Outer && attr.value == target
+        });
     }
 }
 
 impl SynItemHelpers for syn::Field {
     fn has_attr(&self, target: syn::MetaItem) -> bool {
-        return self.attrs
-                   .iter()
-                   .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
+        return self.attrs.iter().any(|ref attr| {
+            attr.style == syn::AttrStyle::Outer && attr.value == target
+        });
     }
 }
 

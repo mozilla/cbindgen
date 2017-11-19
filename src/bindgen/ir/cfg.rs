@@ -63,15 +63,9 @@ impl Cfg {
 
     pub fn append(parent: &Option<Cfg>, child: Option<Cfg>) -> Option<Cfg> {
         match (parent, child) {
-            (&None, None) => {
-                None
-            }
-            (&None, Some(child)) => {
-                Some(child)
-            }
-            (&Some(ref parent), None) => {
-                Some(parent.clone())
-            }
+            (&None, None) => None,
+            (&None, Some(child)) => Some(child),
+            (&Some(ref parent), None) => Some(parent.clone()),
             (&Some(ref parent), Some(ref child)) => {
                 Some(Cfg::All(vec![parent.clone(), child.clone()]))
             }
@@ -87,11 +81,10 @@ impl Cfg {
             }
 
             match &attr.value {
-                &syn::MetaItem::Word(..) => { }
-                &syn::MetaItem::NameValue(..) => { }
+                &syn::MetaItem::Word(..) => {}
+                &syn::MetaItem::NameValue(..) => {}
                 &syn::MetaItem::List(ref ident, ref nested) => {
-                    if ident.as_ref() != "cfg" ||
-                       nested.len() != 1 {
+                    if ident.as_ref() != "cfg" || nested.len() != 1 {
                         continue;
                     }
 
@@ -117,30 +110,23 @@ impl Cfg {
             &syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref ident, ref value)) => {
                 match value {
                     &syn::Lit::Str(ref value, _) => {
-                        Some(Cfg::Named(ident.as_ref().to_owned(),
-                                                  value.clone()))
+                        Some(Cfg::Named(ident.as_ref().to_owned(), value.clone()))
                     }
-                    _ => {
-                        None
-                    }
+                    _ => None,
                 }
             }
             &syn::NestedMetaItem::MetaItem(syn::MetaItem::List(ref ident, ref nested)) => {
                 match ident.as_ref() {
-                    "any" => {
-                        if let Some(configs) = Cfg::load_list(nested) {
-                            Some(Cfg::Any(configs))
-                        } else {
-                            None
-                        }
-                    }
-                    "all" => {
-                        if let Some(configs) = Cfg::load_list(nested) {
-                            Some(Cfg::All(configs))
-                        } else {
-                            None
-                        }
-                    }
+                    "any" => if let Some(configs) = Cfg::load_list(nested) {
+                        Some(Cfg::Any(configs))
+                    } else {
+                        None
+                    },
+                    "all" => if let Some(configs) = Cfg::load_list(nested) {
+                        Some(Cfg::All(configs))
+                    } else {
+                        None
+                    },
                     "not" => {
                         if nested.len() != 1 {
                             return None;
@@ -152,12 +138,10 @@ impl Cfg {
                             None
                         }
                     }
-                    _ => {
-                        None
-                    }
+                    _ => None,
                 }
             }
-            _ => { None }
+            _ => None,
         }
     }
 
@@ -186,12 +170,10 @@ impl Cfg {
                     let key = DefineKey::load(key);
 
                     match key {
-                        DefineKey::Boolean(key_name) => {
-                            if cfg_name == key_name {
-                                return true;
-                            }
-                        }
-                        DefineKey::Named(..) => { }
+                        DefineKey::Boolean(key_name) => if cfg_name == key_name {
+                            return true;
+                        },
+                        DefineKey::Named(..) => {}
                     }
                 }
 
@@ -202,10 +184,9 @@ impl Cfg {
                     let key = DefineKey::load(key);
 
                     match key {
-                        DefineKey::Boolean(..) => { }
+                        DefineKey::Boolean(..) => {}
                         DefineKey::Named(key_name, key_value) => {
-                            if cfg_name == key_name &&
-                               cfg_value == key_value {
+                            if cfg_name == key_name && cfg_value == key_value {
                                 return true;
                             }
                         }
@@ -214,15 +195,9 @@ impl Cfg {
 
                 false
             }
-            &Cfg::Any(ref cfgs) => {
-                cfgs.iter().all(|x| x.has_defines(config))
-            }
-            &Cfg::All(ref cfgs) => {
-                cfgs.iter().all(|x| x.has_defines(config))
-            }
-            &Cfg::Not(ref cfg) => {
-                cfg.has_defines(config)
-            }
+            &Cfg::Any(ref cfgs) => cfgs.iter().all(|x| x.has_defines(config)),
+            &Cfg::All(ref cfgs) => cfgs.iter().all(|x| x.has_defines(config)),
+            &Cfg::Not(ref cfg) => cfg.has_defines(config),
         }
     }
 
@@ -235,12 +210,10 @@ impl Cfg {
                     let key = DefineKey::load(key);
 
                     match key {
-                        DefineKey::Boolean(key_name) => {
-                            if cfg_name == key_name {
-                                define = define_value;
-                            }
-                        }
-                        DefineKey::Named(..) => { }
+                        DefineKey::Boolean(key_name) => if cfg_name == key_name {
+                            define = define_value;
+                        },
+                        DefineKey::Named(..) => {}
                     }
                 }
 
@@ -255,10 +228,9 @@ impl Cfg {
                     let key = DefineKey::load(key);
 
                     match key {
-                        DefineKey::Boolean(..) => { }
+                        DefineKey::Boolean(..) => {}
                         DefineKey::Named(key_name, key_value) => {
-                            if cfg_name == key_name &&
-                               cfg_value == key_value {
+                            if cfg_name == key_name && cfg_value == key_value {
                                 define = define_value;
                             }
                         }

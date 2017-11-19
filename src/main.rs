@@ -16,7 +16,7 @@ extern crate serde_json;
 extern crate syn;
 extern crate toml;
 
-use clap::{Arg, ArgMatches, App};
+use clap::{App, Arg, ArgMatches};
 
 mod logging;
 mod bindgen;
@@ -28,10 +28,10 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // used by compile-tests.
     if let Some(lang) = matches.value_of("lang") {
         config.language = match lang {
-            "C++"=> Language::Cxx,
-            "c++"=> Language::Cxx,
-            "C"=> Language::C,
-            "c"=> Language::C,
+            "C++" => Language::Cxx,
+            "c++" => Language::Cxx,
+            "C" => Language::C,
+            "c" => Language::C,
             _ => {
                 error!("Unknown language specified.");
                 return;
@@ -55,15 +55,14 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
 
         apply_config_overrides(&mut config, &matches);
 
-        return Builder::new().with_config(config)
-                             .with_src(input)
-                             .generate();
+        return Builder::new()
+            .with_config(config)
+            .with_src(input)
+            .generate();
     }
 
     // We have to load a whole crate, so we use cargo to gather metadata
-    let lib = Cargo::load(input,
-                          matches.value_of("crate"),
-                          true)?;
+    let lib = Cargo::load(input, matches.value_of("crate"), true)?;
 
     // Load any config specified or search in the binding crate directory
     let mut config = match matches.value_of("config") {
@@ -82,50 +81,68 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
 
     apply_config_overrides(&mut config, &matches);
 
-    Builder::new().with_config(config)
-                  .with_cargo(lib)
-                  .generate()
+    Builder::new()
+        .with_config(config)
+        .with_cargo(lib)
+        .generate()
 }
 
 fn main() {
     let matches = App::new("cbindgen")
-                    .version(bindgen::VERSION)
-                    .about("Generate C bindings for a Rust library")
-                    .arg(Arg::with_name("v")
-                         .short("v")
-                         .multiple(true)
-                         .help("Enable verbose logging"))
-                    .arg(Arg::with_name("config")
-                         .short("c")
-                         .long("config")
-                         .value_name("PATH")
-                         .help("Specify path to a `cbindgen.toml` config to use"))
-                    .arg(Arg::with_name("lang")
-                         .short("l")
-                         .long("lang")
-                         .value_name("LANGUAGE")
-                         .help("Specify the language to output bindings in")
-                         .possible_values(&["c++", "C++", "c", "C"]))
-                    .arg(Arg::with_name("d")
-                         .short("d")
-                         .long("parse-dependencies")
-                         .help("Whether to parse dependencies when generating bindings"))
-                    .arg(Arg::with_name("INPUT")
-                         .help("A crate directory or source file to generate bindings for")
-                         .required(false)
-                         .index(1))
-                    .arg(Arg::with_name("crate")
-                         .long("crate")
-                         .value_name("CRATE_NAME")
-                         .help("If generating bindings for a crate, the specific crate to generate bindings for")
-                         .required(false))
-                    .arg(Arg::with_name("out")
-                         .short("o")
-                         .long("output")
-                         .value_name("PATH")
-                         .help("The file to output the bindings to")
-                         .required(false))
-                    .get_matches();
+        .version(bindgen::VERSION)
+        .about("Generate C bindings for a Rust library")
+        .arg(
+            Arg::with_name("v")
+                .short("v")
+                .multiple(true)
+                .help("Enable verbose logging"),
+        )
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("PATH")
+                .help("Specify path to a `cbindgen.toml` config to use"),
+        )
+        .arg(
+            Arg::with_name("lang")
+                .short("l")
+                .long("lang")
+                .value_name("LANGUAGE")
+                .help("Specify the language to output bindings in")
+                .possible_values(&["c++", "C++", "c", "C"]),
+        )
+        .arg(
+            Arg::with_name("d")
+                .short("d")
+                .long("parse-dependencies")
+                .help("Whether to parse dependencies when generating bindings"),
+        )
+        .arg(
+            Arg::with_name("INPUT")
+                .help("A crate directory or source file to generate bindings for")
+                .required(false)
+                .index(1),
+        )
+        .arg(
+            Arg::with_name("crate")
+                .long("crate")
+                .value_name("CRATE_NAME")
+                .help(
+                    "If generating bindings for a crate, \
+                     the specific crate to generate bindings for",
+                )
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("out")
+                .short("o")
+                .long("output")
+                .value_name("PATH")
+                .help("The file to output the bindings to")
+                .required(false),
+        )
+        .get_matches();
 
     // Initialize logging
     match matches.occurrences_of("v") {

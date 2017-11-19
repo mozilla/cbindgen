@@ -36,9 +36,11 @@ impl Cargo {
     /// Gather metadata from cargo for a specific library and binding crate
     /// name. If dependency finding isn't needed then Cargo.lock files don't
     /// need to be parsed.
-    pub(crate) fn load(crate_dir: &Path,
-                       binding_crate_name: Option<&str>,
-                       use_cargo_lock: bool) -> Result<Cargo, String> {
+    pub(crate) fn load(
+        crate_dir: &Path,
+        binding_crate_name: Option<&str>,
+        use_cargo_lock: bool,
+    ) -> Result<Cargo, String> {
         let toml_path = crate_dir.join("Cargo.toml");
         let lock_path = crate_dir.join("Cargo.lock");
 
@@ -53,15 +55,19 @@ impl Cargo {
         } else {
             None
         };
-        let metadata = cargo_metadata::metadata(&toml_path)
-                                      .map_err(|_| format!("couldn't execute `cargo metadata` with manifest {:?}.", toml_path))?;
+        let metadata = cargo_metadata::metadata(&toml_path).map_err(|_| {
+            format!(
+                "couldn't execute `cargo metadata` with manifest {:?}.",
+                toml_path
+            )
+        })?;
 
         // Use the specified binding crate name or infer it from the manifest
         let manifest = cargo_toml::manifest(&toml_path)
-                                  .map_err(|_| format!("couldn't load {:?}.", toml_path))?;
+            .map_err(|_| format!("couldn't load {:?}.", toml_path))?;
 
-        let binding_crate_name = binding_crate_name.map_or(manifest.package.name.clone(),
-                                                           |x| x.to_owned());
+        let binding_crate_name =
+            binding_crate_name.map_or(manifest.package.name.clone(), |x| x.to_owned());
 
         Ok(Cargo {
             manifest_path: toml_path,
@@ -95,7 +101,11 @@ impl Cargo {
 
     /// Finds the package reference for a dependency of a crate using
     /// `Cargo.lock`.
-    pub(crate) fn find_dep_ref(&self, package: &PackageRef, dependency_name: &str) -> Option<PackageRef> {
+    pub(crate) fn find_dep_ref(
+        &self,
+        package: &PackageRef,
+        dependency_name: &str,
+    ) -> Option<PackageRef> {
         if self.lock.is_none() {
             return None;
         }
@@ -149,10 +159,10 @@ impl Cargo {
     #[allow(unused)]
     pub(crate) fn find_crate_dir(&self, package: &PackageRef) -> Option<PathBuf> {
         for meta_package in &self.metadata.packages {
-            if meta_package.name == package.name &&
-               meta_package.version == package.version {
-                return Path::new(&meta_package.manifest_path).parent()
-                                                             .map(|x| x.to_owned());
+            if meta_package.name == package.name && meta_package.version == package.version {
+                return Path::new(&meta_package.manifest_path)
+                    .parent()
+                    .map(|x| x.to_owned());
             }
         }
         None
@@ -166,13 +176,12 @@ impl Cargo {
         let kind_cdylib = String::from("cdylib");
 
         for meta_package in &self.metadata.packages {
-            if meta_package.name == package.name &&
-               meta_package.version == package.version {
+            if meta_package.name == package.name && meta_package.version == package.version {
                 for target in &meta_package.targets {
-                    if target.kind.contains(&kind_lib) ||
-                       target.kind.contains(&kind_staticlib) ||
-                       target.kind.contains(&kind_rlib) ||
-                       target.kind.contains(&kind_cdylib) {
+                    if target.kind.contains(&kind_lib) || target.kind.contains(&kind_staticlib)
+                        || target.kind.contains(&kind_rlib)
+                        || target.kind.contains(&kind_cdylib)
+                    {
                         return Some(PathBuf::from(&target.src_path));
                     }
                 }

@@ -8,7 +8,8 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Repr, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
+                  Repr, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -28,20 +29,20 @@ pub struct Struct {
 }
 
 impl Struct {
-    pub fn load(name: String,
-                decl: &syn::VariantData,
-                generics: &syn::Generics,
-                attrs: &Vec<syn::Attribute>,
-                mod_cfg: &Option<Cfg>) -> Result<Struct, String>
-    {
+    pub fn load(
+        name: String,
+        decl: &syn::VariantData,
+        generics: &syn::Generics,
+        attrs: &Vec<syn::Attribute>,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Struct, String> {
         if Repr::load(attrs) != Repr::C {
             return Err("Struct is not marked #[repr(C)].".to_owned());
         }
 
         let (fields, tuple_struct) = match decl {
             &syn::VariantData::Struct(ref fields) => {
-                let out = fields.iter()
-                                .try_skip_map(|x| x.as_ident_and_type())?;
+                let out = fields.iter().try_skip_map(|x| x.as_ident_and_type())?;
                 (out, false)
             }
             &syn::VariantData::Tuple(ref fields) => {
@@ -49,15 +50,17 @@ impl Struct {
                 let mut current = 0;
                 for field in fields {
                     if let Some(x) = Type::load(&field.ty)? {
-                        out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
+                        out.push((
+                            format!("{}", current),
+                            x,
+                            Documentation::load(&field.attrs),
+                        ));
                         current += 1;
                     }
                 }
                 (out, true)
             }
-            &syn::VariantData::Unit => {
-                (vec![], false)
-            }
+            &syn::VariantData::Unit => (vec![], false),
         };
 
         Ok(Struct {
@@ -122,8 +125,10 @@ impl Item for Struct {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
-                     config.structure.rename_fields];
+        let rules = [
+            self.annotations.parse_atom::<RenameRule>("rename-all"),
+            config.structure.rename_fields,
+        ];
 
         if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();
@@ -138,12 +143,16 @@ impl Item for Struct {
 
             self.fields = overriden_fields;
         } else if let Some(r) = find_first_some(&rules) {
-            self.fields = self.fields.iter()
-                                     .map(|x| (r.apply_to_snake_case(&x.0,
-                                                                     IdentifierType::StructMember),
-                                               x.1.clone(),
-                                               x.2.clone()))
-                                     .collect();
+            self.fields = self.fields
+                .iter()
+                .map(|x| {
+                    (
+                        r.apply_to_snake_case(&x.0, IdentifierType::StructMember),
+                        x.1.clone(),
+                        x.2.clone(),
+                    )
+                })
+                .collect();
         } else if self.tuple_struct {
             // If we don't have any rules for a tuple struct, prefix them with
             // an underscore so it still compiles
@@ -159,20 +168,26 @@ impl Item for Struct {
         }
     }
 
-    fn instantiate_monomorph(&self, generic_values: &Vec<Type>, library: &Library, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() > 0 &&
-                self.generic_params.len() == generic_values.len());
+    fn instantiate_monomorph(
+        &self,
+        generic_values: &Vec<Type>,
+        library: &Library,
+        out: &mut Monomorphs,
+    ) {
+        assert!(self.generic_params.len() > 0 && self.generic_params.len() == generic_values.len());
 
-        let mappings = self.generic_params.iter()
-                                          .zip(generic_values.iter())
-                                          .collect::<Vec<_>>();
+        let mappings = self.generic_params
+            .iter()
+            .zip(generic_values.iter())
+            .collect::<Vec<_>>();
 
         let monomorph = Struct {
             name: mangle::mangle_path(&self.name, generic_values),
             generic_params: GenericParams::default(),
-            fields: self.fields.iter()
-                               .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
-                               .collect(),
+            fields: self.fields
+                .iter()
+                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
+                .collect(),
             tuple_struct: self.tuple_struct,
             cfg: self.cfg.clone(),
             annotations: self.annotations.clone(),
@@ -204,10 +219,13 @@ impl Source for Struct {
         if config.documentation {
             out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
         } else {
-            out.write_vertical_source_list(&self.fields.iter()
-                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
-                .collect(),
-                ListType::Cap(";"));
+            out.write_vertical_source_list(
+                &self.fields
+                    .iter()
+                    .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
+                    .collect(),
+                ListType::Cap(";"),
+            );
         }
 
         if config.language == Language::Cxx {
@@ -227,39 +245,54 @@ impl Source for Struct {
 
                 out.new_line();
 
-                write!(out, "bool operator{}(const {}& {}) const", op, self.name, other);
+                write!(
+                    out,
+                    "bool operator{}(const {}& {}) const",
+                    op,
+                    self.name,
+                    other
+                );
                 out.open_brace();
                 out.write("return ");
-                out.write_vertical_source_list(&self.fields.iter()
-                                                    .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
-                                                    .collect(),
-                                        ListType::Join(&format!(" {}", conjuc)));
+                out.write_vertical_source_list(
+                    &self.fields
+                        .iter()
+                        .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
+                        .collect(),
+                    ListType::Join(&format!(" {}", conjuc)),
+                );
                 out.write(";");
                 out.close_brace(false);
             };
 
-            if config.structure.derive_eq(&self.annotations) &&
-               !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq()) {
+            if config.structure.derive_eq(&self.annotations) && !self.fields.is_empty()
+                && self.fields.iter().all(|x| x.1.can_cmp_eq())
+            {
                 emit_op("==", "&&");
             }
-            if config.structure.derive_neq(&self.annotations) &&
-               !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq()) {
+            if config.structure.derive_neq(&self.annotations) && !self.fields.is_empty()
+                && self.fields.iter().all(|x| x.1.can_cmp_eq())
+            {
                 emit_op("!=", "||");
             }
-            if config.structure.derive_lt(&self.annotations) &&
-               self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
+            if config.structure.derive_lt(&self.annotations) && self.fields.len() == 1
+                && self.fields[0].1.can_cmp_order()
+            {
                 emit_op("<", "&&");
             }
-            if config.structure.derive_lte(&self.annotations) &&
-               self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
+            if config.structure.derive_lte(&self.annotations) && self.fields.len() == 1
+                && self.fields[0].1.can_cmp_order()
+            {
                 emit_op("<=", "&&");
             }
-            if config.structure.derive_gt(&self.annotations) &&
-               self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
+            if config.structure.derive_gt(&self.annotations) && self.fields.len() == 1
+                && self.fields[0].1.can_cmp_order()
+            {
                 emit_op(">", "&&");
             }
-            if config.structure.derive_gte(&self.annotations) &&
-               self.fields.len() == 1 && self.fields[0].1.can_cmp_order() {
+            if config.structure.derive_gte(&self.annotations) && self.fields.len() == 1
+                && self.fields[0].1.can_cmp_order()
+            {
                 emit_op(">=", "&&");
             }
         }
@@ -281,11 +314,16 @@ pub trait SynFieldHelpers {
 
 impl SynFieldHelpers for syn::Field {
     fn as_ident_and_type(&self) -> Result<Option<(String, Type, Documentation)>, String> {
-        let ident = self.ident.as_ref().ok_or(format!("field is missing identifier"))?.clone();
+        let ident = self.ident
+            .as_ref()
+            .ok_or(format!("field is missing identifier"))?
+            .clone();
         let converted_ty = Type::load(&self.ty)?;
 
         if let Some(x) = converted_ty {
-            Ok(Some((ident.to_string(), x, Documentation::load(&self.attrs))))
+            Ok(Some(
+                (ident.to_string(), x, Documentation::load(&self.attrs)),
+            ))
         } else {
             Ok(None)
         }

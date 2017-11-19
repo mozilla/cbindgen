@@ -12,9 +12,7 @@ use self::tempdir::TempDir;
 
 /// Use rustc to expand and pretty print the crate into a single file,
 /// removing any macros in the process.
-pub fn expand(manifest_path: &Path,
-              crate_name: &str,
-              version: &str) -> Result<String, String> {
+pub fn expand(manifest_path: &Path, crate_name: &str, version: &str) -> Result<String, String> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let run = |target_dir: &Path| {
         let mut cmd = Command::new(cargo);

@@ -27,8 +27,12 @@ pub fn generate<P: AsRef<Path>>(crate_dir: P) -> Result<Bindings, String> {
 
 /// A utility function for build scripts to generate bindings for a crate with a
 /// custom config.
-pub fn generate_with_config<P: AsRef<Path>>(crate_dir: P, config: Config) -> Result<Bindings, String> {
-    Builder::new().with_config(config)
-                  .with_crate(crate_dir)
-                  .generate()
+pub fn generate_with_config<P: AsRef<Path>>(
+    crate_dir: P,
+    config: Config,
+) -> Result<Bindings, String> {
+    Builder::new()
+        .with_config(config)
+        .with_crate(crate_dir)
+        .generate()
 }

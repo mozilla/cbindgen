@@ -8,7 +8,8 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Repr, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
+                  Repr, Type};
 use bindgen::ir::SynFieldHelpers;
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -29,20 +30,20 @@ pub struct Union {
 }
 
 impl Union {
-    pub fn load(name: String,
-                decl: &syn::VariantData,
-                generics: &syn::Generics,
-                attrs: &Vec<syn::Attribute>,
-                mod_cfg: &Option<Cfg>) -> Result<Union, String>
-    {
+    pub fn load(
+        name: String,
+        decl: &syn::VariantData,
+        generics: &syn::Generics,
+        attrs: &Vec<syn::Attribute>,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Union, String> {
         if Repr::load(attrs) != Repr::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
         }
 
         let (fields, tuple_union) = match decl {
             &syn::VariantData::Struct(ref fields) => {
-                let out = fields.iter()
-                                .try_skip_map(|x| x.as_ident_and_type())?;
+                let out = fields.iter().try_skip_map(|x| x.as_ident_and_type())?;
                 (out, false)
             }
             &syn::VariantData::Tuple(ref fields) => {
@@ -50,15 +51,17 @@ impl Union {
                 let mut current = 0;
                 for field in fields {
                     if let Some(x) = Type::load(&field.ty)? {
-                        out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
+                        out.push((
+                            format!("{}", current),
+                            x,
+                            Documentation::load(&field.attrs),
+                        ));
                         current += 1;
                     }
                 }
                 (out, true)
             }
-            &syn::VariantData::Unit => {
-                (vec![], false)
-            }
+            &syn::VariantData::Unit => (vec![], false),
         };
 
         Ok(Union {
@@ -123,8 +126,10 @@ impl Item for Union {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
-                     config.structure.rename_fields];
+        let rules = [
+            self.annotations.parse_atom::<RenameRule>("rename-all"),
+            config.structure.rename_fields,
+        ];
 
         if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();
@@ -139,12 +144,16 @@ impl Item for Union {
 
             self.fields = overriden_fields;
         } else if let Some(r) = find_first_some(&rules) {
-            self.fields = self.fields.iter()
-                                     .map(|x| (r.apply_to_snake_case(&x.0,
-                                                                     IdentifierType::StructMember),
-                                               x.1.clone(),
-                                               x.2.clone()))
-                                     .collect();
+            self.fields = self.fields
+                .iter()
+                .map(|x| {
+                    (
+                        r.apply_to_snake_case(&x.0, IdentifierType::StructMember),
+                        x.1.clone(),
+                        x.2.clone(),
+                    )
+                })
+                .collect();
         } else if self.tuple_union {
             // If we don't have any rules for a tuple union, prefix them with
             // an underscore so it still compiles
@@ -160,20 +169,26 @@ impl Item for Union {
         }
     }
 
-    fn instantiate_monomorph(&self, generic_values: &Vec<Type>, library: &Library, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() > 0 &&
-                self.generic_params.len() == generic_values.len());
+    fn instantiate_monomorph(
+        &self,
+        generic_values: &Vec<Type>,
+        library: &Library,
+        out: &mut Monomorphs,
+    ) {
+        assert!(self.generic_params.len() > 0 && self.generic_params.len() == generic_values.len());
 
-        let mappings = self.generic_params.iter()
-                                          .zip(generic_values.iter())
-                                          .collect::<Vec<_>>();
+        let mappings = self.generic_params
+            .iter()
+            .zip(generic_values.iter())
+            .collect::<Vec<_>>();
 
         let monomorph = Union {
             name: mangle::mangle_path(&self.name, generic_values),
             generic_params: GenericParams::default(),
-            fields: self.fields.iter()
-                               .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
-                               .collect(),
+            fields: self.fields
+                .iter()
+                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
+                .collect(),
             tuple_union: self.tuple_union,
             cfg: self.cfg.clone(),
             annotations: self.annotations.clone(),
@@ -205,10 +220,13 @@ impl Source for Union {
         if config.documentation {
             out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
         } else {
-            out.write_vertical_source_list(&self.fields.iter()
-                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
-                .collect(),
-                ListType::Cap(";"));
+            out.write_vertical_source_list(
+                &self.fields
+                    .iter()
+                    .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
+                    .collect(),
+                ListType::Cap(";"),
+            );
         }
 
         if config.language == Language::C {

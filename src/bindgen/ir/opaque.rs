@@ -8,7 +8,8 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Path, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
+                  Path, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -24,10 +25,12 @@ pub struct OpaqueItem {
 }
 
 impl OpaqueItem {
-    pub fn new(name: String,
-               generics: &syn::Generics,
-               attrs: &Vec<syn::Attribute>,
-               mod_cfg: &Option<Cfg>) -> OpaqueItem {
+    pub fn new(
+        name: String,
+        generics: &syn::Generics,
+        attrs: &Vec<syn::Attribute>,
+        mod_cfg: &Option<Cfg>,
+    ) -> OpaqueItem {
         OpaqueItem {
             name: name,
             generic_params: GenericParams::new(generics),
@@ -59,12 +62,15 @@ impl Item for OpaqueItem {
         ItemContainer::OpaqueItem(self.clone())
     }
 
-    fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {
-    }
+    fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {}
 
-    fn instantiate_monomorph(&self, generic_values: &Vec<Type>, _library: &Library, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() > 0 &&
-                self.generic_params.len() == generic_values.len());
+    fn instantiate_monomorph(
+        &self,
+        generic_values: &Vec<Type>,
+        _library: &Library,
+        out: &mut Monomorphs,
+    ) {
+        assert!(self.generic_params.len() > 0 && self.generic_params.len() == generic_values.len());
 
         let monomorph = OpaqueItem {
             name: mangle::mangle_path(&self.name, generic_values),

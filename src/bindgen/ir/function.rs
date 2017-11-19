@@ -28,14 +28,14 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn load(name: String,
-                decl: &syn::FnDecl,
-                extern_decl: bool,
-                attrs: &Vec<syn::Attribute>,
-                mod_cfg: &Option<Cfg>) -> Result<Function, String>
-    {
-        let args = decl.inputs.iter()
-                              .try_skip_map(|x| x.as_ident_and_type())?;
+    pub fn load(
+        name: String,
+        decl: &syn::FnDecl,
+        extern_decl: bool,
+        attrs: &Vec<syn::Attribute>,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Function, String> {
+        let args = decl.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
         let ret = decl.output.as_type()?;
 
         Ok(Function {
@@ -78,15 +78,21 @@ impl Function {
     }
 
     pub fn rename_for_config(&mut self, config: &Config) {
-        let rules = [self.annotations.parse_atom::<RenameRule>("rename-all"),
-                     config.function.rename_args];
+        let rules = [
+            self.annotations.parse_atom::<RenameRule>("rename-all"),
+            config.function.rename_args,
+        ];
 
         if let Some(r) = find_first_some(&rules) {
-            self.args = self.args.iter()
-                                 .map(|x| (r.apply_to_snake_case(&x.0,
-                                                                 IdentifierType::FunctionArg),
-                                           x.1.clone()))
-                                  .collect()
+            self.args = self.args
+                .iter()
+                .map(|x| {
+                    (
+                        r.apply_to_snake_case(&x.0, IdentifierType::FunctionArg),
+                        x.1.clone(),
+                    )
+                })
+                .collect()
         }
     }
 }
@@ -151,8 +157,9 @@ impl Source for Function {
 
         let option_1 = out.measure(|out| write_1(self, config, out));
 
-        if (config.function.args == Layout::Auto && option_1 <= config.line_length) ||
-           config.function.args == Layout::Horizontal {
+        if (config.function.args == Layout::Auto && option_1 <= config.line_length)
+            || config.function.args == Layout::Horizontal
+        {
             write_1(self, config, out);
         } else {
             write_2(self, config, out);

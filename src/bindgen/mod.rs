@@ -15,8 +15,8 @@ macro_rules! deserialize_enum_str {
                 impl ::serde::de::Visitor for Visitor {
                     type Value = $name;
 
-                    fn expecting(&self, formatter: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                        formatter.write_str("$name")
+                    fn expecting(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+                        f.write_str("$name")
                     }
 
                     fn visit_str<E>(self, v: &str) -> Result<$name, E>

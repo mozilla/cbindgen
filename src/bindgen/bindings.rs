@@ -8,7 +8,7 @@ use std::path;
 use std::fs;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{Constant, ItemContainer, Function, Static};
+use bindgen::ir::{Constant, Function, ItemContainer, Static};
 use bindgen::writer::{Source, SourceWriter};
 
 /// A bindings header that can be written.
@@ -21,11 +21,13 @@ pub struct Bindings {
 }
 
 impl Bindings {
-    pub(crate) fn new(config: Config,
-                      constants: Vec<Constant>,
-                      globals: Vec<Static>,
-                      items: Vec<ItemContainer>,
-                      functions: Vec<Function>) -> Bindings {
+    pub(crate) fn new(
+        config: Config,
+        constants: Vec<Constant>,
+        globals: Vec<Static>,
+        items: Vec<ItemContainer>,
+        functions: Vec<Function>,
+    ) -> Bindings {
         Bindings {
             config: config,
             globals: globals,
@@ -60,8 +62,11 @@ impl Bindings {
         }
         if self.config.include_version {
             out.new_line_if_not_start();
-            write!(out, "/* Generated with cbindgen:{} */",
-                        ::bindgen::config::VERSION);
+            write!(
+                out,
+                "/* Generated with cbindgen:{} */",
+                ::bindgen::config::VERSION
+            );
             out.new_line();
         }
         if let Some(ref f) = self.config.autogen_warning {
@@ -96,7 +101,11 @@ impl Bindings {
         }
 
         for item in &self.items {
-            if item.deref().annotations().bool("no-export").unwrap_or(false) {
+            if item.deref()
+                .annotations()
+                .bool("no-export")
+                .unwrap_or(false)
+            {
                 continue;
             }
 

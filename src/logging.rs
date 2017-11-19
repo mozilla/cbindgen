@@ -27,10 +27,7 @@ impl log::Log for TraceLogger {
 
     fn log(&self, record: &LogRecord) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stderr(),
-                   "{}: {}",
-                   record.level(),
-                   record.args()).unwrap();
+            writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
         }
     }
 }
@@ -50,10 +47,7 @@ impl log::Log for WarnLogger {
 
     fn log(&self, record: &LogRecord) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stderr(),
-                   "{}: {}",
-                   record.level(),
-                   record.args()).unwrap();
+            writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
         }
     }
 }
@@ -73,10 +67,7 @@ impl log::Log for InfoLogger {
 
     fn log(&self, record: &LogRecord) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stderr(),
-                   "{}: {}",
-                   record.level(),
-                   record.args()).unwrap();
+            writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
         }
     }
 }

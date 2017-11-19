@@ -9,7 +9,8 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, ItemContainer, Item, Path, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
+                  Path, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -27,11 +28,13 @@ pub struct Typedef {
 }
 
 impl Typedef {
-    pub fn load(name: String,
-                ty: &syn::Ty,
-                generics: &syn::Generics,
-                attrs: &Vec<syn::Attribute>,
-                mod_cfg: &Option<Cfg>) -> Result<Typedef, String> {
+    pub fn load(
+        name: String,
+        ty: &syn::Ty,
+        generics: &syn::Generics,
+        attrs: &Vec<syn::Attribute>,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Typedef, String> {
         if let Some(x) = Type::load(ty)? {
             Ok(Typedef {
                 name: name,
@@ -58,15 +61,18 @@ impl Typedef {
         match self.aliased.get_root_path() {
             Some(alias_path) => {
                 if out.contains_key(&alias_path) {
-                    warn!("Multiple typedef's with annotations for {}. Ignoring annotations from {}.",
-                          alias_path, self.name);
+                    warn!(
+                        "Multiple typedef's with annotations for {}. Ignoring annotations from {}.",
+                        alias_path,
+                        self.name
+                    );
                     return;
                 }
 
                 out.insert(alias_path, self.annotations.clone());
                 self.annotations = AnnotationSet::new();
             }
-            None => { }
+            None => {}
         }
     }
 
@@ -111,16 +117,22 @@ impl Item for Typedef {
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.aliased.add_dependencies_ignoring_generics(&self.generic_params, library, out);
+        self.aliased
+            .add_dependencies_ignoring_generics(&self.generic_params, library, out);
     }
 
-    fn instantiate_monomorph(&self, generic_values: &Vec<Type>, library: &Library, out: &mut Monomorphs) {
-        assert!(self.generic_params.len() > 0 &&
-                self.generic_params.len() == generic_values.len());
+    fn instantiate_monomorph(
+        &self,
+        generic_values: &Vec<Type>,
+        library: &Library,
+        out: &mut Monomorphs,
+    ) {
+        assert!(self.generic_params.len() > 0 && self.generic_params.len() == generic_values.len());
 
-        let mappings = self.generic_params.iter()
-                                          .zip(generic_values.iter())
-                                          .collect::<Vec<_>>();
+        let mappings = self.generic_params
+            .iter()
+            .zip(generic_values.iter())
+            .collect::<Vec<_>>();
 
         let monomorph = Typedef {
             name: mangle::mangle_path(&self.name, generic_values),
