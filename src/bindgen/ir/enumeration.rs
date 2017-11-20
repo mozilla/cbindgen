@@ -14,10 +14,103 @@ use bindgen::utilities::find_first_some;
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
+pub struct EnumVariant {
+    pub name: String,
+    pub discriminant: Option<u64>,
+    pub body: Option<(String, Struct)>,
+    pub documentation: Documentation,
+}
+
+impl EnumVariant {
+    pub fn load(
+        is_tagged: bool,
+        variant: &syn::Variant,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Self, String> {
+        let discriminant = match variant.discriminant {
+            Some(syn::ConstExpr::Lit(syn::Lit::Int(i, _))) => Some(i),
+            Some(_) => {
+                return Err("Unsupported discriminant.".to_owned());
+            }
+            None => None,
+        };
+        let body = match variant.data {
+            syn::VariantData::Unit => None,
+            syn::VariantData::Struct(ref fields) | syn::VariantData::Tuple(ref fields) => {
+                Some(Struct {
+                    name: format!("{}_Body", variant.ident),
+                    generic_params: GenericParams::default(),
+                    fields: {
+                        let mut res = Vec::new();
+
+                        if is_tagged {
+                            res.push((
+                                "tag".to_string(),
+                                Type::Path(GenericPath {
+                                    name: "Tag".to_string(),
+                                    generics: vec![],
+                                }),
+                                Documentation::none(),
+                            ));
+                        }
+
+                        for (i, field) in fields.iter().enumerate() {
+                            if let Some(ty) = Type::load(&field.ty)? {
+                                res.push((
+                                    match field.ident {
+                                        Some(ref ident) => ident.to_string(),
+                                        None => i.to_string(),
+                                    },
+                                    ty,
+                                    Documentation::load(&field.attrs),
+                                ));
+                            }
+                        }
+
+                        res
+                    },
+                    is_tagged,
+                    tuple_struct: match variant.data {
+                        syn::VariantData::Tuple(_) => true,
+                        _ => false,
+                    },
+                    cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
+                    annotations: AnnotationSet::load(&variant.attrs)?,
+                    documentation: Documentation::none(),
+                })
+            }
+        };
+        Ok(EnumVariant {
+            name: variant.ident.to_string(),
+            discriminant,
+            body: body.map(|body| {
+                (
+                    RenameRule::SnakeCase
+                        .apply_to_pascal_case(variant.ident.as_ref(), IdentifierType::StructMember),
+                    body,
+                )
+            }),
+            documentation: Documentation::load(&variant.attrs),
+        })
+    }
+}
+
+impl Source for EnumVariant {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        self.documentation.write(config, out);
+        write!(out, "{}", self.name);
+        if let Some(discriminant) = self.discriminant {
+            write!(out, " = {}", discriminant);
+        }
+        out.write(",");
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Enum {
     pub name: String,
     pub repr: Repr,
-    pub values: Vec<(String, u64, Option<(String, Struct)>, Documentation)>,
+    pub variants: Vec<EnumVariant>,
     pub tag: Option<String>,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -27,7 +120,7 @@ pub struct Enum {
 impl Enum {
     pub fn load(
         name: String,
-        variants: &Vec<syn::Variant>,
+        values: &Vec<syn::Variant>,
         attrs: &Vec<syn::Attribute>,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Enum, String> {
@@ -40,104 +133,39 @@ impl Enum {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }
 
-        let mut values = Vec::new();
-        let mut current = 0;
+        let mut variants = Vec::new();
         let mut is_tagged = false;
 
-        for variant in variants {
-            match variant.discriminant {
-                Some(syn::ConstExpr::Lit(syn::Lit::Int(i, _))) => {
-                    current = i;
-                }
-                Some(_) => {
-                    return Err("Unsupported discriminant.".to_owned());
-                }
-                None => { /* okay, we just use current */ }
-            };
-            let body = match variant.data {
-                syn::VariantData::Unit => None,
-                syn::VariantData::Struct(ref fields) | syn::VariantData::Tuple(ref fields) => {
-                    is_tagged = true;
-                    Some(Struct {
-                        name: format!("{}_Body", variant.ident),
-                        generic_params: GenericParams::default(),
-                        fields: {
-                            let mut res = Vec::new();
-
-                            if repr != Repr::C {
-                                res.push((
-                                    "tag".to_string(),
-                                    Type::Path(GenericPath {
-                                        name: "Tag".to_string(),
-                                        generics: vec![],
-                                    }),
-                                    Documentation::none(),
-                                ));
-                            }
-
-                            for (i, field) in fields.iter().enumerate() {
-                                if let Some(ty) = Type::load(&field.ty)? {
-                                    res.push((
-                                        match field.ident {
-                                            Some(ref ident) => ident.to_string(),
-                                            None => i.to_string(),
-                                        },
-                                        ty,
-                                        Documentation::load(&field.attrs),
-                                    ));
-                                }
-                            }
-
-                            res
-                        },
-                        is_variant: repr != Repr::C,
-                        tuple_struct: match variant.data {
-                            syn::VariantData::Tuple(_) => true,
-                            _ => false,
-                        },
-                        cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-                        annotations: AnnotationSet::load(attrs)?,
-                        documentation: Documentation::none(),
-                    })
-                }
-            };
-            values.push((
-                variant.ident.to_string(),
-                current,
-                body.map(|body| {
-                    (
-                        RenameRule::SnakeCase.apply_to_pascal_case(
-                            variant.ident.as_ref(),
-                            IdentifierType::StructMember,
-                        ),
-                        body,
-                    )
-                }),
-                Documentation::load(&variant.attrs),
-            ));
-            current = current + 1;
+        for variant in values {
+            let variant = EnumVariant::load(repr != Repr::C, variant, mod_cfg)?;
+            is_tagged = is_tagged || variant.body.is_some();
+            variants.push(variant);
         }
 
         let annotations = AnnotationSet::load(attrs)?;
 
-        if let Some(variants) = annotations.list("enum-trailing-values") {
-            for variant in variants {
-                values.push((variant, current, None, Documentation::none()));
-                current = current + 1;
+        if let Some(names) = annotations.list("enum-trailing-values") {
+            for name in names {
+                variants.push(EnumVariant {
+                    name,
+                    discriminant: None,
+                    body: None,
+                    documentation: Documentation::none(),
+                });
             }
         }
 
         Ok(Enum {
-            name: name,
-            repr: repr,
-            values: values,
+            name,
+            repr,
+            variants,
             tag: if is_tagged {
                 Some("Tag".to_string())
             } else {
                 None
             },
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-            annotations: annotations,
+            annotations,
             documentation: Documentation::load(attrs),
         })
     }
@@ -169,8 +197,8 @@ impl Item for Enum {
             // it makes sense to always prefix Tag with type name in C
             let new_tag = format!("{}_Tag", self.name);
             if self.repr != Repr::C {
-                for value in &mut self.values {
-                    if let Some((_, ref mut body)) = value.2 {
+                for variant in &mut self.variants {
+                    if let Some((_, ref mut body)) = variant.body {
                         body.fields[0].1 = Type::Path(GenericPath {
                             name: new_tag.clone(),
                             generics: vec![],
@@ -181,8 +209,8 @@ impl Item for Enum {
             self.tag = Some(new_tag);
         }
 
-        for value in &mut self.values {
-            if let Some((_, ref mut body)) = value.2 {
+        for variant in &mut self.variants {
+            if let Some((_, ref mut body)) = variant.body {
                 body.rename_for_config(config);
             }
         }
@@ -190,9 +218,9 @@ impl Item for Enum {
         if config.enumeration.prefix_with_name
             || self.annotations.bool("prefix-with-name").unwrap_or(false)
         {
-            for value in &mut self.values {
-                value.0 = format!("{}_{}", self.name, value.0);
-                if let Some((_, ref mut body)) = value.2 {
+            for variant in &mut self.variants {
+                variant.name = format!("{}_{}", self.name, variant.name);
+                if let Some((_, ref mut body)) = variant.body {
                     body.name = format!("{}_{}", self.name, body.name);
                 }
             }
@@ -204,20 +232,23 @@ impl Item for Enum {
         ];
 
         if let Some(r) = find_first_some(&rules) {
-            self.values = self.values
+            self.variants = self.variants
                 .iter()
-                .map(|&(ref name, ref discriminant, ref body, ref doc)| {
-                    (
-                        r.apply_to_pascal_case(name, IdentifierType::EnumVariant(self)),
-                        discriminant.clone(),
-                        body.as_ref().map(|body| {
+                .map(|variant| {
+                    EnumVariant {
+                        name: r.apply_to_pascal_case(
+                            &variant.name,
+                            IdentifierType::EnumVariant(self),
+                        ),
+                        discriminant: variant.discriminant.clone(),
+                        body: variant.body.as_ref().map(|body| {
                             (
                                 r.apply_to_snake_case(&body.0, IdentifierType::StructMember),
                                 body.1.clone(),
                             )
                         }),
-                        doc.clone(),
-                    )
+                        documentation: variant.documentation.clone(),
+                    }
                 })
                 .collect();
         }
@@ -271,12 +302,11 @@ impl Source for Enum {
             }
         }
         out.open_brace();
-        for (i, value) in self.values.iter().enumerate() {
+        for (i, variant) in self.variants.iter().enumerate() {
             if i != 0 {
                 out.new_line()
             }
-            value.3.write(config, out);
-            write!(out, "{} = {},", value.0, value.1);
+            variant.write(config, out);
         }
         if config.enumeration.add_sentinel(&self.annotations) {
             out.new_line();
@@ -299,8 +329,8 @@ impl Source for Enum {
         }
 
         if is_tagged {
-            for value in &self.values {
-                if let Some((_, ref body)) = value.2 {
+            for variant in &self.variants {
+                if let Some((_, ref body)) = variant.body {
                     out.new_line();
                     out.new_line();
 
@@ -324,13 +354,15 @@ impl Source for Enum {
                 out.open_brace();
             }
 
-            for (i, value) in self.values.iter().enumerate() {
-                if let Some(ref body) = value.2 {
-                    if i != 0 {
-                        out.new_line();
-                    }
-                    write!(out, "{} {};", body.1.name, body.0);
+            for (i, &(ref field_name, ref body)) in self.variants
+                .iter()
+                .filter_map(|variant| variant.body.as_ref())
+                .enumerate()
+            {
+                if i != 0 {
+                    out.new_line();
                 }
+                write!(out, "{} {};", body.name, field_name);
             }
 
             if size.is_none() {

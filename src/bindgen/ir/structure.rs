@@ -22,7 +22,7 @@ pub struct Struct {
     pub name: String,
     pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
-    pub is_variant: bool,
+    pub is_tagged: bool,
     pub tuple_struct: bool,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -64,7 +64,7 @@ impl Struct {
             name: name,
             generic_params: GenericParams::new(generics),
             fields: fields,
-            is_variant: false,
+            is_tagged: false,
             tuple_struct: tuple_struct,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
@@ -145,7 +145,7 @@ impl Item for Struct {
             }
         } else if self.tuple_struct {
             // If there is a tag field, skip it
-            if self.is_variant {
+            if self.is_tagged {
                 names.next();
             }
 
@@ -183,7 +183,7 @@ impl Item for Struct {
                 .iter()
                 .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                 .collect(),
-            is_variant: self.is_variant,
+            is_tagged: self.is_tagged,
             tuple_struct: self.tuple_struct,
             cfg: self.cfg.clone(),
             annotations: self.annotations.clone(),

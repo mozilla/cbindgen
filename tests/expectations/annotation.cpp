@@ -3,7 +3,7 @@
 
 enum class C : uint32_t {
   X = 2,
-  Y = 3,
+  Y,
 };
 
 struct A {
