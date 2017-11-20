@@ -17,7 +17,7 @@ use bindgen::writer::{Source, SourceWriter};
 pub struct Enum {
     pub name: String,
     pub repr: Repr,
-    pub values: Vec<(String, u64, Option<Struct>, Documentation)>,
+    pub values: Vec<(String, u64, Option<(String, Struct)>, Documentation)>,
     pub tag: Option<String>,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -104,7 +104,15 @@ impl Enum {
             values.push((
                 variant.ident.to_string(),
                 current,
-                body,
+                body.map(|body| {
+                    (
+                        RenameRule::SnakeCase.apply_to_pascal_case(
+                            variant.ident.as_ref(),
+                            IdentifierType::StructMember,
+                        ),
+                        body,
+                    )
+                }),
                 Documentation::load(&variant.attrs),
             ));
             current = current + 1;
@@ -162,7 +170,7 @@ impl Item for Enum {
             let new_tag = format!("{}_Tag", self.name);
             if self.repr != Repr::C {
                 for value in &mut self.values {
-                    if let Some(ref mut body) = value.2 {
+                    if let Some((_, ref mut body)) = value.2 {
                         body.fields[0].1 = Type::Path(GenericPath {
                             name: new_tag.clone(),
                             generics: vec![],
@@ -174,7 +182,7 @@ impl Item for Enum {
         }
 
         for value in &mut self.values {
-            if let Some(ref mut body) = value.2 {
+            if let Some((_, ref mut body)) = value.2 {
                 body.rename_for_config(config);
             }
         }
@@ -184,7 +192,7 @@ impl Item for Enum {
         {
             for value in &mut self.values {
                 value.0 = format!("{}_{}", self.name, value.0);
-                if let Some(ref mut body) = value.2 {
+                if let Some((_, ref mut body)) = value.2 {
                     body.name = format!("{}_{}", self.name, body.name);
                 }
             }
@@ -198,12 +206,17 @@ impl Item for Enum {
         if let Some(r) = find_first_some(&rules) {
             self.values = self.values
                 .iter()
-                .map(|x| {
+                .map(|&(ref name, ref discriminant, ref body, ref doc)| {
                     (
-                        r.apply_to_pascal_case(&x.0, IdentifierType::EnumVariant(self)),
-                        x.1.clone(),
-                        x.2.clone(),
-                        x.3.clone(),
+                        r.apply_to_pascal_case(name, IdentifierType::EnumVariant(self)),
+                        discriminant.clone(),
+                        body.as_ref().map(|body| {
+                            (
+                                r.apply_to_snake_case(&body.0, IdentifierType::StructMember),
+                                body.1.clone(),
+                            )
+                        }),
+                        doc.clone(),
                     )
                 })
                 .collect();
@@ -287,7 +300,7 @@ impl Source for Enum {
 
         if is_tagged {
             for value in &self.values {
-                if let Some(ref body) = value.2 {
+                if let Some((_, ref body)) = value.2 {
                     out.new_line();
                     out.new_line();
 
@@ -316,7 +329,7 @@ impl Source for Enum {
                     if i != 0 {
                         out.new_line();
                     }
-                    write!(out, "{} {};", body.name, value.0);
+                    write!(out, "{} {};", body.1.name, body.0);
                 }
             }
 

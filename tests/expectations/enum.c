@@ -62,8 +62,8 @@ typedef struct {
 
 typedef union {
   F_Tag tag;
-  Foo_Body Foo;
-  Bar_Body Bar;
+  Foo_Body foo;
+  Bar_Body bar;
 } F;
 
 typedef enum {
@@ -84,8 +84,8 @@ typedef struct {
 typedef union {
   G_Tag tag;
   union {
-    G_Foo_Body G_Foo;
-    G_Bar_Body G_Bar;
+    G_Foo_Body foo;
+    G_Bar_Body bar;
   };
 } G;
 
