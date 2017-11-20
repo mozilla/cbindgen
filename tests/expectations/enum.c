@@ -5,7 +5,7 @@
 enum A {
   a1 = 0,
   a2 = 2,
-  a3 = 3,
+  a3,
   a4 = 5,
 };
 typedef uint32_t A;
@@ -13,7 +13,7 @@ typedef uint32_t A;
 enum B {
   b1 = 0,
   b2 = 2,
-  b3 = 3,
+  b3,
   b4 = 5,
 };
 typedef uint16_t B;
@@ -21,7 +21,7 @@ typedef uint16_t B;
 enum C {
   c1 = 0,
   c2 = 2,
-  c3 = 3,
+  c3,
   c4 = 5,
 };
 typedef uint8_t C;
@@ -29,7 +29,7 @@ typedef uint8_t C;
 enum D {
   d1 = 0,
   d2 = 2,
-  d3 = 3,
+  d3,
   d4 = 5,
 };
 typedef uintptr_t D;
@@ -37,15 +37,15 @@ typedef uintptr_t D;
 enum E {
   e1 = 0,
   e2 = 2,
-  e3 = 3,
+  e3,
   e4 = 5,
 };
 typedef intptr_t E;
 
 enum F_Tag {
-  Foo = 0,
-  Bar = 1,
-  Baz = 2,
+  Foo,
+  Bar,
+  Baz,
 };
 typedef uint8_t F_Tag;
 
@@ -67,9 +67,9 @@ typedef union {
 } F;
 
 typedef enum {
-  G_Foo = 0,
-  G_Bar = 1,
-  G_Baz = 2,
+  G_Foo,
+  G_Bar,
+  G_Baz,
 } G_Tag;
 
 typedef struct {

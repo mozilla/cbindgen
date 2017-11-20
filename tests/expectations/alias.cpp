@@ -2,8 +2,8 @@
 #include <cstdlib>
 
 enum class Status : uint32_t {
-  Ok = 0,
-  Err = 1,
+  Ok,
+  Err,
 };
 
 struct Dep {

@@ -3,8 +3,8 @@
 #include <stdbool.h>
 
 enum Status {
-  Ok = 0,
-  Err = 1,
+  Ok,
+  Err,
 };
 typedef uint32_t Status;
 

@@ -4,7 +4,7 @@
 
 enum C {
   X = 2,
-  Y = 3,
+  Y,
 };
 typedef uint32_t C;
 

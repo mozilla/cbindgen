@@ -4,18 +4,18 @@
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
 enum BarType {
-  A = 0,
-  B = 1,
-  C = 2,
+  A,
+  B,
+  C,
 };
 typedef uint32_t BarType;
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
 enum FooType {
-  A = 0,
-  B = 1,
-  C = 2,
+  A,
+  B,
+  C,
 };
 typedef uint32_t FooType;
 #endif

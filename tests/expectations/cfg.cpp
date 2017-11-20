@@ -3,17 +3,17 @@
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
 enum class BarType : uint32_t {
-  A = 0,
-  B = 1,
-  C = 2,
+  A,
+  B,
+  C,
 };
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
 enum class FooType : uint32_t {
-  A = 0,
-  B = 1,
-  C = 2,
+  A,
+  B,
+  C,
 };
 #endif
 
