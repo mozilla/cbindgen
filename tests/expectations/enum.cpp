@@ -55,8 +55,8 @@ union F {
   };
 
   Tag tag;
-  Foo_Body Foo;
-  Bar_Body Bar;
+  Foo_Body foo;
+  Bar_Body bar;
 };
 
 struct G {
@@ -77,8 +77,8 @@ struct G {
 
   Tag tag;
   union {
-    G_Foo_Body G_Foo;
-    G_Bar_Body G_Bar;
+    G_Foo_Body foo;
+    G_Bar_Body bar;
   };
 };
 
