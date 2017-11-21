@@ -37,8 +37,8 @@ impl Bindings {
         }
     }
 
-    pub fn write_to_file(&self, path: &str) {
-        if let Some(parent) = path::Path::new(path).parent() {
+    pub fn write_to_file<P: AsRef<path::Path>>(&self, path: P) {
+        if let Some(parent) = path::Path::new(path.as_ref()).parent() {
             fs::create_dir_all(parent).unwrap();
         }
 
