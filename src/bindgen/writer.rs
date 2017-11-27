@@ -43,8 +43,6 @@ impl<'a, 'b, F: Write> Write for InnerWriter<'a, 'b, F> {
             writer.line_length += writer.spaces();
         }
 
-        debug_assert!(!buf.contains(&b'\n'));
-
         let written = writer.out.write(buf)?;
         writer.line_length += written;
         writer.max_line_length = cmp::max(writer.max_line_length, writer.line_length);
