@@ -55,10 +55,11 @@ impl Cargo {
         } else {
             None
         };
-        let metadata = cargo_metadata::metadata(&toml_path).map_err(|_| {
+        let metadata = cargo_metadata::metadata(&toml_path).map_err(|x| {
             format!(
-                "couldn't execute `cargo metadata` with manifest {:?}.",
-                toml_path
+                "couldn't execute `cargo metadata` with manifest {:?}: {:?}",
+                toml_path,
+                x
             )
         })?;
 
