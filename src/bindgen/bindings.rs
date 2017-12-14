@@ -93,7 +93,6 @@ impl Bindings {
             self.open_namespaces(&mut out);
         }
 
-
         for constant in &self.constants {
             out.new_line_if_not_start();
             constant.write(&self.config, &mut out);

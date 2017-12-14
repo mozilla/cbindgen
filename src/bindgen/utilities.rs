@@ -47,33 +47,33 @@ pub trait SynItemHelpers {
 
 impl SynItemHelpers for syn::Item {
     fn has_attr(&self, target: syn::MetaItem) -> bool {
-        return self.attrs.iter().any(|ref attr| {
-            attr.style == syn::AttrStyle::Outer && attr.value == target
-        });
+        return self.attrs
+            .iter()
+            .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
     }
 }
 
 impl SynItemHelpers for syn::ForeignItem {
     fn has_attr(&self, target: syn::MetaItem) -> bool {
-        return self.attrs.iter().any(|ref attr| {
-            attr.style == syn::AttrStyle::Outer && attr.value == target
-        });
+        return self.attrs
+            .iter()
+            .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
     }
 }
 
 impl SynItemHelpers for syn::Variant {
     fn has_attr(&self, target: syn::MetaItem) -> bool {
-        return self.attrs.iter().any(|ref attr| {
-            attr.style == syn::AttrStyle::Outer && attr.value == target
-        });
+        return self.attrs
+            .iter()
+            .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
     }
 }
 
 impl SynItemHelpers for syn::Field {
     fn has_attr(&self, target: syn::MetaItem) -> bool {
-        return self.attrs.iter().any(|ref attr| {
-            attr.style == syn::AttrStyle::Outer && attr.value == target
-        });
+        return self.attrs
+            .iter()
+            .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
     }
 }
 

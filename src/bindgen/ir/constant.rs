@@ -23,20 +23,21 @@ impl LiteralExpr {
             &syn::ExprKind::Lit(syn::Lit::Byte(value)) => Ok(LiteralExpr(format!("{}", value))),
             &syn::ExprKind::Lit(syn::Lit::Char(value)) => Ok(LiteralExpr(format!("{}", value))),
             &syn::ExprKind::Lit(syn::Lit::Int(value, ref ty)) => match ty {
-                &syn::IntTy::Usize |
-                &syn::IntTy::U8 |
-                &syn::IntTy::U16 |
-                &syn::IntTy::U32 |
-                &syn::IntTy::U64 |
-                &syn::IntTy::Unsuffixed => Ok(LiteralExpr(format!("{}", value))),
-                &syn::IntTy::Isize |
-                &syn::IntTy::I8 |
-                &syn::IntTy::I16 |
-                &syn::IntTy::I32 |
-                &syn::IntTy::I64 => unsafe {
-                    Ok(LiteralExpr(
-                        format!("{}", mem::transmute::<u64, i64>(value)),
-                    ))
+                &syn::IntTy::Usize
+                | &syn::IntTy::U8
+                | &syn::IntTy::U16
+                | &syn::IntTy::U32
+                | &syn::IntTy::U64
+                | &syn::IntTy::Unsuffixed => Ok(LiteralExpr(format!("{}", value))),
+                &syn::IntTy::Isize
+                | &syn::IntTy::I8
+                | &syn::IntTy::I16
+                | &syn::IntTy::I32
+                | &syn::IntTy::I64 => unsafe {
+                    Ok(LiteralExpr(format!(
+                        "{}",
+                        mem::transmute::<u64, i64>(value)
+                    )))
                 },
             },
             &syn::ExprKind::Lit(syn::Lit::Float(ref value, ref _ty)) => {
@@ -57,7 +58,6 @@ pub struct Constant {
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
-
 
 impl Constant {
     pub fn load(

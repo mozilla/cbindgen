@@ -63,8 +63,7 @@ impl Typedef {
                 if out.contains_key(&alias_path) {
                     warn!(
                         "Multiple typedef's with annotations for {}. Ignoring annotations from {}.",
-                        alias_path,
-                        self.name
+                        alias_path, self.name
                     );
                     return;
                 }

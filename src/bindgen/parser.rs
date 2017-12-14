@@ -222,8 +222,7 @@ impl Parser {
                             } else {
                                 error!(
                                     "Parsing crate `{}`: can't find dependency version for `{}`.",
-                                    pkg.name,
-                                    dep_pkg_name
+                                    pkg.name, dep_pkg_name
                                 );
                             }
                         } else {
@@ -231,8 +230,7 @@ impl Parser {
                                 "Parsing crate `{}`: cannot parse external crate `{}` because \
                                  cbindgen is in single source mode. Consider specifying a crate \
                                  directory instead of a source file.",
-                                pkg.name,
-                                dep_pkg_name
+                                pkg.name, dep_pkg_name
                             );
                         }
                     }
@@ -265,15 +263,13 @@ impl Parser {
                 let mut f = File::open(mod_path).map_err(|_| {
                     format!(
                         "Parsing crate `{}`: cannot open file `{:?}`.",
-                        pkg.name,
-                        mod_path
+                        pkg.name, mod_path
                     )
                 })?;
                 f.read_to_string(&mut s).map_err(|_| {
                     format!(
                         "Parsing crate `{}`: cannot open file `{:?}`.",
-                        pkg.name,
-                        mod_path
+                        pkg.name, mod_path
                     )
                 })?;
 
@@ -330,8 +326,7 @@ impl Parser {
                             // just elicit a warning
                             warn!(
                                 "Parsing crate `{}`: can't find mod {}`.",
-                                pkg.name,
-                                next_mod_name
+                                pkg.name, next_mod_name
                             );
                         }
                     }
@@ -362,8 +357,7 @@ impl Parser {
                             } else {
                                 error!(
                                     "Parsing crate `{}`: can't find dependency version for `{}`.",
-                                    pkg.name,
-                                    dep_pkg_name
+                                    pkg.name, dep_pkg_name
                                 );
                             }
                         } else {
@@ -371,8 +365,7 @@ impl Parser {
                                 "Parsing crate `{}`: cannot parse external crate `{}` because \
                                  cbindgen is in single source mode. Consider specifying a crate \
                                  directory instead of a source file.",
-                                pkg.name,
-                                dep_pkg_name
+                                pkg.name, dep_pkg_name
                             );
                         }
                     }
@@ -518,8 +511,7 @@ impl Parse {
         if !block.abi.is_c() {
             info!(
                 "Skip {}::{} - (extern block must be extern C).",
-                crate_name,
-                &item.ident
+                crate_name, &item.ident
             );
             return;
         }
@@ -530,8 +522,7 @@ impl Parse {
                     if crate_name != binding_crate_name {
                         info!(
                             "Skip {}::{} - (fn's outside of the binding crate are not used).",
-                            crate_name,
-                            &foreign_item.ident
+                            crate_name, &foreign_item.ident
                         );
                         return;
                     }
@@ -551,9 +542,7 @@ impl Parse {
                         Err(msg) => {
                             error!(
                                 "Cannot use fn {}::{} ({}).",
-                                crate_name,
-                                &foreign_item.ident,
-                                msg
+                                crate_name, &foreign_item.ident, msg
                             );
                         }
                     }
@@ -576,8 +565,7 @@ impl Parse {
         if crate_name != binding_crate_name {
             info!(
                 "Skip {}::{} - (fn's outside of the binding crate are not used).",
-                crate_name,
-                &item.ident
+                crate_name, &item.ident
             );
             return;
         }
@@ -597,15 +585,13 @@ impl Parse {
             if (abi.is_omitted() || abi.is_c()) && !item.is_no_mangle() {
                 warn!(
                     "Skip {}::{} - (`extern` but not `no_mangle`).",
-                    crate_name,
-                    &item.ident
+                    crate_name, &item.ident
                 );
             }
             if abi.is_some() && !(abi.is_omitted() || abi.is_c()) {
                 warn!(
                     "Skip {}::{} - (non `extern \"C\"`).",
-                    crate_name,
-                    &item.ident
+                    crate_name, &item.ident
                 );
             }
         }
@@ -624,8 +610,7 @@ impl Parse {
         if crate_name != binding_crate_name {
             info!(
                 "Skip {}::{} - (const's outside of the binding crate are not used).",
-                crate_name,
-                &item.ident
+                crate_name, &item.ident
             );
             return;
         }
@@ -657,8 +642,7 @@ impl Parse {
         if crate_name != binding_crate_name {
             info!(
                 "Skip {}::{} - (static's outside of the binding crate are not used).",
-                crate_name,
-                &item.ident
+                crate_name, &item.ident
             );
             return;
         }
@@ -696,8 +680,12 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                self.opaque_items
-                    .try_insert(OpaqueItem::new(struct_name, generics, &item.attrs, mod_cfg));
+                self.opaque_items.try_insert(OpaqueItem::new(
+                    struct_name,
+                    generics,
+                    &item.attrs,
+                    mod_cfg,
+                ));
             }
         }
     }
@@ -721,8 +709,12 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                self.opaque_items
-                    .try_insert(OpaqueItem::new(union_name, generics, &item.attrs, mod_cfg));
+                self.opaque_items.try_insert(OpaqueItem::new(
+                    union_name,
+                    generics,
+                    &item.attrs,
+                    mod_cfg,
+                ));
             }
         }
     }
@@ -741,8 +733,7 @@ impl Parse {
         {
             info!(
                 "Skip {}::{} - (has generics or lifetimes or where bounds).",
-                crate_name,
-                &item.ident
+                crate_name, &item.ident
             );
             return;
         }
@@ -755,8 +746,12 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                self.opaque_items
-                    .try_insert(OpaqueItem::new(enum_name, generics, &item.attrs, mod_cfg));
+                self.opaque_items.try_insert(OpaqueItem::new(
+                    enum_name,
+                    generics,
+                    &item.attrs,
+                    mod_cfg,
+                ));
             }
         }
     }
@@ -780,8 +775,12 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                self.opaque_items
-                    .try_insert(OpaqueItem::new(alias_name, generics, &item.attrs, mod_cfg));
+                self.opaque_items.try_insert(OpaqueItem::new(
+                    alias_name,
+                    generics,
+                    &item.attrs,
+                    mod_cfg,
+                ));
             }
         }
     }

@@ -117,8 +117,8 @@ impl Library {
             // TODO
             let mut transferred = false;
 
-            self.enums
-                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
+            self.enums.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
@@ -127,12 +127,13 @@ impl Library {
                          that already has annotations.",
                         alias_path
                     );
-                });
+                }
+            });
             if transferred {
                 continue;
             }
-            self.structs
-                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
+            self.structs.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
@@ -141,12 +142,13 @@ impl Library {
                          that already has annotations.",
                         alias_path
                     );
-                });
+                }
+            });
             if transferred {
                 continue;
             }
-            self.unions
-                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
+            self.unions.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
@@ -155,12 +157,13 @@ impl Library {
                          that already has annotations.",
                         alias_path
                     );
-                });
+                }
+            });
             if transferred {
                 continue;
             }
-            self.opaque_items
-                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
+            self.opaque_items.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
@@ -169,12 +172,13 @@ impl Library {
                          that already has annotations.",
                         alias_path
                     );
-                });
+                }
+            });
             if transferred {
                 continue;
             }
-            self.typedefs
-                .for_items_mut(&alias_path, |x| if x.annotations().is_empty() {
+            self.typedefs.for_items_mut(&alias_path, |x| {
+                if x.annotations().is_empty() {
                     *x.annotations_mut() = annotations.clone();
                     transferred = true;
                 } else {
@@ -183,7 +187,8 @@ impl Library {
                          that already has annotations.",
                         alias_path
                     );
-                });
+                }
+            });
             if transferred {
                 continue;
             }

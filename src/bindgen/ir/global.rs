@@ -22,7 +22,6 @@ pub struct Static {
     pub documentation: Documentation,
 }
 
-
 impl Static {
     pub fn load(
         name: String,

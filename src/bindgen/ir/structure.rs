@@ -50,11 +50,7 @@ impl Struct {
                 let mut current = 0;
                 for field in fields {
                     if let Some(x) = Type::load(&field.ty)? {
-                        out.push((
-                            format!("{}", current),
-                            x,
-                            Documentation::load(&field.attrs),
-                        ));
+                        out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
                         current += 1;
                     }
                 }
@@ -248,9 +244,7 @@ impl Source for Struct {
                 write!(
                     out,
                     "bool operator{}(const {}& {}) const",
-                    op,
-                    self.name,
-                    other
+                    op, self.name, other
                 );
                 out.open_brace();
                 out.write("return ");
@@ -321,9 +315,11 @@ impl SynFieldHelpers for syn::Field {
         let converted_ty = Type::load(&self.ty)?;
 
         if let Some(x) = converted_ty {
-            Ok(Some(
-                (ident.to_string(), x, Documentation::load(&self.attrs)),
-            ))
+            Ok(Some((
+                ident.to_string(),
+                x,
+                Documentation::load(&self.attrs),
+            )))
         } else {
             Ok(None)
         }

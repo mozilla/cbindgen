@@ -51,11 +51,7 @@ impl Union {
                 let mut current = 0;
                 for field in fields {
                     if let Some(x) = Type::load(&field.ty)? {
-                        out.push((
-                            format!("{}", current),
-                            x,
-                            Documentation::load(&field.attrs),
-                        ));
+                        out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
                         current += 1;
                     }
                 }

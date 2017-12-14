@@ -184,11 +184,9 @@ impl Type {
                 let converted = match converted {
                     Some(converted) => converted,
                     None => {
-                        return Err(
-                            "Cannot have a pointer to a zero sized type. If you are \
-                             trying to represent `void*` use `c_void*`."
-                                .to_owned(),
-                        )
+                        return Err("Cannot have a pointer to a zero sized type. If you are \
+                                    trying to represent `void*` use `c_void*`."
+                            .to_owned())
                     }
                 };
 
@@ -203,11 +201,9 @@ impl Type {
                 let converted = match converted {
                     Some(converted) => converted,
                     None => {
-                        return Err(
-                            "Cannot have a pointer to a zero sized type. If you are \
-                             trying to represent `void*` use `c_void*`."
-                                .to_owned(),
-                        )
+                        return Err("Cannot have a pointer to a zero sized type. If you are \
+                                    trying to represent `void*` use `c_void*`."
+                            .to_owned())
                     }
                 };
 
