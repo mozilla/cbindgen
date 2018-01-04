@@ -82,12 +82,23 @@ impl Bindings {
             out.write("#include <stdlib.h>");
             out.new_line();
             out.write("#include <stdbool.h>");
+            out.new_line();
         } else {
             out.write("#include <cstdint>");
             out.new_line();
             out.write("#include <cstdlib>");
+            out.new_line();
         }
-        out.new_line();
+
+        for include in &self.config.sys_includes {
+            write!(out, "#include <{}>", include);
+            out.new_line();
+        }
+
+        for include in &self.config.includes {
+            write!(out, "#include \"{}\"", include);
+            out.new_line();
+        }
 
         if self.config.language == Language::Cxx {
             self.open_namespaces(&mut out);

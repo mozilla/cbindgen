@@ -173,13 +173,16 @@ impl Cargo {
         let kind_staticlib = String::from("staticlib");
         let kind_rlib = String::from("rlib");
         let kind_cdylib = String::from("cdylib");
+        let kind_dylib = String::from("dylib");
 
         for meta_package in &self.metadata.packages {
             if meta_package.name == package.name && meta_package.version == package.version {
                 for target in &meta_package.targets {
-                    if target.kind.contains(&kind_lib) || target.kind.contains(&kind_staticlib)
+                    if target.kind.contains(&kind_lib)
+                        || target.kind.contains(&kind_staticlib)
                         || target.kind.contains(&kind_rlib)
                         || target.kind.contains(&kind_cdylib)
+                        || target.kind.contains(&kind_dylib)
                     {
                         return Some(PathBuf::from(&target.src_path));
                     }

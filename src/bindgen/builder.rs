@@ -39,6 +39,18 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_include<S: AsRef<str>>(mut self, include: S) -> Builder {
+        self.config.includes.push(String::from(include.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_sys_include<S: AsRef<str>>(mut self, include: S) -> Builder {
+        self.config.sys_includes.push(String::from(include.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_trailer<S: AsRef<str>>(mut self, trailer: S) -> Builder {
         self.config.trailer = Some(String::from(trailer.as_ref()));
         self

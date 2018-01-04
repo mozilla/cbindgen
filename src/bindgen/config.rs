@@ -307,6 +307,10 @@ impl Default for ParseConfig {
 pub struct Config {
     /// Optional text to output at the beginning of the file
     pub header: Option<String>,
+    /// A list of additional includes to put at the beginning of the generated header
+    pub includes: Vec<String>,
+    /// A list of additional system includes to put at the beginning of the generated header
+    pub sys_includes: Vec<String>,
     /// Optional text to output at the end of the file
     pub trailer: Option<String>,
     /// Optional name to use for an include guard
@@ -351,6 +355,8 @@ impl Default for Config {
     fn default() -> Config {
         Config {
             header: None,
+            includes: Vec::new(),
+            sys_includes: Vec::new(),
             trailer: None,
             include_guard: None,
             autogen_warning: None,
