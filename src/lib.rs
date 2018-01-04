@@ -18,7 +18,7 @@ use std::path::Path;
 
 /// A utility function for build scripts to generate bindings for a crate, using
 /// a `cbindgen.toml` if it exists.
-pub fn generate<P: AsRef<Path>>(crate_dir: P) -> Result<Bindings, String> {
+pub fn generate<P: AsRef<Path>>(crate_dir: P) -> Result<Bindings, Error> {
     let config = Config::from_root_or_default(crate_dir.as_ref());
 
     generate_with_config(crate_dir, config)
@@ -29,7 +29,7 @@ pub fn generate<P: AsRef<Path>>(crate_dir: P) -> Result<Bindings, String> {
 pub fn generate_with_config<P: AsRef<Path>>(
     crate_dir: P,
     config: Config,
-) -> Result<Bindings, String> {
+) -> Result<Bindings, Error> {
     Builder::new()
         .with_config(config)
         .with_crate(crate_dir)

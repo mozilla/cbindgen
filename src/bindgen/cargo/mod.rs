@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 mod cargo;
-mod cargo_expand;
-mod cargo_lock;
-mod cargo_metadata;
-mod cargo_toml;
+pub(crate) mod cargo_expand;
+pub(crate) mod cargo_lock;
+pub(crate) mod cargo_metadata;
+pub(crate) mod cargo_toml;
 
 pub(crate) use self::cargo::*;

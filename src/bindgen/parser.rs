@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 use syn;
 
 use bindgen::cargo::{Cargo, PackageRef};
+use bindgen::error::Error;
 use bindgen::ir::{AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams};
 use bindgen::ir::{ItemMap, OpaqueItem, Static, Struct, Typedef, Union};
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
@@ -23,7 +24,7 @@ const STD_CRATES: &'static [&'static str] = &[
     "proc_macro",
 ];
 
-type ParseResult = Result<Parse, String>;
+type ParseResult = Result<Parse, Error>;
 
 /// Parses a single rust source file, not following `mod` or `extern crate`.
 pub fn parse_src(src_file: &Path) -> ParseResult {
@@ -128,7 +129,7 @@ impl Parser {
         return !STD_CRATES.contains(&pkg_name.as_ref()) && !self.exclude.contains(&pkg_name);
     }
 
-    fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), String> {
+    fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
         assert!(self.lib.is_some());
         self.parsed_crates.insert(pkg.name.clone());
 
@@ -153,14 +154,22 @@ impl Parser {
         }
     }
 
-    fn parse_expand_crate(&mut self, pkg: &PackageRef) -> Result<(), String> {
+    fn parse_expand_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
         assert!(self.lib.is_some());
 
         let mod_parsed = {
             if !self.cache_expanded_crate.contains_key(&pkg.name) {
-                let s = self.lib.as_ref().unwrap().expand_crate(pkg)?;
+                let s = self.lib.as_ref().unwrap().expand_crate(pkg)
+                    .map_err(|x| Error::CargoExpand(
+                        pkg.name.clone(),
+                        x
+                    ))?;
                 let i = syn::parse_crate(&s)
-                    .map_err(|msg| format!("Parsing crate `{}`:\n{}.", pkg.name, msg))?;
+                    .map_err(|msg| Error::ParseSyntaxError{
+                        crate_name: pkg.name.clone(),
+                        src_path: "".to_owned(),
+                        message: msg,
+                    })?;
                 self.cache_expanded_crate.insert(pkg.name.clone(), i.items);
             }
 
@@ -174,7 +183,7 @@ impl Parser {
         &mut self,
         pkg: &PackageRef,
         items: &Vec<syn::Item>,
-    ) -> Result<(), String> {
+    ) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
             &self.binding_crate_name,
             &pkg.name,
@@ -193,11 +202,7 @@ impl Parser {
                     if let &Some(ref inline_items) = inline_items {
                         self.process_expanded_mod(pkg, inline_items)?;
                     } else {
-                        error!(
-                            "Parsing crate `{}`: external mod found in expanded source, \
-                             this shouldn't be possible.",
-                            pkg.name
-                        );
+                        unreachable!();
                     }
 
                     if cfg.is_some() {
@@ -246,7 +251,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_mod(&mut self, pkg: &PackageRef, mod_path: &Path) -> Result<(), String> {
+    fn parse_mod(&mut self, pkg: &PackageRef, mod_path: &Path) -> Result<(), Error> {
         let mod_parsed = {
             let owned_mod_path = mod_path.to_path_buf();
 
@@ -261,20 +266,24 @@ impl Parser {
 
                 let mut s = String::new();
                 let mut f = File::open(mod_path).map_err(|_| {
-                    format!(
-                        "Parsing crate `{}`: cannot open file `{:?}`.",
-                        pkg.name, mod_path
-                    )
+                    Error::ParseCannotOpenFile{
+                        crate_name: pkg.name.clone(),
+                        src_path: mod_path.to_str().unwrap().to_owned(),
+                    }
                 })?;
                 f.read_to_string(&mut s).map_err(|_| {
-                    format!(
-                        "Parsing crate `{}`: cannot open file `{:?}`.",
-                        pkg.name, mod_path
-                    )
+                    Error::ParseCannotOpenFile{
+                        crate_name: pkg.name.clone(),
+                        src_path: mod_path.to_str().unwrap().to_owned(),
+                    }
                 })?;
 
                 let i = syn::parse_crate(&s).map_err(|msg| {
-                    format!("Parsing crate `{}`:\n{}.", pkg.name, limit_string(&msg))
+                    Error::ParseSyntaxError{
+                        crate_name: pkg.name.clone(),
+                        src_path: "".to_owned(),
+                        message: limit_string(&msg).to_owned(),
+                    }
                 })?;
 
                 self.cache_src.insert(owned_mod_path.clone(), i.items);
@@ -293,7 +302,7 @@ impl Parser {
         pkg: &PackageRef,
         mod_dir: &Path,
         items: &Vec<syn::Item>,
-    ) -> Result<(), String> {
+    ) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
             &self.binding_crate_name,
             &pkg.name,

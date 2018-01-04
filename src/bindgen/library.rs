@@ -8,6 +8,7 @@ use std::mem;
 use bindgen::bindings::Bindings;
 use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
+use bindgen::error::Error;
 use bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use bindgen::monomorph::Monomorphs;
@@ -50,7 +51,7 @@ impl Library {
         }
     }
 
-    pub fn generate(mut self) -> Result<Bindings, String> {
+    pub fn generate(mut self) -> Result<Bindings, Error> {
         self.functions.sort_by(|x, y| x.name.cmp(&y.name));
 
         self.transfer_annotations();

@@ -20,7 +20,7 @@ use clap::{App, Arg, ArgMatches};
 mod logging;
 mod bindgen;
 
-use bindgen::{Bindings, Builder, Cargo, Config, Language};
+use bindgen::{Bindings, Builder, Cargo, Config, Error, Language};
 
 fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // We allow specifying a language to override the config default. This is
@@ -43,7 +43,7 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     }
 }
 
-fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings, String> {
+fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings, Error> {
     // If a file is specified then we load it as a single source
     if !input.is_dir() {
         // Load any config specified or search in the input directory

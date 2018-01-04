@@ -8,6 +8,7 @@ use bindgen::cargo::cargo_expand;
 use bindgen::cargo::cargo_lock::{self, Lock};
 use bindgen::cargo::cargo_metadata::{self, Metadata};
 use bindgen::cargo::cargo_toml;
+use bindgen::error::Error;
 
 /// Parse a dependency string used in Cargo.lock
 fn parse_dep_string(dep_string: &str) -> (&str, &str) {
@@ -40,7 +41,7 @@ impl Cargo {
         crate_dir: &Path,
         binding_crate_name: Option<&str>,
         use_cargo_lock: bool,
-    ) -> Result<Cargo, String> {
+    ) -> Result<Cargo, Error> {
         let toml_path = crate_dir.join("Cargo.toml");
         let lock_path = crate_dir.join("Cargo.lock");
 
@@ -48,7 +49,7 @@ impl Cargo {
             match cargo_lock::lock(&lock_path) {
                 Ok(lock) => Some(lock),
                 Err(x) => {
-                    warn!("couldn't load lock file {:?}: {:?}", lock_path, x);
+                    warn!("Couldn't load lock file {:?}: {:?}", lock_path, x);
                     None
                 }
             }
@@ -56,15 +57,13 @@ impl Cargo {
             None
         };
         let metadata = cargo_metadata::metadata(&toml_path).map_err(|x| {
-            format!(
-                "couldn't execute `cargo metadata` with manifest {:?}: {:?}",
-                toml_path, x
-            )
+            Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x)
         })?;
 
         // Use the specified binding crate name or infer it from the manifest
-        let manifest = cargo_toml::manifest(&toml_path)
-            .map_err(|_| format!("couldn't load {:?}.", toml_path))?;
+        let manifest = cargo_toml::manifest(&toml_path).map_err(|x| {
+            Error::CargoToml(toml_path.to_str().unwrap().to_owned(), x)
+        })?;
 
         let binding_crate_name =
             binding_crate_name.map_or(manifest.package.name.clone(), |x| x.to_owned());
@@ -191,7 +190,7 @@ impl Cargo {
         None
     }
 
-    pub(crate) fn expand_crate(&self, package: &PackageRef) -> Result<String, String> {
+    pub(crate) fn expand_crate(&self, package: &PackageRef) -> Result<String, cargo_expand::Error> {
         cargo_expand::expand(&self.manifest_path, &package.name, &package.version)
     }
 }

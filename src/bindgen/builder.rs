@@ -6,6 +6,7 @@ use std::path;
 
 use bindgen::cargo::Cargo;
 use bindgen::config::{Braces, Config, Language};
+use bindgen::error::Error;
 use bindgen::library::Library;
 use bindgen::bindings::Bindings;
 use bindgen::parser::{self, Parse};
@@ -200,7 +201,7 @@ impl Builder {
         self
     }
 
-    pub fn generate(self) -> Result<Bindings, String> {
+    pub fn generate(self) -> Result<Bindings, Error> {
         let mut result = Parse::new();
 
         if self.std_types {

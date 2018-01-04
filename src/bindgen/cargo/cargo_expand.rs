@@ -3,16 +3,39 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::env;
+use std::io;
 use std::path::Path;
 use std::process::Command;
-use std::str::from_utf8;
+use std::str::{Utf8Error, from_utf8};
 
 extern crate tempdir;
 use self::tempdir::TempDir;
 
+#[derive(Debug)]
+/// Possible errors that can occur during `rustc --pretty=expanded`.
+pub enum Error {
+    /// Error during creation of temporary directory
+    Io(io::Error),
+    /// Output of `cargo metadata` was not valid utf8
+    Utf8(Utf8Error),
+    /// Error during execution of `cargo rustc --pretty=expanded`
+    Compile(String),
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::Io(err)
+    }
+}
+impl From<Utf8Error> for Error {
+    fn from(err: Utf8Error) -> Self {
+        Error::Utf8(err)
+    }
+}
+
 /// Use rustc to expand and pretty print the crate into a single file,
 /// removing any macros in the process.
-pub fn expand(manifest_path: &Path, crate_name: &str, version: &str) -> Result<String, String> {
+pub fn expand(manifest_path: &Path, crate_name: &str, version: &str) -> Result<String, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let run = |target_dir: &Path| {
         let mut cmd = Command::new(cargo);
@@ -27,13 +50,13 @@ pub fn expand(manifest_path: &Path, crate_name: &str, version: &str) -> Result<S
         cmd.arg("-Z");
         cmd.arg("unstable-options");
         cmd.arg("--pretty=expanded");
-        let output = cmd.output().unwrap();
+        let output = cmd.output()?;
 
-        let src = from_utf8(&output.stdout).unwrap().to_owned();
-        let error = from_utf8(&output.stderr).unwrap().to_owned();
+        let src = from_utf8(&output.stdout)?.to_owned();
+        let error = from_utf8(&output.stderr)?.to_owned();
 
         if src.len() == 0 {
-            Err(error)
+            Err(Error::Compile(error))
         } else {
             Ok(src)
         }
@@ -44,8 +67,7 @@ pub fn expand(manifest_path: &Path, crate_name: &str, version: &str) -> Result<S
     } else {
         // Create a temp directory to use as a target dir for cargo expand, for
         // hygenic purposes.
-        let target_dir = TempDir::new("cbindgen-expand")
-            .map_err(|_| format!("couldn't create a temp target directory"))?;
+        let target_dir = TempDir::new("cbindgen-expand")?;
 
         run(target_dir.path())
     }
