@@ -7,7 +7,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::cdecl;
-use bindgen::config::{Config, Layout};
+use bindgen::config::{Config, Layout, Language};
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, SynFnRetTyHelpers, Type};
 use bindgen::library::Library;
@@ -105,6 +105,7 @@ impl Function {
 impl Source for Function {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         fn write_1<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
+            let void_prototype = config.language == Language::C;
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
@@ -120,7 +121,7 @@ impl Source for Function {
                     out.write(" ");
                 }
             }
-            cdecl::write_func(out, &func, false);
+            cdecl::write_func(out, &func, false, void_prototype);
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.write(" ");
@@ -133,6 +134,7 @@ impl Source for Function {
         }
 
         fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
+            let void_prototype = config.language == Language::C;
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
@@ -148,7 +150,7 @@ impl Source for Function {
                     out.new_line();
                 }
             }
-            cdecl::write_func(out, &func, true);
+            cdecl::write_func(out, &func, true, void_prototype);
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.new_line();
