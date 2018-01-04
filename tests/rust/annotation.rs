@@ -16,7 +16,8 @@ enum C {
 }
 
 #[no_mangle]
-extern "C" fn root(x: A,
-                   y: B,
-                   z: C)
-{ }
+pub extern "C" fn root(
+    x: A,
+    y: B,
+    z: C
+) { }

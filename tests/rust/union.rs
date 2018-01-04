@@ -20,7 +20,8 @@ union NormalWithZST {
 }
 
 #[no_mangle]
-extern "C" fn root(a: *mut Opaque,
-                   b: Normal,
-                   c: NormalWithZST)
-{ }
+pub extern "C" fn root(
+    a: *mut Opaque,
+    b: Normal,
+    c: NormalWithZST
+) { }

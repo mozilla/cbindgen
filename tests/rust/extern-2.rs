@@ -1,11 +1,11 @@
 #[no_mangle]
-extern "C" fn first()
+pub extern "C" fn first()
 { }
 
 #[no_mangle]
-extern fn second()
+pub extern fn second()
 { }
 
 #[no_mangle]
-fn third()
+pub fn third()
 { }

@@ -6,6 +6,7 @@ struct Foo<'a> {
 const BAR: &'static str = "";
 
 #[no_mangle]
-extern "C" fn root(a: Foo<'static>,
-                   b: &'static str)
-{ }
+pub extern "C" fn root(
+	a: Foo<'static>,
+    b: &'static str
+) { }

@@ -22,5 +22,5 @@ struct Root {
 }
 
 #[no_mangle]
-extern "C" fn root(a: Root)
+pub extern "C" fn root(a: Root)
 { }

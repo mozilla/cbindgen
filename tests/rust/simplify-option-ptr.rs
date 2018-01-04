@@ -16,8 +16,9 @@ union Bar {
 }
 
 #[no_mangle]
-extern "C" fn root(a: Option<&Opaque>,
-                   b: Option<&mut Opaque>,
-                   c: Foo,
-                   d: Bar)
-{ }
+pub extern "C" fn root(
+	a: Option<&Opaque>,
+    b: Option<&mut Opaque>,
+    c: Foo,
+    d: Bar
+) { }

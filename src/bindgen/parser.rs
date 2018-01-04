@@ -570,7 +570,7 @@ impl Parse {
             return;
         }
 
-        if item.is_no_mangle() && (abi.is_omitted() || abi.is_c()) {
+        if item.vis == syn::Visibility::Public && item.is_no_mangle() && (abi.is_omitted() || abi.is_c()) {
             match Function::load(item.ident.to_string(), decl, false, &item.attrs, mod_cfg) {
                 Ok(func) => {
                     info!("Take {}::{}.", crate_name, &item.ident);
@@ -582,6 +582,12 @@ impl Parse {
                 }
             }
         } else {
+            if item.vis != syn::Visibility::Public {
+                warn!(
+                    "Skip {}::{} - (not `pub`).",
+                    crate_name, &item.ident
+                );
+            }
             if (abi.is_omitted() || abi.is_c()) && !item.is_no_mangle() {
                 warn!(
                     "Skip {}::{} - (`extern` but not `no_mangle`).",
@@ -649,14 +655,29 @@ impl Parse {
 
         let static_name = item.ident.to_string();
 
-        match Static::load(static_name.clone(), ty, mutability, &item.attrs, mod_cfg) {
-            Ok(constant) => {
-                info!("Take {}::{}.", crate_name, &item.ident);
+        if item.vis == syn::Visibility::Public && item.is_no_mangle() {
+            match Static::load(static_name.clone(), ty, mutability, &item.attrs, mod_cfg) {
+                Ok(constant) => {
+                    info!("Take {}::{}.", crate_name, &item.ident);
 
-                self.globals.try_insert(constant);
+                    self.globals.try_insert(constant);
+                }
+                Err(msg) => {
+                    warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
+                }
             }
-            Err(msg) => {
-                warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
+        } else {
+            if item.vis != syn::Visibility::Public {
+                warn!(
+                    "Skip {}::{} - (not `pub`).",
+                    crate_name, &item.ident
+                );
+            }
+            if !item.is_no_mangle() {
+                warn!(
+                    "Skip {}::{} - (not `no_mangle`).",
+                    crate_name, &item.ident
+                );
             }
         }
     }

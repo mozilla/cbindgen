@@ -28,9 +28,10 @@ struct TupleRenamed(i32, f32);
 struct TupleNamed(i32, f32);
 
 #[no_mangle]
-extern "C" fn root(a: *mut Opaque,
-                   b: Normal,
-                   c: NormalWithZST,
-                   d: TupleRenamed,
-                   e: TupleNamed)
-{ }
+pub extern "C" fn root(
+    a: *mut Opaque,
+    b: Normal,
+    c: NormalWithZST,
+    d: TupleRenamed,
+    e: TupleNamed
+) { }

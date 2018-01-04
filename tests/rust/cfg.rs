@@ -32,10 +32,10 @@ struct BarHandle {
 
 #[cfg(all(unix, x11))]
 #[no_mangle]
-extern "C" fn root(a: FooHandle)
+pub extern "C" fn root(a: FooHandle)
 { }
 
 #[cfg(any(windows, target_pointer_width="32"))]
 #[no_mangle]
-extern "C" fn root(a: BarHandle)
+pub extern "C" fn root(a: BarHandle)
 { }

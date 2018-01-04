@@ -7,5 +7,5 @@ struct Foo<T, U> {
 type IntFoo<T> = Foo<i32, T>;
 
 #[no_mangle]
-extern "C" fn root(a: IntFoo<i32>)
+pub extern "C" fn root(a: IntFoo<i32>)
 { }

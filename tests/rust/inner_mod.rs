@@ -6,5 +6,5 @@ mod foo {
 }
 
 #[no_mangle]
-extern "C" fn root(a: foo::Foo)
+pub extern "C" fn root(a: foo::Foo)
 { }

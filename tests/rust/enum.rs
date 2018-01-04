@@ -44,10 +44,11 @@ enum E {
 }
 
 #[no_mangle]
-extern "C" fn root(o: *mut Opaque,
-                   a: A,
-                   b: B,
-                   c: C,
-                   d: D,
-                   e: E)
-{ }
+pub extern "C" fn root(
+    o: *mut Opaque,
+    a: A,
+    b: B,
+    c: C,
+    d: D,
+    e: E
+) { }

@@ -24,8 +24,9 @@ type Unit = i32;
 type SpecialStatus = Status;
 
 #[no_mangle]
-extern "C" fn root(x: IntFoo,
-                   y: DoubleFoo,
-                   z: Unit,
-                   w: SpecialStatus)
-{ }
+pub extern "C" fn root(
+    x: IntFoo,
+    y: DoubleFoo,
+    z: Unit,
+    w: SpecialStatus
+) { }
