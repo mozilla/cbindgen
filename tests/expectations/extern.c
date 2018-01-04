@@ -9,4 +9,4 @@ typedef struct {
 
 extern void bar(Normal a);
 
-extern int32_t foo();
+extern int32_t foo(void);

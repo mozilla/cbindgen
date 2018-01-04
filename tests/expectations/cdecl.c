@@ -30,6 +30,6 @@ typedef bool (*M[16])(int32_t, int32_t);
 
 typedef void (*N[16])(int32_t, int32_t);
 
-void (*O())();
+void (*O(void))(void);
 
 void root(A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n);
