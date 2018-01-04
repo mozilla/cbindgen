@@ -14,4 +14,4 @@ extern Foo FOO;
 
 extern const int32_t NUMBER;
 
-void root();
+void root(void);
