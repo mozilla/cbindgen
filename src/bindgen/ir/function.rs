@@ -78,6 +78,11 @@ impl Function {
     }
 
     pub fn rename_for_config(&mut self, config: &Config) {
+        self.ret.rename_for_config(config);
+        for &mut (_, ref mut ty) in &mut self.args {
+            ty.rename_for_config(config);
+        }
+
         let rules = [
             self.annotations.parse_atom::<RenameRule>("rename-all"),
             config.function.rename_args,

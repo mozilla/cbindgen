@@ -97,6 +97,19 @@ exclude = ["libc"]
 # parsing to expand any macros
 expand = ["euclid"]
 
+[export]
+# A list of additional items not used by exported functions to include in
+# the generated bindings
+include = ["Foo", "Bar"]
+# A list of items to not include in the generated bindings
+exclude = ["Bad"]
+# A prefix to add before the name of every item
+prefix = "CAPI_"
+
+# Table of name conversions to apply to item names
+[export.rename]
+"Struct" = "CAPI_Struct"
+
 [fn]
 # An optional prefix to put before every function declaration
 prefix = "string"

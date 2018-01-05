@@ -121,7 +121,12 @@ impl Item for Struct {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        let rules = [
+        config.export.rename(&mut self.name);
+        for &mut (_, ref mut ty, _) in &mut self.fields {
+            ty.rename_for_config(config);
+        }
+
+        let field_rules = [
             self.annotations.parse_atom::<RenameRule>("rename-all"),
             config.structure.rename_fields,
         ];
@@ -138,7 +143,7 @@ impl Item for Struct {
             }
 
             self.fields = overriden_fields;
-        } else if let Some(r) = find_first_some(&rules) {
+        } else if let Some(r) = find_first_some(&field_rules) {
             self.fields = self.fields
                 .iter()
                 .map(|x| {

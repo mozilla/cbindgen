@@ -52,8 +52,8 @@ impl Library {
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
+        self.remove_excluded();
         self.functions.sort_by(|x, y| x.name.cmp(&y.name));
-
         self.transfer_annotations();
         self.rename_items();
         self.simplify_option_to_ptr();
@@ -70,6 +70,20 @@ impl Library {
         self.globals.for_all_items(|global| {
             global.add_dependencies(&self, &mut dependencies);
         });
+        for name in &self.config.export.include {
+            if let Some(items) = self.get_items(name) {
+                if !dependencies.items.contains(name) {
+                    dependencies.items.insert(name.clone());
+
+                    for item in &items {
+                        item.deref().add_dependencies(&self, &mut dependencies);
+                    }
+                    for item in items {
+                        dependencies.order.push(item);
+                    }
+                }
+            }
+        }
 
         dependencies.sort();
 
@@ -105,6 +119,18 @@ impl Library {
         }
 
         None
+    }
+
+    fn remove_excluded(&mut self) {
+        let config = &self.config;
+        self.functions.retain(|x| !config.export.exclude.contains(&x.name));
+        self.enums.filter(|x| config.export.exclude.contains(&x.name));
+        self.structs.filter(|x| config.export.exclude.contains(&x.name));
+        self.unions.filter(|x| config.export.exclude.contains(&x.name));
+        self.opaque_items.filter(|x| config.export.exclude.contains(&x.name));
+        self.typedefs.filter(|x| config.export.exclude.contains(&x.name));
+        self.globals.filter(|x| config.export.exclude.contains(&x.name));
+        self.constants.filter(|x| config.export.exclude.contains(&x.name));
     }
 
     fn transfer_annotations(&mut self) {
@@ -198,12 +224,34 @@ impl Library {
 
     fn rename_items(&mut self) {
         let config = &self.config;
+
+        self.globals
+            .for_all_items_mut(|x| x.rename_for_config(config));
+        self.globals.rebuild();
+
+        self.constants
+            .for_all_items_mut(|x| x.rename_for_config(config));
+        self.constants.rebuild();
+
         self.structs
             .for_all_items_mut(|x| x.rename_for_config(config));
+        self.structs.rebuild();
+
         self.unions
             .for_all_items_mut(|x| x.rename_for_config(config));
+        self.unions.rebuild();
+
         self.enums
             .for_all_items_mut(|x| x.rename_for_config(config));
+        self.enums.rebuild();
+
+        self.opaque_items
+            .for_all_items_mut(|x| x.rename_for_config(config));
+        self.opaque_items.rebuild();
+
+        self.typedefs
+            .for_all_items_mut(|x| x.rename_for_config(config));
+        self.typedefs.rebuild();
 
         for item in &mut self.functions {
             item.rename_for_config(&self.config);

@@ -122,6 +122,11 @@ impl Item for Union {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
+        config.export.rename(&mut self.name);
+        for &mut (_, ref mut ty, _) in &mut self.fields {
+            ty.rename_for_config(config);
+        }
+
         let rules = [
             self.annotations.parse_atom::<RenameRule>("rename-all"),
             config.structure.rename_fields,

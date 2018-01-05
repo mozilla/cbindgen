@@ -75,6 +75,10 @@ impl Item for Static {
         ItemContainer::Static(self.clone())
     }
 
+    fn rename_for_config(&mut self, config: &Config) {
+        self.ty.rename_for_config(config);
+    }
+
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ty.add_dependencies(library, out);
     }

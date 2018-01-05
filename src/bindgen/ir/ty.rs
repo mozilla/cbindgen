@@ -443,6 +443,33 @@ impl Type {
         }
     }
 
+    pub fn rename_for_config(&mut self, config: &Config) {
+        match self {
+            &mut Type::ConstPtr(ref mut ty) => {
+                ty.rename_for_config(config);
+            }
+            &mut Type::Ptr(ref mut ty) => {
+                ty.rename_for_config(config);
+            }
+            &mut Type::Path(ref mut path) => {
+                for generic in &mut path.generics {
+                    generic.rename_for_config(config);
+                }
+                config.export.rename(&mut path.name);
+            }
+            &mut Type::Primitive(_) => {}
+            &mut Type::Array(ref mut ty, _) => {
+                ty.rename_for_config(config);
+            }
+            &mut Type::FuncPtr(ref mut ret, ref mut args) => {
+                ret.rename_for_config(config);
+                for arg in args {
+                    arg.rename_for_config(config);
+                }
+            }
+        }
+    }
+
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         match self {
             &mut Type::ConstPtr(ref mut ty) => {

@@ -115,6 +115,11 @@ impl Item for Typedef {
         ItemContainer::Typedef(self.clone())
     }
 
+    fn rename_for_config(&mut self, config: &Config) {
+        config.export.rename(&mut self.name);
+        self.aliased.rename_for_config(config);
+    }
+
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.aliased
             .add_dependencies_ignoring_generics(&self.generic_params, library, out);

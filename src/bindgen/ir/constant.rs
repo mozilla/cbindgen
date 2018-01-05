@@ -110,6 +110,10 @@ impl Item for Constant {
     fn container(&self) -> ItemContainer {
         ItemContainer::Constant(self.clone())
     }
+
+    fn rename_for_config(&mut self, config: &Config) {
+        config.export.rename(&mut self.name);
+    }
 }
 
 impl Source for Constant {

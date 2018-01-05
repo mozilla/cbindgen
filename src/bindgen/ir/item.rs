@@ -76,6 +76,11 @@ impl<T: Item + Clone> ItemMap<T> {
         }
     }
 
+    pub fn rebuild(&mut self) {
+        let old = mem::replace(self, ItemMap::new());
+        old.for_all_items(|x| { self.try_insert(x.clone()); });
+    }
+
     pub fn try_insert(&mut self, item: T) -> bool {
         match (item.cfg().is_some(), self.data.get_mut(item.name())) {
             (true, Some(&mut ItemValue::Cfg(ref mut items))) => {

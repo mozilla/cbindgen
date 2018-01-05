@@ -95,6 +95,45 @@ impl FromStr for Layout {
 
 deserialize_enum_str!(Layout);
 
+/// Settings to apply when exporting items.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct ExportConfig {
+    /// A list of additional items not used by exported functions to include in
+    /// the generated bindings
+    pub include: Vec<String>,
+    /// A list of items to not include in the generated bindings
+    pub exclude: Vec<String>,
+    /// Table of name conversions to apply to item names
+    pub rename: HashMap<String, String>,
+    /// A prefix to add before the name of every item
+    pub prefix: Option<String>,
+}
+
+impl Default for ExportConfig {
+    fn default() -> ExportConfig {
+        ExportConfig {
+            include: Vec::new(),
+            exclude: Vec::new(),
+            rename: HashMap::new(),
+            prefix: None,
+        }
+    }
+}
+
+impl ExportConfig {
+    pub(crate) fn rename(&self, item_name: &mut String) {
+        if let Some(name) = self.rename.get(item_name) {
+            *item_name = name.clone();
+        }
+        if let Some(ref prefix) = self.prefix {
+            item_name.insert_str(0, &prefix);
+        }
+    }
+}
+
 /// Settings to apply to generated functions.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -333,6 +372,8 @@ pub struct Config {
     pub language: Language,
     /// The configuration options for parsing
     pub parse: ParseConfig,
+    /// The configuration options for exporting
+    pub export: ExportConfig,
     /// The configuration options for functions
     #[serde(rename = "fn")]
     pub function: FunctionConfig,
@@ -368,6 +409,7 @@ impl Default for Config {
             tab_width: 2,
             language: Language::Cxx,
             parse: ParseConfig::default(),
+            export: ExportConfig::default(),
             function: FunctionConfig::default(),
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),

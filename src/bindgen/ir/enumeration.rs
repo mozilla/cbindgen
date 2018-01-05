@@ -109,6 +109,8 @@ impl Item for Enum {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
+        config.export.rename(&mut self.name);
+
         if config.language == Language::C
             && (config.enumeration.prefix_with_name
                 || self.annotations.bool("prefix-with-name").unwrap_or(false))

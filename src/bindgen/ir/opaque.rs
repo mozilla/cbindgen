@@ -62,6 +62,10 @@ impl Item for OpaqueItem {
         ItemContainer::OpaqueItem(self.clone())
     }
 
+    fn rename_for_config(&mut self, config: &Config) {
+        config.export.rename(&mut self.name);
+    }
+
     fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {}
 
     fn instantiate_monomorph(

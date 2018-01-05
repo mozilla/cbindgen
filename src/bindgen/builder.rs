@@ -116,6 +116,30 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn include_item<S: AsRef<str>>(mut self, item_name: S) -> Builder {
+        self.config.export.include.push(String::from(item_name.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
+    pub fn exclude_item<S: AsRef<str>>(mut self, item_name: S) -> Builder {
+        self.config.export.exclude.push(String::from(item_name.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
+    pub fn rename_item<S: AsRef<str>>(mut self, from: S, to: S) -> Builder {
+        self.config.export.rename.insert(String::from(from.as_ref()), String::from(to.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_item_prefix<S: AsRef<str>>(mut self, prefix: S) -> Builder {
+        self.config.export.prefix = Some(String::from(prefix.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_parse_deps(mut self, parse_deps: bool) -> Builder {
         self.config.parse.parse_deps = parse_deps;
         self
