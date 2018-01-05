@@ -15,8 +15,6 @@ extern Foo FOO;
 
 extern const int32_t NUMBER;
 
-extern const char* STRING;
-
 void root();
 
 } // extern "C"

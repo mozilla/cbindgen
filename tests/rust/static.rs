@@ -1,7 +1,5 @@
 #[no_mangle]
 pub static NUMBER: i32 = 10;
-#[no_mangle]
-pub static STRING: &'static libc::c_char = "hello world";
 
 #[repr(C)]
 struct Foo {
