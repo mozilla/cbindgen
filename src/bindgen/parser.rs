@@ -257,10 +257,10 @@ impl Parser {
 
             if !self.cache_src.contains_key(&owned_mod_path) {
                 fn limit_string(text: &str) -> &str {
-                    if text.len() <= 30 {
+                    if text.len() <= 100 {
                         text
                     } else {
-                        &text[..30]
+                        &text[..100]
                     }
                 }
 
