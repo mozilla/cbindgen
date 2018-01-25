@@ -185,6 +185,9 @@ impl FunctionConfig {
 pub struct StructConfig {
     /// The rename rule to apply to the name of struct fields
     pub rename_fields: Option<RenameRule>,
+    /// Whether to generate a constructor for the struct (which takes
+    /// arguments to initialize all the members)
+    pub derive_constructor: bool,
     /// Whether to generate a piecewise equality operator
     pub derive_eq: bool,
     /// Whether to generate a piecewise inequality operator
@@ -203,6 +206,7 @@ impl Default for StructConfig {
     fn default() -> StructConfig {
         StructConfig {
             rename_fields: None,
+            derive_constructor: false,
             derive_eq: false,
             derive_neq: false,
             derive_lt: false,
@@ -214,6 +218,12 @@ impl Default for StructConfig {
 }
 
 impl StructConfig {
+    pub(crate) fn derive_constructor(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-constructor") {
+            return x;
+        }
+        self.derive_constructor
+    }
     pub(crate) fn derive_eq(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("derive-eq") {
             return x;
