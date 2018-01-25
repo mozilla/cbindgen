@@ -1,5 +1,6 @@
 /// cbindgen:derive-lt=true
 /// cbindgen:derive-lte=true
+/// cbindgen:derive-constructor=true
 /// cbindgen:rename-all=GeckoCase
 #[repr(C)]
 struct A(i32);

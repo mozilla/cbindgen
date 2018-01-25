@@ -232,6 +232,48 @@ impl Source for Struct {
         if config.language == Language::Cxx {
             let mut wrote_start_newline = false;
 
+            if config.structure.derive_constructor(&self.annotations)
+                && !self.fields.is_empty()
+            {
+                if !wrote_start_newline {
+                    wrote_start_newline = true;
+                    out.new_line();
+                }
+
+                out.new_line();
+
+                let arg_renamer = |name: &str| {
+                    config.function.rename_args
+                        .as_ref()
+                        .unwrap_or(&RenameRule::GeckoCase)
+                        .apply_to_snake_case(name, IdentifierType::FunctionArg)
+                };
+                write!(out, "{}(", self.name);
+                out.write_vertical_source_list(
+                    &self.fields
+                        .iter()
+                        .map(|&(ref name, ref ty, _)| {
+                            // const-ref args to constructor
+                            (format!("const& {}", arg_renamer(name)), ty.clone())
+                        })
+                        .collect(),
+                    ListType::Join(","),
+                );
+                write!(out, ")");
+                out.new_line();
+                write!(out, "  : ");
+                out.write_vertical_source_list(
+                    &self.fields
+                        .iter()
+                        .map(|x| format!("{}({})", x.0, arg_renamer(&x.0)))
+                        .collect(),
+                    ListType::Join(","),
+                );
+                out.new_line();
+                write!(out, "{{}}");
+                out.new_line();
+            }
+
             let other = if let Some(r) = config.function.rename_args {
                 r.apply_to_snake_case("other", IdentifierType::FunctionArg)
             } else {
