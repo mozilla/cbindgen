@@ -29,20 +29,17 @@ pub struct Typedef {
 
 impl Typedef {
     pub fn load(
-        name: String,
-        ty: &syn::Ty,
-        generics: &syn::Generics,
-        attrs: &Vec<syn::Attribute>,
+        item: &syn::ItemType,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Typedef, String> {
-        if let Some(x) = Type::load(ty)? {
+        if let Some(x) = Type::load(&item.ty)? {
             Ok(Typedef {
-                name: name,
-                generic_params: GenericParams::new(generics),
+                name: item.ident.to_string(),
+                generic_params: GenericParams::new(&item.generics),
                 aliased: x,
-                cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-                annotations: AnnotationSet::load(attrs)?,
-                documentation: Documentation::load(attrs),
+                cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+                annotations: AnnotationSet::load(&item.attrs)?,
+                documentation: Documentation::load(&item.attrs),
             })
         } else {
             Err("Cannot have a typedef of a zero sized type.".to_owned())

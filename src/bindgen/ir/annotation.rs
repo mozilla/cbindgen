@@ -45,15 +45,16 @@ impl AnnotationSet {
         self.annotations.is_empty()
     }
 
-    pub fn load(attrs: &Vec<syn::Attribute>) -> Result<AnnotationSet, String> {
+    pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
         let mut lines = Vec::new();
 
         for attr in attrs {
             if attr.style == syn::AttrStyle::Outer {
-                if let syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref comment, _)) =
-                    attr.value
+                if let Some(syn::Meta::NameValue(syn::MetaNameValue { ident, lit: syn::Lit::Str(comment), .. })) =
+                    attr.interpret_meta()
                 {
-                    if &*name == "doc" {
+                    let comment = comment.value();
+                    if &*ident.to_string() == "doc" {
                         let line = comment.trim_left_matches("///").trim();
                         if line.starts_with("cbindgen:") {
                             lines.push(line.to_owned());

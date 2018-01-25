@@ -9,7 +9,7 @@ use syn;
 use bindgen::cdecl;
 use bindgen::config::{Config, Layout, Language};
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, SynFnRetTyHelpers, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Type, PrimitiveType};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::rename::{IdentifierType, RenameRule};
@@ -32,11 +32,22 @@ impl Function {
         name: String,
         decl: &syn::FnDecl,
         extern_decl: bool,
-        attrs: &Vec<syn::Attribute>,
+        attrs: &[syn::Attribute],
         mod_cfg: &Option<Cfg>,
     ) -> Result<Function, String> {
         let args = decl.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
-        let ret = decl.output.as_type()?;
+        let ret = match decl.output {
+            syn::ReturnType::Default => {
+                Type::Primitive(PrimitiveType::Void)
+            }
+            syn::ReturnType::Type(_, ref ty) => {
+                if let Some(x) = Type::load(ty)? {
+                    x
+                } else {
+                    Type::Primitive(PrimitiveType::Void)
+                }
+            }
+        };
 
         Ok(Function {
             name: name,
@@ -181,7 +192,7 @@ pub trait SynFnArgHelpers {
 impl SynFnArgHelpers for syn::FnArg {
     fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
         match self {
-            &syn::FnArg::Captured(syn::Pat::Ident(_, ref ident, _), ref ty) => {
+            &syn::FnArg::Captured(syn::ArgCaptured { pat: syn::Pat::Ident(syn::PatIdent { ref ident, .. }), ref ty, .. }) => {
                 if let Some(x) = Type::load(ty)? {
                     Ok(Some((ident.to_string(), x)))
                 } else {

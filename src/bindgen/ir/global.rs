@@ -24,28 +24,22 @@ pub struct Static {
 
 impl Static {
     pub fn load(
-        name: String,
-        ty: &syn::Ty,
-        mutable: &syn::Mutability,
-        attrs: &Vec<syn::Attribute>,
+        item: &syn::ItemStatic,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Static, String> {
-        let ty = Type::load(ty)?;
+        let ty = Type::load(&item.ty)?;
 
         if ty.is_none() {
             return Err("Cannot have a zero sized static definition.".to_owned());
         }
 
-        let ty = ty.unwrap();
-        let mutable = mutable == &syn::Mutability::Mutable;
-
         Ok(Static {
-            name: name,
-            ty: ty,
-            mutable: mutable,
-            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-            annotations: AnnotationSet::load(attrs)?,
-            documentation: Documentation::load(attrs),
+            name: item.ident.to_string(),
+            ty: ty.unwrap(),
+            mutable: item.mutability.is_some(),
+            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            annotations: AnnotationSet::load(&item.attrs)?,
+            documentation: Documentation::load(&item.attrs),
         })
     }
 

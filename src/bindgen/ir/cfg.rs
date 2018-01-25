@@ -16,7 +16,7 @@ enum DefineKey<'a> {
 
 impl<'a> DefineKey<'a> {
     fn load(key: &str) -> DefineKey {
-        // TODO - dirty parser
+        // TODO: dirty parser
         if key.contains("=") {
             let mut splits = key.trim().split("=");
 
@@ -72,7 +72,7 @@ impl Cfg {
         }
     }
 
-    pub fn load(attrs: &Vec<syn::Attribute>) -> Option<Cfg> {
+    pub fn load(attrs: &[syn::Attribute]) -> Option<Cfg> {
         let mut configs = Vec::new();
 
         for attr in attrs {
@@ -80,18 +80,17 @@ impl Cfg {
                 continue;
             }
 
-            match &attr.value {
-                &syn::MetaItem::Word(..) => {}
-                &syn::MetaItem::NameValue(..) => {}
-                &syn::MetaItem::List(ref ident, ref nested) => {
+            match attr.interpret_meta() {
+                Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) => {
                     if ident.as_ref() != "cfg" || nested.len() != 1 {
                         continue;
                     }
 
-                    if let Some(config) = Cfg::load_single(&nested[0]) {
+                    if let Some(config) = Cfg::load_single(nested.first().unwrap().value()) {
                         configs.push(config);
                     }
                 }
+                _ => {}
             }
         }
 
@@ -102,27 +101,27 @@ impl Cfg {
         }
     }
 
-    fn load_single(item: &syn::NestedMetaItem) -> Option<Cfg> {
+    fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {
         match item {
-            &syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref ident)) => {
+            &syn::NestedMeta::Meta(syn::Meta::Word(ref ident)) => {
                 Some(Cfg::Boolean(ident.as_ref().to_owned()))
             }
-            &syn::NestedMetaItem::MetaItem(syn::MetaItem::NameValue(ref ident, ref value)) => {
-                match value {
-                    &syn::Lit::Str(ref value, _) => {
-                        Some(Cfg::Named(ident.as_ref().to_owned(), value.clone()))
+            &syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue { ref ident, ref lit, .. })) => {
+                match lit {
+                    &syn::Lit::Str(ref value) => {
+                        Some(Cfg::Named(ident.as_ref().to_owned(), value.value()))
                     }
                     _ => None,
                 }
             }
-            &syn::NestedMetaItem::MetaItem(syn::MetaItem::List(ref ident, ref nested)) => {
+            &syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList { ref ident, ref nested, .. })) => {
                 match ident.as_ref() {
-                    "any" => if let Some(configs) = Cfg::load_list(nested) {
+                    "any" => if let Some(configs) = Cfg::load_list(nested.iter()) {
                         Some(Cfg::Any(configs))
                     } else {
                         None
                     },
-                    "all" => if let Some(configs) = Cfg::load_list(nested) {
+                    "all" => if let Some(configs) = Cfg::load_list(nested.iter()) {
                         Some(Cfg::All(configs))
                     } else {
                         None
@@ -145,11 +144,7 @@ impl Cfg {
         }
     }
 
-    fn load_list(attrs: &Vec<syn::NestedMetaItem>) -> Option<Vec<Cfg>> {
-        if attrs.len() == 0 {
-            return None;
-        }
-
+    fn load_list<'a, I: Iterator<Item=&'a syn::NestedMeta>>(attrs: I) -> Option<Vec<Cfg>> {
         let mut configs = Vec::new();
 
         for attr in attrs {
@@ -160,7 +155,11 @@ impl Cfg {
             }
         }
 
-        Some(configs)
+        if configs.is_empty() {
+            None
+        } else {
+            Some(configs)
+        }
     }
 
     fn has_defines(&self, config: &Config) -> bool {

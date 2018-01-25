@@ -176,10 +176,10 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn load(ty: &syn::Ty) -> Result<Option<Type>, String> {
+    pub fn load(ty: &syn::Type) -> Result<Option<Type>, String> {
         let converted = match ty {
-            &syn::Ty::Rptr(_, ref mut_ty) => {
-                let converted = Type::load(&mut_ty.ty)?;
+            &syn::Type::Reference(ref reference) => {
+                let converted = Type::load(&reference.elem)?;
 
                 let converted = match converted {
                     Some(converted) => converted,
@@ -190,13 +190,13 @@ impl Type {
                     }
                 };
 
-                match mut_ty.mutability {
-                    syn::Mutability::Mutable => Type::Ptr(Box::new(converted)),
-                    syn::Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
+                match reference.mutability {
+                    Some(_) => Type::Ptr(Box::new(converted)),
+                    None => Type::ConstPtr(Box::new(converted)),
                 }
             }
-            &syn::Ty::Ptr(ref mut_ty) => {
-                let converted = Type::load(&mut_ty.ty)?;
+            &syn::Type::Ptr(ref pointer) => {
+                let converted = Type::load(&pointer.elem)?;
 
                 let converted = match converted {
                     Some(converted) => converted,
@@ -207,13 +207,13 @@ impl Type {
                     }
                 };
 
-                match mut_ty.mutability {
-                    syn::Mutability::Mutable => Type::Ptr(Box::new(converted)),
-                    syn::Mutability::Immutable => Type::ConstPtr(Box::new(converted)),
+                match pointer.mutability {
+                    Some(_) => Type::Ptr(Box::new(converted)),
+                    None => Type::ConstPtr(Box::new(converted)),
                 }
             }
-            &syn::Ty::Path(_, ref path) => {
-                let path = GenericPath::load(path)?;
+            &syn::Type::Path(ref path) => {
+                let path = GenericPath::load(&path.path)?;
 
                 if path.name == "PhantomData" {
                     return Ok(None);
@@ -228,36 +228,47 @@ impl Type {
                     Type::Path(path)
                 }
             }
-            &syn::Ty::Array(ref ty, syn::ConstExpr::Lit(syn::Lit::Int(size, _))) => {
-                let converted = Type::load(ty)?;
+            &syn::Type::Array(syn::TypeArray { ref elem, len: syn::Expr::Path(ref path), .. }) => {
+                let converted = Type::load(elem)?;
 
                 let converted = match converted {
                     Some(converted) => converted,
                     None => return Err("Cannot have an array of zero sized types.".to_owned()),
                 };
 
-                Type::Array(Box::new(converted), format!("{}", size))
-            }
-            &syn::Ty::Array(ref ty, syn::ConstExpr::Path(ref path)) => {
-                let converted = Type::load(ty)?;
-
-                let converted = match converted {
-                    Some(converted) => converted,
-                    None => return Err("Cannot have an array of zero sized types.".to_owned()),
-                };
-
-                let path = GenericPath::load(path)?;
+                let path = GenericPath::load(&path.path)?;
 
                 Type::Array(Box::new(converted), path.name)
             }
-            &syn::Ty::BareFn(ref function) => {
+            &syn::Type::Array(syn::TypeArray { ref elem, len: syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref len), ..  }), .. }) => {
+                let converted = Type::load(elem)?;
+
+                let converted = match converted {
+                    Some(converted) => converted,
+                    None => return Err("Cannot have an array of zero sized types.".to_owned()),
+                };
+
+                Type::Array(Box::new(converted), format!("{}", len.value()))
+            }
+            &syn::Type::BareFn(ref function) => {
                 let args = function.inputs.iter().try_skip_map(|x| Type::load(&x.ty))?;
-                let ret = function.output.as_type()?;
+                let ret = match function.output {
+                    syn::ReturnType::Default => {
+                        Type::Primitive(PrimitiveType::Void)
+                    }
+                    syn::ReturnType::Type(_, ref ty) => {
+                        if let Some(x) = Type::load(ty)? {
+                            x
+                        } else {
+                            Type::Primitive(PrimitiveType::Void)
+                        }
+                    }
+                };
 
                 Type::FuncPtr(Box::new(ret), args)
             }
-            &syn::Ty::Tup(ref fields) => {
-                if fields.len() == 0 {
+            &syn::Type::Tuple(ref tuple) => {
+                if tuple.elems.len() == 0 {
                     return Ok(None);
                 }
                 return Err("Tuples are not supported types.".to_owned());
@@ -552,22 +563,5 @@ impl Source for (String, Type, Documentation) {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         self.2.write(config, out);
         cdecl::write_field(out, &self.1, &self.0);
-    }
-}
-
-pub trait SynFnRetTyHelpers {
-    fn as_type(&self) -> Result<Type, String>;
-}
-
-impl SynFnRetTyHelpers for syn::FunctionRetTy {
-    fn as_type(&self) -> Result<Type, String> {
-        match self {
-            &syn::FunctionRetTy::Default => Ok(Type::Primitive(PrimitiveType::Void)),
-            &syn::FunctionRetTy::Ty(ref t) => if let Some(x) = Type::load(t)? {
-                Ok(x)
-            } else {
-                Ok(Type::Primitive(PrimitiveType::Void))
-            },
-        }
     }
 }

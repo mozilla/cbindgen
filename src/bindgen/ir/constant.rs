@@ -16,34 +16,36 @@ pub struct LiteralExpr(String);
 
 impl LiteralExpr {
     pub fn load(expr: &syn::Expr) -> Result<LiteralExpr, String> {
-        match &expr.node {
-            &syn::ExprKind::Lit(syn::Lit::Str(ref text, ..)) => {
-                Ok(LiteralExpr(format!("u8\"{}\"", text)))
+        match expr {
+            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(ref value), .. }) => {
+                Ok(LiteralExpr(format!("u8\"{}\"", value.value())))
             }
-            &syn::ExprKind::Lit(syn::Lit::Byte(value)) => Ok(LiteralExpr(format!("{}", value))),
-            &syn::ExprKind::Lit(syn::Lit::Char(value)) => Ok(LiteralExpr(format!("{}", value))),
-            &syn::ExprKind::Lit(syn::Lit::Int(value, ref ty)) => match ty {
-                &syn::IntTy::Usize
-                | &syn::IntTy::U8
-                | &syn::IntTy::U16
-                | &syn::IntTy::U32
-                | &syn::IntTy::U64
-                | &syn::IntTy::Unsuffixed => Ok(LiteralExpr(format!("{}", value))),
-                &syn::IntTy::Isize
-                | &syn::IntTy::I8
-                | &syn::IntTy::I16
-                | &syn::IntTy::I32
-                | &syn::IntTy::I64 => unsafe {
+            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Byte(ref value), .. }) => Ok(LiteralExpr(format!("{}", value.value()))),
+            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Char(ref value), .. }) => Ok(LiteralExpr(format!("{}", value.value()))),
+            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref value), .. }) => match value.suffix() {
+                syn::IntSuffix::Usize
+                | syn::IntSuffix::U8
+                | syn::IntSuffix::U16
+                | syn::IntSuffix::U32
+                | syn::IntSuffix::U64
+                | syn::IntSuffix::U128
+                | syn::IntSuffix::None => Ok(LiteralExpr(format!("{}", value.value()))),
+                syn::IntSuffix::Isize
+                | syn::IntSuffix::I8
+                | syn::IntSuffix::I16
+                | syn::IntSuffix::I32
+                | syn::IntSuffix::I64
+                | syn::IntSuffix::I128 => unsafe {
                     Ok(LiteralExpr(format!(
                         "{}",
-                        mem::transmute::<u64, i64>(value)
+                        mem::transmute::<u64, i64>(value.value())
                     )))
                 },
             },
-            &syn::ExprKind::Lit(syn::Lit::Float(ref value, ref _ty)) => {
-                Ok(LiteralExpr(format!("{}", value)))
+            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Float(ref value), .. }) => {
+                Ok(LiteralExpr(format!("{}", value.value())))
             }
-            &syn::ExprKind::Lit(syn::Lit::Bool(value)) => Ok(LiteralExpr(format!("{}", value))),
+            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Bool(ref value), .. }) => Ok(LiteralExpr(format!("{}", value.value))),
             _ => Err("Unsupported literal expression.".to_owned()),
         }
     }
@@ -62,12 +64,10 @@ pub struct Constant {
 impl Constant {
     pub fn load(
         name: String,
-        ty: &syn::Ty,
-        expr: &syn::Expr,
-        attrs: &Vec<syn::Attribute>,
+        item: &syn::ItemConst,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Constant, String> {
-        let ty = Type::load(ty)?;
+        let ty = Type::load(&item.ty)?;
 
         if ty.is_none() {
             return Err("Cannot have a zero sized const definition.".to_owned());
@@ -82,10 +82,10 @@ impl Constant {
         Ok(Constant {
             name: name,
             ty: ty,
-            value: LiteralExpr::load(expr)?,
-            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-            annotations: AnnotationSet::load(attrs)?,
-            documentation: Documentation::load(attrs),
+            value: LiteralExpr::load(&item.expr)?,
+            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            annotations: AnnotationSet::load(&item.attrs)?,
+            documentation: Documentation::load(&item.attrs),
         })
     }
 }

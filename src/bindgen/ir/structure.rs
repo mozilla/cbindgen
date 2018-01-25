@@ -31,25 +31,23 @@ pub struct Struct {
 
 impl Struct {
     pub fn load(
-        name: String,
-        decl: &syn::VariantData,
-        generics: &syn::Generics,
-        attrs: &Vec<syn::Attribute>,
+        item: &syn::ItemStruct,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Struct, String> {
-        if Repr::load(attrs)? != Repr::C {
+        if Repr::load(&item.attrs)? != Repr::C {
             return Err("Struct is not marked #[repr(C)].".to_owned());
         }
 
-        let (fields, tuple_struct) = match decl {
-            &syn::VariantData::Struct(ref fields) => {
-                let out = fields.iter().try_skip_map(|x| x.as_ident_and_type())?;
+        let (fields, tuple_struct) = match &item.fields {
+            &syn::Fields::Unit => (Vec::new(), false),
+            &syn::Fields::Named(ref fields) => {
+                let out = fields.named.iter().try_skip_map(|x| x.as_ident_and_type())?;
                 (out, false)
             }
-            &syn::VariantData::Tuple(ref fields) => {
+            &syn::Fields::Unnamed(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
-                for field in fields {
+                for field in fields.unnamed.iter() {
                     if let Some(x) = Type::load(&field.ty)? {
                         out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
                         current += 1;
@@ -57,18 +55,17 @@ impl Struct {
                 }
                 (out, true)
             }
-            &syn::VariantData::Unit => (vec![], false),
         };
 
         Ok(Struct {
-            name: name,
-            generic_params: GenericParams::new(generics),
+            name: item.ident.to_string(),
+            generic_params: GenericParams::new(&item.generics),
             fields: fields,
             is_tagged: false,
             tuple_struct: tuple_struct,
-            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-            annotations: AnnotationSet::load(attrs)?,
-            documentation: Documentation::load(attrs),
+            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            annotations: AnnotationSet::load(&item.attrs)?,
+            documentation: Documentation::load(&item.attrs),
         })
     }
 

@@ -29,59 +29,75 @@ impl EnumVariant {
         variant: &syn::Variant,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Self, String> {
-        let discriminant = match variant.discriminant {
-            Some(syn::ConstExpr::Lit(syn::Lit::Int(i, _))) => Some(i),
-            Some(_) => {
+        let discriminant = match &variant.discriminant {
+            &Some((_, syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref lit), .. }))) => Some(lit.value()),
+            &Some(_) => {
                 return Err("Unsupported discriminant.".to_owned());
             }
-            None => None,
+            &None => None,
         };
-        let body = match variant.data {
-            syn::VariantData::Unit => None,
-            syn::VariantData::Struct(ref fields) | syn::VariantData::Tuple(ref fields) => {
+
+        fn parse_fields(
+            is_tagged: bool,
+            fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>
+        ) -> Result<Vec<(String, Type, Documentation)>, String> {
+            let mut res = Vec::new();
+
+            if is_tagged {
+                res.push((
+                    "tag".to_string(),
+                    Type::Path(GenericPath {
+                        name: "Tag".to_string(),
+                        generics: vec![],
+                    }),
+                    Documentation::none(),
+                ));
+            }
+
+            for (i, field) in fields.iter().enumerate() {
+                if let Some(ty) = Type::load(&field.ty)? {
+                    res.push((
+                        match field.ident {
+                            Some(ref ident) => ident.to_string(),
+                            None => i.to_string(),
+                        },
+                        ty,
+                        Documentation::load(&field.attrs),
+                    ));
+                }
+            }
+
+            Ok(res)
+        }
+
+        let body = match variant.fields {
+            syn::Fields::Unit => None,
+            syn::Fields::Named(ref fields) => {
                 Some(Struct {
                     name: format!("{}_Body", variant.ident),
                     generic_params: GenericParams::default(),
-                    fields: {
-                        let mut res = Vec::new();
-
-                        if is_tagged {
-                            res.push((
-                                "tag".to_string(),
-                                Type::Path(GenericPath {
-                                    name: "Tag".to_string(),
-                                    generics: vec![],
-                                }),
-                                Documentation::none(),
-                            ));
-                        }
-
-                        for (i, field) in fields.iter().enumerate() {
-                            if let Some(ty) = Type::load(&field.ty)? {
-                                res.push((
-                                    match field.ident {
-                                        Some(ref ident) => ident.to_string(),
-                                        None => i.to_string(),
-                                    },
-                                    ty,
-                                    Documentation::load(&field.attrs),
-                                ));
-                            }
-                        }
-
-                        res
-                    },
+                    fields: parse_fields(is_tagged, &fields.named)?,
                     is_tagged,
-                    tuple_struct: match variant.data {
-                        syn::VariantData::Tuple(_) => true,
-                        _ => false,
-                    },
+                    tuple_struct: false,
+                    cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
+                    annotations: AnnotationSet::load(&variant.attrs)?,
+                    documentation: Documentation::none(),
+                })
+            }
+            syn::Fields::Unnamed(ref fields) => {
+                Some(Struct {
+                    name: format!("{}_Body", variant.ident),
+                    generic_params: GenericParams::default(),
+                    fields: parse_fields(is_tagged, &fields.unnamed)?,
+                    is_tagged,
+                    tuple_struct: true,
                     cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
                     annotations: AnnotationSet::load(&variant.attrs)?,
                     documentation: Documentation::none(),
                 })
             }
         };
+
         Ok(EnumVariant {
             name: variant.ident.to_string(),
             discriminant,
@@ -127,12 +143,10 @@ pub struct Enum {
 
 impl Enum {
     pub fn load(
-        name: String,
-        values: &Vec<syn::Variant>,
-        attrs: &Vec<syn::Attribute>,
+        item: &syn::ItemEnum,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Enum, String> {
-        let repr = Repr::load(attrs)?;
+        let repr = Repr::load(&item.attrs)?;
         if repr == Repr::RUST {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }
@@ -140,13 +154,13 @@ impl Enum {
         let mut variants = Vec::new();
         let mut is_tagged = false;
 
-        for variant in values {
+        for variant in item.variants.iter() {
             let variant = EnumVariant::load(repr.style == ReprStyle::Rust, variant, mod_cfg)?;
             is_tagged = is_tagged || variant.body.is_some();
             variants.push(variant);
         }
 
-        let annotations = AnnotationSet::load(attrs)?;
+        let annotations = AnnotationSet::load(&item.attrs)?;
 
         if let Some(names) = annotations.list("enum-trailing-values") {
             for name in names {
@@ -160,7 +174,7 @@ impl Enum {
         }
 
         Ok(Enum {
-            name,
+            name: item.ident.to_string(),
             repr,
             variants,
             tag: if is_tagged {
@@ -168,9 +182,9 @@ impl Enum {
             } else {
                 None
             },
-            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
+            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             annotations,
-            documentation: Documentation::load(attrs),
+            documentation: Documentation::load(&item.attrs),
         })
     }
 }

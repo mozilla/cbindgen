@@ -25,21 +25,27 @@ impl GenericPath {
 
     pub fn load(path: &syn::Path) -> Result<GenericPath, String> {
         assert!(path.segments.len() > 0);
-        let last_segment = path.segments.last().unwrap();
-
+        let last_segment_token = path.segments.last().unwrap();
+        let last_segment = last_segment_token.value();
         let name = last_segment.ident.to_string();
 
         if name == "PhantomData" {
             return Ok(GenericPath::new(name, Vec::new()));
         }
 
-        let generics = match &last_segment.parameters {
-            &syn::PathParameters::AngleBracketed(ref d) => {
-                d.types.iter().try_skip_map(|x| Type::load(x))?
+        let generics = match &last_segment.arguments {
+            &syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments { ref args, .. }) => {
+                args.iter().try_skip_map(|x| {
+                    match *x {
+                        &syn::GenericArgument::Type(ref x) => Type::load(x),
+                        _ => { Err(String::new()) }
+                    }
+                })?
             }
-            &syn::PathParameters::Parenthesized(_) => {
+            &syn::PathArguments::Parenthesized(_) => {
                 return Err("Path contains parentheses.".to_owned());
             }
+            _ => Vec::new()
         };
 
         Ok(GenericPath::new(name, generics))

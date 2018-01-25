@@ -14,7 +14,7 @@ def build_cbindgen():
         return False
 
 def cbindgen(path, out, c):
-    bin = ["target/debug/cbindgen"]
+    bin = ["cargo", "run", "--"]
     compile = [path, "-o", out]
     flags = []
 

@@ -23,9 +23,8 @@ tempdir = "0.3"
 toml = "0.4"
 
 [dependencies.syn]
-version = "0.11"
-default-features = false
-features = ["full"]
+version = "0.12.6"
+features = ["extra-traits", "full"]
 
 [[bin]]
 name = "cbindgen"

@@ -13,9 +13,12 @@ impl GenericParams {
     pub fn new(generics: &syn::Generics) -> Self {
         GenericParams(
             generics
-                .ty_params
+                .params
                 .iter()
-                .map(|x| x.ident.to_string())
+                .filter_map(|x| match x {
+                    &syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => Some(ident.to_string()),
+                    _ => None,
+                })
                 .collect::<Vec<_>>(),
         )
     }

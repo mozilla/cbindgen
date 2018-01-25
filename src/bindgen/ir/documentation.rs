@@ -15,7 +15,7 @@ pub struct Documentation {
 }
 
 impl Documentation {
-    pub fn load(attrs: &Vec<syn::Attribute>) -> Self {
+    pub fn load(attrs: &[syn::Attribute]) -> Self {
         let mut doc = Vec::new();
 
         for attr in attrs {
@@ -26,9 +26,12 @@ impl Documentation {
                 // step through rust.  In that case they are stored as doc
                 // attributes and the leading three slashes (and optional space)
                 // are not included.
-                if let syn::MetaItem::NameValue(ref name, syn::Lit::Str(ref comment, _)) =
-                    attr.value
+                if let Some(syn::Meta::NameValue(syn::MetaNameValue{ident, lit: syn::Lit::Str(comment), ..})) =
+                    attr.interpret_meta()
                 {
+                    let name = ident.to_string();
+                    let comment = comment.value();
+
                     if &*name == "doc" {
                         let line = if attr.is_sugared_doc {
                             comment

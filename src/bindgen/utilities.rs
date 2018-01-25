@@ -38,42 +38,55 @@ pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
 }
 
 pub trait SynItemHelpers {
-    fn has_attr(&self, target: syn::MetaItem) -> bool;
+    fn has_attr(&self, target: syn::Meta) -> bool;
 
     fn is_no_mangle(&self) -> bool {
-        self.has_attr(syn::MetaItem::Word(syn::Ident::new("no_mangle")))
+        self.has_attr(syn::Meta::Word("no_mangle".into()))
     }
 }
 
-impl SynItemHelpers for syn::Item {
-    fn has_attr(&self, target: syn::MetaItem) -> bool {
+impl SynItemHelpers for syn::ItemStruct {
+    fn has_attr(&self, target: syn::Meta) -> bool {
         return self.attrs
             .iter()
-            .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
+            .filter_map(|x| x.interpret_meta())
+            .any(|attr| attr == target);
     }
 }
 
-impl SynItemHelpers for syn::ForeignItem {
-    fn has_attr(&self, target: syn::MetaItem) -> bool {
+impl SynItemHelpers for syn::ItemFn {
+    fn has_attr(&self, target: syn::Meta) -> bool {
         return self.attrs
             .iter()
-            .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
+            .filter_map(|x| x.interpret_meta())
+            .any(|attr| attr == target);
+    }
+}
+
+impl SynItemHelpers for syn::ItemStatic {
+    fn has_attr(&self, target: syn::Meta) -> bool {
+        return self.attrs
+            .iter()
+            .filter_map(|x| x.interpret_meta())
+            .any(|attr| attr == target);
     }
 }
 
 impl SynItemHelpers for syn::Variant {
-    fn has_attr(&self, target: syn::MetaItem) -> bool {
+    fn has_attr(&self, target: syn::Meta) -> bool {
         return self.attrs
             .iter()
-            .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
+            .filter_map(|x| x.interpret_meta())
+            .any(|attr| attr == target);
     }
 }
 
 impl SynItemHelpers for syn::Field {
-    fn has_attr(&self, target: syn::MetaItem) -> bool {
+    fn has_attr(&self, target: syn::Meta) -> bool {
         return self.attrs
             .iter()
-            .any(|ref attr| attr.style == syn::AttrStyle::Outer && attr.value == target);
+            .filter_map(|x| x.interpret_meta())
+            .any(|attr| attr == target);
     }
 }
 
@@ -85,18 +98,31 @@ pub trait SynAbiHelpers {
 
 impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
-        self == &Some(syn::Abi::Named(String::from("C")))
+        if let &Some(ref abi) = self {
+            if let Some(ref lit_string) = abi.name {
+                return lit_string.value() == String::from("C")
+            }
+        }
+        false
     }
     fn is_omitted(&self) -> bool {
-        self == &Some(syn::Abi::Rust)
+        if let &Some(ref abi) = self {
+            abi.name.is_none()
+        } else {
+            false
+        }
     }
 }
 
 impl SynAbiHelpers for syn::Abi {
     fn is_c(&self) -> bool {
-        self == &syn::Abi::Named(String::from("C"))
+        if let Some(ref lit_string) = self.name {
+            lit_string.value() == String::from("C")
+        } else {
+            false
+        }
     }
     fn is_omitted(&self) -> bool {
-        self == &syn::Abi::Rust
+        self.name.is_none()
     }
 }

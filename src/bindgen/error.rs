@@ -4,6 +4,7 @@
 
 use std::fmt;
 
+pub use syn::synom::ParseError;
 pub use bindgen::cargo::cargo_metadata::Error as CargoMetadataError;
 pub use bindgen::cargo::cargo_toml::Error as CargoTomlError;
 pub use bindgen::cargo::cargo_expand::Error as CargoExpandError;
@@ -13,7 +14,7 @@ pub enum Error {
     CargoMetadata(String, CargoMetadataError),
     CargoToml(String, CargoTomlError),
     CargoExpand(String, CargoExpandError),
-    ParseSyntaxError{crate_name: String, src_path: String, message: String},
+    ParseSyntaxError{crate_name: String, src_path: String, error: ParseError},
     ParseCannotOpenFile{crate_name: String, src_path: String},
 }
 
@@ -29,8 +30,8 @@ impl fmt::Display for Error {
             &Error::CargoExpand(ref crate_name, ref error) => {
                 write!(f, "Parsing crate `{}`: couldn't run `cargo rustc --pretty=expanded`: {:?}", crate_name, error)
             }
-            &Error::ParseSyntaxError{ref crate_name, ref src_path, ref message} => {
-                write!(f, "Parsing crate `{}`:`{}`:\n{}", crate_name, src_path, message)
+            &Error::ParseSyntaxError{ref crate_name, ref src_path, ref error} => {
+                write!(f, "Parsing crate `{}`:`{}`:\n{:?}", crate_name, src_path, error)
             }
             &Error::ParseCannotOpenFile{ref crate_name, ref src_path} => {
                 write!(f, "Parsing crate `{}`: cannot open file `{}`.", crate_name, src_path)

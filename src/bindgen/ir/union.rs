@@ -31,43 +31,26 @@ pub struct Union {
 
 impl Union {
     pub fn load(
-        name: String,
-        decl: &syn::VariantData,
-        generics: &syn::Generics,
-        attrs: &Vec<syn::Attribute>,
+        item: &syn::ItemUnion,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Union, String> {
-        if Repr::load(attrs)? != Repr::C {
+        if Repr::load(&item.attrs)? != Repr::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
         }
 
-        let (fields, tuple_union) = match decl {
-            &syn::VariantData::Struct(ref fields) => {
-                let out = fields.iter().try_skip_map(|x| x.as_ident_and_type())?;
-                (out, false)
-            }
-            &syn::VariantData::Tuple(ref fields) => {
-                let mut out = Vec::new();
-                let mut current = 0;
-                for field in fields {
-                    if let Some(x) = Type::load(&field.ty)? {
-                        out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
-                        current += 1;
-                    }
-                }
-                (out, true)
-            }
-            &syn::VariantData::Unit => (vec![], false),
+        let (fields, tuple_union) = {
+            let out = item.fields.named.iter().try_skip_map(|x| x.as_ident_and_type())?;
+            (out, false)
         };
 
         Ok(Union {
-            name: name,
-            generic_params: GenericParams::new(generics),
+            name: item.ident.to_string(),
+            generic_params: GenericParams::new(&item.generics),
             fields: fields,
             tuple_union: tuple_union,
-            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-            annotations: AnnotationSet::load(attrs)?,
-            documentation: Documentation::load(attrs),
+            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            annotations: AnnotationSet::load(&item.attrs)?,
+            documentation: Documentation::load(&item.attrs),
         })
     }
 

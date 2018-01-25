@@ -48,26 +48,27 @@ impl Repr {
     pub fn load(attrs: &[syn::Attribute]) -> Result<Repr, String> {
         let ids = attrs
             .iter()
-            .filter_map(|attr| match *attr {
-                syn::Attribute {
-                    style: syn::AttrStyle::Outer,
-                    is_sugared_doc: false,
-                    value: syn::MetaItem::List(ref id, ref nested),
-                } if id == "repr" =>
-                {
-                    Some(nested)
+            .filter_map(|attr| {
+                if attr.is_sugared_doc || attr.style != syn::AttrStyle::Outer {
+                    return None;
                 }
-                _ => None,
+
+                if let Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) = attr.interpret_meta() {
+                    if ident.as_ref() == "repr" {
+                        return Some(nested.into_iter().collect::<Vec<_>>());
+                    }
+                }
+                None
             })
             .flat_map(|nested| nested)
-            .filter_map(|meta| match *meta {
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref id)) => Some(id.as_ref()),
+            .filter_map(|meta| match meta {
+                syn::NestedMeta::Meta(syn::Meta::Word(ident)) => Some(ident.to_string()),
                 _ => None,
             });
 
         let mut repr = Repr::default();
         for id in ids {
-            let new_ty = match id {
+            let new_ty = match id.as_ref() {
                 "u8" => ReprType::U8,
                 "u16" => ReprType::U16,
                 "u32" => ReprType::U32,
