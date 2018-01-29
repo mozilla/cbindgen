@@ -36,6 +36,8 @@ enum class E : intptr_t {
   e4 = 5,
 };
 
+struct Opaque;
+
 union F {
   enum class Tag : uint8_t {
     Foo,
@@ -81,8 +83,6 @@ struct G {
     G_Bar_Body bar;
   };
 };
-
-struct Opaque;
 
 extern "C" {
 

@@ -158,7 +158,14 @@ impl Item for Struct {
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        for &(_, ref ty, _) in &self.fields {
+        let mut fields = self.fields.iter();
+
+        // If there is a tag field, skip it
+        if self.is_tagged {
+            fields.next();
+        }
+
+        for &(_, ref ty, _) in fields {
             ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
         }
     }

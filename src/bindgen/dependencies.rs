@@ -22,12 +22,14 @@ impl Dependencies {
     }
 
     pub fn sort(&mut self) {
-        // Sort enums and opaque structs into their own layers because they don't
+        // Sort untagged enums and opaque structs into their own layers because they don't
         // depend on each other or anything else.
         let ordering = |a: &ItemContainer, b: &ItemContainer| match (a, b) {
-            (&ItemContainer::Enum(ref x), &ItemContainer::Enum(ref y)) => x.name.cmp(&y.name),
-            (&ItemContainer::Enum(_), _) => Ordering::Less,
-            (_, &ItemContainer::Enum(_)) => Ordering::Greater,
+            (&ItemContainer::Enum(ref x), &ItemContainer::Enum(ref y)) if x.tag.is_none() && y.tag.is_none() => {
+                x.name.cmp(&y.name)
+            },
+            (&ItemContainer::Enum(ref x), _) if x.tag.is_none() => Ordering::Less,
+            (_, &ItemContainer::Enum(ref x)) if x.tag.is_none() => Ordering::Greater,
 
             (&ItemContainer::OpaqueItem(ref x), &ItemContainer::OpaqueItem(ref y)) => {
                 x.name.cmp(&y.name)

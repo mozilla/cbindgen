@@ -42,6 +42,8 @@ enum E {
 };
 typedef intptr_t E;
 
+typedef struct Opaque Opaque;
+
 enum F_Tag {
   Foo,
   Bar,
@@ -88,7 +90,5 @@ typedef union {
     G_Bar_Body bar;
   };
 } G;
-
-typedef struct Opaque Opaque;
 
 void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g);

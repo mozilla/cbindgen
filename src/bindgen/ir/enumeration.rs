@@ -7,6 +7,8 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
+use bindgen::dependencies::Dependencies;
+use bindgen::library::Library;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, GenericPath, Item,
                   ItemContainer, Repr, Struct, Type};
 use bindgen::rename::{IdentifierType, RenameRule};
@@ -93,6 +95,12 @@ impl EnumVariant {
             documentation: Documentation::load(&variant.attrs),
         })
     }
+
+    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+        if let &Some((_, ref item)) = &self.body {
+            item.add_dependencies(library, out);
+        }
+    }
 }
 
 impl Source for EnumVariant {
@@ -124,12 +132,20 @@ impl Enum {
         attrs: &Vec<syn::Attribute>,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Enum, String> {
-        let repr = Repr::load(attrs);
+        const VALID_REPR: &[Repr] = &[
+            Repr::C,
+            Repr::USize,
+            Repr::U32,
+            Repr::U16,
+            Repr::U8,
+            Repr::ISize,
+            Repr::I32,
+            Repr::I16,
+            Repr::I8,
+        ];
 
-        if repr != Repr::C && repr != Repr::USize && repr != Repr::U32 && repr != Repr::U16
-            && repr != Repr::U8 && repr != Repr::ISize && repr != Repr::I32
-            && repr != Repr::I16 && repr != Repr::I8
-        {
+        let repr = Repr::load(attrs);
+        if !VALID_REPR.contains(&repr) {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }
 
@@ -193,6 +209,8 @@ impl Item for Enum {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
+        config.export.rename(&mut self.name);
+
         if config.language == Language::C && self.tag.is_some() {
             // it makes sense to always prefix Tag with type name in C
             let new_tag = format!("{}_Tag", self.name);
@@ -251,6 +269,12 @@ impl Item for Enum {
                     }
                 })
                 .collect();
+        }
+    }
+
+    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+        for variant in &self.variants {
+            variant.add_dependencies(library, out);
         }
     }
 }
