@@ -41,6 +41,7 @@ pub fn expand(manifest_path: &Path, crate_name: &str, version: &str) -> Result<S
         let mut cmd = Command::new(cargo);
         cmd.env("CARGO_TARGET_DIR", target_dir);
         cmd.arg("rustc");
+        cmd.arg("--lib");
         cmd.arg("--manifest-path");
         cmd.arg(manifest_path);
         cmd.arg("--all-features");

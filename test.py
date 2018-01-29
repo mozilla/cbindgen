@@ -13,15 +13,16 @@ def build_cbindgen():
     except subprocess.CalledProcessError:
         return False
 
-def cbindgen(rust_src, out, c, config):
+def cbindgen(path, out, c):
     bin = ["target/debug/cbindgen"]
-    compile = [rust_src, "-o", out]
+    compile = [path, "-o", out]
     flags = []
 
     if c:
         flags += ["--lang", "c"]
 
-    if config != None:
+    config = path.replace(".rs", ".toml")
+    if not os.path.isdir(path) and os.path.exists(config):
         flags += ["--config", config]
 
     command = bin + flags + compile
@@ -45,26 +46,28 @@ def gxx(src):
     os.remove("tests/expectations/tmp.o")
 
 def run_compile_test(rust_src, should_verify, c):
-    rust_src_name = os.path.basename(rust_src)
+    is_crate = os.path.isdir(rust_src)
+
+    test_name = rust_src
+    if is_crate:
+        test_name = os.path.basename(rust_src[0:-1])
+    else:
+        test_name = os.path.splitext(os.path.basename(rust_src))[0]
 
     expectation = True
-    if rust_src_name.startswith("fail-"):
+    if test_name.startswith("fail-"):
         expectation = False
 
     if c:
-        out = os.path.join('tests/expectations/', rust_src_name.replace(".rs", ".c"))
+        out = os.path.join('tests/expectations/', test_name + ".c")
         verify = 'tests/expectations/__verify__.c'
     else:
-        out = os.path.join('tests/expectations/', rust_src_name.replace(".rs", ".cpp"))
+        out = os.path.join('tests/expectations/', test_name + ".cpp")
         verify = 'tests/expectations/__verify__.cpp'
-
-    config = rust_src.replace(".rs", ".toml")
-    if not os.path.exists(config):
-        config = None
 
     try:
         if should_verify:
-            cbindgen(rust_src, verify, c, config)
+            cbindgen(rust_src, verify, c)
 
             if c:
                 gcc(verify)
@@ -76,7 +79,7 @@ def run_compile_test(rust_src, should_verify, c):
                 return False
             os.remove(verify)
         else:
-            cbindgen(rust_src, out, c, config)
+            cbindgen(rust_src, out, c)
 
             if c:
                 gcc(out)
@@ -105,7 +108,7 @@ for flag in flags:
 
 tests = []
 if len(files) == 0:
-    tests = glob.glob("tests/rust/*.rs")
+    tests = glob.glob("tests/rust/*.rs") + glob.glob("tests/rust/*/")
 else:
     tests = files
 

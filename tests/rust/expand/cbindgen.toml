@@ -1,0 +1,3 @@
+[parse]
+parse_deps = false
+expand = ["expand"]
