@@ -10,7 +10,7 @@ use bindgen::config::{Config, Language};
 use bindgen::dependencies::Dependencies;
 use bindgen::library::Library;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, GenericPath, Item,
-                  ItemContainer, Repr, Struct, Type};
+                  ItemContainer, Repr, ReprStyle, ReprType, Struct, Type};
 use bindgen::rename::{IdentifierType, RenameRule};
 use bindgen::utilities::find_first_some;
 use bindgen::writer::{Source, SourceWriter};
@@ -132,20 +132,8 @@ impl Enum {
         attrs: &Vec<syn::Attribute>,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Enum, String> {
-        const VALID_REPR: &[Repr] = &[
-            Repr::C,
-            Repr::USize,
-            Repr::U32,
-            Repr::U16,
-            Repr::U8,
-            Repr::ISize,
-            Repr::I32,
-            Repr::I16,
-            Repr::I8,
-        ];
-
         let repr = Repr::load(attrs);
-        if !VALID_REPR.contains(&repr) {
+        if repr == Repr::RUST {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }
 
@@ -153,7 +141,7 @@ impl Enum {
         let mut is_tagged = false;
 
         for variant in values {
-            let variant = EnumVariant::load(repr != Repr::C, variant, mod_cfg)?;
+            let variant = EnumVariant::load(repr.style == ReprStyle::Rust, variant, mod_cfg)?;
             is_tagged = is_tagged || variant.body.is_some();
             variants.push(variant);
         }
@@ -214,7 +202,7 @@ impl Item for Enum {
         if config.language == Language::C && self.tag.is_some() {
             // it makes sense to always prefix Tag with type name in C
             let new_tag = format!("{}_Tag", self.name);
-            if self.repr != Repr::C {
+            if self.repr.style == ReprStyle::Rust {
                 for variant in &mut self.variants {
                     if let Some((_, ref mut body)) = variant.body {
                         body.fields[0].1 = Type::Path(GenericPath {
@@ -281,27 +269,26 @@ impl Item for Enum {
 
 impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        let size = match self.repr {
-            Repr::C => None,
-            Repr::USize => Some("uintptr_t"),
-            Repr::U32 => Some("uint32_t"),
-            Repr::U16 => Some("uint16_t"),
-            Repr::U8 => Some("uint8_t"),
-            Repr::ISize => Some("intptr_t"),
-            Repr::I32 => Some("int32_t"),
-            Repr::I16 => Some("int16_t"),
-            Repr::I8 => Some("int8_t"),
-            _ => unreachable!(),
-        };
+        let size = self.repr.ty.map(|ty| match ty {
+            ReprType::USize => "uintptr_t",
+            ReprType::U32 => "uint32_t",
+            ReprType::U16 => "uint16_t",
+            ReprType::U8 => "uint8_t",
+            ReprType::ISize => "intptr_t",
+            ReprType::I32 => "int32_t",
+            ReprType::I16 => "int16_t",
+            ReprType::I8 => "int8_t",
+        });
 
         self.cfg.write_before(config, out);
 
         self.documentation.write(config, out);
 
         let is_tagged = self.tag.is_some();
+        let separate_tag = self.repr.style == ReprStyle::C;
 
         if is_tagged && config.language == Language::Cxx {
-            out.write(if size.is_some() { "union " } else { "struct " });
+            out.write(if separate_tag { "struct " } else { "union " });
             write!(out, "{}", self.name);
             out.open_brace();
         }
@@ -373,7 +360,7 @@ impl Source for Enum {
             write!(out, "{} tag;", enum_name);
             out.new_line();
 
-            if size.is_none() {
+            if separate_tag {
                 out.write("union");
                 out.open_brace();
             }
@@ -389,7 +376,7 @@ impl Source for Enum {
                 write!(out, "{} {};", body.name, field_name);
             }
 
-            if size.is_none() {
+            if separate_tag {
                 out.close_brace(true);
             }
 

@@ -91,4 +91,28 @@ typedef union {
   };
 } G;
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g);
+enum H_Tag {
+  H_Foo,
+  H_Bar,
+  H_Baz,
+};
+typedef uint8_t H_Tag;
+
+typedef struct {
+  int16_t _0;
+} H_Foo_Body;
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} H_Bar_Body;
+
+typedef union {
+  H_Tag tag;
+  union {
+    H_Foo_Body foo;
+    H_Bar_Body bar;
+  };
+} H;
+
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h);
