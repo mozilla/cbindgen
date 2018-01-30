@@ -43,42 +43,55 @@ impl Repr {
     pub const RUST: Self = Repr {
         style: ReprStyle::Rust,
         ty: None,
-
     };
 
-    pub fn load(attrs: &[syn::Attribute]) -> Repr {
-        attrs
-        .iter()
-        .filter_map(|attr| match *attr {
-            syn::Attribute {
-                style: syn::AttrStyle::Outer,
-                is_sugared_doc: false,
-                value: syn::MetaItem::List(ref id, ref nested)
-            } if id == "repr" => Some(nested),
-            _ => None,
-        })
-        .flat_map(|nested| nested)
-        .filter_map(|meta| match *meta {
-            syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref id)) => Some(id.as_ref()),
-            _ => None,
-        })
-        .fold(Repr::default(), |mut acc, id| {
-            if id == "C" {
-                acc.style = ReprStyle::C;
-            } else {
-                acc.ty = Some(match id {
-                    "u8" => ReprType::U8,
-                    "u16" => ReprType::U16,
-                    "u32" => ReprType::U32,
-                    "usize" => ReprType::USize,
-                    "i8" => ReprType::I8,
-                    "i16" => ReprType::I16,
-                    "i32" => ReprType::I32,
-                    "isize" => ReprType::ISize,
-                    _ => return acc
-                });
+    pub fn load(attrs: &[syn::Attribute]) -> Result<Repr, String> {
+        let ids = attrs
+            .iter()
+            .filter_map(|attr| match *attr {
+                syn::Attribute {
+                    style: syn::AttrStyle::Outer,
+                    is_sugared_doc: false,
+                    value: syn::MetaItem::List(ref id, ref nested),
+                } if id == "repr" =>
+                {
+                    Some(nested)
+                }
+                _ => None,
+            })
+            .flat_map(|nested| nested)
+            .filter_map(|meta| match *meta {
+                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref id)) => Some(id.as_ref()),
+                _ => None,
+            });
+
+        let mut repr = Repr::default();
+        for id in ids {
+            let new_ty = match id {
+                "u8" => ReprType::U8,
+                "u16" => ReprType::U16,
+                "u32" => ReprType::U32,
+                "usize" => ReprType::USize,
+                "i8" => ReprType::I8,
+                "i16" => ReprType::I16,
+                "i32" => ReprType::I32,
+                "isize" => ReprType::ISize,
+                "C" => {
+                    repr.style = ReprStyle::C;
+                    continue;
+                }
+                _ => {
+                    return Err(format!("Unsupported #[repr({})].", id));
+                }
+            };
+            if let Some(old_ty) = repr.ty {
+                return Err(format!(
+                    "Conflicting #[repr(...)] type hints {:?} and {:?}.",
+                    old_ty, new_ty
+                ));
             }
-            acc
-        })
+            repr.ty = Some(new_ty);
+        }
+        Ok(repr)
     }
 }

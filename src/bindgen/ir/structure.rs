@@ -37,7 +37,7 @@ impl Struct {
         attrs: &Vec<syn::Attribute>,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Struct, String> {
-        if Repr::load(attrs) != Repr::C {
+        if Repr::load(attrs)? != Repr::C {
             return Err("Struct is not marked #[repr(C)].".to_owned());
         }
 
