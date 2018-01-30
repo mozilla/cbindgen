@@ -353,7 +353,7 @@ impl Source for Enum {
             out.new_line();
 
             if config.language == Language::C {
-                out.write("typedef union");
+                write!(out, "typedef {}", if separate_tag { "struct" } else { "union" });
                 out.open_brace();
             }
 
