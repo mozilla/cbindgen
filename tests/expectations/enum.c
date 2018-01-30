@@ -83,7 +83,7 @@ typedef struct {
   int16_t y;
 } G_Bar_Body;
 
-typedef union {
+typedef struct {
   G_Tag tag;
   union {
     G_Foo_Body foo;
@@ -107,7 +107,7 @@ typedef struct {
   int16_t y;
 } H_Bar_Body;
 
-typedef union {
+typedef struct {
   H_Tag tag;
   union {
     H_Foo_Body foo;
