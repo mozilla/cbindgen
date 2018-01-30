@@ -34,7 +34,9 @@ union DisplayItem {
     Rect bounds;
   };
 
-  Tag tag;
+  struct {
+    Tag tag;
+  };
   Fill_Body fill;
   Image_Body image;
 };
