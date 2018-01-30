@@ -56,7 +56,9 @@ union F {
     int16_t y;
   };
 
-  Tag tag;
+  struct {
+    Tag tag;
+  };
   Foo_Body foo;
   Bar_Body bar;
 };

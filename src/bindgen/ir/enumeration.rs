@@ -357,7 +357,21 @@ impl Source for Enum {
                 out.open_brace();
             }
 
+            // C++ allows accessing only common initial sequence of union
+            // branches so we need to wrap tag into an anonymous struct
+            let wrap_tag = config.language == Language::Cxx && !separate_tag;
+
+            if wrap_tag {
+                out.write("struct");
+                out.open_brace();
+            }
+
             write!(out, "{} tag;", enum_name);
+
+            if wrap_tag {
+                out.close_brace(true);
+            }
+
             out.new_line();
 
             if separate_tag {
