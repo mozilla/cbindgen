@@ -84,8 +84,31 @@ struct G {
   };
 };
 
+struct H {
+  enum class Tag : uint8_t {
+    H_Foo,
+    H_Bar,
+    H_Baz,
+  };
+
+  struct H_Foo_Body {
+    int16_t _0;
+  };
+
+  struct H_Bar_Body {
+    uint8_t x;
+    int16_t y;
+  };
+
+  Tag tag;
+  union {
+    H_Foo_Body foo;
+    H_Bar_Body bar;
+  };
+};
+
 extern "C" {
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h);
 
 } // extern "C"

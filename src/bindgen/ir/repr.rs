@@ -5,9 +5,19 @@
 use syn;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Repr {
-    None,
+pub enum ReprStyle {
+    Rust,
     C,
+}
+
+impl Default for ReprStyle {
+    fn default() -> Self {
+        ReprStyle::Rust
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ReprType {
     U8,
     U16,
     U32,
@@ -18,113 +28,57 @@ pub enum Repr {
     ISize,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
+pub struct Repr {
+    pub style: ReprStyle,
+    pub ty: Option<ReprType>,
+}
+
 impl Repr {
-    pub fn load(attrs: &Vec<syn::Attribute>) -> Repr {
-        if Repr::has_attr(Repr::repr_c(), attrs) {
-            Repr::C
-        } else if Repr::has_attr(Repr::repr_usize(), attrs) {
-            Repr::USize
-        } else if Repr::has_attr(Repr::repr_u32(), attrs) {
-            Repr::U32
-        } else if Repr::has_attr(Repr::repr_u16(), attrs) {
-            Repr::U16
-        } else if Repr::has_attr(Repr::repr_u8(), attrs) {
-            Repr::U8
-        } else if Repr::has_attr(Repr::repr_isize(), attrs) {
-            Repr::ISize
-        } else if Repr::has_attr(Repr::repr_i32(), attrs) {
-            Repr::I32
-        } else if Repr::has_attr(Repr::repr_i16(), attrs) {
-            Repr::I16
-        } else if Repr::has_attr(Repr::repr_i8(), attrs) {
-            Repr::I8
-        } else {
-            Repr::None
-        }
-    }
+    pub const C: Self = Repr {
+        style: ReprStyle::C,
+        ty: None,
+    };
 
-    fn has_attr(meta: syn::MetaItem, attrs: &Vec<syn::Attribute>) -> bool {
-        attrs.iter().any(|x| !x.is_sugared_doc && x.value == meta)
-    }
+    pub const RUST: Self = Repr {
+        style: ReprStyle::Rust,
+        ty: None,
 
-    fn repr_c() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("C"))),
-            ],
-        )
-    }
+    };
 
-    fn repr_usize() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("usize"))),
-            ],
-        )
-    }
-
-    fn repr_u32() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u32"))),
-            ],
-        )
-    }
-
-    fn repr_u16() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u16"))),
-            ],
-        )
-    }
-
-    fn repr_u8() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("u8"))),
-            ],
-        )
-    }
-
-    fn repr_isize() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("isize"))),
-            ],
-        )
-    }
-
-    fn repr_i32() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i32"))),
-            ],
-        )
-    }
-
-    fn repr_i16() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i16"))),
-            ],
-        )
-    }
-
-    fn repr_i8() -> syn::MetaItem {
-        syn::MetaItem::List(
-            syn::Ident::new("repr"),
-            vec![
-                syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(syn::Ident::new("i8"))),
-            ],
-        )
+    pub fn load(attrs: &[syn::Attribute]) -> Repr {
+        attrs
+        .iter()
+        .filter_map(|attr| match *attr {
+            syn::Attribute {
+                style: syn::AttrStyle::Outer,
+                is_sugared_doc: false,
+                value: syn::MetaItem::List(ref id, ref nested)
+            } if id == "repr" => Some(nested),
+            _ => None,
+        })
+        .flat_map(|nested| nested)
+        .filter_map(|meta| match *meta {
+            syn::NestedMetaItem::MetaItem(syn::MetaItem::Word(ref id)) => Some(id.as_ref()),
+            _ => None,
+        })
+        .fold(Repr::default(), |mut acc, id| {
+            if id == "C" {
+                acc.style = ReprStyle::C;
+            } else {
+                acc.ty = Some(match id {
+                    "u8" => ReprType::U8,
+                    "u16" => ReprType::U16,
+                    "u32" => ReprType::U32,
+                    "usize" => ReprType::USize,
+                    "i8" => ReprType::I8,
+                    "i16" => ReprType::I16,
+                    "i32" => ReprType::I32,
+                    "isize" => ReprType::ISize,
+                    _ => return acc
+                });
+            }
+            acc
+        })
     }
 }
