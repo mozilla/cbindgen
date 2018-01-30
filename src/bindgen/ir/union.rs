@@ -37,7 +37,7 @@ impl Union {
         attrs: &Vec<syn::Attribute>,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Union, String> {
-        if Repr::load(attrs) != Repr::C {
+        if Repr::load(attrs)? != Repr::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
         }
 

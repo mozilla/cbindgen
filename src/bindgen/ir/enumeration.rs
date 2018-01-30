@@ -132,7 +132,7 @@ impl Enum {
         attrs: &Vec<syn::Attribute>,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Enum, String> {
-        let repr = Repr::load(attrs);
+        let repr = Repr::load(attrs)?;
         if repr == Repr::RUST {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }

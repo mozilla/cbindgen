@@ -42,6 +42,10 @@ enum E {
 };
 typedef intptr_t E;
 
+typedef struct I I;
+
+typedef struct J J;
+
 typedef struct Opaque Opaque;
 
 enum F_Tag {
@@ -115,4 +119,4 @@ typedef struct {
   };
 } H;
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j);

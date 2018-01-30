@@ -66,6 +66,20 @@ enum H {
     Baz
 }
 
+#[repr(C, u8, u16)]
+enum I {
+    Foo(i16),
+    Bar { x: u8, y: i16 },
+    Baz
+}
+
+#[repr(C, u8, unknown_hint)]
+enum J {
+    Foo(i16),
+    Bar { x: u8, y: i16 },
+    Baz
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     o: *mut Opaque,
@@ -76,5 +90,7 @@ pub extern "C" fn root(
     e: E,
     f: F,
     g: G,
-    h: H
+    h: H,
+    i: I,
+    j: J
 ) { }
