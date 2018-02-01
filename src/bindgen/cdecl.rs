@@ -109,7 +109,12 @@ impl CDecl {
         }
     }
 
-    fn write<F: Write>(&self, out: &mut SourceWriter<F>, ident: Option<&str>, void_prototype: bool) {
+    fn write<F: Write>(
+        &self,
+        out: &mut SourceWriter<F>,
+        ident: Option<&str>,
+        void_prototype: bool,
+    ) {
         // Write the type-specifier and type-qualifier first
         if self.type_qualifers.len() != 0 {
             write!(out, "{} {}", self.type_qualifers, self.type_name);
@@ -216,7 +221,12 @@ impl CDecl {
     }
 }
 
-pub fn write_func<F: Write>(out: &mut SourceWriter<F>, f: &Function, layout_vertical: bool, void_prototype: bool) {
+pub fn write_func<F: Write>(
+    out: &mut SourceWriter<F>,
+    f: &Function,
+    layout_vertical: bool,
+    void_prototype: bool,
+) {
     &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name), void_prototype);
 }
 

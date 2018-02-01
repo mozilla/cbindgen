@@ -56,14 +56,12 @@ impl Cargo {
         } else {
             None
         };
-        let metadata = cargo_metadata::metadata(&toml_path).map_err(|x| {
-            Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x)
-        })?;
+        let metadata = cargo_metadata::metadata(&toml_path)
+            .map_err(|x| Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x))?;
 
         // Use the specified binding crate name or infer it from the manifest
-        let manifest = cargo_toml::manifest(&toml_path).map_err(|x| {
-            Error::CargoToml(toml_path.to_str().unwrap().to_owned(), x)
-        })?;
+        let manifest = cargo_toml::manifest(&toml_path)
+            .map_err(|x| Error::CargoToml(toml_path.to_str().unwrap().to_owned(), x))?;
 
         let binding_crate_name =
             binding_crate_name.map_or(manifest.package.name.clone(), |x| x.to_owned());
@@ -178,8 +176,7 @@ impl Cargo {
         for meta_package in &self.metadata.packages {
             if meta_package.name == package.name && meta_package.version == package.version {
                 for target in &meta_package.targets {
-                    if target.kind.contains(&kind_lib)
-                        || target.kind.contains(&kind_staticlib)
+                    if target.kind.contains(&kind_lib) || target.kind.contains(&kind_staticlib)
                         || target.kind.contains(&kind_rlib)
                         || target.kind.contains(&kind_cdylib)
                         || target.kind.contains(&kind_dylib)

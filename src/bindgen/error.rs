@@ -14,28 +14,50 @@ pub enum Error {
     CargoMetadata(String, CargoMetadataError),
     CargoToml(String, CargoTomlError),
     CargoExpand(String, CargoExpandError),
-    ParseSyntaxError{crate_name: String, src_path: String, error: ParseError},
-    ParseCannotOpenFile{crate_name: String, src_path: String},
+    ParseSyntaxError {
+        crate_name: String,
+        src_path: String,
+        error: ParseError,
+    },
+    ParseCannotOpenFile {
+        crate_name: String,
+        src_path: String,
+    },
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &Error::CargoMetadata(ref path, ref error) => {
-                write!(f, "Couldn't execute `cargo metadata` with manifest {:?}: {:?}", path, error)
-            }
+            &Error::CargoMetadata(ref path, ref error) => write!(
+                f,
+                "Couldn't execute `cargo metadata` with manifest {:?}: {:?}",
+                path, error
+            ),
             &Error::CargoToml(ref path, ref error) => {
                 write!(f, "Couldn't load manifest file {:?}: {:?}", path, error)
             }
-            &Error::CargoExpand(ref crate_name, ref error) => {
-                write!(f, "Parsing crate `{}`: couldn't run `cargo rustc --pretty=expanded`: {:?}", crate_name, error)
-            }
-            &Error::ParseSyntaxError{ref crate_name, ref src_path, ref error} => {
-                write!(f, "Parsing crate `{}`:`{}`:\n{:?}", crate_name, src_path, error)
-            }
-            &Error::ParseCannotOpenFile{ref crate_name, ref src_path} => {
-                write!(f, "Parsing crate `{}`: cannot open file `{}`.", crate_name, src_path)
-            }
+            &Error::CargoExpand(ref crate_name, ref error) => write!(
+                f,
+                "Parsing crate `{}`: couldn't run `cargo rustc --pretty=expanded`: {:?}",
+                crate_name, error
+            ),
+            &Error::ParseSyntaxError {
+                ref crate_name,
+                ref src_path,
+                ref error,
+            } => write!(
+                f,
+                "Parsing crate `{}`:`{}`:\n{:?}",
+                crate_name, src_path, error
+            ),
+            &Error::ParseCannotOpenFile {
+                ref crate_name,
+                ref src_path,
+            } => write!(
+                f,
+                "Parsing crate `{}`: cannot open file `{}`.",
+                crate_name, src_path
+            ),
         }
     }
 }

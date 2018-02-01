@@ -28,10 +28,7 @@ pub struct Typedef {
 }
 
 impl Typedef {
-    pub fn load(
-        item: &syn::ItemType,
-        mod_cfg: &Option<Cfg>,
-    ) -> Result<Typedef, String> {
+    pub fn load(item: &syn::ItemType, mod_cfg: &Option<Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(&item.ty)? {
             Ok(Typedef {
                 name: item.ident.to_string(),

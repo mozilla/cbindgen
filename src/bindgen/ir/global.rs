@@ -23,10 +23,7 @@ pub struct Static {
 }
 
 impl Static {
-    pub fn load(
-        item: &syn::ItemStatic,
-        mod_cfg: &Option<Cfg>,
-    ) -> Result<Static, String> {
+    pub fn load(item: &syn::ItemStatic, mod_cfg: &Option<Cfg>) -> Result<Static, String> {
         let ty = Type::load(&item.ty)?;
 
         if ty.is_none() {

@@ -106,45 +106,49 @@ impl Cfg {
             &syn::NestedMeta::Meta(syn::Meta::Word(ref ident)) => {
                 Some(Cfg::Boolean(ident.as_ref().to_owned()))
             }
-            &syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue { ref ident, ref lit, .. })) => {
-                match lit {
-                    &syn::Lit::Str(ref value) => {
-                        Some(Cfg::Named(ident.as_ref().to_owned(), value.value()))
-                    }
-                    _ => None,
+            &syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
+                ref ident,
+                ref lit,
+                ..
+            })) => match lit {
+                &syn::Lit::Str(ref value) => {
+                    Some(Cfg::Named(ident.as_ref().to_owned(), value.value()))
                 }
-            }
-            &syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList { ref ident, ref nested, .. })) => {
-                match ident.as_ref() {
-                    "any" => if let Some(configs) = Cfg::load_list(nested.iter()) {
-                        Some(Cfg::Any(configs))
-                    } else {
-                        None
-                    },
-                    "all" => if let Some(configs) = Cfg::load_list(nested.iter()) {
-                        Some(Cfg::All(configs))
-                    } else {
-                        None
-                    },
-                    "not" => {
-                        if nested.len() != 1 {
-                            return None;
-                        }
+                _ => None,
+            },
+            &syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList {
+                ref ident,
+                ref nested,
+                ..
+            })) => match ident.as_ref() {
+                "any" => if let Some(configs) = Cfg::load_list(nested.iter()) {
+                    Some(Cfg::Any(configs))
+                } else {
+                    None
+                },
+                "all" => if let Some(configs) = Cfg::load_list(nested.iter()) {
+                    Some(Cfg::All(configs))
+                } else {
+                    None
+                },
+                "not" => {
+                    if nested.len() != 1 {
+                        return None;
+                    }
 
-                        if let Some(config) = Cfg::load_single(&nested[0]) {
-                            Some(Cfg::Not(Box::new(config)))
-                        } else {
-                            None
-                        }
+                    if let Some(config) = Cfg::load_single(&nested[0]) {
+                        Some(Cfg::Not(Box::new(config)))
+                    } else {
+                        None
                     }
-                    _ => None,
                 }
-            }
+                _ => None,
+            },
             _ => None,
         }
     }
 
-    fn load_list<'a, I: Iterator<Item=&'a syn::NestedMeta>>(attrs: I) -> Option<Vec<Cfg>> {
+    fn load_list<'a, I: Iterator<Item = &'a syn::NestedMeta>>(attrs: I) -> Option<Vec<Cfg>> {
         let mut configs = Vec::new();
 
         for attr in attrs {

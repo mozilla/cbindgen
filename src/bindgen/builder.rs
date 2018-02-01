@@ -46,7 +46,9 @@ impl Builder {
 
     #[allow(unused)]
     pub fn with_sys_include<S: AsRef<str>>(mut self, include: S) -> Builder {
-        self.config.sys_includes.push(String::from(include.as_ref()));
+        self.config
+            .sys_includes
+            .push(String::from(include.as_ref()));
         self
     }
 
@@ -117,19 +119,28 @@ impl Builder {
 
     #[allow(unused)]
     pub fn include_item<S: AsRef<str>>(mut self, item_name: S) -> Builder {
-        self.config.export.include.push(String::from(item_name.as_ref()));
+        self.config
+            .export
+            .include
+            .push(String::from(item_name.as_ref()));
         self
     }
 
     #[allow(unused)]
     pub fn exclude_item<S: AsRef<str>>(mut self, item_name: S) -> Builder {
-        self.config.export.exclude.push(String::from(item_name.as_ref()));
+        self.config
+            .export
+            .exclude
+            .push(String::from(item_name.as_ref()));
         self
     }
 
     #[allow(unused)]
     pub fn rename_item<S: AsRef<str>>(mut self, from: S, to: S) -> Builder {
-        self.config.export.rename.insert(String::from(from.as_ref()), String::from(to.as_ref()));
+        self.config
+            .export
+            .rename
+            .insert(String::from(from.as_ref()), String::from(to.as_ref()));
         self
     }
 

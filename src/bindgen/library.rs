@@ -123,14 +123,22 @@ impl Library {
 
     fn remove_excluded(&mut self) {
         let config = &self.config;
-        self.functions.retain(|x| !config.export.exclude.contains(&x.name));
-        self.enums.filter(|x| config.export.exclude.contains(&x.name));
-        self.structs.filter(|x| config.export.exclude.contains(&x.name));
-        self.unions.filter(|x| config.export.exclude.contains(&x.name));
-        self.opaque_items.filter(|x| config.export.exclude.contains(&x.name));
-        self.typedefs.filter(|x| config.export.exclude.contains(&x.name));
-        self.globals.filter(|x| config.export.exclude.contains(&x.name));
-        self.constants.filter(|x| config.export.exclude.contains(&x.name));
+        self.functions
+            .retain(|x| !config.export.exclude.contains(&x.name));
+        self.enums
+            .filter(|x| config.export.exclude.contains(&x.name));
+        self.structs
+            .filter(|x| config.export.exclude.contains(&x.name));
+        self.unions
+            .filter(|x| config.export.exclude.contains(&x.name));
+        self.opaque_items
+            .filter(|x| config.export.exclude.contains(&x.name));
+        self.typedefs
+            .filter(|x| config.export.exclude.contains(&x.name));
+        self.globals
+            .filter(|x| config.export.exclude.contains(&x.name));
+        self.constants
+            .filter(|x| config.export.exclude.contains(&x.name));
     }
 
     fn transfer_annotations(&mut self) {

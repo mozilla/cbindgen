@@ -16,7 +16,9 @@ impl GenericParams {
                 .params
                 .iter()
                 .filter_map(|x| match x {
-                    &syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => Some(ident.to_string()),
+                    &syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => {
+                        Some(ident.to_string())
+                    }
                     _ => None,
                 })
                 .collect::<Vec<_>>(),

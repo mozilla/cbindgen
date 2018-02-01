@@ -34,18 +34,17 @@ impl GenericPath {
         }
 
         let generics = match &last_segment.arguments {
-            &syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments { ref args, .. }) => {
-                args.iter().try_skip_map(|x| {
-                    match *x {
-                        &syn::GenericArgument::Type(ref x) => Type::load(x),
-                        _ => { Err(String::new()) }
-                    }
-                })?
-            }
+            &syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+                ref args,
+                ..
+            }) => args.iter().try_skip_map(|x| match *x {
+                &syn::GenericArgument::Type(ref x) => Type::load(x),
+                _ => Err(String::new()),
+            })?,
             &syn::PathArguments::Parenthesized(_) => {
                 return Err("Path contains parentheses.".to_owned());
             }
-            _ => Vec::new()
+            _ => Vec::new(),
         };
 
         Ok(GenericPath::new(name, generics))

@@ -30,7 +30,13 @@ impl EnumVariant {
         mod_cfg: &Option<Cfg>,
     ) -> Result<Self, String> {
         let discriminant = match &variant.discriminant {
-            &Some((_, syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref lit), .. }))) => Some(lit.value()),
+            &Some((
+                _,
+                syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Int(ref lit),
+                    ..
+                }),
+            )) => Some(lit.value()),
             &Some(_) => {
                 return Err("Unsupported discriminant.".to_owned());
             }
@@ -39,7 +45,7 @@ impl EnumVariant {
 
         fn parse_fields(
             is_tagged: bool,
-            fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>
+            fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
         ) -> Result<Vec<(String, Type, Documentation)>, String> {
             let mut res = Vec::new();
 
@@ -72,30 +78,26 @@ impl EnumVariant {
 
         let body = match variant.fields {
             syn::Fields::Unit => None,
-            syn::Fields::Named(ref fields) => {
-                Some(Struct {
-                    name: format!("{}_Body", variant.ident),
-                    generic_params: GenericParams::default(),
-                    fields: parse_fields(is_tagged, &fields.named)?,
-                    is_tagged,
-                    tuple_struct: false,
-                    cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
-                    annotations: AnnotationSet::load(&variant.attrs)?,
-                    documentation: Documentation::none(),
-                })
-            }
-            syn::Fields::Unnamed(ref fields) => {
-                Some(Struct {
-                    name: format!("{}_Body", variant.ident),
-                    generic_params: GenericParams::default(),
-                    fields: parse_fields(is_tagged, &fields.unnamed)?,
-                    is_tagged,
-                    tuple_struct: true,
-                    cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
-                    annotations: AnnotationSet::load(&variant.attrs)?,
-                    documentation: Documentation::none(),
-                })
-            }
+            syn::Fields::Named(ref fields) => Some(Struct {
+                name: format!("{}_Body", variant.ident),
+                generic_params: GenericParams::default(),
+                fields: parse_fields(is_tagged, &fields.named)?,
+                is_tagged,
+                tuple_struct: false,
+                cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
+                annotations: AnnotationSet::load(&variant.attrs)?,
+                documentation: Documentation::none(),
+            }),
+            syn::Fields::Unnamed(ref fields) => Some(Struct {
+                name: format!("{}_Body", variant.ident),
+                generic_params: GenericParams::default(),
+                fields: parse_fields(is_tagged, &fields.unnamed)?,
+                is_tagged,
+                tuple_struct: true,
+                cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
+                annotations: AnnotationSet::load(&variant.attrs)?,
+                documentation: Documentation::none(),
+            }),
         };
 
         Ok(EnumVariant {
@@ -142,10 +144,7 @@ pub struct Enum {
 }
 
 impl Enum {
-    pub fn load(
-        item: &syn::ItemEnum,
-        mod_cfg: &Option<Cfg>,
-    ) -> Result<Enum, String> {
+    pub fn load(item: &syn::ItemEnum, mod_cfg: &Option<Cfg>) -> Result<Enum, String> {
         let repr = Repr::load(&item.attrs)?;
         if repr == Repr::RUST {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
@@ -254,21 +253,16 @@ impl Item for Enum {
         if let Some(r) = find_first_some(&rules) {
             self.variants = self.variants
                 .iter()
-                .map(|variant| {
-                    EnumVariant {
-                        name: r.apply_to_pascal_case(
-                            &variant.name,
-                            IdentifierType::EnumVariant(self),
-                        ),
-                        discriminant: variant.discriminant.clone(),
-                        body: variant.body.as_ref().map(|body| {
-                            (
-                                r.apply_to_snake_case(&body.0, IdentifierType::StructMember),
-                                body.1.clone(),
-                            )
-                        }),
-                        documentation: variant.documentation.clone(),
-                    }
+                .map(|variant| EnumVariant {
+                    name: r.apply_to_pascal_case(&variant.name, IdentifierType::EnumVariant(self)),
+                    discriminant: variant.discriminant.clone(),
+                    body: variant.body.as_ref().map(|body| {
+                        (
+                            r.apply_to_snake_case(&body.0, IdentifierType::StructMember),
+                            body.1.clone(),
+                        )
+                    }),
+                    documentation: variant.documentation.clone(),
                 })
                 .collect();
         }
@@ -367,7 +361,11 @@ impl Source for Enum {
             out.new_line();
 
             if config.language == Language::C {
-                write!(out, "typedef {}", if separate_tag { "struct" } else { "union" });
+                write!(
+                    out,
+                    "typedef {}",
+                    if separate_tag { "struct" } else { "union" }
+                );
                 out.open_brace();
             }
 

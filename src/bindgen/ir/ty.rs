@@ -228,7 +228,11 @@ impl Type {
                     Type::Path(path)
                 }
             }
-            &syn::Type::Array(syn::TypeArray { ref elem, len: syn::Expr::Path(ref path), .. }) => {
+            &syn::Type::Array(syn::TypeArray {
+                ref elem,
+                len: syn::Expr::Path(ref path),
+                ..
+            }) => {
                 let converted = Type::load(elem)?;
 
                 let converted = match converted {
@@ -240,7 +244,15 @@ impl Type {
 
                 Type::Array(Box::new(converted), path.name)
             }
-            &syn::Type::Array(syn::TypeArray { ref elem, len: syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref len), ..  }), .. }) => {
+            &syn::Type::Array(syn::TypeArray {
+                ref elem,
+                len:
+                    syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Int(ref len),
+                        ..
+                    }),
+                ..
+            }) => {
                 let converted = Type::load(elem)?;
 
                 let converted = match converted {
@@ -253,9 +265,7 @@ impl Type {
             &syn::Type::BareFn(ref function) => {
                 let args = function.inputs.iter().try_skip_map(|x| Type::load(&x.ty))?;
                 let ret = match function.output {
-                    syn::ReturnType::Default => {
-                        Type::Primitive(PrimitiveType::Void)
-                    }
+                    syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
                     syn::ReturnType::Type(_, ref ty) => {
                         if let Some(x) = Type::load(ty)? {
                             x

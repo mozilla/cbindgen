@@ -26,8 +26,11 @@ impl Documentation {
                 // step through rust.  In that case they are stored as doc
                 // attributes and the leading three slashes (and optional space)
                 // are not included.
-                if let Some(syn::Meta::NameValue(syn::MetaNameValue{ident, lit: syn::Lit::Str(comment), ..})) =
-                    attr.interpret_meta()
+                if let Some(syn::Meta::NameValue(syn::MetaNameValue {
+                    ident,
+                    lit: syn::Lit::Str(comment),
+                    ..
+                })) = attr.interpret_meta()
                 {
                     let name = ident.to_string();
                     let comment = comment.value();

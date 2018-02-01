@@ -100,7 +100,7 @@ impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
         if let &Some(ref abi) = self {
             if let Some(ref lit_string) = abi.name {
-                return lit_string.value() == String::from("C")
+                return lit_string.value() == String::from("C");
             }
         }
         false

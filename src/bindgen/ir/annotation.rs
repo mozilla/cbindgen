@@ -50,8 +50,11 @@ impl AnnotationSet {
 
         for attr in attrs {
             if attr.style == syn::AttrStyle::Outer {
-                if let Some(syn::Meta::NameValue(syn::MetaNameValue { ident, lit: syn::Lit::Str(comment), .. })) =
-                    attr.interpret_meta()
+                if let Some(syn::Meta::NameValue(syn::MetaNameValue {
+                    ident,
+                    lit: syn::Lit::Str(comment),
+                    ..
+                })) = attr.interpret_meta()
                 {
                     let comment = comment.value();
                     if &*ident.to_string() == "doc" {

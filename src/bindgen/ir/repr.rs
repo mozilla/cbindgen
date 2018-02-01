@@ -53,7 +53,9 @@ impl Repr {
                     return None;
                 }
 
-                if let Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) = attr.interpret_meta() {
+                if let Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) =
+                    attr.interpret_meta()
+                {
                     if ident.as_ref() == "repr" {
                         return Some(nested.into_iter().collect::<Vec<_>>());
                     }

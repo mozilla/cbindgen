@@ -159,17 +159,16 @@ impl Parser {
 
         let mod_parsed = {
             if !self.cache_expanded_crate.contains_key(&pkg.name) {
-                let s = self.lib.as_ref().unwrap().expand_crate(pkg)
-                    .map_err(|x| Error::CargoExpand(
-                        pkg.name.clone(),
-                        x
-                    ))?;
-                let i = syn::parse_file(&s)
-                    .map_err(|x| Error::ParseSyntaxError{
-                        crate_name: pkg.name.clone(),
-                        src_path: "".to_owned(),
-                        error: x,
-                    })?;
+                let s = self.lib
+                    .as_ref()
+                    .unwrap()
+                    .expand_crate(pkg)
+                    .map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
+                let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
+                    crate_name: pkg.name.clone(),
+                    src_path: "".to_owned(),
+                    error: x,
+                })?;
                 self.cache_expanded_crate.insert(pkg.name.clone(), i.items);
             }
 
@@ -179,11 +178,7 @@ impl Parser {
         self.process_expanded_mod(pkg, &mod_parsed)
     }
 
-    fn process_expanded_mod(
-        &mut self,
-        pkg: &PackageRef,
-        items: &[syn::Item],
-    ) -> Result<(), Error> {
+    fn process_expanded_mod(&mut self, pkg: &PackageRef, items: &[syn::Item]) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
             &self.binding_crate_name,
             &pkg.name,
@@ -257,25 +252,20 @@ impl Parser {
 
             if !self.cache_src.contains_key(&owned_mod_path) {
                 let mut s = String::new();
-                let mut f = File::open(mod_path).map_err(|_| {
-                    Error::ParseCannotOpenFile{
+                let mut f = File::open(mod_path).map_err(|_| Error::ParseCannotOpenFile {
+                    crate_name: pkg.name.clone(),
+                    src_path: mod_path.to_str().unwrap().to_owned(),
+                })?;
+                f.read_to_string(&mut s)
+                    .map_err(|_| Error::ParseCannotOpenFile {
                         crate_name: pkg.name.clone(),
                         src_path: mod_path.to_str().unwrap().to_owned(),
-                    }
-                })?;
-                f.read_to_string(&mut s).map_err(|_| {
-                    Error::ParseCannotOpenFile{
-                        crate_name: pkg.name.clone(),
-                        src_path: mod_path.to_str().unwrap().to_owned(),
-                    }
-                })?;
+                    })?;
 
-                let i = syn::parse_file(&s).map_err(|x| {
-                    Error::ParseSyntaxError{
-                        crate_name: pkg.name.clone(),
-                        src_path: "".to_owned(),
-                        error: x,
-                    }
+                let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
+                    crate_name: pkg.name.clone(),
+                    src_path: "".to_owned(),
+                    error: x,
                 })?;
 
                 self.cache_src.insert(owned_mod_path.clone(), i.items);
@@ -495,10 +485,7 @@ impl Parse {
         item: &syn::ItemForeignMod,
     ) {
         if !item.abi.is_c() {
-            info!(
-                "Skip {} - (extern block must be extern C).",
-                crate_name
-            );
+            info!("Skip {} - (extern block must be extern C).", crate_name);
             return;
         }
 
@@ -544,7 +531,7 @@ impl Parse {
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: &Option<Cfg>,
-        item: &syn::ItemFn
+        item: &syn::ItemFn,
     ) {
         if crate_name != binding_crate_name {
             info!(
@@ -556,7 +543,13 @@ impl Parse {
 
         if let syn::Visibility::Public(_) = item.vis {
             if item.is_no_mangle() && (item.abi.is_omitted() || item.abi.is_c()) {
-                match Function::load(item.ident.to_string(), &item.decl, false, &item.attrs, mod_cfg) {
+                match Function::load(
+                    item.ident.to_string(),
+                    &item.decl,
+                    false,
+                    &item.attrs,
+                    mod_cfg,
+                ) {
                     Ok(func) => {
                         info!("Take {}::{}.", crate_name, &item.ident);
 
@@ -571,11 +564,9 @@ impl Parse {
         }
 
         // TODO
-        if let syn::Visibility::Public(_) = item.vis { } else {
-            warn!(
-                "Skip {}::{} - (not `pub`).",
-                crate_name, &item.ident
-            );
+        if let syn::Visibility::Public(_) = item.vis {
+        } else {
+            warn!("Skip {}::{} - (not `pub`).", crate_name, &item.ident);
         }
         if (item.abi.is_omitted() || item.abi.is_c()) && !item.is_no_mangle() {
             warn!(
@@ -627,7 +618,7 @@ impl Parse {
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: &Option<Cfg>,
-        item: &syn::ItemStatic
+        item: &syn::ItemStatic,
     ) {
         if crate_name != binding_crate_name {
             info!(
@@ -653,27 +644,17 @@ impl Parse {
         }
 
         // TODO
-        if let syn::Visibility::Public(_) = item.vis { } else {
-            warn!(
-                "Skip {}::{} - (not `pub`).",
-                crate_name, &item.ident
-            );
+        if let syn::Visibility::Public(_) = item.vis {
+        } else {
+            warn!("Skip {}::{} - (not `pub`).", crate_name, &item.ident);
         }
         if !item.is_no_mangle() {
-            warn!(
-                "Skip {}::{} - (not `no_mangle`).",
-                crate_name, &item.ident
-            );
+            warn!("Skip {}::{} - (not `no_mangle`).", crate_name, &item.ident);
         }
     }
 
     /// Loads a `struct` declaration
-    fn load_syn_struct(
-        &mut self,
-        crate_name: &str,
-        mod_cfg: &Option<Cfg>,
-        item: &syn::ItemStruct,
-    ) {
+    fn load_syn_struct(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemStruct) {
         match Struct::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
@@ -693,12 +674,7 @@ impl Parse {
     }
 
     /// Loads a `union` declaration
-    fn load_syn_union(
-        &mut self,
-        crate_name: &str,
-        mod_cfg: &Option<Cfg>,
-        item: &syn::ItemUnion,
-    ) {
+    fn load_syn_union(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemUnion) {
         match Union::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
@@ -718,14 +694,8 @@ impl Parse {
     }
 
     /// Loads a `enum` declaration
-    fn load_syn_enum(
-        &mut self,
-        crate_name: &str,
-        mod_cfg: &Option<Cfg>,
-        item: &syn::ItemEnum,
-    ) {
-        if item.generics.lifetimes().count() > 0 ||
-            item.generics.type_params().count() > 0 {
+    fn load_syn_enum(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemEnum) {
+        if item.generics.lifetimes().count() > 0 || item.generics.type_params().count() > 0 {
             info!(
                 "Skip {}::{} - (has generics or lifetimes or where bounds).",
                 crate_name, &item.ident
@@ -751,12 +721,7 @@ impl Parse {
     }
 
     /// Loads a `type` declaration
-    fn load_syn_ty(
-        &mut self,
-        crate_name: &str,
-        mod_cfg: &Option<Cfg>,
-        item: &syn::ItemType,
-    ) {
+    fn load_syn_ty(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemType) {
         match Typedef::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);

@@ -17,12 +17,22 @@ pub struct LiteralExpr(String);
 impl LiteralExpr {
     pub fn load(expr: &syn::Expr) -> Result<LiteralExpr, String> {
         match expr {
-            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(ref value), .. }) => {
-                Ok(LiteralExpr(format!("u8\"{}\"", value.value())))
-            }
-            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Byte(ref value), .. }) => Ok(LiteralExpr(format!("{}", value.value()))),
-            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Char(ref value), .. }) => Ok(LiteralExpr(format!("{}", value.value()))),
-            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Int(ref value), .. }) => match value.suffix() {
+            &syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Str(ref value),
+                ..
+            }) => Ok(LiteralExpr(format!("u8\"{}\"", value.value()))),
+            &syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Byte(ref value),
+                ..
+            }) => Ok(LiteralExpr(format!("{}", value.value()))),
+            &syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Char(ref value),
+                ..
+            }) => Ok(LiteralExpr(format!("{}", value.value()))),
+            &syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Int(ref value),
+                ..
+            }) => match value.suffix() {
                 syn::IntSuffix::Usize
                 | syn::IntSuffix::U8
                 | syn::IntSuffix::U16
@@ -42,10 +52,14 @@ impl LiteralExpr {
                     )))
                 },
             },
-            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Float(ref value), .. }) => {
-                Ok(LiteralExpr(format!("{}", value.value())))
-            }
-            &syn::Expr::Lit(syn::ExprLit { lit: syn::Lit::Bool(ref value), .. }) => Ok(LiteralExpr(format!("{}", value.value))),
+            &syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Float(ref value),
+                ..
+            }) => Ok(LiteralExpr(format!("{}", value.value()))),
+            &syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Bool(ref value),
+                ..
+            }) => Ok(LiteralExpr(format!("{}", value.value))),
             _ => Err("Unsupported literal expression.".to_owned()),
         }
     }

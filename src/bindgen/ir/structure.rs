@@ -30,10 +30,7 @@ pub struct Struct {
 }
 
 impl Struct {
-    pub fn load(
-        item: &syn::ItemStruct,
-        mod_cfg: &Option<Cfg>,
-    ) -> Result<Struct, String> {
+    pub fn load(item: &syn::ItemStruct, mod_cfg: &Option<Cfg>) -> Result<Struct, String> {
         if Repr::load(&item.attrs)? != Repr::C {
             return Err("Struct is not marked #[repr(C)].".to_owned());
         }
@@ -231,9 +228,7 @@ impl Source for Struct {
         if config.language == Language::Cxx {
             let mut wrote_start_newline = false;
 
-            if config.structure.derive_constructor(&self.annotations)
-                && !self.fields.is_empty()
-            {
+            if config.structure.derive_constructor(&self.annotations) && !self.fields.is_empty() {
                 if !wrote_start_newline {
                     wrote_start_newline = true;
                     out.new_line();
@@ -242,7 +237,9 @@ impl Source for Struct {
                 out.new_line();
 
                 let arg_renamer = |name: &str| {
-                    config.function.rename_args
+                    config
+                        .function
+                        .rename_args
                         .as_ref()
                         .unwrap_or(&RenameRule::GeckoCase)
                         .apply_to_snake_case(name, IdentifierType::FunctionArg)

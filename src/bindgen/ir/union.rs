@@ -30,16 +30,16 @@ pub struct Union {
 }
 
 impl Union {
-    pub fn load(
-        item: &syn::ItemUnion,
-        mod_cfg: &Option<Cfg>,
-    ) -> Result<Union, String> {
+    pub fn load(item: &syn::ItemUnion, mod_cfg: &Option<Cfg>) -> Result<Union, String> {
         if Repr::load(&item.attrs)? != Repr::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
         }
 
         let (fields, tuple_union) = {
-            let out = item.fields.named.iter().try_skip_map(|x| x.as_ident_and_type())?;
+            let out = item.fields
+                .named
+                .iter()
+                .try_skip_map(|x| x.as_ident_and_type())?;
             (out, false)
         };
 
