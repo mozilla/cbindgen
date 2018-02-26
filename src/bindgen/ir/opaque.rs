@@ -74,7 +74,12 @@ impl Item for OpaqueItem {
         _library: &Library,
         out: &mut Monomorphs,
     ) {
-        assert!(self.generic_params.len() > 0 && self.generic_params.len() == generic_values.len());
+        assert!(self.generic_params.len() > 0, "{} is not generic", self.name);
+        assert!(self.generic_params.len() == generic_values.len(), "{} has {} params but is being instantiated with {} values",
+            self.name,
+            self.generic_params.len(),
+            generic_values.len(),
+        );
 
         let monomorph = OpaqueItem {
             name: mangle::mangle_path(&self.name, generic_values),

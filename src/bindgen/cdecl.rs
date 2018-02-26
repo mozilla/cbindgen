@@ -69,22 +69,22 @@ impl CDecl {
         match t {
             &Type::Path(ref path) => {
                 if is_const {
-                    assert!(self.type_qualifers.len() == 0);
+                    assert!(self.type_qualifers.len() == 0, "error generating cdecl for {:?}", t);
                     self.type_qualifers = "const".to_owned();
                 }
 
-                assert!(self.type_name.len() == 0);
+                assert!(self.type_name.len() == 0, "error generating cdecl for {:?}", t);
                 self.type_name = path.name.clone();
-                assert!(self.type_generic_args.len() == 0);
+                assert!(self.type_generic_args.len() == 0, "error generating cdecl for {:?}", t);
                 self.type_generic_args = path.generics.clone();
             }
             &Type::Primitive(ref p) => {
                 if is_const {
-                    assert!(self.type_qualifers.len() == 0);
+                    assert!(self.type_qualifers.len() == 0, "error generating cdecl for {:?}", t);
                     self.type_qualifers = "const".to_owned();
                 }
 
-                assert!(self.type_name.len() == 0);
+                assert!(self.type_name.len() == 0, "error generating cdecl for {:?}", t);
                 self.type_name = p.to_string();
             }
 
