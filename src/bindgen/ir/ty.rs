@@ -131,7 +131,7 @@ impl PrimitiveType {
             &PrimitiveType::UInt => "unsigned int",
             &PrimitiveType::ULong => "unsigned long",
             &PrimitiveType::ULongLong => "unsigned long long",
-            &PrimitiveType::USize => "size_t",
+            &PrimitiveType::USize => "uintptr_t",
             &PrimitiveType::UInt8 => "uint8_t",
             &PrimitiveType::UInt16 => "uint16_t",
             &PrimitiveType::UInt32 => "uint32_t",
