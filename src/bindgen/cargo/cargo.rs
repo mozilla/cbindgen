@@ -39,11 +39,15 @@ impl Cargo {
     /// need to be parsed.
     pub(crate) fn load(
         crate_dir: &Path,
+        lock_file: Option<&str>,
         binding_crate_name: Option<&str>,
         use_cargo_lock: bool,
     ) -> Result<Cargo, Error> {
         let toml_path = crate_dir.join("Cargo.toml");
-        let lock_path = crate_dir.join("Cargo.lock");
+        let lock_path = match lock_file {
+            Some(v) => PathBuf::from(v),
+            None => crate_dir.join("Cargo.lock")
+        };
 
         let lock = if use_cargo_lock {
             match cargo_lock::lock(&lock_path) {

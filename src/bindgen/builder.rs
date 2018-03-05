@@ -263,11 +263,12 @@ impl Builder {
             let cargo = if let Some(binding_lib_name) = binding_lib_name {
                 Cargo::load(
                     &lib_dir,
+                    None,
                     Some(&binding_lib_name),
                     self.config.parse.parse_deps,
                 )?
             } else {
-                Cargo::load(&lib_dir, None, self.config.parse.parse_deps)?
+                Cargo::load(&lib_dir, None, None, self.config.parse.parse_deps)?
             };
 
             result.extend_with(&parser::parse_lib(
