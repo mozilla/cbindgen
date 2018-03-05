@@ -23,8 +23,9 @@ tempdir = "0.3"
 toml = "0.4"
 
 [dependencies.standalone-syn]
-version = "0.12.10"
-features = ["extra-traits", "full"]
+version = "0.13.0"
+default-features = false
+features = ["clone-impls", "derive", "extra-traits", "full", "parsing", "printing"]
 
 [[bin]]
 name = "cbindgen"
