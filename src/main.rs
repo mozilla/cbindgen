@@ -61,7 +61,7 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
     }
 
     // We have to load a whole crate, so we use cargo to gather metadata
-    let lib = Cargo::load(input, matches.value_of("crate"), true)?;
+    let lib = Cargo::load(input, matches.value_of("lockfile"), matches.value_of("crate"), true)?;
 
     // Load any config specified or search in the binding crate directory
     let mut config = match matches.value_of("config") {
@@ -119,7 +119,10 @@ fn main() {
         )
         .arg(
             Arg::with_name("INPUT")
-                .help("A crate directory or source file to generate bindings for")
+                .help(
+                    "A crate directory or source file to generate bindings for. \
+                    In general this is the folder where the Cargo.toml file of \
+                    source Rust library resides.")
                 .required(false)
                 .index(1),
         )
@@ -139,6 +142,17 @@ fn main() {
                 .long("output")
                 .value_name("PATH")
                 .help("The file to output the bindings to")
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("lockfile")
+                .long("lockfile")
+                .value_name("PATH")
+                .help(
+                    "Specify the path to the Cargo.lock file explicitly. If this \
+                    is not specified, the Cargo.lock file is searched for in the \
+                    same folder as the Cargo.toml file. This option is useful for \
+                    projects that use workspaces.")
                 .required(false),
         )
         .get_matches();
