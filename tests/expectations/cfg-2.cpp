@@ -1,6 +1,14 @@
 #include <cstdint>
 #include <cstdlib>
 
+#if defined(NOT_DEFINED)
+static const int32_t DEFAULT_X = 8;
+#endif
+
+#if defined(DEFINED)
+static const int32_t DEFAULT_X = 42;
+#endif
+
 #if (defined(NOT_DEFINED) || defined(DEFINED))
 struct Foo {
   int32_t x;
