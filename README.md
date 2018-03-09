@@ -9,6 +9,8 @@
 
 This project can be used to generate C bindings for Rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/), but has been designed to support any project.
 
+Note: `cbindgen` temporarily requires `nightly`. See `#147` for information and current status.
+
 ## Features
 
   * Builds bindings for a crate, its mods, its dependent crates, and their mods
