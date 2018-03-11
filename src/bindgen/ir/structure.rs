@@ -217,7 +217,8 @@ impl Source for Struct {
 
         self.generic_params.write(config, out);
 
-        if config.language == Language::C {
+        let typedef_struct = config.export.typedef_struct(&self.name);
+        if config.language == Language::C && typedef_struct {
             out.write("typedef struct");
         } else {
             write!(out, "struct {}", self.name);
@@ -347,7 +348,10 @@ impl Source for Struct {
 
         if config.language == Language::C {
             out.close_brace(false);
-            write!(out, " {};", self.name);
+            if typedef_struct {
+                write!(out, " {}", self.name);
+            }
+            write!(out, ";");
         } else {
             out.close_brace(true);
         }

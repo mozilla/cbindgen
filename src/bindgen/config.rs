@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::default::Default;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
@@ -110,6 +110,8 @@ pub struct ExportConfig {
     pub rename: HashMap<String, String>,
     /// A prefix to add before the name of every item
     pub prefix: Option<String>,
+    /// A list of C structures to avoid declaring with a typedef
+    pub no_typedef: HashSet<String>
 }
 
 impl Default for ExportConfig {
@@ -118,6 +120,7 @@ impl Default for ExportConfig {
             include: Vec::new(),
             exclude: Vec::new(),
             rename: HashMap::new(),
+            no_typedef: HashSet::new(),
             prefix: None,
         }
     }
@@ -131,6 +134,10 @@ impl ExportConfig {
         if let Some(ref prefix) = self.prefix {
             item_name.insert_str(0, &prefix);
         }
+    }
+
+    pub(crate) fn typedef_struct(&self, item_name: &str) -> bool {
+        !self.no_typedef.contains(item_name)
     }
 }
 

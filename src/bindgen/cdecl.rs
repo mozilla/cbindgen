@@ -4,6 +4,7 @@
 
 use std::io::Write;
 
+use bindgen::config::{Config};
 use bindgen::ir::{Function, Type};
 use bindgen::writer::{ListType, SourceWriter};
 
@@ -114,13 +115,18 @@ impl CDecl {
         out: &mut SourceWriter<F>,
         ident: Option<&str>,
         void_prototype: bool,
+        config: &Config
     ) {
         // Write the type-specifier and type-qualifier first
         if self.type_qualifers.len() != 0 {
-            write!(out, "{} {}", self.type_qualifers, self.type_name);
-        } else {
+            write!(out, "{} ", self.type_qualifers);
+        }
+
+        if config.export.typedef_struct(&self.type_name) {
             write!(out, "{}", self.type_name);
-        };
+        } else {
+            write!(out, "struct {}", self.type_name);
+        }
 
         if !self.type_generic_args.is_empty() {
             out.write("<");
@@ -197,7 +203,7 @@ impl CDecl {
                             // Convert &Option<String> to Option<&str>
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
-                            arg_ty.write(out, arg_ident, void_prototype);
+                            arg_ty.write(out, arg_ident, void_prototype, config);
                         }
                         out.pop_tab();
                     } else {
@@ -209,7 +215,7 @@ impl CDecl {
                             // Convert &Option<String> to Option<&str>
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
-                            arg_ty.write(out, arg_ident, void_prototype);
+                            arg_ty.write(out, arg_ident, void_prototype, config);
                         }
                     }
                     out.write(")");
@@ -226,14 +232,15 @@ pub fn write_func<F: Write>(
     f: &Function,
     layout_vertical: bool,
     void_prototype: bool,
+    config: &Config
 ) {
-    &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name), void_prototype);
+    &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name), void_prototype, &config);
 }
 
-pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
-    &CDecl::from_type(t).write(out, Some(ident), false);
+pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str, config: &Config) {
+    &CDecl::from_type(t).write(out, Some(ident), false, &config);
 }
 
-pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type) {
-    &CDecl::from_type(t).write(out, None, false);
+pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type, config: &Config) {
+    &CDecl::from_type(t).write(out, None, false, &config);
 }
