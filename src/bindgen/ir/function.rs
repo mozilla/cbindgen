@@ -130,7 +130,7 @@ impl Source for Function {
                     out.write(" ");
                 }
             }
-            cdecl::write_func(out, &func, false, void_prototype);
+            cdecl::write_func(out, &func, false, void_prototype, &config);
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.write(" ");
@@ -159,7 +159,7 @@ impl Source for Function {
                     out.new_line();
                 }
             }
-            cdecl::write_func(out, &func, true, void_prototype);
+            cdecl::write_func(out, &func, true, void_prototype, &config);
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.new_line();

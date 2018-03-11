@@ -558,20 +558,20 @@ impl Source for String {
 }
 
 impl Source for Type {
-    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_type(out, &self);
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        cdecl::write_type(out, &self, config);
     }
 }
 
 impl Source for (String, Type) {
-    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_field(out, &self.1, &self.0);
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        cdecl::write_field(out, &self.1, &self.0, config);
     }
 }
 
 impl Source for (String, Type, Documentation) {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         self.2.write(config, out);
-        cdecl::write_field(out, &self.1, &self.0);
+        cdecl::write_field(out, &self.1, &self.0, config);
     }
 }
