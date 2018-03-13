@@ -126,8 +126,7 @@ impl Parser {
         }
 
         // Check the blacklist
-        let res = !STD_CRATES.contains(&pkg_name.as_ref()) && !self.exclude.contains(&pkg_name);
-        return res;
+        !STD_CRATES.contains(&pkg_name.as_ref()) && !self.exclude.contains(&pkg_name)
     }
 
     fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
