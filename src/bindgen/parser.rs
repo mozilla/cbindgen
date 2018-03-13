@@ -104,7 +104,7 @@ struct Parser {
 }
 
 impl Parser {
-    fn should_parse_dependency(&self, pkg_name: &String) -> bool {
+    fn should_parse_dependency(&self, pkg_name: &String, orig_name: &String) -> bool {
         if self.parsed_crates.contains(pkg_name) {
             return false;
         }
@@ -120,13 +120,14 @@ impl Parser {
 
         // If we have a whitelist, check it
         if let Some(ref include) = self.include {
-            if !include.contains(&pkg_name) {
+            if !include.contains(&orig_name) {
                 return false;
             }
         }
 
         // Check the blacklist
-        return !STD_CRATES.contains(&pkg_name.as_ref()) && !self.exclude.contains(&pkg_name);
+        let res = !STD_CRATES.contains(&pkg_name.as_ref()) && !self.exclude.contains(&pkg_name);
+        return res;
     }
 
     fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
@@ -212,7 +213,7 @@ impl Parser {
                         self.cfg_stack.push(cfg.clone());
                     }
 
-                    if self.should_parse_dependency(&dep_pkg_name) {
+                    if self.should_parse_dependency(&dep_pkg_name, &dep_pkg_name) {
                         if self.lib.is_some() {
                             let dep_pkg_ref =
                                 self.lib.as_ref().unwrap().find_dep_ref(pkg, &dep_pkg_name);
@@ -327,6 +328,7 @@ impl Parser {
                     }
                 }
                 &syn::Item::ExternCrate(ref item) => {
+                    let dep_pkg_real_name = item.ident.to_string();
                     let dep_pkg_name = if let Some((_, ref name)) = item.rename {
                         name.to_string()
                     } else {
@@ -338,10 +340,10 @@ impl Parser {
                         self.cfg_stack.push(cfg.clone());
                     }
 
-                    if self.should_parse_dependency(&dep_pkg_name) {
+                    if self.should_parse_dependency(&dep_pkg_name, &dep_pkg_real_name) {
                         if self.lib.is_some() {
                             let dep_pkg_ref =
-                                self.lib.as_ref().unwrap().find_dep_ref(pkg, &dep_pkg_name);
+                                self.lib.as_ref().unwrap().find_dep_ref(pkg, &dep_pkg_real_name);
 
                             if let Some(dep_pkg_ref) = dep_pkg_ref {
                                 self.parse_crate(&dep_pkg_ref)?;
