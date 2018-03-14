@@ -8,7 +8,7 @@ struct B;
 template<typename T>
 struct List {
   T *members;
-  size_t count;
+  uintptr_t count;
 };
 
 extern "C" {

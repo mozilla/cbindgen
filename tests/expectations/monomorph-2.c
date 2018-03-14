@@ -8,12 +8,12 @@ typedef struct B B;
 
 typedef struct {
   B *members;
-  size_t count;
+  uintptr_t count;
 } List_B;
 
 typedef struct {
   A *members;
-  size_t count;
+  uintptr_t count;
 } List_A;
 
 void bar(List_B b);
