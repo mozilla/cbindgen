@@ -313,12 +313,36 @@ impl Parser {
                         } else if next_mod_path2.exists() {
                             self.parse_mod(pkg, next_mod_path2.as_path())?;
                         } else {
+                            // Last chance to find a module path
+                            let mut path_attr_found = false;
+                            for attr in &item.attrs {
+                                if attr.is_sugared_doc {
+                                    continue;
+                                }
+
+                                match attr.interpret_meta() {
+                                    Some(syn::Meta::NameValue(syn::MetaNameValue { ident, lit, ..})) => {
+                                        match (ident.as_ref(), lit) {
+                                            ("path", syn::Lit::Str(ref path)) => {
+                                                path_attr_found = true;
+                                                self.parse_mod(pkg, &mod_dir.join(path.value()))?;
+                                                break;
+                                            }
+                                            _ => (),
+                                        }
+                                    }
+                                    _ => (),
+                                }
+                            }
+
                             // This should be an error, but it's common enough to
                             // just elicit a warning
-                            warn!(
-                                "Parsing crate `{}`: can't find mod {}`.",
-                                pkg.name, next_mod_name
-                            );
+                            if !path_attr_found {
+                                warn!(
+                                    "Parsing crate `{}`: can't find mod {}`.",
+                                    pkg.name, next_mod_name
+                                );
+                            }
                         }
                     }
 
