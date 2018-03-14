@@ -351,11 +351,7 @@ impl Parser {
                     }
                 }
                 &syn::Item::ExternCrate(ref item) => {
-                    let dep_pkg_name = if let Some((_, ref name)) = item.rename {
-                        name.to_string()
-                    } else {
-                        item.ident.to_string()
-                    };
+                    let dep_pkg_name = item.ident.to_string();
 
                     let cfg = Cfg::load(&item.attrs);
                     if let &Some(ref cfg) = &cfg {

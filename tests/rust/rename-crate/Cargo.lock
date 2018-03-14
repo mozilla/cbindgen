@@ -1,0 +1,11 @@
+[[package]]
+name = "dependency"
+version = "0.1.0"
+
+[[package]]
+name = "rename-crate"
+version = "0.1.0"
+dependencies = [
+ "dependency 0.1.0",
+]
+
