@@ -80,6 +80,14 @@ enum J {
     Baz
 }
 
+#[repr(C)]
+enum K {
+    k1,
+    k2,
+    k3,
+    k4,
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     o: *mut Opaque,
@@ -92,5 +100,6 @@ pub extern "C" fn root(
     g: G,
     h: H,
     i: I,
-    j: J
+    j: J,
+    k: K,
 ) { }

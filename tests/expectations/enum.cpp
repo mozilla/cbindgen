@@ -36,6 +36,13 @@ enum class E : intptr_t {
   e4 = 5,
 };
 
+enum class K {
+  k1,
+  k2,
+  k3,
+  k4,
+};
+
 struct I;
 
 struct J;
@@ -115,6 +122,6 @@ struct H {
 
 extern "C" {
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k);
 
 } // extern "C"

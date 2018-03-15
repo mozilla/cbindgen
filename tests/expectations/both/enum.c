@@ -42,7 +42,7 @@ enum E {
 };
 typedef intptr_t E;
 
-typedef enum {
+typedef enum K {
   k1,
   k2,
   k3,
@@ -62,39 +62,39 @@ enum F_Tag {
 };
 typedef uint8_t F_Tag;
 
-typedef struct {
+typedef struct Foo_Body {
   F_Tag tag;
   int16_t _0;
 } Foo_Body;
 
-typedef struct {
+typedef struct Bar_Body {
   F_Tag tag;
   uint8_t x;
   int16_t y;
 } Bar_Body;
 
-typedef union {
+typedef union F {
   F_Tag tag;
   Foo_Body foo;
   Bar_Body bar;
 } F;
 
-typedef enum {
+typedef enum G_Tag {
   G_Foo,
   G_Bar,
   G_Baz,
 } G_Tag;
 
-typedef struct {
+typedef struct G_Foo_Body {
   int16_t _0;
 } G_Foo_Body;
 
-typedef struct {
+typedef struct G_Bar_Body {
   uint8_t x;
   int16_t y;
 } G_Bar_Body;
 
-typedef struct {
+typedef struct G {
   G_Tag tag;
   union {
     G_Foo_Body foo;
@@ -109,16 +109,16 @@ enum H_Tag {
 };
 typedef uint8_t H_Tag;
 
-typedef struct {
+typedef struct H_Foo_Body {
   int16_t _0;
 } H_Foo_Body;
 
-typedef struct {
+typedef struct H_Bar_Body {
   uint8_t x;
   int16_t y;
 } H_Bar_Body;
 
-typedef struct {
+typedef struct H {
   H_Tag tag;
   union {
     H_Foo_Body foo;
