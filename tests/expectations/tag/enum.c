@@ -42,18 +42,18 @@ enum E {
 };
 typedef intptr_t E;
 
-typedef enum {
+enum K {
   k1,
   k2,
   k3,
   k4,
-} K;
+};
 
-typedef struct I I;
+struct I;
 
-typedef struct J J;
+struct J;
 
-typedef struct Opaque Opaque;
+struct Opaque;
 
 enum F_Tag {
   Foo,
@@ -62,45 +62,45 @@ enum F_Tag {
 };
 typedef uint8_t F_Tag;
 
-typedef struct {
+struct Foo_Body {
   F_Tag tag;
   int16_t _0;
-} Foo_Body;
+};
 
-typedef struct {
+struct Bar_Body {
   F_Tag tag;
   uint8_t x;
   int16_t y;
-} Bar_Body;
+};
 
-typedef union {
-  F_Tag tag;
-  Foo_Body foo;
-  Bar_Body bar;
-} F;
+union F {
+  enum F_Tag tag;
+  struct Foo_Body foo;
+  struct Bar_Body bar;
+};
 
-typedef enum {
+enum G_Tag {
   G_Foo,
   G_Bar,
   G_Baz,
-} G_Tag;
+};
 
-typedef struct {
+struct G_Foo_Body {
   int16_t _0;
-} G_Foo_Body;
+};
 
-typedef struct {
+struct G_Bar_Body {
   uint8_t x;
   int16_t y;
-} G_Bar_Body;
+};
 
-typedef struct {
-  G_Tag tag;
+struct G {
+  enum G_Tag tag;
   union {
-    G_Foo_Body foo;
-    G_Bar_Body bar;
+    struct G_Foo_Body foo;
+    struct G_Bar_Body bar;
   };
-} G;
+};
 
 enum H_Tag {
   H_Foo,
@@ -109,21 +109,32 @@ enum H_Tag {
 };
 typedef uint8_t H_Tag;
 
-typedef struct {
+struct H_Foo_Body {
   int16_t _0;
-} H_Foo_Body;
+};
 
-typedef struct {
+struct H_Bar_Body {
   uint8_t x;
   int16_t y;
-} H_Bar_Body;
+};
 
-typedef struct {
-  H_Tag tag;
+struct H {
+  enum H_Tag tag;
   union {
-    H_Foo_Body foo;
-    H_Bar_Body bar;
+    struct H_Foo_Body foo;
+    struct H_Bar_Body bar;
   };
-} H;
+};
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k);
+void root(struct Opaque *o,
+          A a,
+          B b,
+          C c,
+          D d,
+          E e,
+          union F f,
+          struct G g,
+          struct H h,
+          struct I i,
+          struct J j,
+          enum K k);

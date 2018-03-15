@@ -13,13 +13,16 @@ def build_cbindgen():
     except subprocess.CalledProcessError:
         return False
 
-def cbindgen(path, out, c):
+def cbindgen(path, out, c, style):
     bin = ["cargo", "run", "--"]
     compile = [path, "-o", out]
     flags = []
 
     if c:
         flags += ["--lang", "c"]
+
+    if style:
+        flags += ["--style", style]
 
     config = path.replace(".rs", ".toml")
     if not os.path.isdir(path) and os.path.exists(config):
@@ -45,7 +48,7 @@ def gxx(src):
     subprocess.check_output([gxx_bin, "-D", "DEFINED", "-std=c++11", "-c", src, "-o", "tests/expectations/tmp.o"])
     os.remove("tests/expectations/tmp.o")
 
-def run_compile_test(rust_src, should_verify, c):
+def run_compile_test(rust_src, should_verify, c, style=""):
     is_crate = os.path.isdir(rust_src)
 
     test_name = rust_src
@@ -59,7 +62,8 @@ def run_compile_test(rust_src, should_verify, c):
         expectation = False
 
     if c:
-        out = os.path.join('tests/expectations/', test_name + ".c")
+        subdir = style if style != "type" else ""
+        out = os.path.join('tests/expectations/', subdir, test_name + ".c")
         verify = 'tests/expectations/__verify__.c'
     else:
         out = os.path.join('tests/expectations/', test_name + ".cpp")
@@ -67,7 +71,7 @@ def run_compile_test(rust_src, should_verify, c):
 
     try:
         if should_verify:
-            cbindgen(rust_src, verify, c)
+            cbindgen(rust_src, verify, c, style)
 
             if c:
                 gcc(verify)
@@ -79,7 +83,7 @@ def run_compile_test(rust_src, should_verify, c):
                 return False
             os.remove(verify)
         else:
-            cbindgen(rust_src, out, c)
+            cbindgen(rust_src, out, c, style)
 
             if c:
                 gcc(out)
@@ -118,12 +122,13 @@ num_fail = 0
 # C
 
 for test in tests:
-    if run_compile_test(test, should_verify, True):
-        num_pass += 1
-        print("Pass - %s" % test)
-    else:
-        num_fail += 1
-        print("Fail - %s" % test)
+    for style in ["type", "tag", "both"]:
+        if run_compile_test(test, should_verify, True, style):
+            num_pass += 1
+            print("Pass - %s" % test)
+        else:
+            num_fail += 1
+            print("Fail - %s" % test)
 
 # C++
 
