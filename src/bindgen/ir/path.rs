@@ -5,6 +5,7 @@
 use syn;
 
 use bindgen::ir::Type;
+use bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use bindgen::utilities::IterHelpers;
 
 pub type Path = String;
@@ -13,6 +14,7 @@ pub type Path = String;
 pub struct GenericPath {
     pub name: String,
     pub generics: Vec<Type>,
+    pub ctype: Option<DeclarationType>,
 }
 
 impl GenericPath {
@@ -20,7 +22,12 @@ impl GenericPath {
         GenericPath {
             name: name,
             generics: generics,
+            ctype: None,
         }
+    }
+
+    pub fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
+        self.ctype = resolver.type_for(&self.name);
     }
 
     pub fn load(path: &syn::Path) -> Result<GenericPath, String> {

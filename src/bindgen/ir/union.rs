@@ -7,6 +7,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
+use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
                   Repr, Type};
@@ -102,6 +103,16 @@ impl Item for Union {
 
     fn container(&self) -> ItemContainer {
         ItemContainer::Union(self.clone())
+    }
+
+    fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
+        resolver.add_union(&self.name);
+    }
+
+    fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
+        for &mut (_, ref mut ty, _) in &mut self.fields {
+            ty.resolve_declaration_types(resolver);
+        }
     }
 
     fn rename_for_config(&mut self, config: &Config) {
@@ -205,11 +216,23 @@ impl Source for Union {
 
         self.generic_params.write(config, out);
 
-        if config.language == Language::C {
-            out.write("typedef union");
-        } else {
-            write!(out, "union {}", self.name);
+        // The following results in
+        // C++ or C with Tag as style:
+        //   union Name {
+        // C with Type only style:
+        //   typedef union {
+        // C with Both as style:
+        //   typedef union Name {
+        if config.language == Language::C && config.style.generate_typedef() {
+            out.write("typedef ");
         }
+
+        out.write("union");
+
+        if config.language == Language::Cxx || config.style.generate_tag() {
+            write!(out, " {}", self.name);
+        }
+
         out.open_brace();
 
         if config.documentation {
@@ -224,7 +247,7 @@ impl Source for Union {
             );
         }
 
-        if config.language == Language::C {
+        if config.language == Language::C && config.style.generate_typedef() {
             out.close_brace(false);
             write!(out, " {};", self.name);
         } else {

@@ -8,6 +8,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
+use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
                   Path, Type};
@@ -112,6 +113,10 @@ impl Item for Typedef {
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.name);
         self.aliased.rename_for_config(config);
+    }
+
+    fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
+        self.aliased.resolve_declaration_types(resolver);
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {

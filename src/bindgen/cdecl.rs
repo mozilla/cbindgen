@@ -4,6 +4,7 @@
 
 use std::io::Write;
 
+use bindgen::declarationtyperesolver::DeclarationType;
 use bindgen::ir::{Function, Type};
 use bindgen::writer::{ListType, SourceWriter};
 
@@ -32,6 +33,7 @@ struct CDecl {
     type_name: String,
     type_generic_args: Vec<Type>,
     declarators: Vec<CDeclarator>,
+    type_ctype: Option<DeclarationType>,
 }
 
 impl CDecl {
@@ -41,6 +43,7 @@ impl CDecl {
             type_name: String::new(),
             type_generic_args: Vec::new(),
             declarators: Vec::new(),
+            type_ctype: None,
         }
     }
 
@@ -77,6 +80,7 @@ impl CDecl {
                 self.type_name = path.name.clone();
                 assert!(self.type_generic_args.len() == 0, "error generating cdecl for {:?}", t);
                 self.type_generic_args = path.generics.clone();
+                self.type_ctype = path.ctype;
             }
             &Type::Primitive(ref p) => {
                 if is_const {
@@ -117,10 +121,14 @@ impl CDecl {
     ) {
         // Write the type-specifier and type-qualifier first
         if self.type_qualifers.len() != 0 {
-            write!(out, "{} {}", self.type_qualifers, self.type_name);
-        } else {
-            write!(out, "{}", self.type_name);
-        };
+            write!(out, "{} ", self.type_qualifers);
+        }
+
+        if let Some(ref ctype) = self.type_ctype {
+            write!(out, "{} ", ctype.to_str());
+        }
+
+        write!(out, "{}", self.type_name);
 
         if !self.type_generic_args.is_empty() {
             out.write("<");
