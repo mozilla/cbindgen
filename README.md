@@ -85,6 +85,8 @@ line_length = 80
 tab_width = 2
 # The language to output bindings in
 language = "[C|C++]"
+# A rule to use to select style of declaration in C, tagname vs typedef
+style = "[Both|Type|Tag]"
 
 [parse]
 # Whether to parse dependent crates and include their types in the generated

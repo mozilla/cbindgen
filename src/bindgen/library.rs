@@ -7,6 +7,7 @@ use std::mem;
 
 use bindgen::bindings::Bindings;
 use bindgen::config::{Config, Language};
+use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::error::Error;
 use bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
@@ -60,6 +61,8 @@ impl Library {
 
         if self.config.language == Language::C {
             self.instantiate_monomorphs();
+
+            self.resolve_declaration_types();
         }
 
         let mut dependencies = Dependencies::new();
@@ -263,6 +266,49 @@ impl Library {
 
         for item in &mut self.functions {
             item.rename_for_config(&self.config);
+        }
+    }
+
+    fn resolve_declaration_types(&mut self) {
+        if self.config.style.generate_typedef() {
+            return;
+        }
+
+        let mut resolver = DeclarationTypeResolver::new();
+
+        self.structs.for_all_items(|x| {
+            x.collect_declaration_types(&mut resolver);
+        });
+
+        self.opaque_items.for_all_items(|x| {
+            x.collect_declaration_types(&mut resolver);
+        });
+
+        self.enums.for_all_items(|x| {
+            x.collect_declaration_types(&mut resolver);
+        });
+
+        self.unions.for_all_items(|x| {
+            x.collect_declaration_types(&mut resolver);
+        });
+
+        self.enums
+            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+
+        self.structs
+            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+
+        self.unions
+            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+
+        self.typedefs
+            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+
+        self.globals
+            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+
+        for item in &mut self.functions {
+            item.resolve_declaration_types(&resolver);
         }
     }
 

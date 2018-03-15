@@ -9,6 +9,7 @@ use syn;
 
 use bindgen::cdecl;
 use bindgen::config::Config;
+use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{Documentation, GenericParams, GenericPath, Path};
 use bindgen::library::Library;
@@ -486,6 +487,30 @@ impl Type {
                 ret.rename_for_config(config);
                 for arg in args {
                     arg.rename_for_config(config);
+                }
+            }
+        }
+    }
+
+    pub fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
+        match self {
+            &mut Type::ConstPtr(ref mut ty) => {
+                ty.resolve_declaration_types(resolver);
+            }
+            &mut Type::Ptr(ref mut ty) => {
+                ty.resolve_declaration_types(resolver);
+            }
+            &mut Type::Path(ref mut path) => {
+                path.resolve_declaration_types(resolver);
+            }
+            &mut Type::Primitive(_) => {}
+            &mut Type::Array(ref mut ty, _) => {
+                ty.resolve_declaration_types(resolver);
+            }
+            &mut Type::FuncPtr(ref mut ret, ref mut args) => {
+                ret.resolve_declaration_types(resolver);
+                for arg in args {
+                    arg.resolve_declaration_types(resolver);
                 }
             }
         }

@@ -7,6 +7,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
+use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
                   Path, Type};
@@ -62,6 +63,10 @@ impl Item for OpaqueItem {
         ItemContainer::OpaqueItem(self.clone())
     }
 
+    fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
+        resolver.add_struct(&self.name);
+    }
+
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.name);
     }
@@ -101,7 +106,8 @@ impl Source for OpaqueItem {
 
         self.generic_params.write(config, out);
 
-        if config.language == Language::C {
+        if config.style.generate_typedef() &&
+            config.language == Language::C {
             write!(out, "typedef struct {} {};", self.name, self.name);
         } else {
             write!(out, "struct {};", self.name);

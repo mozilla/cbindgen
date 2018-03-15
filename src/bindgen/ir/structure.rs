@@ -7,9 +7,10 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
+use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
-                  Repr, Type};
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item,
+                  ItemContainer, Repr, Type};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -116,6 +117,16 @@ impl Item for Struct {
         ItemContainer::Struct(self.clone())
     }
 
+    fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
+        resolver.add_struct(&self.name);
+    }
+
+    fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
+        for &mut (_, ref mut ty, _) in &mut self.fields {
+            ty.resolve_declaration_types(resolver);
+        }
+    }
+
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.name);
         for &mut (_, ref mut ty, _) in &mut self.fields {
@@ -217,11 +228,23 @@ impl Source for Struct {
 
         self.generic_params.write(config, out);
 
-        if config.language == Language::C {
-            out.write("typedef struct");
-        } else {
-            write!(out, "struct {}", self.name);
+        // The following results in
+        // C++ or C with Tag as style:
+        //   struct Name {
+        // C with Type only style:
+        //   typedef struct {
+        // C with Both as style:
+        //   typedef struct Name {
+        if config.language == Language::C && config.style.generate_typedef() {
+            out.write("typedef ");
         }
+
+        out.write("struct");
+
+        if config.language == Language::Cxx || config.style.generate_tag() {
+            write!(out, " {}", self.name);
+        }
+
         out.open_brace();
 
         if config.documentation {
@@ -345,7 +368,7 @@ impl Source for Struct {
             }
         }
 
-        if config.language == Language::C {
+        if config.language == Language::C && config.style.generate_typedef() {
             out.close_brace(false);
             write!(out, " {};", self.name);
         } else {

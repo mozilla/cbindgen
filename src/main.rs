@@ -20,7 +20,7 @@ use clap::{App, Arg, ArgMatches};
 mod logging;
 mod bindgen;
 
-use bindgen::{Bindings, Builder, Cargo, Config, Error, Language};
+use bindgen::{Bindings, Builder, Cargo, Config, Error, Language, Style};
 
 fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // We allow specifying a language to override the config default. This is
@@ -36,6 +36,21 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
                 return;
             }
         };
+    }
+
+    if let Some(style) = matches.value_of("style") {
+        config.style = match style {
+            "Both" => Style::Both,
+            "both" => Style::Both,
+            "Tag" =>  Style::Tag,
+            "tag" =>  Style::Tag,
+            "Type" => Style::Type,
+            "type" => Style::Type,
+            _ => {
+                error!("Unknown style specified.");
+                return;
+            }
+        }
     }
 
     if matches.is_present("d") {
@@ -110,6 +125,14 @@ fn main() {
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
                 .possible_values(&["c++", "C++", "c", "C"]),
+        )
+        .arg(
+            Arg::with_name("style")
+                .short("s")
+                .long("style")
+                .value_name("STYLE")
+                .help("Specify the declaration style to use for bindings")
+                .possible_values(&["Both", "both", "Tag", "tag", "Type", "type"]),
         )
         .arg(
             Arg::with_name("d")

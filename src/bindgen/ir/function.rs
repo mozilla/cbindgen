@@ -8,6 +8,7 @@ use syn;
 
 use bindgen::cdecl;
 use bindgen::config::{Config, Language, Layout};
+use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, PrimitiveType, Type};
 use bindgen::library::Library;
@@ -83,6 +84,13 @@ impl Function {
         self.ret.mangle_paths(monomorphs);
         for &mut (_, ref mut ty) in &mut self.args {
             ty.mangle_paths(monomorphs);
+        }
+    }
+
+    pub fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
+        self.ret.resolve_declaration_types(resolver);
+        for &mut (_, ref mut ty) in &mut self.args {
+            ty.resolve_declaration_types(resolver);
         }
     }
 
