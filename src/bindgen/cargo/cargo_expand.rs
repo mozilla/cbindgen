@@ -8,9 +8,6 @@ use std::path::Path;
 use std::process::Command;
 use std::str::{Utf8Error, from_utf8};
 
-extern crate tempdir;
-use self::tempdir::TempDir;
-
 #[derive(Debug)]
 /// Possible errors that can occur during `rustc --pretty=expanded`.
 pub enum Error {
@@ -37,39 +34,31 @@ impl From<Utf8Error> for Error {
 /// removing any macros in the process.
 pub fn expand(manifest_path: &Path, crate_name: &str, version: &str) -> Result<String, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
-    let run = |target_dir: &Path| {
-        let mut cmd = Command::new(cargo);
-        cmd.env("CARGO_TARGET_DIR", target_dir);
-        cmd.arg("rustc");
-        cmd.arg("--lib");
-        cmd.arg("--manifest-path");
-        cmd.arg(manifest_path);
-        cmd.arg("--all-features");
-        cmd.arg("-p");
-        cmd.arg(&format!("{}:{}", crate_name, version));
-        cmd.arg("--");
-        cmd.arg("-Z");
-        cmd.arg("unstable-options");
-        cmd.arg("--pretty=expanded");
-        let output = cmd.output()?;
-
-        let src = from_utf8(&output.stdout)?.to_owned();
-        let error = from_utf8(&output.stderr)?.to_owned();
-
-        if src.len() == 0 {
-            Err(Error::Compile(error))
-        } else {
-            Ok(src)
-        }
-    };
+    let mut cmd = Command::new(cargo);
 
     if let Ok(ref path) = env::var("CARGO_EXPAND_TARGET_DIR") {
-        run(&Path::new(path))
-    } else {
-        // Create a temp directory to use as a target dir for cargo expand, for
-        // hygenic purposes.
-        let target_dir = TempDir::new("cbindgen-expand")?;
+        cmd.env("CARGO_TARGET_DIR", path);
+    }
 
-        run(target_dir.path())
+    cmd.arg("rustc");
+    cmd.arg("--lib");
+    cmd.arg("--manifest-path");
+    cmd.arg(manifest_path);
+    cmd.arg("--all-features");
+    cmd.arg("-p");
+    cmd.arg(&format!("{}:{}", crate_name, version));
+    cmd.arg("--");
+    cmd.arg("-Z");
+    cmd.arg("unstable-options");
+    cmd.arg("--pretty=expanded");
+    let output = cmd.output()?;
+
+    let src = from_utf8(&output.stdout)?.to_owned();
+    let error = from_utf8(&output.stderr)?.to_owned();
+
+    if src.len() == 0 {
+        Err(Error::Compile(error))
+    } else {
+        Ok(src)
     }
 }
