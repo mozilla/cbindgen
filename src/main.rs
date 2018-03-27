@@ -112,6 +112,11 @@ fn main() {
                 .help("Enable verbose logging"),
         )
         .arg(
+            Arg::with_name("verify")
+                .long("verify")
+                .help("Generate bindings and compare it to the existing bindings file and error if they are different"),
+        )
+        .arg(
             Arg::with_name("config")
                 .short("c")
                 .long("config")
@@ -180,6 +185,11 @@ fn main() {
         )
         .get_matches();
 
+    if !matches.is_present("out") && matches.is_present("verify") {
+        error!("Cannot verify bindings against `stdout`, please specify a file to compare against.");
+        std::process::exit(2);
+    }
+
     // Initialize logging
     match matches.occurrences_of("v") {
         0 => logging::WarnLogger::init().unwrap(),
@@ -205,7 +215,11 @@ fn main() {
     // Write the bindings file
     match matches.value_of("out") {
         Some(file) => {
-            bindings.write_to_file(file);
+            let changed = bindings.write_to_file(file);
+
+            if matches.is_present("verify") && changed {
+                std::process::exit(2);
+            }
         }
         _ => {
             bindings.write(io::stdout());

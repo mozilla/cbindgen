@@ -13,8 +13,8 @@ def build_cbindgen():
     except subprocess.CalledProcessError:
         return False
 
-def cbindgen(path, out, c, style):
-    bin = ["cargo", "run", "--"]
+def cbindgen(path, out, c, style, verify):
+    bin = ["target/debug/cbindgen"]
     compile = [path, "-o", out]
     flags = []
 
@@ -23,6 +23,9 @@ def cbindgen(path, out, c, style):
 
     if style:
         flags += ["--style", style]
+
+    if verify:
+        flags += ["--verify"]
 
     config = path.replace(".rs", ".toml")
     if not os.path.isdir(path) and os.path.exists(config):
@@ -48,7 +51,7 @@ def gxx(src):
     subprocess.check_output([gxx_bin, "-D", "DEFINED", "-std=c++11", "-c", src, "-o", "tests/expectations/tmp.o"])
     os.remove("tests/expectations/tmp.o")
 
-def run_compile_test(rust_src, should_verify, c, style=""):
+def run_compile_test(rust_src, verify, c, style=""):
     is_crate = os.path.isdir(rust_src)
 
     test_name = rust_src
@@ -64,35 +67,20 @@ def run_compile_test(rust_src, should_verify, c, style=""):
     if c:
         subdir = style if style != "type" else ""
         out = os.path.join('tests/expectations/', subdir, test_name + ".c")
-        verify = 'tests/expectations/__verify__.c'
     else:
         out = os.path.join('tests/expectations/', test_name + ".cpp")
-        verify = 'tests/expectations/__verify__.cpp'
 
     try:
-        if should_verify:
-            cbindgen(rust_src, verify, c, style)
-
-            if c:
-                gcc(verify)
-            else:
-                gxx(verify)
-
-            if not filecmp.cmp(out, verify):
-                os.remove(verify)
-                return False
-            os.remove(verify)
-        else:
-            cbindgen(rust_src, out, c, style)
-
-            if c:
-                gcc(out)
-            else:
-                gxx(out)
-
+        cbindgen(rust_src, out, c, style, verify)
     except subprocess.CalledProcessError:
-        if os.path.exists(verify):
-            os.remove(verify)
+        return False;
+
+    try:
+        if c:
+            gcc(out)
+        else:
+            gxx(out)
+    except subprocess.CalledProcessError:
         return expectation == False
 
     return expectation == True
@@ -104,11 +92,11 @@ args = sys.argv[1:]
 files = [x for x in args if not x.startswith("-")]
 flags = [x for x in args if x.startswith("-")]
 
-should_verify = False
+verify = False
 
 for flag in flags:
     if flag == "-v":
-        should_verify = True
+        verify = True
 
 tests = []
 if len(files) == 0:
@@ -123,7 +111,7 @@ num_fail = 0
 
 for test in tests:
     for style in ["type", "tag", "both"]:
-        if run_compile_test(test, should_verify, True, style):
+        if run_compile_test(test, verify, True, style):
             num_pass += 1
             print("Pass - %s" % test)
         else:
@@ -133,7 +121,7 @@ for test in tests:
 # C++
 
 for test in tests:
-    if run_compile_test(test, should_verify, False):
+    if run_compile_test(test, verify, False):
         num_pass += 1
         print("Pass - %s" % test)
     else:

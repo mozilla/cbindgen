@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::io::Write;
+use std::io::{Read, Write};
 use std::fs::File;
 use std::path;
 use std::fs;
@@ -37,12 +37,32 @@ impl Bindings {
         }
     }
 
-    pub fn write_to_file<P: AsRef<path::Path>>(&self, path: P) {
-        if let Some(parent) = path::Path::new(path.as_ref()).parent() {
-            fs::create_dir_all(parent).unwrap();
+    pub fn write_to_file<P: AsRef<path::Path>>(&self, path: P) -> bool {
+        // Don't compare files if we've never written this file before
+        if !path.as_ref().is_file() {
+            if let Some(parent) = path::Path::new(path.as_ref()).parent() {
+                fs::create_dir_all(parent).unwrap();
+            }
+            self.write(File::create(path).unwrap());
+            return true;
         }
 
-        self.write(File::create(path).unwrap());
+        let mut new_file_contents = Vec::new();
+        self.write(&mut new_file_contents);
+
+        let mut old_file_contents = Vec::new();
+        {
+            let mut old_file = File::open(&path).unwrap();
+            old_file.read_to_end(&mut old_file_contents).unwrap();
+        }
+
+        if old_file_contents != new_file_contents {
+            let mut new_file = File::create(&path).unwrap();
+            new_file.write_all(&new_file_contents).unwrap();
+            true
+        } else {
+            false
+        }
     }
 
     pub fn write<F: Write>(&self, file: F) {
