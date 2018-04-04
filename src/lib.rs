@@ -7,7 +7,7 @@ extern crate log;
 #[macro_use]
 extern crate serde;
 extern crate serde_json;
-extern crate standalone_syn as syn;
+extern crate syn;
 extern crate toml;
 
 mod bindgen;
