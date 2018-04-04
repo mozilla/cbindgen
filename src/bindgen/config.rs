@@ -379,6 +379,9 @@ pub struct ParseConfig {
     pub exclude: Vec<String>,
     /// The names of crates to parse with `rustc --pretty=expanded`
     pub expand: Vec<String>,
+    /// Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
+    /// This may be required for some build processes.
+    pub clean: bool
 }
 
 impl Default for ParseConfig {
@@ -388,6 +391,7 @@ impl Default for ParseConfig {
             include: None,
             exclude: Vec::new(),
             expand: Vec::new(),
+            clean: false,
         }
     }
 }

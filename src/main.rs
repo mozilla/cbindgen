@@ -76,7 +76,13 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
     }
 
     // We have to load a whole crate, so we use cargo to gather metadata
-    let lib = Cargo::load(input, matches.value_of("lockfile"), matches.value_of("crate"), true)?;
+    let lib = Cargo::load(
+        input,
+        matches.value_of("lockfile"),
+        matches.value_of("crate"),
+        true,
+        matches.is_present("clean")
+    )?;
 
     // Load any config specified or search in the binding crate directory
     let mut config = match matches.value_of("config") {
@@ -144,6 +150,14 @@ fn main() {
                 .short("d")
                 .long("parse-dependencies")
                 .help("Whether to parse dependencies when generating bindings"),
+        )
+        .arg(
+            Arg::with_name("clean")
+                .long("clean")
+                .help(
+                    "Whether to use a new temporary directory for expanding macros. \
+                    Affects performance, but might be required in certain build processes.")
+                .required(false)
         )
         .arg(
             Arg::with_name("INPUT")

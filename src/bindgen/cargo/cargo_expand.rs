@@ -8,6 +8,9 @@ use std::path::Path;
 use std::process::Command;
 use std::str::{Utf8Error, from_utf8};
 
+extern crate tempdir;
+use self::tempdir::TempDir;
+
 #[derive(Debug)]
 /// Possible errors that can occur during `rustc --pretty=expanded`.
 pub enum Error {
@@ -32,11 +35,15 @@ impl From<Utf8Error> for Error {
 
 /// Use rustc to expand and pretty print the crate into a single file,
 /// removing any macros in the process.
-pub fn expand(manifest_path: &Path, crate_name: &str, version: &str) -> Result<String, Error> {
+pub fn expand(manifest_path: &Path, crate_name: &str, version: &str, use_tempdir: bool) -> Result<String, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
 
-    if let Ok(ref path) = env::var("CARGO_EXPAND_TARGET_DIR") {
+    let mut _temp_dir = None; // drop guard
+    if use_tempdir {
+        _temp_dir = Some(TempDir::new("cbindgen-expand")?);
+        cmd.env("CARGO_TARGET_DIR", _temp_dir.unwrap().path());
+    } else if let Ok(ref path) = env::var("CARGO_EXPAND_TARGET_DIR") {
         cmd.env("CARGO_TARGET_DIR", path);
     }
 

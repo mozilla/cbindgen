@@ -266,9 +266,10 @@ impl Builder {
                     None,
                     Some(&binding_lib_name),
                     self.config.parse.parse_deps,
+                    self.config.parse.clean
                 )?
             } else {
-                Cargo::load(&lib_dir, None, None, self.config.parse.parse_deps)?
+                Cargo::load(&lib_dir, None, None, self.config.parse.parse_deps, self.config.parse.clean)?
             };
 
             result.extend_with(&parser::parse_lib(

@@ -99,6 +99,9 @@ exclude = ["libc"]
 # A list of crate names that should be run through `cargo expand` before
 # parsing to expand any macros
 expand = ["euclid"]
+# Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
+# This may be required for some build processes.
+clean = false
 
 [export]
 # A list of additional items not used by exported functions to include in

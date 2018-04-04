@@ -31,6 +31,7 @@ pub(crate) struct Cargo {
 
     lock: Option<Lock>,
     metadata: Metadata,
+    clean: bool
 }
 
 impl Cargo {
@@ -42,6 +43,7 @@ impl Cargo {
         lock_file: Option<&str>,
         binding_crate_name: Option<&str>,
         use_cargo_lock: bool,
+        clean: bool
     ) -> Result<Cargo, Error> {
         let toml_path = crate_dir.join("Cargo.toml");
         let lock_path = match lock_file {
@@ -75,6 +77,7 @@ impl Cargo {
             binding_crate_name: binding_crate_name,
             lock: lock,
             metadata: metadata,
+            clean: clean
         })
     }
 
@@ -195,6 +198,6 @@ impl Cargo {
     }
 
     pub(crate) fn expand_crate(&self, package: &PackageRef) -> Result<String, cargo_expand::Error> {
-        cargo_expand::expand(&self.manifest_path, &package.name, &package.version)
+        cargo_expand::expand(&self.manifest_path, &package.name, &package.version, self.clean)
     }
 }
