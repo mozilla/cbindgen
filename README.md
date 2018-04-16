@@ -24,7 +24,9 @@ This project can be used to generate C bindings for Rust code. It is currently b
 
 ### Command line
 
-`cbindgen crate/ -o crate/bindings.h`
+```
+cbindgen crate/ -o crate/bindings.h
+```
 
 See `cbindgen --help` for more options.
 
