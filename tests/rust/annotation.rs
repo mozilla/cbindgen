@@ -36,5 +36,8 @@ enum H {
 pub extern "C" fn root(
     x: A,
     y: B,
-    z: C
+    z: C,
+    f: F,
+    h: H,
 ) { }
+
