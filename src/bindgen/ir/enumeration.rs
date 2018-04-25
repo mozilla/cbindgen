@@ -14,7 +14,7 @@ use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Ge
                   ItemContainer, Repr, ReprStyle, ReprType, Struct, Type};
 use bindgen::rename::{IdentifierType, RenameRule};
 use bindgen::utilities::find_first_some;
-use bindgen::writer::{Source, SourceWriter};
+use bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct EnumVariant {
@@ -320,6 +320,8 @@ impl Source for Enum {
         let is_tagged = self.tag.is_some();
         let separate_tag = self.repr.style == ReprStyle::C;
 
+
+        // If tagged, we need to emit a proper struct/union wrapper around our enum
         if is_tagged && config.language == Language::Cxx {
             out.write(if separate_tag { "struct " } else { "union " });
             write!(out, "{}", self.name);
@@ -332,6 +334,8 @@ impl Source for Enum {
             &self.name
         };
 
+
+        // Emit the actual enum
         if config.language == Language::C {
             if size.is_none() && config.style.generate_typedef() {
                 out.write("typedef ");
@@ -342,7 +346,7 @@ impl Source for Enum {
             if !size.is_none() || config.style.generate_tag() {
                 write!(out, " {}", enum_name);
             }
-         } else {
+        } else {
             if let Some(prim) = size {
                 write!(out, "enum class {} : {}", enum_name, prim);
             } else {
@@ -375,8 +379,12 @@ impl Source for Enum {
                 write!(out, "typedef {} {};", prim, enum_name);
             }
         }
+        // Done emitting the enum
 
+
+        // If tagged, we need to emit structs for the cases and union them together
         if is_tagged {
+            // Emit the cases for the structs
             for variant in &self.variants {
                 if let Some((_, ref body)) = variant.body {
                     out.new_line();
@@ -389,6 +397,8 @@ impl Source for Enum {
             out.new_line();
             out.new_line();
 
+
+            // Emit the actual union
             if config.language == Language::C {
                 if config.style.generate_typedef() {
                     out.write("typedef ");
@@ -446,6 +456,73 @@ impl Source for Enum {
 
             if separate_tag {
                 out.close_brace(true);
+            }
+
+
+            // Emit convenience methods
+            if config.language == Language::Cxx &&
+               config.enumeration.derive_helper_methods(&self.annotations) {
+
+                for variant in &self.variants {
+                    out.new_line();
+                    out.new_line();
+
+                    let arg_renamer = |name: &str| {
+                        config
+                            .function
+                            .rename_args
+                            .as_ref()
+                            .unwrap_or(&RenameRule::GeckoCase)
+                            .apply_to_snake_case(name, IdentifierType::FunctionArg)
+                    };
+
+                    write!(out, "static {} {}(", self.name, variant.name);
+
+                    let skip_fields = if separate_tag { 0 } else { 1 };
+
+                    if let Some((_, ref body)) = variant.body {
+                        out.write_vertical_source_list(
+                            &body
+                                .fields.iter().skip(skip_fields)
+                                .map(|&(ref name, ref ty, _)| {
+                                    // const-ref args to constructor
+                                    (format!("const& {}", arg_renamer(name)), ty.clone())
+                                })
+                                .collect(),
+                            ListType::Join(","),
+                        );
+                    }
+
+                    write!(out, ")");
+                    out.open_brace();
+
+                    write!(out, "{} result;", self.name);
+
+                    if let Some((ref variant_name, ref body)) = variant.body {
+                        for &(ref field_name, ..) in body.fields.iter().skip(skip_fields) {
+                            out.new_line();
+                            write!(out, "result.{}.{} = {};",
+                                variant_name, field_name, arg_renamer(field_name));
+                        }
+                    }
+
+                    out.new_line();
+                    write!(out, "result.tag = {}::{};", enum_name, variant.name);
+                    out.new_line();
+                    write!(out, "return result;");
+                    out.close_brace(false);
+                }
+
+                for variant in &self.variants {
+                    out.new_line();
+                    out.new_line();
+
+                    // FIXME: create a config for method case
+                    write!(out, "bool Is{}() const", variant.name);
+                    out.open_brace();
+                    write!(out, "return tag == {}::{};", enum_name, variant.name);
+                    out.close_brace(false);
+                }
             }
 
             if config.language == Language::C {
