@@ -16,6 +16,22 @@ enum C {
     Y,
 }
 
+/// cbindgen:derive-helper-methods=true
+#[repr(u8)]
+enum F {
+    Foo(i16),
+    Bar { x: u8, y: i16 },
+    Baz
+}
+
+/// cbindgen:derive-helper-methods
+#[repr(C, u8)]
+enum H {
+    Hello(i16),
+    There { x: u8, y: i16 },
+    Everyone
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     x: A,

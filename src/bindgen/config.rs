@@ -319,6 +319,9 @@ pub struct EnumConfig {
     pub add_sentinel: bool,
     /// Whether the enum variants should be prefixed with the enum name
     pub prefix_with_name: bool,
+    /// Whether to generate static `::X(..)` constructors and `IsX()`
+    /// methods for tagged enums.
+    pub derive_helper_methods: bool,
 }
 
 impl Default for EnumConfig {
@@ -327,6 +330,7 @@ impl Default for EnumConfig {
             rename_variants: None,
             add_sentinel: false,
             prefix_with_name: false,
+            derive_helper_methods: false,
         }
     }
 }
@@ -337,6 +341,12 @@ impl EnumConfig {
             return x;
         }
         self.add_sentinel
+    }
+    pub(crate) fn derive_helper_methods(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-helper-methods") {
+            return x;
+        }
+        self.derive_helper_methods
     }
 }
 
