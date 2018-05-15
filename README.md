@@ -5,7 +5,7 @@
 [Latest Version]: https://img.shields.io/crates/v/cbindgen.svg
 [crates.io]: https://crates.io/crates/cbindgen
 [Api Rustdoc]: https://img.shields.io/badge/api-rustdoc-blue.svg
-[rustdoc]: https://eqrion.github.io/cbindgen/cbindgen
+[rustdoc]: https://docs.rs/cbindgen
 
 This project can be used to generate C bindings for Rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/), but has been designed to support any project.
 
