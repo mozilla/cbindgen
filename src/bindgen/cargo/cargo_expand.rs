@@ -6,7 +6,7 @@ use std::env;
 use std::io;
 use std::path::Path;
 use std::process::Command;
-use std::str::{Utf8Error, from_utf8};
+use std::str::{from_utf8, Utf8Error};
 
 extern crate tempdir;
 use self::tempdir::TempDir;
@@ -35,7 +35,12 @@ impl From<Utf8Error> for Error {
 
 /// Use rustc to expand and pretty print the crate into a single file,
 /// removing any macros in the process.
-pub fn expand(manifest_path: &Path, crate_name: &str, version: &str, use_tempdir: bool) -> Result<String, Error> {
+pub fn expand(
+    manifest_path: &Path,
+    crate_name: &str,
+    version: &str,
+    use_tempdir: bool,
+) -> Result<String, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
 

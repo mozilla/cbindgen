@@ -4,10 +4,10 @@
 
 use std::fmt;
 
-pub use syn::synom::ParseError;
+pub use bindgen::cargo::cargo_expand::Error as CargoExpandError;
 pub use bindgen::cargo::cargo_metadata::Error as CargoMetadataError;
 pub use bindgen::cargo::cargo_toml::Error as CargoTomlError;
-pub use bindgen::cargo::cargo_expand::Error as CargoExpandError;
+pub use syn::synom::ParseError;
 
 #[derive(Debug)]
 pub enum Error {

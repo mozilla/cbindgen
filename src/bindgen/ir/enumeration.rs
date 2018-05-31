@@ -9,9 +9,9 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::library::Library;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, GenericPath, Item,
                   ItemContainer, Repr, ReprStyle, ReprType, Struct, Type};
+use bindgen::library::Library;
 use bindgen::rename::{IdentifierType, RenameRule};
 use bindgen::utilities::find_first_some;
 use bindgen::writer::{ListType, Source, SourceWriter};
@@ -107,8 +107,10 @@ impl EnumVariant {
             discriminant,
             body: body.map(|body| {
                 (
-                    RenameRule::SnakeCase
-                        .apply_to_pascal_case(&format!("{}", variant.ident), IdentifierType::StructMember),
+                    RenameRule::SnakeCase.apply_to_pascal_case(
+                        &format!("{}", variant.ident),
+                        IdentifierType::StructMember,
+                    ),
                     body,
                 )
             }),
@@ -320,7 +322,6 @@ impl Source for Enum {
         let is_tagged = self.tag.is_some();
         let separate_tag = self.repr.style == ReprStyle::C;
 
-
         // If tagged, we need to emit a proper struct/union wrapper around our enum
         if is_tagged && config.language == Language::Cxx {
             out.write(if separate_tag { "struct " } else { "union " });
@@ -333,7 +334,6 @@ impl Source for Enum {
         } else {
             &self.name
         };
-
 
         // Emit the actual enum
         if config.language == Language::C {
@@ -381,7 +381,6 @@ impl Source for Enum {
         }
         // Done emitting the enum
 
-
         // If tagged, we need to emit structs for the cases and union them together
         if is_tagged {
             // Emit the cases for the structs
@@ -396,7 +395,6 @@ impl Source for Enum {
 
             out.new_line();
             out.new_line();
-
 
             // Emit the actual union
             if config.language == Language::C {
@@ -458,11 +456,10 @@ impl Source for Enum {
                 out.close_brace(true);
             }
 
-
             // Emit convenience methods
-            if config.language == Language::Cxx &&
-               config.enumeration.derive_helper_methods(&self.annotations) {
-
+            if config.language == Language::Cxx
+                && config.enumeration.derive_helper_methods(&self.annotations)
+            {
                 for variant in &self.variants {
                     out.new_line();
                     out.new_line();
@@ -482,8 +479,9 @@ impl Source for Enum {
 
                     if let Some((_, ref body)) = variant.body {
                         out.write_vertical_source_list(
-                            &body
-                                .fields.iter().skip(skip_fields)
+                            &body.fields
+                                .iter()
+                                .skip(skip_fields)
                                 .map(|&(ref name, ref ty, _)| {
                                     // const-ref args to constructor
                                     (format!("const& {}", arg_renamer(name)), ty.clone())
@@ -501,8 +499,13 @@ impl Source for Enum {
                     if let Some((ref variant_name, ref body)) = variant.body {
                         for &(ref field_name, ..) in body.fields.iter().skip(skip_fields) {
                             out.new_line();
-                            write!(out, "result.{}.{} = {};",
-                                variant_name, field_name, arg_renamer(field_name));
+                            write!(
+                                out,
+                                "result.{}.{} = {};",
+                                variant_name,
+                                field_name,
+                                arg_renamer(field_name)
+                            );
                         }
                     }
 

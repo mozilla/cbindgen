@@ -11,10 +11,10 @@
 
 use std::collections::HashMap;
 use std::env;
-use std::process::Command;
-use std::str::{Utf8Error, from_utf8};
 use std::io;
 use std::path::Path;
+use std::process::Command;
+use std::str::{from_utf8, Utf8Error};
 
 use serde_json;
 

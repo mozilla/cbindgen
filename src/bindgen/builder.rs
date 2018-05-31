@@ -4,11 +4,11 @@
 
 use std::path;
 
+use bindgen::bindings::Bindings;
 use bindgen::cargo::Cargo;
 use bindgen::config::{Braces, Config, Language};
 use bindgen::error::Error;
 use bindgen::library::Library;
-use bindgen::bindings::Bindings;
 use bindgen::parser::{self, Parse};
 
 /// A builder for generating a bindings header.
@@ -266,10 +266,16 @@ impl Builder {
                     None,
                     Some(&binding_lib_name),
                     self.config.parse.parse_deps,
-                    self.config.parse.clean
+                    self.config.parse.clean,
                 )?
             } else {
-                Cargo::load(&lib_dir, None, None, self.config.parse.parse_deps, self.config.parse.clean)?
+                Cargo::load(
+                    &lib_dir,
+                    None,
+                    None,
+                    self.config.parse.parse_deps,
+                    self.config.parse.clean,
+                )?
             };
 
             result.extend_with(&parser::parse_lib(

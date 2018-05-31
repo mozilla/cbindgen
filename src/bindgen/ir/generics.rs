@@ -1,5 +1,5 @@
-use std::ops::Deref;
 use std::io::Write;
+use std::ops::Deref;
 
 use syn;
 

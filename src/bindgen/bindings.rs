@@ -2,10 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::io::{Read, Write};
-use std::fs::File;
-use std::path;
 use std::fs;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path;
 
 use bindgen::config::{Config, Language};
 use bindgen::ir::{Constant, Function, ItemContainer, Static};

@@ -17,8 +17,8 @@ extern crate toml;
 
 use clap::{App, Arg, ArgMatches};
 
-mod logging;
 mod bindgen;
+mod logging;
 
 use bindgen::{Bindings, Builder, Cargo, Config, Error, Language, Style};
 
@@ -42,8 +42,8 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
         config.style = match style {
             "Both" => Style::Both,
             "both" => Style::Both,
-            "Tag" =>  Style::Tag,
-            "tag" =>  Style::Tag,
+            "Tag" => Style::Tag,
+            "tag" => Style::Tag,
             "Type" => Style::Type,
             "type" => Style::Type,
             _ => {
@@ -81,7 +81,7 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
         matches.value_of("lockfile"),
         matches.value_of("crate"),
         true,
-        matches.is_present("clean")
+        matches.is_present("clean"),
     )?;
 
     // Load any config specified or search in the binding crate directory
@@ -200,7 +200,9 @@ fn main() {
         .get_matches();
 
     if !matches.is_present("out") && matches.is_present("verify") {
-        error!("Cannot verify bindings against `stdout`, please specify a file to compare against.");
+        error!(
+            "Cannot verify bindings against `stdout`, please specify a file to compare against."
+        );
         std::process::exit(2);
     }
 

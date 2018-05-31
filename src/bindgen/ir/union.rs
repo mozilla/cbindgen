@@ -9,9 +9,9 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
+use bindgen::ir::SynFieldHelpers;
 use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
                   Repr, Type};
-use bindgen::ir::SynFieldHelpers;
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -176,8 +176,14 @@ impl Item for Union {
         library: &Library,
         out: &mut Monomorphs,
     ) {
-        assert!(self.generic_params.len() > 0, "{} is not generic", self.name);
-        assert!(self.generic_params.len() == generic_values.len(), "{} has {} params but is being instantiated with {} values",
+        assert!(
+            self.generic_params.len() > 0,
+            "{} is not generic",
+            self.name
+        );
+        assert!(
+            self.generic_params.len() == generic_values.len(),
+            "{} has {} params but is being instantiated with {} values",
             self.name,
             self.generic_params.len(),
             generic_values.len(),

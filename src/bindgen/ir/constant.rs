@@ -8,8 +8,8 @@ use std::mem;
 use syn;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Item, ItemContainer, Type};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Item, ItemContainer, Type};
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]

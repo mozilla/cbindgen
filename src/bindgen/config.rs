@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::default::Default;
 use std::collections::HashMap;
+use std::default::Default;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
@@ -128,8 +128,8 @@ impl FromStr for Style {
         match s {
             "Both" => Ok(Style::Both),
             "both" => Ok(Style::Both),
-            "Tag" =>  Ok(Style::Tag),
-            "tag" =>  Ok(Style::Tag),
+            "Tag" => Ok(Style::Tag),
+            "tag" => Ok(Style::Tag),
             "Type" => Ok(Style::Type),
             "type" => Ok(Style::Type),
             _ => Err(format!("Unrecognized Style: '{}'.", s)),
@@ -391,7 +391,7 @@ pub struct ParseConfig {
     pub expand: Vec<String>,
     /// Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
     /// This may be required for some build processes.
-    pub clean: bool
+    pub clean: bool,
 }
 
 impl Default for ParseConfig {

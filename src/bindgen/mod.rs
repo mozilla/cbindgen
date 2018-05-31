@@ -9,7 +9,8 @@ macro_rules! deserialize_enum_str {
     ($name:ident) => {
         impl<'de> ::serde::Deserialize<'de> for $name {
             fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-                where D: ::serde::Deserializer<'de>
+            where
+                D: ::serde::Deserializer<'de>,
             {
                 struct Visitor;
                 impl<'de> ::serde::de::Visitor<'de> for Visitor {
@@ -20,7 +21,8 @@ macro_rules! deserialize_enum_str {
                     }
 
                     fn visit_str<E>(self, v: &str) -> Result<$name, E>
-                        where E: ::serde::de::Error
+                    where
+                        E: ::serde::de::Error,
                     {
                         match v.parse::<$name>() {
                             Ok(v) => Ok(v),
@@ -31,7 +33,7 @@ macro_rules! deserialize_enum_str {
                 deserializer.deserialize_str(Visitor)
             }
         }
-    }
+    };
 }
 
 mod bindings;
@@ -54,7 +56,7 @@ mod writer;
 #[allow(unused)]
 pub(crate) use self::cargo::*;
 
-pub use self::config::*;
 pub use self::bindings::Bindings;
 pub use self::builder::Builder;
+pub use self::config::*;
 pub use self::error::Error;

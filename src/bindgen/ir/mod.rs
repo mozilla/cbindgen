@@ -5,6 +5,7 @@
 pub mod annotation;
 pub mod cfg;
 pub mod constant;
+pub mod documentation;
 pub mod enumeration;
 pub mod function;
 pub mod generics;
@@ -17,11 +18,11 @@ pub mod structure;
 pub mod ty;
 pub mod typedef;
 pub mod union;
-pub mod documentation;
 
 pub use self::annotation::{AnnotationSet, AnnotationValue};
 pub use self::cfg::*;
 pub use self::constant::*;
+pub use self::documentation::Documentation;
 pub use self::enumeration::*;
 pub use self::function::*;
 pub use self::generics::*;
@@ -34,4 +35,3 @@ pub use self::structure::*;
 pub use self::ty::*;
 pub use self::typedef::*;
 pub use self::union::*;
-pub use self::documentation::Documentation;

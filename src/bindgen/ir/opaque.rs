@@ -79,8 +79,14 @@ impl Item for OpaqueItem {
         _library: &Library,
         out: &mut Monomorphs,
     ) {
-        assert!(self.generic_params.len() > 0, "{} is not generic", self.name);
-        assert!(self.generic_params.len() == generic_values.len(), "{} has {} params but is being instantiated with {} values",
+        assert!(
+            self.generic_params.len() > 0,
+            "{} is not generic",
+            self.name
+        );
+        assert!(
+            self.generic_params.len() == generic_values.len(),
+            "{} has {} params but is being instantiated with {} values",
             self.name,
             self.generic_params.len(),
             generic_values.len(),
@@ -106,8 +112,7 @@ impl Source for OpaqueItem {
 
         self.generic_params.write(config, out);
 
-        if config.style.generate_typedef() &&
-            config.language == Language::C {
+        if config.style.generate_typedef() && config.language == Language::C {
             write!(out, "typedef struct {} {};", self.name, self.name);
         } else {
             write!(out, "struct {};", self.name);

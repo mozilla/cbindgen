@@ -111,9 +111,7 @@ impl Cfg {
                 ref lit,
                 ..
             })) => match lit {
-                &syn::Lit::Str(ref value) => {
-                    Some(Cfg::Named(format!("{}", ident), value.value()))
-                }
+                &syn::Lit::Str(ref value) => Some(Cfg::Named(format!("{}", ident), value.value())),
                 _ => None,
             },
             &syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList {
@@ -146,7 +144,7 @@ impl Cfg {
                 } else {
                     None
                 }
-            },
+            }
             _ => None,
         }
     }

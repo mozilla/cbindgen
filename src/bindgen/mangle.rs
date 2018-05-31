@@ -98,7 +98,7 @@ fn generics() {
             "Foo",
             &[
                 generic_path("Bar", &[path("T")]),
-                generic_path("Bar", &[path("E")])
+                generic_path("Bar", &[path("E")]),
             ]
         ),
         "Foo_Bar_T_____Bar_E"
