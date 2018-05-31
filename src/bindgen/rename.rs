@@ -94,8 +94,10 @@ impl RenameRule {
 
                 if let IdentifierType::EnumVariant(e) = context {
                     if let &RenameRule::QualifiedScreamingSnakeCase = self {
-                        result.push_str(&RenameRule::ScreamingSnakeCase
-                            .apply_to_pascal_case(&e.name, IdentifierType::Enum));
+                        result.push_str(
+                            &RenameRule::ScreamingSnakeCase
+                                .apply_to_pascal_case(&e.name, IdentifierType::Enum),
+                        );
                         result.push_str("_");
                     }
                 }
@@ -173,8 +175,10 @@ impl RenameRule {
 
                 if let IdentifierType::EnumVariant(e) = context {
                     if let &RenameRule::QualifiedScreamingSnakeCase = self {
-                        result.push_str(&RenameRule::ScreamingSnakeCase
-                            .apply_to_snake_case(&e.name, IdentifierType::Enum));
+                        result.push_str(
+                            &RenameRule::ScreamingSnakeCase
+                                .apply_to_snake_case(&e.name, IdentifierType::Enum),
+                        );
                         result.push_str("_");
                     }
                 }

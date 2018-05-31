@@ -9,8 +9,10 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, GenericPath, Item,
-                  ItemContainer, Repr, ReprStyle, ReprType, Struct, Type};
+use bindgen::ir::{
+    AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, GenericPath, Item, ItemContainer,
+    Repr, ReprStyle, ReprType, Struct, Type,
+};
 use bindgen::library::Library;
 use bindgen::rename::{IdentifierType, RenameRule};
 use bindgen::utilities::find_first_some;
@@ -278,7 +280,8 @@ impl Item for Enum {
         ];
 
         if let Some(r) = find_first_some(&rules) {
-            self.variants = self.variants
+            self.variants = self
+                .variants
                 .iter()
                 .map(|variant| EnumVariant {
                     name: r.apply_to_pascal_case(&variant.name, IdentifierType::EnumVariant(self)),
@@ -437,7 +440,8 @@ impl Source for Enum {
                 out.open_brace();
             }
 
-            for (i, &(ref field_name, ref body)) in self.variants
+            for (i, &(ref field_name, ref body)) in self
+                .variants
                 .iter()
                 .filter_map(|variant| variant.body.as_ref())
                 .enumerate()
@@ -479,7 +483,8 @@ impl Source for Enum {
 
                     if let Some((_, ref body)) = variant.body {
                         out.write_vertical_source_list(
-                            &body.fields
+                            &body
+                                .fields
                                 .iter()
                                 .skip(skip_fields)
                                 .map(|&(ref name, ref ty, _)| {

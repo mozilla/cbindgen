@@ -9,8 +9,9 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
-                  Path, Type};
+use bindgen::ir::{
+    AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer, Path, Type,
+};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;

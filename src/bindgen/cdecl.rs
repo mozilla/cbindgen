@@ -59,7 +59,8 @@ impl CDecl {
     }
 
     fn build_func(&mut self, f: &Function, layout_vertical: bool) {
-        let args = f.args
+        let args = f
+            .args
             .iter()
             .map(|&(ref arg_name, ref arg_ty)| (Some(arg_name.clone()), CDecl::from_type(arg_ty)))
             .collect();

@@ -8,8 +8,9 @@ use std::mem;
 use bindgen::config::Config;
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Static, Struct, Type, Typedef,
-                  Union};
+use bindgen::ir::{
+    AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Static, Struct, Type, Typedef, Union,
+};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 

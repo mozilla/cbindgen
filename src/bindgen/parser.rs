@@ -159,7 +159,8 @@ impl Parser {
 
         let mod_parsed = {
             if !self.cache_expanded_crate.contains_key(&pkg.name) {
-                let s = self.lib
+                let s = self
+                    .lib
                     .as_ref()
                     .unwrap()
                     .expand_crate(pkg)

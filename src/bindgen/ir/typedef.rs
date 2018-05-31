@@ -10,8 +10,9 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
-                  Path, Type};
+use bindgen::ir::{
+    AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer, Path, Type,
+};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -143,7 +144,8 @@ impl Item for Typedef {
             generic_values.len(),
         );
 
-        let mappings = self.generic_params
+        let mappings = self
+            .generic_params
             .iter()
             .zip(generic_values.iter())
             .collect::<Vec<_>>();

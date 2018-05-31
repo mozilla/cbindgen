@@ -10,8 +10,9 @@ use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::SynFieldHelpers;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
-                  Repr, Type};
+use bindgen::ir::{
+    AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer, Repr, Type,
+};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -37,7 +38,8 @@ impl Union {
         }
 
         let (fields, tuple_union) = {
-            let out = item.fields
+            let out = item
+                .fields
                 .named
                 .iter()
                 .try_skip_map(|x| x.as_ident_and_type())?;
@@ -145,7 +147,8 @@ impl Item for Union {
 
             self.fields = overriden_fields;
         } else if let Some(r) = find_first_some(&rules) {
-            self.fields = self.fields
+            self.fields = self
+                .fields
                 .iter()
                 .map(|x| {
                     (
@@ -189,7 +192,8 @@ impl Item for Union {
             generic_values.len(),
         );
 
-        let mappings = self.generic_params
+        let mappings = self
+            .generic_params
             .iter()
             .zip(generic_values.iter())
             .collect::<Vec<_>>();
@@ -197,7 +201,8 @@ impl Item for Union {
         let monomorph = Union {
             name: mangle::mangle_path(&self.name, generic_values),
             generic_params: GenericParams::default(),
-            fields: self.fields
+            fields: self
+                .fields
                 .iter()
                 .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                 .collect(),
@@ -245,7 +250,8 @@ impl Source for Union {
             out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
         } else {
             out.write_vertical_source_list(
-                &self.fields
+                &self
+                    .fields
                     .iter()
                     .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
                     .collect(),

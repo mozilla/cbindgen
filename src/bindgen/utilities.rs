@@ -47,7 +47,8 @@ pub trait SynItemHelpers {
 
 impl SynItemHelpers for syn::ItemStruct {
     fn has_attr_word(&self, word: &str) -> bool {
-        return self.attrs
+        return self
+            .attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
             .any(|attr| match attr {
@@ -59,7 +60,8 @@ impl SynItemHelpers for syn::ItemStruct {
 
 impl SynItemHelpers for syn::ItemFn {
     fn has_attr_word(&self, word: &str) -> bool {
-        return self.attrs
+        return self
+            .attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
             .any(|attr| match attr {
@@ -71,7 +73,8 @@ impl SynItemHelpers for syn::ItemFn {
 
 impl SynItemHelpers for syn::ItemStatic {
     fn has_attr_word(&self, word: &str) -> bool {
-        return self.attrs
+        return self
+            .attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
             .any(|attr| match attr {
@@ -83,7 +86,8 @@ impl SynItemHelpers for syn::ItemStatic {
 
 impl SynItemHelpers for syn::Variant {
     fn has_attr_word(&self, word: &str) -> bool {
-        return self.attrs
+        return self
+            .attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
             .any(|attr| match attr {
@@ -95,7 +99,8 @@ impl SynItemHelpers for syn::Variant {
 
 impl SynItemHelpers for syn::Field {
     fn has_attr_word(&self, word: &str) -> bool {
-        return self.attrs
+        return self
+            .attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
             .any(|attr| match attr {

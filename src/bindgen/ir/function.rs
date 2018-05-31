@@ -106,7 +106,8 @@ impl Function {
         ];
 
         if let Some(r) = find_first_some(&rules) {
-            self.args = self.args
+            self.args = self
+                .args
                 .iter()
                 .map(|x| {
                     (

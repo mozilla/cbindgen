@@ -9,8 +9,9 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer,
-                  Repr, Type};
+use bindgen::ir::{
+    AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer, Repr, Type,
+};
 use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
@@ -200,7 +201,8 @@ impl Item for Struct {
             generic_values.len(),
         );
 
-        let mappings = self.generic_params
+        let mappings = self
+            .generic_params
             .iter()
             .zip(generic_values.iter())
             .collect::<Vec<_>>();
@@ -208,7 +210,8 @@ impl Item for Struct {
         let monomorph = Struct {
             name: mangle::mangle_path(&self.name, generic_values),
             generic_params: GenericParams::default(),
-            fields: self.fields
+            fields: self
+                .fields
                 .iter()
                 .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                 .collect(),
@@ -257,7 +260,8 @@ impl Source for Struct {
             out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
         } else {
             out.write_vertical_source_list(
-                &self.fields
+                &self
+                    .fields
                     .iter()
                     .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
                     .collect(),
@@ -286,7 +290,8 @@ impl Source for Struct {
                 };
                 write!(out, "{}(", self.name);
                 out.write_vertical_source_list(
-                    &self.fields
+                    &self
+                        .fields
                         .iter()
                         .map(|&(ref name, ref ty, _)| {
                             // const-ref args to constructor
@@ -299,7 +304,8 @@ impl Source for Struct {
                 out.new_line();
                 write!(out, "  : ");
                 out.write_vertical_source_list(
-                    &self.fields
+                    &self
+                        .fields
                         .iter()
                         .map(|x| format!("{}({})", x.0, arg_renamer(&x.0)))
                         .collect(),
@@ -332,7 +338,8 @@ impl Source for Struct {
                 out.open_brace();
                 out.write("return ");
                 out.write_vertical_source_list(
-                    &self.fields
+                    &self
+                        .fields
                         .iter()
                         .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
                         .collect(),
@@ -342,32 +349,38 @@ impl Source for Struct {
                 out.close_brace(false);
             };
 
-            if config.structure.derive_eq(&self.annotations) && !self.fields.is_empty()
+            if config.structure.derive_eq(&self.annotations)
+                && !self.fields.is_empty()
                 && self.fields.iter().all(|x| x.1.can_cmp_eq())
             {
                 emit_op("==", "&&");
             }
-            if config.structure.derive_neq(&self.annotations) && !self.fields.is_empty()
+            if config.structure.derive_neq(&self.annotations)
+                && !self.fields.is_empty()
                 && self.fields.iter().all(|x| x.1.can_cmp_eq())
             {
                 emit_op("!=", "||");
             }
-            if config.structure.derive_lt(&self.annotations) && self.fields.len() == 1
+            if config.structure.derive_lt(&self.annotations)
+                && self.fields.len() == 1
                 && self.fields[0].1.can_cmp_order()
             {
                 emit_op("<", "&&");
             }
-            if config.structure.derive_lte(&self.annotations) && self.fields.len() == 1
+            if config.structure.derive_lte(&self.annotations)
+                && self.fields.len() == 1
                 && self.fields[0].1.can_cmp_order()
             {
                 emit_op("<=", "&&");
             }
-            if config.structure.derive_gt(&self.annotations) && self.fields.len() == 1
+            if config.structure.derive_gt(&self.annotations)
+                && self.fields.len() == 1
                 && self.fields[0].1.can_cmp_order()
             {
                 emit_op(">", "&&");
             }
-            if config.structure.derive_gte(&self.annotations) && self.fields.len() == 1
+            if config.structure.derive_gte(&self.annotations)
+                && self.fields.len() == 1
                 && self.fields[0].1.can_cmp_order()
             {
                 emit_op(">=", "&&");
@@ -391,7 +404,8 @@ pub trait SynFieldHelpers {
 
 impl SynFieldHelpers for syn::Field {
     fn as_ident_and_type(&self) -> Result<Option<(String, Type, Documentation)>, String> {
-        let ident = self.ident
+        let ident = self
+            .ident
             .as_ref()
             .ok_or(format!("field is missing identifier"))?
             .clone();

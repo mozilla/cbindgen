@@ -131,7 +131,8 @@ impl Bindings {
         }
 
         for item in &self.items {
-            if item.deref()
+            if item
+                .deref()
                 .annotations()
                 .bool("no-export")
                 .unwrap_or(false)
