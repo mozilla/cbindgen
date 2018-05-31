@@ -322,8 +322,8 @@ impl Parser {
 
                                 match attr.interpret_meta() {
                                     Some(syn::Meta::NameValue(syn::MetaNameValue { ident, lit, ..})) => {
-                                        match (ident.as_ref(), lit) {
-                                            ("path", syn::Lit::Str(ref path)) => {
+                                        match lit {
+                                            syn::Lit::Str(ref path) if ident == "path" => {
                                                 path_attr_found = true;
                                                 self.parse_mod(pkg, &mod_dir.join(path.value()))?;
                                                 break;

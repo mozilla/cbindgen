@@ -108,7 +108,7 @@ impl EnumVariant {
             body: body.map(|body| {
                 (
                     RenameRule::SnakeCase
-                        .apply_to_pascal_case(variant.ident.as_ref(), IdentifierType::StructMember),
+                        .apply_to_pascal_case(&format!("{}", variant.ident), IdentifierType::StructMember),
                     body,
                 )
             }),

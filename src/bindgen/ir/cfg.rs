@@ -82,7 +82,7 @@ impl Cfg {
 
             match attr.interpret_meta() {
                 Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) => {
-                    if ident.as_ref() != "cfg" || nested.len() != 1 {
+                    if ident != "cfg" || nested.len() != 1 {
                         continue;
                     }
 
@@ -104,7 +104,7 @@ impl Cfg {
     fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {
         match item {
             &syn::NestedMeta::Meta(syn::Meta::Word(ref ident)) => {
-                Some(Cfg::Boolean(ident.as_ref().to_owned()))
+                Some(Cfg::Boolean(format!("{}", ident)))
             }
             &syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
                 ref ident,
@@ -112,7 +112,7 @@ impl Cfg {
                 ..
             })) => match lit {
                 &syn::Lit::Str(ref value) => {
-                    Some(Cfg::Named(ident.as_ref().to_owned(), value.value()))
+                    Some(Cfg::Named(format!("{}", ident), value.value()))
                 }
                 _ => None,
             },
@@ -120,18 +120,20 @@ impl Cfg {
                 ref ident,
                 ref nested,
                 ..
-            })) => match ident.as_ref() {
-                "any" => if let Some(configs) = Cfg::load_list(nested.iter()) {
-                    Some(Cfg::Any(configs))
-                } else {
-                    None
-                },
-                "all" => if let Some(configs) = Cfg::load_list(nested.iter()) {
-                    Some(Cfg::All(configs))
-                } else {
-                    None
-                },
-                "not" => {
+            })) => {
+                if ident == "any" {
+                    if let Some(configs) = Cfg::load_list(nested.iter()) {
+                        Some(Cfg::Any(configs))
+                    } else {
+                        None
+                    }
+                } else if ident == "all" {
+                    if let Some(configs) = Cfg::load_list(nested.iter()) {
+                        Some(Cfg::All(configs))
+                    } else {
+                        None
+                    }
+                } else if ident == "not" {
                     if nested.len() != 1 {
                         return None;
                     }
@@ -141,8 +143,9 @@ impl Cfg {
                     } else {
                         None
                     }
+                } else {
+                    None
                 }
-                _ => None,
             },
             _ => None,
         }

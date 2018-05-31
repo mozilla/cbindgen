@@ -38,55 +38,70 @@ pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
 }
 
 pub trait SynItemHelpers {
-    fn has_attr(&self, target: syn::Meta) -> bool;
+    fn has_attr_word(&self, word: &str) -> bool;
 
     fn is_no_mangle(&self) -> bool {
-        self.has_attr(syn::Meta::Word("no_mangle".into()))
+        self.has_attr_word("no_mangle")
     }
 }
 
 impl SynItemHelpers for syn::ItemStruct {
-    fn has_attr(&self, target: syn::Meta) -> bool {
+    fn has_attr_word(&self, word: &str) -> bool {
         return self.attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
-            .any(|attr| attr == target);
+            .any(|attr| match attr {
+                syn::Meta::Word(ref ident) if ident == word => true,
+                _ => false,
+            });
     }
 }
 
 impl SynItemHelpers for syn::ItemFn {
-    fn has_attr(&self, target: syn::Meta) -> bool {
+    fn has_attr_word(&self, word: &str) -> bool {
         return self.attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
-            .any(|attr| attr == target);
+            .any(|attr| match attr {
+                syn::Meta::Word(ref ident) if ident == word => true,
+                _ => false,
+            });
     }
 }
 
 impl SynItemHelpers for syn::ItemStatic {
-    fn has_attr(&self, target: syn::Meta) -> bool {
+    fn has_attr_word(&self, word: &str) -> bool {
         return self.attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
-            .any(|attr| attr == target);
+            .any(|attr| match attr {
+                syn::Meta::Word(ref ident) if ident == word => true,
+                _ => false,
+            });
     }
 }
 
 impl SynItemHelpers for syn::Variant {
-    fn has_attr(&self, target: syn::Meta) -> bool {
+    fn has_attr_word(&self, word: &str) -> bool {
         return self.attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
-            .any(|attr| attr == target);
+            .any(|attr| match attr {
+                syn::Meta::Word(ref ident) if ident == word => true,
+                _ => false,
+            });
     }
 }
 
 impl SynItemHelpers for syn::Field {
-    fn has_attr(&self, target: syn::Meta) -> bool {
+    fn has_attr_word(&self, word: &str) -> bool {
         return self.attrs
             .iter()
             .filter_map(|x| x.interpret_meta())
-            .any(|attr| attr == target);
+            .any(|attr| match attr {
+                syn::Meta::Word(ref ident) if ident == word => true,
+                _ => false,
+            });
     }
 }
 
