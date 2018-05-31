@@ -2,6 +2,8 @@ language: rust
 cache: cargo
 rust:
   - nightly
+before_script:
+  - rustup component add rustfmt-preview
 addons:
     apt:
       sources:
@@ -12,6 +14,7 @@ addons:
 env:
   - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
 script:
+  - cargo fmt --all -- --check
   - cargo build --verbose
   - cargo test --verbose
   - python test.py -v
