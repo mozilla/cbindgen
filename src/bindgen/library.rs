@@ -13,6 +13,7 @@ use bindgen::error::Error;
 use bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use bindgen::monomorph::Monomorphs;
+use bindgen::ItemType;
 
 #[derive(Debug, Clone)]
 pub struct Library {
@@ -91,12 +92,28 @@ impl Library {
         dependencies.sort();
 
         let items = dependencies.order;
-        let constants = self.constants.to_vec();
-        let globals = self.globals.to_vec();
-        let functions = mem::replace(&mut self.functions, Vec::new());
+        let constants =
+            if self.config.export.should_generate(ItemType::Constants) {
+                self.constants.to_vec()
+            } else {
+                vec![]
+            };
+
+        let globals =
+            if self.config.export.should_generate(ItemType::Globals) {
+                self.globals.to_vec()
+            } else {
+                vec![]
+            };
+        let functions =
+            if self.config.export.should_generate(ItemType::Functions) {
+                mem::replace(&mut self.functions, vec![])
+            } else {
+                vec![]
+            };
 
         Ok(Bindings::new(
-            self.config.clone(),
+            self.config,
             constants,
             globals,
             items,
@@ -105,21 +122,21 @@ impl Library {
     }
 
     pub fn get_items(&self, p: &Path) -> Option<Vec<ItemContainer>> {
-        if let Some(x) = self.enums.get_items(p) {
-            return Some(x);
+        macro_rules! find {
+            ($field:ident, $kind:ident) => {
+                if self.config.export.should_generate(ItemType::$kind) {
+                    if let Some(x) = self.$field.get_items(p) {
+                        return Some(x)
+                    }
+                }
+            }
         }
-        if let Some(x) = self.structs.get_items(p) {
-            return Some(x);
-        }
-        if let Some(x) = self.unions.get_items(p) {
-            return Some(x);
-        }
-        if let Some(x) = self.opaque_items.get_items(p) {
-            return Some(x);
-        }
-        if let Some(x) = self.typedefs.get_items(p) {
-            return Some(x);
-        }
+
+        find!(enums, Enums);
+        find!(structs, Structs);
+        find!(unions, Unions);
+        find!(opaque_items, OpaqueItems);
+        find!(typedefs, Typedefs);
 
         None
     }
