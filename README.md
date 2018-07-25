@@ -113,6 +113,8 @@ include = ["Foo", "Bar"]
 exclude = ["Bad"]
 # A prefix to add before the name of every item
 prefix = "CAPI_"
+# Types of items that we'll generate.
+item_types = ["constants", "globals", "enums", "structs", "unions", "typedefs", "opaque", "functions"]
 
 # Table of name conversions to apply to item names
 [export.rename]
