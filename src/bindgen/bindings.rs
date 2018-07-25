@@ -153,43 +153,36 @@ impl Bindings {
             out.new_line();
         }
 
+        if !self.functions.is_empty() || !self.globals.is_empty() {
+            if self.config.language == Language::Cxx {
+                out.new_line_if_not_start();
+                out.write("extern \"C\" {");
+                out.new_line();
+            }
+
+            for global in &self.globals {
+                out.new_line_if_not_start();
+                global.write(&self.config, &mut out);
+                out.new_line();
+            }
+
+            for function in &self.functions {
+                out.new_line_if_not_start();
+                function.write(&self.config, &mut out);
+                out.new_line();
+            }
+
+            if self.config.language == Language::Cxx {
+                out.new_line_if_not_start();
+                out.write("} // extern \"C\"");
+                out.new_line();
+            }
+        }
+
         if self.config.language == Language::Cxx {
-            out.new_line_if_not_start();
-            out.write("extern \"C\" {");
-            out.new_line();
-        }
-
-        for global in &self.globals {
-            out.new_line_if_not_start();
-            global.write(&self.config, &mut out);
-            out.new_line();
-        }
-
-        if let Some(ref f) = self.config.autogen_warning {
-            out.new_line_if_not_start();
-            write!(out, "{}", f);
-            out.new_line();
-        }
-
-        for function in &self.functions {
-            out.new_line_if_not_start();
-            function.write(&self.config, &mut out);
-            out.new_line();
-        }
-
-        if self.config.language == Language::Cxx {
-            out.new_line_if_not_start();
-            out.write("} // extern \"C\"");
-            out.new_line();
-
             self.close_namespaces(&mut out);
         }
 
-        if let Some(ref f) = self.config.autogen_warning {
-            out.new_line_if_not_start();
-            write!(out, "{}", f);
-            out.new_line();
-        }
         if let Some(ref f) = self.config.include_guard {
             out.new_line_if_not_start();
             if self.config.language == Language::C {

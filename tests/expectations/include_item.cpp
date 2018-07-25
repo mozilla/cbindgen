@@ -9,7 +9,3 @@ struct A {
 struct B {
   A data;
 };
-
-extern "C" {
-
-} // extern "C"
