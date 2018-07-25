@@ -19,6 +19,7 @@ pub struct Builder {
     lib: Option<(path::PathBuf, Option<String>)>,
     lib_cargo: Option<Cargo>,
     std_types: bool,
+    lockfile: Option<path::PathBuf>,
 }
 
 impl Builder {
@@ -29,6 +30,7 @@ impl Builder {
             lib: None,
             lib_cargo: None,
             std_types: true,
+            lockfile: None,
         }
     }
 
@@ -248,6 +250,14 @@ impl Builder {
         self
     }
 
+    #[allow(unused)]
+    pub fn with_lockfile<P: AsRef<path::Path>>(mut self, lockfile: P) -> Builder {
+        debug_assert!(self.lockfile.is_none());
+        debug_assert!(self.lib_cargo.is_none());
+        self.lockfile = Some(path::PathBuf::from(lockfile.as_ref()));
+        self
+    }
+
     pub fn generate(self) -> Result<Bindings, Error> {
         let mut result = Parse::new();
 
@@ -260,10 +270,12 @@ impl Builder {
         }
 
         if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
+            let lockfile = self.lockfile.as_ref().and_then(|p| p.to_str());
+
             let cargo = if let Some(binding_lib_name) = binding_lib_name {
                 Cargo::load(
                     &lib_dir,
-                    None,
+                    lockfile,
                     Some(&binding_lib_name),
                     self.config.parse.parse_deps,
                     self.config.parse.clean,
@@ -271,7 +283,7 @@ impl Builder {
             } else {
                 Cargo::load(
                     &lib_dir,
-                    None,
+                    lockfile,
                     None,
                     self.config.parse.parse_deps,
                     self.config.parse.clean,
