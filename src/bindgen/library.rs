@@ -92,25 +92,22 @@ impl Library {
         dependencies.sort();
 
         let items = dependencies.order;
-        let constants =
-            if self.config.export.should_generate(ItemType::Constants) {
-                self.constants.to_vec()
-            } else {
-                vec![]
-            };
+        let constants = if self.config.export.should_generate(ItemType::Constants) {
+            self.constants.to_vec()
+        } else {
+            vec![]
+        };
 
-        let globals =
-            if self.config.export.should_generate(ItemType::Globals) {
-                self.globals.to_vec()
-            } else {
-                vec![]
-            };
-        let functions =
-            if self.config.export.should_generate(ItemType::Functions) {
-                mem::replace(&mut self.functions, vec![])
-            } else {
-                vec![]
-            };
+        let globals = if self.config.export.should_generate(ItemType::Globals) {
+            self.globals.to_vec()
+        } else {
+            vec![]
+        };
+        let functions = if self.config.export.should_generate(ItemType::Functions) {
+            mem::replace(&mut self.functions, vec![])
+        } else {
+            vec![]
+        };
 
         Ok(Bindings::new(
             self.config,
@@ -126,10 +123,10 @@ impl Library {
             ($field:ident, $kind:ident) => {
                 if self.config.export.should_generate(ItemType::$kind) {
                     if let Some(x) = self.$field.get_items(p) {
-                        return Some(x)
+                        return Some(x);
                     }
                 }
-            }
+            };
         }
 
         find!(enums, Enums);
