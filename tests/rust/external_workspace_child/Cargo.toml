@@ -1,0 +1,8 @@
+[package]
+name = "child"
+version = "0.1.0"
+authors = ["cbindgen"]
+workspace = "../workspace"
+
+[dependencies.dep]
+path = "../workspace/dep"

@@ -46,10 +46,11 @@ impl Cargo {
         clean: bool,
     ) -> Result<Cargo, Error> {
         let toml_path = crate_dir.join("Cargo.toml");
-        let lock_path = match lock_file {
-            Some(v) => PathBuf::from(v),
-            None => crate_dir.join("Cargo.lock"),
-        };
+        let metadata = cargo_metadata::metadata(&toml_path)
+            .map_err(|x| Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x))?;
+        let lock_path = lock_file
+            .map(PathBuf::from)
+            .unwrap_or_else(|| Path::new(&metadata.workspace_root).join("Cargo.lock"));
 
         let lock = if use_cargo_lock {
             match cargo_lock::lock(&lock_path) {
@@ -62,8 +63,6 @@ impl Cargo {
         } else {
             None
         };
-        let metadata = cargo_metadata::metadata(&toml_path)
-            .map_err(|x| Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x))?;
 
         // Use the specified binding crate name or infer it from the manifest
         let manifest = cargo_toml::manifest(&toml_path)

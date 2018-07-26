@@ -1,0 +1,18 @@
+[[package]]
+name = "child"
+version = "0.1.0"
+dependencies = [
+ "dep 0.1.0",
+]
+
+[[package]]
+name = "dep"
+version = "0.1.0"
+
+[[package]]
+name = "workspace"
+version = "0.1.0"
+dependencies = [
+ "dep 0.1.0",
+]
+

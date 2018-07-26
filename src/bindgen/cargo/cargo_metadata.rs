@@ -24,6 +24,8 @@ pub struct Metadata {
     /// A list of all crates referenced by this crate (and the crate itself)
     pub packages: Vec<Package>,
     version: usize,
+    /// path to the workspace containing the `Cargo.lock`
+    pub workspace_root: String,
 }
 
 #[derive(Clone, Deserialize, Debug)]
