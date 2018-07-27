@@ -173,7 +173,30 @@ impl Builder {
 
     #[allow(unused)]
     pub fn with_parse_expand<S: AsRef<str>>(mut self, expand: &[S]) -> Builder {
-        self.config.parse.expand = expand.iter().map(|x| String::from(x.as_ref())).collect();
+        self.config.parse.expand.crates = expand.iter().map(|x| String::from(x.as_ref())).collect();
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_parse_expand_all_features(mut self, expand_all_features: bool) -> Builder {
+        self.config.parse.expand.all_features = expand_all_features;
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_parse_expand_default_features(mut self, expand_default_features: bool) -> Builder {
+        self.config.parse.expand.default_features = expand_default_features;
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_parse_expand_features<S: AsRef<str>>(mut self, expand_features: &[S]) -> Builder {
+        self.config.parse.expand.features = Some(
+            expand_features
+                .iter()
+                .map(|x| String::from(x.as_ref()))
+                .collect(),
+        );
         self
     }
 
@@ -295,7 +318,10 @@ impl Builder {
                 self.config.parse.parse_deps,
                 &self.config.parse.include,
                 &self.config.parse.exclude,
-                &self.config.parse.expand,
+                &self.config.parse.expand.crates,
+                self.config.parse.expand.all_features,
+                self.config.parse.expand.default_features,
+                &self.config.parse.expand.features,
             )?);
         } else if let Some(cargo) = self.lib_cargo.clone() {
             result.extend_with(&parser::parse_lib(
@@ -303,7 +329,10 @@ impl Builder {
                 self.config.parse.parse_deps,
                 &self.config.parse.include,
                 &self.config.parse.exclude,
-                &self.config.parse.expand,
+                &self.config.parse.expand.crates,
+                self.config.parse.expand.all_features,
+                self.config.parse.expand.default_features,
+                &self.config.parse.expand.features,
             )?);
         }
 

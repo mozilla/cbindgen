@@ -1,0 +1,18 @@
+[package]
+name = "expand"
+version = "0.1.0"
+authors = ["cbindgen"]
+
+[features]
+default = ["extra_headers"]
+extra_headers = []
+no_parse = []
+cbindgen = []
+
+[lib]
+name = "expand"
+crate-type = ["lib", "dylib"]
+
+[[bin]]
+name = "expand"
+path = "src/main.rs"

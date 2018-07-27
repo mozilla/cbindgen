@@ -98,12 +98,27 @@ parse_deps = true
 include = ["webrender", "webrender_traits"]
 # A black list of crate names that are not allowed to be parsed
 exclude = ["libc"]
-# A list of crate names that should be run through `cargo expand` before
-# parsing to expand any macros
-expand = ["euclid"]
 # Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
 # This may be required for some build processes.
 clean = false
+
+[parse.expand]
+# A list of crate names that should be run through `cargo expand` before
+# parsing to expand any macros
+crates = ["euclid"]
+# If enabled,  use the `--all-features` option when expanding. Ignored when
+# `expand_features` is set. Disabled by default, except when using the
+# `expand = ["euclid"]` shorthand for backwards-compatibility.
+all_features = false
+# When `enable_all_features` is disabled and this is also disabled, use the
+# `--no-default-features` option when expanding. Enabled by default.
+default_features = true
+# A list of feature names that should be used when running `cargo expand`. This
+# combines with `default_features` like in `Cargo.toml`. Note that the features
+# listed here are features for the current crate being built, *not* the crates
+# being expanded. The crate's `Cargo.toml` must take care of enabling the
+# appropriate features in its dependencies
+features = ["cbindgen"]
 
 [export]
 # A list of additional items not used by exported functions to include in
