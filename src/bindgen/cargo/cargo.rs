@@ -197,12 +197,21 @@ impl Cargo {
         None
     }
 
-    pub(crate) fn expand_crate(&self, package: &PackageRef) -> Result<String, cargo_expand::Error> {
+    pub(crate) fn expand_crate(
+        &self,
+        package: &PackageRef,
+        expand_all_features: bool,
+        expand_default_features: bool,
+        expand_features: &Option<Vec<String>>,
+    ) -> Result<String, cargo_expand::Error> {
         cargo_expand::expand(
             &self.manifest_path,
             &package.name,
             &package.version,
             self.clean,
+            expand_all_features,
+            expand_default_features,
+            expand_features,
         )
     }
 }

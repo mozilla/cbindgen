@@ -40,6 +40,9 @@ pub fn expand(
     crate_name: &str,
     version: &str,
     use_tempdir: bool,
+    expand_all_features: bool,
+    expand_default_features: bool,
+    expand_features: &Option<Vec<String>>,
 ) -> Result<String, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
@@ -56,7 +59,23 @@ pub fn expand(
     cmd.arg("--lib");
     cmd.arg("--manifest-path");
     cmd.arg(manifest_path);
-    cmd.arg("--all-features");
+    if let Some(features) = expand_features {
+        cmd.arg("--features");
+        let mut features_str = String::new();
+        for (index, feature) in features.iter().enumerate() {
+            if index != 0 {
+                features_str.push_str(" ");
+            }
+            features_str.push_str(feature);
+        }
+        cmd.arg(features_str);
+    }
+    if expand_all_features {
+        cmd.arg("--all-features");
+    }
+    if !expand_default_features {
+        cmd.arg("--no-default-features");
+    }
     cmd.arg("-p");
     cmd.arg(&format!("{}:{}", crate_name, version));
     cmd.arg("--");

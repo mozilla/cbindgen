@@ -1,0 +1,5 @@
+[parse]
+parse_deps = false
+[parse.expand]
+crates = ["expand"]
+features = ["cbindgen"]

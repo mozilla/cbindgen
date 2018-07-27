@@ -37,6 +37,9 @@ pub fn parse_src(src_file: &Path) -> ParseResult {
         include: None,
         exclude: Vec::new(),
         expand: Vec::new(),
+        expand_all_features: true,
+        expand_default_features: true,
+        expand_features: None,
         parsed_crates: HashSet::new(),
         cache_src: HashMap::new(),
         cache_expanded_crate: HashMap::new(),
@@ -64,6 +67,9 @@ pub(crate) fn parse_lib(
     include: &Option<Vec<String>>,
     exclude: &Vec<String>,
     expand: &Vec<String>,
+    expand_all_features: bool,
+    expand_default_features: bool,
+    expand_features: &Option<Vec<String>>,
 ) -> ParseResult {
     let mut context = Parser {
         binding_crate_name: lib.binding_crate_name().to_owned(),
@@ -72,6 +78,9 @@ pub(crate) fn parse_lib(
         include: include.clone(),
         exclude: exclude.clone(),
         expand: expand.clone(),
+        expand_all_features,
+        expand_default_features,
+        expand_features: expand_features.clone(),
         parsed_crates: HashSet::new(),
         cache_src: HashMap::new(),
         cache_expanded_crate: HashMap::new(),
@@ -93,6 +102,9 @@ struct Parser {
     include: Option<Vec<String>>,
     exclude: Vec<String>,
     expand: Vec<String>,
+    expand_all_features: bool,
+    expand_default_features: bool,
+    expand_features: Option<Vec<String>>,
 
     parsed_crates: HashSet<String>,
     cache_src: HashMap<PathBuf, Vec<syn::Item>>,
@@ -163,7 +175,12 @@ impl Parser {
                     .lib
                     .as_ref()
                     .unwrap()
-                    .expand_crate(pkg)
+                    .expand_crate(
+                        pkg,
+                        self.expand_all_features,
+                        self.expand_default_features,
+                        &self.expand_features,
+                    )
                     .map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
                     crate_name: pkg.name.clone(),
