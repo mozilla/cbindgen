@@ -107,10 +107,10 @@ clean = false
 # parsing to expand any macros
 crates = ["euclid"]
 # If enabled,  use the `--all-features` option when expanding. Ignored when
-# `expand_features` is set. Disabled by default, except when using the
+# `features` is set. Disabled by default, except when using the
 # `expand = ["euclid"]` shorthand for backwards-compatibility.
 all_features = false
-# When `enable_all_features` is disabled and this is also disabled, use the
+# When `all_features` is disabled and this is also disabled, use the
 # `--no-default-features` option when expanding. Enabled by default.
 default_features = true
 # A list of feature names that should be used when running `cargo expand`. This
