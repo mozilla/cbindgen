@@ -180,8 +180,7 @@ impl Parser {
                         self.expand_all_features,
                         self.expand_default_features,
                         &self.expand_features,
-                    )
-                    .map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
+                    ).map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
                     crate_name: pkg.name.clone(),
                     src_path: "".to_owned(),
