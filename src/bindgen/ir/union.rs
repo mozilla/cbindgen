@@ -156,8 +156,7 @@ impl Item for Union {
                         x.1.clone(),
                         x.2.clone(),
                     )
-                })
-                .collect();
+                }).collect();
         } else if self.tuple_union {
             // If we don't have any rules for a tuple union, prefix them with
             // an underscore so it still compiles

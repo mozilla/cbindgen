@@ -20,8 +20,7 @@ impl GenericParams {
                         Some(ident.to_string())
                     }
                     _ => None,
-                })
-                .collect::<Vec<_>>(),
+                }).collect::<Vec<_>>(),
         )
     }
 }

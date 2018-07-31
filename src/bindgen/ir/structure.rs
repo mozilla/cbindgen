@@ -40,7 +40,10 @@ impl Struct {
         let (fields, tuple_struct) = match &item.fields {
             &syn::Fields::Unit => (Vec::new(), false),
             &syn::Fields::Named(ref fields) => {
-                let out = fields.named.iter().try_skip_map(|x| x.as_ident_and_type())?;
+                let out = fields
+                    .named
+                    .iter()
+                    .try_skip_map(|x| x.as_ident_and_type())?;
                 (out, false)
             }
             &syn::Fields::Unnamed(ref fields) => {
@@ -296,8 +299,7 @@ impl Source for Struct {
                         .map(|&(ref name, ref ty, _)| {
                             // const-ref args to constructor
                             (format!("const& {}", arg_renamer(name)), ty.clone())
-                        })
-                        .collect(),
+                        }).collect(),
                     ListType::Join(","),
                 );
                 write!(out, ")");

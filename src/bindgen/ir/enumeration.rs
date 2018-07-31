@@ -293,8 +293,7 @@ impl Item for Enum {
                         )
                     }),
                     documentation: variant.documentation.clone(),
-                })
-                .collect();
+                }).collect();
         }
     }
 
@@ -490,8 +489,7 @@ impl Source for Enum {
                                 .map(|&(ref name, ref ty, _)| {
                                     // const-ref args to constructor
                                     (format!("const& {}", arg_renamer(name)), ty.clone())
-                                })
-                                .collect(),
+                                }).collect(),
                             ListType::Join(","),
                         );
                     }

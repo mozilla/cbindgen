@@ -61,8 +61,7 @@ impl Repr {
                     }
                 }
                 None
-            })
-            .flat_map(|nested| nested)
+            }).flat_map(|nested| nested)
             .filter_map(|meta| match meta {
                 syn::NestedMeta::Meta(syn::Meta::Word(ident)) => Some(ident.to_string()),
                 _ => None,

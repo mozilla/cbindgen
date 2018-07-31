@@ -114,8 +114,7 @@ impl Function {
                         r.apply_to_snake_case(&x.0, IdentifierType::FunctionArg),
                         x.1.clone(),
                     )
-                })
-                .collect()
+                }).collect()
         }
     }
 }
