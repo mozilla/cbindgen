@@ -16,4 +16,6 @@ There is continuous integration setup for `cbindgen` using [travis](https://trav
 
 Please run `./test.py` before filing a pull request to be sure that all tests pass. This will also update the test expectations.
 
-Bonus points if you write a new test for your pull request!
+Rustfmt is also enforced by travis. To format your code install `rustfmt-preview` using `rustup component add rustfmt-preview` and then `cargo fmt`. Travis runs with rust nightly, so use `rustup run nightly -- cargo fmt` to guarantee consistent results.
+
+Writing new tests with your pull requests is also appreciated.
