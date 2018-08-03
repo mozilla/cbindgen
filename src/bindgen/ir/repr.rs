@@ -4,10 +4,11 @@
 
 use syn;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ReprStyle {
     Rust,
     C,
+    Transparent,
 }
 
 impl Default for ReprStyle {
@@ -16,7 +17,7 @@ impl Default for ReprStyle {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ReprType {
     U8,
     U16,
@@ -28,7 +29,7 @@ pub enum ReprType {
     ISize,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub struct Repr {
     pub style: ReprStyle,
     pub ty: Option<ReprType>,
@@ -37,6 +38,11 @@ pub struct Repr {
 impl Repr {
     pub const C: Self = Repr {
         style: ReprStyle::C,
+        ty: None,
+    };
+
+    pub const TRANSPARENT: Self = Repr {
+        style: ReprStyle::Transparent,
         ty: None,
     };
 
@@ -80,6 +86,10 @@ impl Repr {
                 "isize" => ReprType::ISize,
                 "C" => {
                     repr.style = ReprStyle::C;
+                    continue;
+                }
+                "transparent" => {
+                    repr.style = ReprStyle::Transparent;
                     continue;
                 }
                 _ => {
