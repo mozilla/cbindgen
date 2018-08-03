@@ -11,7 +11,7 @@ use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Repr,
-    ToCondition, Type,
+    ToCondition, Type, Typedef,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -26,6 +26,7 @@ pub struct Struct {
     pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
     pub is_tagged: bool,
+    pub is_transparent: bool,
     pub tuple_struct: bool,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -39,9 +40,13 @@ impl Struct {
     }
 
     pub fn load(item: &syn::ItemStruct, mod_cfg: &Option<Cfg>) -> Result<Struct, String> {
-        if Repr::load(&item.attrs)? != Repr::C {
-            return Err("Struct is not marked #[repr(C)].".to_owned());
-        }
+        let is_transparent = match Repr::load(&item.attrs)? {
+            Repr::C => false,
+            Repr::TRANSPARENT => true,
+            _ => {
+                return Err("Struct is not marked #[repr(C)] or #[repr(transparent)].".to_owned());
+            }
+        };
 
         let (fields, tuple_struct) = match &item.fields {
             &syn::Fields::Unit => (Vec::new(), false),
@@ -70,6 +75,7 @@ impl Struct {
             generic_params: GenericParams::new(&item.generics),
             fields: fields,
             is_tagged: false,
+            is_transparent: is_transparent,
             tuple_struct: tuple_struct,
             cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             annotations: AnnotationSet::load(&item.attrs)?,
@@ -128,7 +134,9 @@ impl Item for Struct {
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
-        resolver.add_struct(&self.name);
+        if !self.is_transparent {
+            resolver.add_struct(&self.name);
+        }
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
@@ -225,6 +233,7 @@ impl Item for Struct {
                 .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                 .collect(),
             is_tagged: self.is_tagged,
+            is_transparent: self.is_transparent,
             tuple_struct: self.tuple_struct,
             cfg: self.cfg.clone(),
             annotations: self.annotations.clone(),
@@ -240,6 +249,18 @@ impl Item for Struct {
 
 impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if self.is_transparent {
+            let typedef = Typedef {
+                name: self.name.clone(),
+                generic_params: self.generic_params.clone(),
+                aliased: self.fields[0].1.clone(),
+                cfg: self.cfg.clone(),
+                annotations: self.annotations.clone(),
+                documentation: self.documentation.clone(),
+            };
+            return typedef.write(config, out);
+        }
+
         let condition = (&self.cfg).to_condition(config);
         condition.write_before(config, out);
 
