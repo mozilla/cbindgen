@@ -281,7 +281,7 @@ impl Parser {
 
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
                     crate_name: pkg.name.clone(),
-                    src_path: "".to_owned(),
+                    src_path: owned_mod_path.to_string_lossy().into(),
                     error: x,
                 })?;
 
