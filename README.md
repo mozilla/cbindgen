@@ -90,6 +90,11 @@ language = "[C|C++]"
 # A rule to use to select style of declaration in C, tagname vs typedef
 style = "[Both|Type|Tag]"
 
+[defines]
+# A rule for generating `#ifdef`s for matching `#[cfg]`ed items,
+# e.g. `#[cfg(foo = "bar")] ...` -> `#if defined(FOO_IS_BAR) ... #endif`
+"foo = bar" = "FOO_IS_BAR"
+
 [parse]
 # Whether to parse dependent crates and include their types in the generated
 # bindings
