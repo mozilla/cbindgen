@@ -166,13 +166,28 @@ impl fmt::Display for PrimitiveType {
     }
 }
 
+// The `U` part of `[T; U]`
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum ArrayLength {
+    Name(String),
+    Value(String),
+}
+
+impl ArrayLength {
+    pub fn as_str(&self) -> &str {
+        match self {
+            ArrayLength::Name(ref string) | ArrayLength::Value(ref string) => string
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Type {
     ConstPtr(Box<Type>),
     Ptr(Box<Type>),
     Path(GenericPath),
     Primitive(PrimitiveType),
-    Array(Box<Type>, String),
+    Array(Box<Type>, ArrayLength),
     FuncPtr(Box<Type>, Vec<Type>),
 }
 
@@ -242,8 +257,9 @@ impl Type {
                 };
 
                 let path = GenericPath::load(&path.path)?;
-
-                Type::Array(Box::new(converted), path.name)
+                let len = ArrayLength::Name(path.name);
+                // panic!("panic -> name: {:?}", len);
+                Type::Array(Box::new(converted), len)
             }
             &syn::Type::Array(syn::TypeArray {
                 ref elem,
@@ -261,7 +277,9 @@ impl Type {
                     None => return Err("Cannot have an array of zero sized types.".to_owned()),
                 };
 
-                Type::Array(Box::new(converted), format!("{}", len.value()))
+                let len = ArrayLength::Value(format!("{}", len.value()));
+                // panic!("panic -> value: {:?}", len);
+                Type::Array(Box::new(converted), len)
             }
             &syn::Type::BareFn(ref function) => {
                 let args = function.inputs.iter().try_skip_map(|x| Type::load(&x.ty))?;
@@ -480,8 +498,11 @@ impl Type {
                 config.export.rename(&mut path.name);
             }
             &mut Type::Primitive(_) => {}
-            &mut Type::Array(ref mut ty, _) => {
+            &mut Type::Array(ref mut ty, ref mut len) => {
                 ty.rename_for_config(config);
+                if let ArrayLength::Name(ref mut name) = len {
+                    config.export.rename(name);
+                }
             }
             &mut Type::FuncPtr(ref mut ret, ref mut args) => {
                 ret.rename_for_config(config);
