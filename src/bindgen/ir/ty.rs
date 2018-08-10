@@ -176,7 +176,7 @@ pub enum ArrayLength {
 impl ArrayLength {
     pub fn as_str(&self) -> &str {
         match self {
-            ArrayLength::Name(ref string) | ArrayLength::Value(ref string) => string
+            ArrayLength::Name(ref string) | ArrayLength::Value(ref string) => string,
         }
     }
 }
