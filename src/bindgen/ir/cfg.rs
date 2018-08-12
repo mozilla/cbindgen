@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::fmt;
 use std::io::Write;
 
 use syn;
@@ -9,6 +10,7 @@ use syn;
 use bindgen::config::Config;
 use bindgen::writer::SourceWriter;
 
+#[derive(PartialEq, Eq)]
 enum DefineKey<'a> {
     Boolean(&'a str),
     Named(&'a str, &'a str),
@@ -50,6 +52,36 @@ pub enum Cfg {
     Any(Vec<Cfg>),
     All(Vec<Cfg>),
     Not(Box<Cfg>),
+}
+
+impl fmt::Display for Cfg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Cfg::Boolean(key) => write!(f, "{}", key),
+            Cfg::Named(key, value) => write!(f, "{} = {:?}", key, value),
+            Cfg::Any(cfgs) => {
+                write!(f, "any(")?;
+                for (index, cfg) in cfgs.iter().enumerate() {
+                    if index > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", cfg)?;
+                }
+                write!(f, ")")
+            }
+            Cfg::All(cfgs) => {
+                write!(f, "all(")?;
+                for (index, cfg) in cfgs.iter().enumerate() {
+                    if index > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", cfg)?;
+                }
+                write!(f, ")")
+            }
+            Cfg::Not(cfg) => write!(f, "not({})", cfg),
+        }
+    }
 }
 
 impl Cfg {
@@ -166,139 +198,161 @@ impl Cfg {
             Some(configs)
         }
     }
+}
 
-    fn has_defines(&self, config: &Config) -> bool {
+pub trait ToCondition: Sized {
+    type Output;
+
+    fn to_condition(self, config: &Config) -> Option<Self::Output>;
+}
+
+impl<'a> ToCondition for &'a Option<Cfg> {
+    type Output = Condition;
+
+    fn to_condition(self, config: &Config) -> Option<Self::Output> {
+        self.clone().and_then(|cfg| cfg.to_condition(config))
+    }
+}
+
+impl ToCondition for Option<Cfg> {
+    type Output = Condition;
+
+    fn to_condition(self, config: &Config) -> Option<Self::Output> {
+        self.and_then(|cfg| cfg.to_condition(config))
+    }
+}
+
+impl<'a> ToCondition for &'a Cfg {
+    type Output = Condition;
+
+    fn to_condition(self, config: &Config) -> Option<Self::Output> {
+        self.clone().to_condition(config)
+    }
+}
+
+impl ToCondition for Cfg {
+    type Output = Condition;
+
+    fn to_condition(self, config: &Config) -> Option<Self::Output> {
         match self {
-            &Cfg::Boolean(ref cfg_name) => {
-                for (key, ..) in &config.defines {
-                    let key = DefineKey::load(key);
-
-                    match key {
-                        DefineKey::Boolean(key_name) => if cfg_name == key_name {
-                            return true;
-                        },
-                        DefineKey::Named(..) => {}
-                    }
+            Cfg::Boolean(cfg_name) => {
+                let define = config
+                    .defines
+                    .iter()
+                    .find(|(key, ..)| DefineKey::Boolean(&cfg_name) == DefineKey::load(key));
+                if let Some((_, define)) = define {
+                    Some(Condition::Define(define.to_owned()))
+                } else {
+                    warn!(
+                        "Missing `[defines]` entry for `{}` in cbindgen config.",
+                        Cfg::Boolean(cfg_name)
+                    );
+                    None
                 }
-
-                false
             }
-            &Cfg::Named(ref cfg_name, ref cfg_value) => {
-                for (key, ..) in &config.defines {
-                    let key = DefineKey::load(key);
-
-                    match key {
-                        DefineKey::Boolean(..) => {}
-                        DefineKey::Named(key_name, key_value) => {
-                            if cfg_name == key_name && cfg_value == key_value {
-                                return true;
-                            }
-                        }
-                    }
+            Cfg::Named(cfg_name, cfg_value) => {
+                let define = config.defines.iter().find(|(key, ..)| {
+                    DefineKey::Named(&cfg_name, &cfg_value) == DefineKey::load(key)
+                });
+                if let Some((_, define)) = define {
+                    Some(Condition::Define(define.to_owned()))
+                } else {
+                    warn!(
+                        "Missing `[defines]` entry for `{}` in cbindgen config.",
+                        Cfg::Named(cfg_name, cfg_value)
+                    );
+                    None
                 }
-
-                false
             }
-            &Cfg::Any(ref cfgs) => cfgs.iter().all(|x| x.has_defines(config)),
-            &Cfg::All(ref cfgs) => cfgs.iter().all(|x| x.has_defines(config)),
-            &Cfg::Not(ref cfg) => cfg.has_defines(config),
+            Cfg::Any(children) => {
+                let conditions: Vec<_> = children
+                    .into_iter()
+                    .filter_map(|x| x.to_condition(config))
+                    .collect();
+                match conditions.len() {
+                    0 => None,
+                    1 => conditions.into_iter().next(),
+                    _ => Some(Condition::Any(conditions)),
+                }
+            }
+            Cfg::All(children) => {
+                let cfgs: Vec<_> = children
+                    .into_iter()
+                    .filter_map(|x| x.to_condition(config))
+                    .collect();
+                match cfgs.len() {
+                    0 => None,
+                    1 => cfgs.into_iter().next(),
+                    _ => Some(Condition::All(cfgs)),
+                }
+            }
+            Cfg::Not(child) => child
+                .to_condition(config)
+                .map(|cfg| Condition::Not(Box::new(cfg))),
         }
     }
+}
 
-    fn write_condition<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+#[derive(Debug, Clone)]
+pub enum Condition {
+    Define(String),
+    Any(Vec<Condition>),
+    All(Vec<Condition>),
+    Not(Box<Condition>),
+}
+
+impl Condition {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         match self {
-            &Cfg::Boolean(ref cfg_name) => {
-                let mut define: &str = cfg_name;
-
-                for (key, define_value) in &config.defines {
-                    let key = DefineKey::load(key);
-
-                    match key {
-                        DefineKey::Boolean(key_name) => if cfg_name == key_name {
-                            define = define_value;
-                        },
-                        DefineKey::Named(..) => {}
-                    }
-                }
-
+            &Condition::Define(ref define) => {
                 out.write("defined(");
                 write!(out, "{}", define);
                 out.write(")");
             }
-            &Cfg::Named(ref cfg_name, ref cfg_value) => {
-                let mut define: &str = cfg_name;
-
-                for (key, define_value) in &config.defines {
-                    let key = DefineKey::load(key);
-
-                    match key {
-                        DefineKey::Boolean(..) => {}
-                        DefineKey::Named(key_name, key_value) => {
-                            if cfg_name == key_name && cfg_value == key_value {
-                                define = define_value;
-                            }
-                        }
-                    }
-                }
-
-                out.write("defined(");
-                write!(out, "{}", define);
-                out.write(")");
-            }
-            &Cfg::Any(ref cfgs) => {
+            &Condition::Any(ref conditions) => {
                 out.write("(");
-                for (i, cfg) in cfgs.iter().enumerate() {
+                for (i, condition) in conditions.iter().enumerate() {
                     if i != 0 {
                         out.write(" || ");
                     }
-                    cfg.write_condition(config, out);
+                    condition.write(config, out);
                 }
                 out.write(")");
             }
-            &Cfg::All(ref cfgs) => {
+            &Condition::All(ref conditions) => {
                 out.write("(");
-                for (i, cfg) in cfgs.iter().enumerate() {
+                for (i, condition) in conditions.iter().enumerate() {
                     if i != 0 {
                         out.write(" && ");
                     }
-                    cfg.write_condition(config, out);
+                    condition.write(config, out);
                 }
                 out.write(")");
             }
-            &Cfg::Not(ref cfg) => {
+            &Condition::Not(ref condition) => {
                 out.write("!");
-                cfg.write_condition(config, out);
+                condition.write(config, out);
             }
         }
     }
 }
 
-pub trait CfgWrite {
+pub trait ConditionWrite {
     fn write_before<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>);
-
     fn write_after<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>);
 }
 
-impl CfgWrite for Option<Cfg> {
+impl ConditionWrite for Option<Condition> {
     fn write_before<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if let &Some(ref cfg) = self {
-            if !cfg.has_defines(config) {
-                return;
-            }
-
             out.write("#if ");
-            cfg.write_condition(config, out);
+            cfg.write(config, out);
             out.new_line();
         }
     }
 
-    fn write_after<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if let &Some(ref cfg) = self {
-            // TODO
-            if !cfg.has_defines(config) {
-                return;
-            }
-
+    fn write_after<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
+        if self.is_some() {
             out.new_line();
             out.write("#endif");
         }

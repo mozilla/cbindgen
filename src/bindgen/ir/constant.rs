@@ -9,7 +9,9 @@ use syn;
 
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
-use bindgen::ir::{AnnotationSet, Cfg, CfgWrite, Documentation, Item, ItemContainer, Type};
+use bindgen::ir::{
+    AnnotationSet, Cfg, ConditionWrite, Documentation, Item, ItemContainer, ToCondition, Type,
+};
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -137,7 +139,8 @@ impl Item for Constant {
 
 impl Source for Constant {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.cfg.write_before(config, out);
+        let condition = (&self.cfg).to_condition(config);
+        condition.write_before(config, out);
         if config.constant.allow_static_const && config.language == Language::Cxx {
             if let Type::ConstPtr(..) = self.ty {
                 out.write("static ");
@@ -149,6 +152,6 @@ impl Source for Constant {
         } else {
             write!(out, "#define {} {}", self.name, self.value.0)
         }
-        self.cfg.write_after(config, out);
+        condition.write_after(config, out);
     }
 }

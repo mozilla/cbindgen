@@ -10,8 +10,8 @@ use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
-    AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, GenericPath, Item, ItemContainer,
-    Repr, ReprStyle, ReprType, Struct, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath, Item,
+    ItemContainer, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::rename::{IdentifierType, RenameRule};
@@ -317,7 +317,9 @@ impl Source for Enum {
             ReprType::I8 => "int8_t",
         });
 
-        self.cfg.write_before(config, out);
+        let condition = (&self.cfg).to_condition(config);
+
+        condition.write_before(config, out);
 
         self.documentation.write(config, out);
 
@@ -543,6 +545,6 @@ impl Source for Enum {
             }
         }
 
-        self.cfg.write_after(config, out);
+        condition.write_after(config, out);
     }
 }

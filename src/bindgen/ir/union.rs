@@ -11,7 +11,8 @@ use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::SynFieldHelpers;
 use bindgen::ir::{
-    AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer, Repr, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Repr,
+    ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -220,7 +221,8 @@ impl Item for Union {
 
 impl Source for Union {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.cfg.write_before(config, out);
+        let condition = (&self.cfg).to_condition(config);
+        condition.write_before(config, out);
 
         self.documentation.write(config, out);
 
@@ -265,6 +267,6 @@ impl Source for Union {
             out.close_brace(true);
         }
 
-        self.cfg.write_after(config, out);
+        condition.write_after(config, out);
     }
 }

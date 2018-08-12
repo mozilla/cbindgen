@@ -10,7 +10,8 @@ use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
-    AnnotationSet, Cfg, CfgWrite, Documentation, GenericParams, Item, ItemContainer, Repr, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Repr,
+    ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -234,7 +235,8 @@ impl Item for Struct {
 
 impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.cfg.write_before(config, out);
+        let condition = (&self.cfg).to_condition(config);
+        condition.write_before(config, out);
 
         self.documentation.write(config, out);
 
@@ -396,7 +398,7 @@ impl Source for Struct {
             out.close_brace(true);
         }
 
-        self.cfg.write_after(config, out);
+        condition.write_after(config, out);
     }
 }
 
