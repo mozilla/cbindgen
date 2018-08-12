@@ -1,0 +1,11 @@
+[package]
+name = "mod_attr"
+version = "0.1.0"
+authors = ["cbindgen"]
+
+[lib]
+name = "mod_attr"
+crate-type = ["lib", "dylib"]
+
+[features]
+foobar = []
