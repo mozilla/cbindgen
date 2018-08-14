@@ -33,6 +33,11 @@ pub struct Struct {
 }
 
 impl Struct {
+    /// Whether this struct can derive operator== / operator!=.
+    pub fn can_derive_eq(&self) -> bool {
+        !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq())
+    }
+
     pub fn load(item: &syn::ItemStruct, mod_cfg: &Option<Cfg>) -> Result<Struct, String> {
         if Repr::load(&item.attrs)? != Repr::C {
             return Err("Struct is not marked #[repr(C)].".to_owned());
@@ -354,14 +359,12 @@ impl Source for Struct {
             };
 
             if config.structure.derive_eq(&self.annotations)
-                && !self.fields.is_empty()
-                && self.fields.iter().all(|x| x.1.can_cmp_eq())
+                && self.can_derive_eq()
             {
                 emit_op("==", "&&");
             }
             if config.structure.derive_neq(&self.annotations)
-                && !self.fields.is_empty()
-                && self.fields.iter().all(|x| x.1.can_cmp_eq())
+                && self.can_derive_eq()
             {
                 emit_op("!=", "||");
             }
