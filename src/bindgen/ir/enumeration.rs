@@ -156,6 +156,18 @@ pub struct Enum {
 }
 
 impl Enum {
+    fn can_derive_eq(&self) -> bool {
+        if self.tag.is_none() {
+            return false;
+        }
+
+        self.variants.iter().all(|variant| {
+            variant.body.as_ref().map_or(true, |&(_, ref body)| {
+                body.can_derive_eq()
+            })
+        })
+    }
+
     pub fn load(item: &syn::ItemEnum, mod_cfg: &Option<Cfg>) -> Result<Enum, String> {
         let repr = Repr::load(&item.attrs)?;
         if repr == Repr::RUST {
@@ -459,6 +471,8 @@ impl Source for Enum {
                 out.close_brace(true);
             }
 
+            let skip_fields = if separate_tag { 0 } else { 1 };
+
             // Emit convenience methods
             if config.language == Language::Cxx
                 && config.enumeration.derive_helper_methods(&self.annotations)
@@ -477,8 +491,6 @@ impl Source for Enum {
                     };
 
                     write!(out, "static {} {}(", self.name, variant.name);
-
-                    let skip_fields = if separate_tag { 0 } else { 1 };
 
                     if let Some((_, ref body)) = variant.body {
                         out.write_vertical_source_list(
@@ -527,6 +539,48 @@ impl Source for Enum {
                     write!(out, "bool Is{}() const", variant.name);
                     out.open_brace();
                     write!(out, "return tag == {}::{};", enum_name, variant.name);
+                    out.close_brace(false);
+                }
+            }
+
+            if config.language == Language::Cxx &&
+                self.can_derive_eq() &&
+                config.structure.derive_eq(&self.annotations)
+            {
+                out.new_line();
+                out.new_line();
+                write!(out, "bool operator==(const {}& other) const", self.name);
+                out.open_brace();
+                write!(out, "if (tag != other.tag)");
+                out.open_brace();
+                write!(out, "return false;");
+                out.close_brace(false);
+                out.new_line();
+                write!(out, "switch (tag)");
+                out.open_brace();
+                for variant in &self.variants {
+                    if let Some((ref variant_name, _)) = variant.body {
+                        write!(
+                            out,
+                            "case {}::{}: return {} == other.{};",
+                            self.tag.as_ref().unwrap(),
+                            variant.name,
+                            variant_name,
+                            variant_name
+                        );
+                        out.new_line();
+                    }
+                }
+                write!(out, "default: return true;");
+                out.close_brace(false);
+                out.close_brace(false);
+
+                if config.structure.derive_neq(&self.annotations) {
+                    out.new_line();
+                    out.new_line();
+                    write!(out, "bool operator!=(const {}& other) const", self.name);
+                    out.open_brace();
+                    write!(out, "return !(*this == other);");
                     out.close_brace(false);
                 }
             }
