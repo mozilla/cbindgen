@@ -331,6 +331,8 @@ impl Source for Struct {
                 String::from("other")
             };
 
+            let skip_fields = if self.is_tagged { 1 } else { 0 };
+
             let mut emit_op = |op, conjuc| {
                 if !wrote_start_newline {
                     wrote_start_newline = true;
@@ -350,6 +352,7 @@ impl Source for Struct {
                     &self
                         .fields
                         .iter()
+                        .skip(skip_fields)
                         .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
                         .collect(),
                     ListType::Join(&format!(" {}", conjuc)),

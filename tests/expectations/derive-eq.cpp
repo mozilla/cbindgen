@@ -28,12 +28,10 @@ union Bar {
     Foo named;
 
     bool operator==(const Bazz_Body& other) const {
-      return tag == other.tag &&
-             named == other.named;
+      return named == other.named;
     }
     bool operator!=(const Bazz_Body& other) const {
-      return tag != other.tag ||
-             named != other.named;
+      return named != other.named;
     }
   };
 
@@ -43,13 +41,11 @@ union Bar {
     uint32_t fields;
 
     bool operator==(const FooNamed_Body& other) const {
-      return tag == other.tag &&
-             different == other.different &&
+      return different == other.different &&
              fields == other.fields;
     }
     bool operator!=(const FooNamed_Body& other) const {
-      return tag != other.tag ||
-             different != other.different ||
+      return different != other.different ||
              fields != other.fields;
     }
   };
@@ -60,13 +56,11 @@ union Bar {
     Foo _1;
 
     bool operator==(const FooParen_Body& other) const {
-      return tag == other.tag &&
-             _0 == other._0 &&
+      return _0 == other._0 &&
              _1 == other._1;
     }
     bool operator!=(const FooParen_Body& other) const {
-      return tag != other.tag ||
-             _0 != other._0 ||
+      return _0 != other._0 ||
              _1 != other._1;
     }
   };
