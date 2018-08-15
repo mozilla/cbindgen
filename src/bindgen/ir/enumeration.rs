@@ -162,9 +162,10 @@ impl Enum {
         }
 
         self.variants.iter().all(|variant| {
-            variant.body.as_ref().map_or(true, |&(_, ref body)| {
-                body.can_derive_eq()
-            })
+            variant
+                .body
+                .as_ref()
+                .map_or(true, |&(_, ref body)| body.can_derive_eq())
         })
     }
 
@@ -545,9 +546,9 @@ impl Source for Enum {
                 }
             }
 
-            if config.language == Language::Cxx &&
-                self.can_derive_eq() &&
-                config.structure.derive_eq(&self.annotations)
+            if config.language == Language::Cxx
+                && self.can_derive_eq()
+                && config.structure.derive_eq(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
