@@ -359,14 +359,10 @@ impl Source for Struct {
                 out.close_brace(false);
             };
 
-            if config.structure.derive_eq(&self.annotations)
-                && self.can_derive_eq()
-            {
+            if config.structure.derive_eq(&self.annotations) && self.can_derive_eq() {
                 emit_op("==", "&&");
             }
-            if config.structure.derive_neq(&self.annotations)
-                && self.can_derive_eq()
-            {
+            if config.structure.derive_neq(&self.annotations) && self.can_derive_eq() {
                 emit_op("!=", "||");
             }
             if config.structure.derive_lt(&self.annotations)
