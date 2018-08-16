@@ -39,4 +39,4 @@ typedef union {
   FooParen_Body foo_paren;
 } Bar;
 
-Foo root(Bar bar);
+Foo root(Bar aBar);

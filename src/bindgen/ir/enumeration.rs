@@ -550,11 +550,17 @@ impl Source for Enum {
                 && self.can_derive_eq()
                 && config.structure.derive_eq(&self.annotations)
             {
+                let other = if let Some(r) = config.function.rename_args {
+                    r.apply_to_snake_case("other", IdentifierType::FunctionArg)
+                } else {
+                    String::from("other")
+                };
+
                 out.new_line();
                 out.new_line();
-                write!(out, "bool operator==(const {}& other) const", self.name);
+                write!(out, "bool operator==(const {}& {}) const", self.name, other);
                 out.open_brace();
-                write!(out, "if (tag != other.tag)");
+                write!(out, "if (tag != {}.tag)", other);
                 out.open_brace();
                 write!(out, "return false;");
                 out.close_brace(false);
@@ -565,10 +571,11 @@ impl Source for Enum {
                     if let Some((ref variant_name, _)) = variant.body {
                         write!(
                             out,
-                            "case {}::{}: return {} == other.{};",
+                            "case {}::{}: return {} == {}.{};",
                             self.tag.as_ref().unwrap(),
                             variant.name,
                             variant_name,
+                            other,
                             variant_name
                         );
                         out.new_line();
@@ -581,9 +588,9 @@ impl Source for Enum {
                 if config.structure.derive_neq(&self.annotations) {
                     out.new_line();
                     out.new_line();
-                    write!(out, "bool operator!=(const {}& other) const", self.name);
+                    write!(out, "bool operator!=(const {}& {}) const", self.name, other);
                     out.open_brace();
-                    write!(out, "return !(*this == other);");
+                    write!(out, "return !(*this == {});", other);
                     out.close_brace(false);
                 }
             }
