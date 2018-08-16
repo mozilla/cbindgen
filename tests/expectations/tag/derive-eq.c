@@ -39,4 +39,4 @@ union Bar {
   struct FooParen_Body foo_paren;
 };
 
-struct Foo root(union Bar bar);
+struct Foo root(union Bar aBar);
