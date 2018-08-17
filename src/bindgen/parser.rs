@@ -204,6 +204,9 @@ impl Parser {
         );
 
         for item in items {
+            if item.has_test_attr() {
+                continue;
+            }
             match item {
                 &syn::Item::Mod(ref item) => {
                     let cfg = Cfg::load(&item.attrs);
@@ -310,6 +313,9 @@ impl Parser {
         );
 
         for item in items {
+            if item.has_test_attr() {
+                continue;
+            }
             match item {
                 &syn::Item::Mod(ref item) => {
                     let next_mod_name = item.ident.to_string();
@@ -485,6 +491,9 @@ impl Parse {
         items: &[syn::Item],
     ) {
         for item in items {
+            if item.has_test_attr() {
+                continue;
+            }
             match item {
                 &syn::Item::ForeignMod(ref item) => {
                     self.load_syn_foreign_mod(binding_crate_name, crate_name, mod_cfg, item);
