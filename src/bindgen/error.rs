@@ -45,11 +45,22 @@ impl fmt::Display for Error {
                 ref crate_name,
                 ref src_path,
                 ref error,
-            } => write!(
-                f,
-                "Parsing crate `{}`:`{}`:\n{:?}",
-                crate_name, src_path, error
-            ),
+            } => {
+                write!(
+                    f,
+                    "Parsing crate `{}`:`{}`:\n{:?}",
+                    crate_name, src_path, error
+                )?;
+
+                if !src_path.is_empty() {
+                    write!(
+                        f,
+                        "\nTry running `rustc -Z parse-only {}` to see a nicer error message",
+                        src_path,
+                    )?
+                }
+                Ok(())
+            }
             &Error::ParseCannotOpenFile {
                 ref crate_name,
                 ref src_path,
