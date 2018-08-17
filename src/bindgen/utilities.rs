@@ -38,75 +38,169 @@ pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
 }
 
 pub trait SynItemHelpers {
-    fn has_attr_word(&self, word: &str) -> bool;
+    /// Searches for attributes like `#[test]`.
+    /// Example:
+    /// - `item.has_attr_word("test")` => `#[test]`
+    fn has_attr_word(&self, name: &str) -> bool;
+
+    /// Searches for attributes like `#[cfg(test)]`.
+    /// Example:
+    /// - `item.has_attr_list("cfg", &["test"])` => `#[cfg(test)]`
+    fn has_attr_list(&self, name: &str, args: &[&str]) -> bool;
+
+    /// Searches for attributes like `#[feature = "std"]`.
+    /// Example:
+    /// - `item.has_attr_name_value("feature", "std")` => `#[feature = "std"]`
+    fn has_attr_name_value(&self, name: &str, value: &str) -> bool;
 
     fn is_no_mangle(&self) -> bool {
         self.has_attr_word("no_mangle")
     }
-}
 
-impl SynItemHelpers for syn::ItemStruct {
-    fn has_attr_word(&self, word: &str) -> bool {
-        return self
-            .attrs
-            .iter()
-            .filter_map(|x| x.interpret_meta())
-            .any(|attr| match attr {
-                syn::Meta::Word(ref ident) if ident == word => true,
-                _ => false,
-            });
+    /// Searches for attributes `#[test]` and/or `#[cfg(test)]`.
+    fn has_test_attr(&self) -> bool {
+        self.has_attr_list("cfg", &["test"]) || self.has_attr_word("test")
     }
 }
 
-impl SynItemHelpers for syn::ItemFn {
-    fn has_attr_word(&self, word: &str) -> bool {
-        return self
-            .attrs
-            .iter()
-            .filter_map(|x| x.interpret_meta())
-            .any(|attr| match attr {
-                syn::Meta::Word(ref ident) if ident == word => true,
-                _ => false,
-            });
+macro_rules! syn_item_match_helper {
+    ($s:ident => has_attrs: |$i:ident| $a:block, otherwise: || $b:block) => {
+        match $s {
+            &syn::Item::Const(ref item) => (|$i: &syn::ItemConst| $a)(item),
+            &syn::Item::Enum(ref item) => (|$i: &syn::ItemEnum| $a)(item),
+            &syn::Item::ExternCrate(ref item) => (|$i: &syn::ItemExternCrate| $a)(item),
+            &syn::Item::Fn(ref item) => (|$i: &syn::ItemFn| $a)(item),
+            &syn::Item::ForeignMod(ref item) => (|$i: &syn::ItemForeignMod| $a)(item),
+            &syn::Item::Impl(ref item) => (|$i: &syn::ItemImpl| $a)(item),
+            &syn::Item::Macro(ref item) => (|$i: &syn::ItemMacro| $a)(item),
+            &syn::Item::Macro2(ref item) => (|$i: &syn::ItemMacro2| $a)(item),
+            &syn::Item::Mod(ref item) => (|$i: &syn::ItemMod| $a)(item),
+            &syn::Item::Static(ref item) => (|$i: &syn::ItemStatic| $a)(item),
+            &syn::Item::Struct(ref item) => (|$i: &syn::ItemStruct| $a)(item),
+            &syn::Item::Trait(ref item) => (|$i: &syn::ItemTrait| $a)(item),
+            &syn::Item::Type(ref item) => (|$i: &syn::ItemType| $a)(item),
+            &syn::Item::Union(ref item) => (|$i: &syn::ItemUnion| $a)(item),
+            &syn::Item::Use(ref item) => (|$i: &syn::ItemUse| $a)(item),
+            &syn::Item::Verbatim(_) => (|| $b)(),
+        }
+    };
+}
+
+impl SynItemHelpers for syn::Item {
+    fn has_attr_word(&self, name: &str) -> bool {
+        syn_item_match_helper!(self =>
+            has_attrs: |item| { item.has_attr_word(name) },
+            otherwise: || { false }
+        )
+    }
+
+    fn has_attr_list(&self, name: &str, args: &[&str]) -> bool {
+        syn_item_match_helper!(self =>
+            has_attrs: |item| { item.has_attr_list(name, args) },
+            otherwise: || { false }
+        )
+    }
+
+    fn has_attr_name_value(&self, name: &str, value: &str) -> bool {
+        syn_item_match_helper!(self =>
+            has_attrs: |item| { item.has_attr_name_value(name, value) },
+            otherwise: || { false }
+        )
     }
 }
 
-impl SynItemHelpers for syn::ItemStatic {
-    fn has_attr_word(&self, word: &str) -> bool {
-        return self
-            .attrs
-            .iter()
-            .filter_map(|x| x.interpret_meta())
-            .any(|attr| match attr {
-                syn::Meta::Word(ref ident) if ident == word => true,
-                _ => false,
-            });
-    }
+macro_rules! impl_syn_item_helper {
+    ($t:ty) => {
+        impl SynItemHelpers for $t {
+            fn has_attr_word(&self, name: &str) -> bool {
+                return self
+                    .attrs
+                    .iter()
+                    .filter_map(|x| x.interpret_meta())
+                    .any(|attr| {
+                        if let syn::Meta::Word(ref ident) = attr {
+                            ident == name
+                        } else {
+                            false
+                        }
+                    });
+            }
+
+            fn has_attr_list(&self, name: &str, args: &[&str]) -> bool {
+                return self
+                    .attrs
+                    .iter()
+                    .filter_map(|x| x.interpret_meta())
+                    .any(|attr| {
+                        if let syn::Meta::List(syn::MetaList { ident, nested, .. }) = attr {
+                            if ident != name {
+                                return false;
+                            }
+                            args.iter().all(|arg| {
+                                nested.iter().any(|nested_meta| {
+                                    if let syn::NestedMeta::Meta(syn::Meta::Word(ident)) =
+                                        nested_meta
+                                    {
+                                        ident == arg
+                                    } else {
+                                        false
+                                    }
+                                })
+                            })
+                        } else {
+                            false
+                        }
+                    });
+            }
+
+            fn has_attr_name_value(&self, name: &str, value: &str) -> bool {
+                return self
+                    .attrs
+                    .iter()
+                    .filter_map(|x| x.interpret_meta())
+                    .any(|attr| {
+                        if let syn::Meta::NameValue(syn::MetaNameValue { ident, lit, .. }) = attr {
+                            if let syn::Lit::Str(lit) = lit {
+                                (ident == name) && (&lit.value() == value)
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    });
+            }
+        }
+    };
 }
 
-impl SynItemHelpers for syn::Variant {
-    fn has_attr_word(&self, word: &str) -> bool {
-        return self
-            .attrs
-            .iter()
-            .filter_map(|x| x.interpret_meta())
-            .any(|attr| match attr {
-                syn::Meta::Word(ref ident) if ident == word => true,
-                _ => false,
-            });
-    }
-}
+impl_syn_item_helper!(syn::ItemExternCrate);
+impl_syn_item_helper!(syn::ItemUse);
+impl_syn_item_helper!(syn::ItemStatic);
+impl_syn_item_helper!(syn::ItemConst);
+impl_syn_item_helper!(syn::ItemFn);
+impl_syn_item_helper!(syn::ItemMod);
+impl_syn_item_helper!(syn::ItemForeignMod);
+impl_syn_item_helper!(syn::ItemType);
+impl_syn_item_helper!(syn::ItemStruct);
+impl_syn_item_helper!(syn::ItemEnum);
+impl_syn_item_helper!(syn::ItemUnion);
+impl_syn_item_helper!(syn::ItemTrait);
+impl_syn_item_helper!(syn::ItemImpl);
+impl_syn_item_helper!(syn::ItemMacro);
+impl_syn_item_helper!(syn::ItemMacro2);
 
-impl SynItemHelpers for syn::Field {
-    fn has_attr_word(&self, word: &str) -> bool {
-        return self
-            .attrs
-            .iter()
-            .filter_map(|x| x.interpret_meta())
-            .any(|attr| match attr {
-                syn::Meta::Word(ref ident) if ident == word => true,
-                _ => false,
-            });
+impl SynItemHelpers for syn::ItemVerbatim {
+    fn has_attr_word(&self, _name: &str) -> bool {
+        false
+    }
+
+    fn has_attr_list(&self, _name: &str, _args: &[&str]) -> bool {
+        false
+    }
+
+    fn has_attr_name_value(&self, _name: &str, _value: &str) -> bool {
+        false
     }
 }
 
