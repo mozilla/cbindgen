@@ -11,7 +11,7 @@ use bindgen::config::{Config, Language, Layout};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, PrimitiveType, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, Path, PrimitiveType, ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
@@ -21,7 +21,7 @@ use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Function {
-    pub name: String,
+    pub path: Path,
     pub ret: Type,
     pub args: Vec<(String, Type)>,
     pub extern_decl: bool,
@@ -32,7 +32,7 @@ pub struct Function {
 
 impl Function {
     pub fn load(
-        name: String,
+        path: Path,
         decl: &syn::FnDecl,
         extern_decl: bool,
         attrs: &[syn::Attribute],
@@ -51,14 +51,18 @@ impl Function {
         };
 
         Ok(Function {
-            name: name,
-            ret: ret,
-            args: args,
-            extern_decl: extern_decl,
+            path,
+            ret,
+            args,
+            extern_decl,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
             documentation: Documentation::load(attrs),
         })
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 
     pub fn simplify_standard_types(&mut self) {

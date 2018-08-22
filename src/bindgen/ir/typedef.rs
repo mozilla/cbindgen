@@ -22,7 +22,8 @@ use bindgen::writer::{Source, SourceWriter};
 /// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]
 pub struct Typedef {
-    pub name: String,
+    pub path: Path,
+    pub export_name: String,
     pub generic_params: GenericParams,
     pub aliased: Type,
     pub cfg: Option<Cfg>,
@@ -33,16 +34,37 @@ pub struct Typedef {
 impl Typedef {
     pub fn load(item: &syn::ItemType, mod_cfg: &Option<Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(&item.ty)? {
-            Ok(Typedef {
-                name: item.ident.to_string(),
-                generic_params: GenericParams::new(&item.generics),
-                aliased: x,
-                cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-                annotations: AnnotationSet::load(&item.attrs)?,
-                documentation: Documentation::load(&item.attrs),
-            })
+            let path = Path::new(item.ident.to_string());
+            Ok(Typedef::new(
+                path,
+                GenericParams::new(&item.generics),
+                x,
+                Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+                AnnotationSet::load(&item.attrs)?,
+                Documentation::load(&item.attrs),
+            ))
         } else {
             Err("Cannot have a typedef of a zero sized type.".to_owned())
+        }
+    }
+
+    pub fn new(
+        path: Path,
+        generic_params: GenericParams,
+        aliased: Type,
+        cfg: Option<Cfg>,
+        annotations: AnnotationSet,
+        documentation: Documentation,
+    ) -> Self {
+        let export_name = path.name().to_owned();
+        Self {
+            path,
+            export_name,
+            generic_params,
+            aliased,
+            cfg,
+            annotations,
+            documentation,
         }
     }
 
@@ -60,7 +82,7 @@ impl Typedef {
                 if out.contains_key(&alias_path) {
                     warn!(
                         "Multiple typedef's with annotations for {}. Ignoring annotations from {}.",
-                        alias_path, self.name
+                        alias_path, self.path
                     );
                     return;
                 }
@@ -92,8 +114,12 @@ impl Typedef {
 }
 
 impl Item for Typedef {
-    fn name(&self) -> &str {
-        &self.name
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn export_name(&self) -> &str {
+        &self.export_name
     }
 
     fn cfg(&self) -> &Option<Cfg> {
@@ -113,7 +139,7 @@ impl Item for Typedef {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.name);
+        config.export.rename(&mut self.export_name);
         self.aliased.rename_for_config(config, &self.generic_params);
     }
 
@@ -128,19 +154,19 @@ impl Item for Typedef {
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &Vec<Type>,
+        generic_values: &[Type],
         library: &Library,
         out: &mut Monomorphs,
     ) {
         assert!(
             self.generic_params.len() > 0,
             "{} is not generic",
-            self.name
+            self.path
         );
         assert!(
             self.generic_params.len() == generic_values.len(),
             "{} has {} params but is being instantiated with {} values",
-            self.name,
+            self.path,
             self.generic_params.len(),
             generic_values.len(),
         );
@@ -151,19 +177,20 @@ impl Item for Typedef {
             .zip(generic_values.iter())
             .collect::<Vec<_>>();
 
-        let monomorph = Typedef {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: GenericParams::default(),
-            aliased: self.aliased.specialize(&mappings),
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        };
+        let mangled_path = mangle::mangle_path(&self.path, generic_values);
+        let monomorph = Typedef::new(
+            mangled_path,
+            GenericParams::default(),
+            self.aliased.specialize(&mappings),
+            self.cfg.clone(),
+            self.annotations.clone(),
+            self.documentation.clone(),
+        );
 
         // Instantiate any monomorphs for any generic paths we may have just created.
         monomorph.add_monomorphs(library, out);
 
-        out.insert_typedef(self, monomorph, generic_values.clone());
+        out.insert_typedef(self, monomorph, generic_values.to_owned());
     }
 }
 
@@ -178,9 +205,9 @@ impl Source for Typedef {
 
         if config.language == Language::C {
             out.write("typedef ");
-            (self.name.clone(), self.aliased.clone()).write(config, out);
+            (self.export_name().to_owned(), self.aliased.clone()).write(config, out);
         } else {
-            write!(out, "using {} = ", self.name);
+            write!(out, "using {} = ", self.export_name());
             self.aliased.write(config, out);
         }
         out.write(";");

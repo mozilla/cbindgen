@@ -10,8 +10,8 @@ use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Repr,
-    ToCondition, Type, Typedef,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
+    Repr, ToCondition, Type, Typedef,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -22,7 +22,8 @@ use bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Struct {
-    pub name: String,
+    pub path: Path,
+    pub export_name: String,
     pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
     /// Whether there's a tag field on the body of this struct. When this is
@@ -74,18 +75,49 @@ impl Struct {
             }
         };
 
-        Ok(Self {
-            name: item.ident.to_string(),
-            generic_params: GenericParams::new(&item.generics),
-            fields: fields,
-            is_tagged: false,
-            is_enum_variant_body: false,
-            is_transparent: is_transparent,
-            tuple_struct: tuple_struct,
-            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-            annotations: AnnotationSet::load(&item.attrs)?,
-            documentation: Documentation::load(&item.attrs),
-        })
+        let is_tagged = false;
+        let is_enum_variant_body = false;
+
+        Ok(Struct::new(
+            Path::new(item.ident.to_string()),
+            GenericParams::new(&item.generics),
+            fields,
+            is_tagged,
+            is_enum_variant_body,
+            is_transparent,
+            tuple_struct,
+            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            AnnotationSet::load(&item.attrs)?,
+            Documentation::load(&item.attrs),
+        ))
+    }
+
+    pub fn new(
+        path: Path,
+        generic_params: GenericParams,
+        fields: Vec<(String, Type, Documentation)>,
+        is_tagged: bool,
+        is_enum_variant_body: bool,
+        is_transparent: bool,
+        tuple_struct: bool,
+        cfg: Option<Cfg>,
+        annotations: AnnotationSet,
+        documentation: Documentation,
+    ) -> Self {
+        let export_name = path.name().to_owned();
+        Self {
+            path,
+            export_name,
+            generic_params,
+            fields,
+            is_tagged,
+            is_enum_variant_body,
+            is_transparent,
+            tuple_struct,
+            cfg,
+            annotations,
+            documentation,
+        }
     }
 
     pub fn simplify_standard_types(&mut self) {
@@ -116,29 +148,33 @@ impl Struct {
         }
     }
 
-    pub fn specialize(&self, generic_values: &Vec<Type>, mappings: &Vec<(&String, &Type)>) -> Self {
-        Self {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: GenericParams::default(),
-            fields: self
-                .fields
+    pub fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)]) -> Self {
+        let mangled_path = mangle::mangle_path(&self.path, generic_values);
+        Struct::new(
+            mangled_path,
+            GenericParams::default(),
+            self.fields
                 .iter()
-                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
+                .map(|x| (x.0.clone(), x.1.specialize(mappings), x.2.clone()))
                 .collect(),
-            is_enum_variant_body: self.is_enum_variant_body,
-            is_tagged: self.is_tagged,
-            is_transparent: self.is_transparent,
-            tuple_struct: self.tuple_struct,
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        }
+            self.is_tagged,
+            self.is_enum_variant_body,
+            self.is_transparent,
+            self.tuple_struct,
+            self.cfg.clone(),
+            self.annotations.clone(),
+            self.documentation.clone(),
+        )
     }
 }
 
 impl Item for Struct {
-    fn name(&self) -> &str {
-        &self.name
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn export_name(&self) -> &str {
+        &self.export_name
     }
 
     fn cfg(&self) -> &Option<Cfg> {
@@ -159,7 +195,7 @@ impl Item for Struct {
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
         if !self.is_transparent {
-            resolver.add_struct(&self.name);
+            resolver.add_struct(&self.path);
         }
     }
 
@@ -171,7 +207,7 @@ impl Item for Struct {
 
     fn rename_for_config(&mut self, config: &Config) {
         if !self.is_tagged || config.language == Language::C {
-            config.export.rename(&mut self.name);
+            config.export.rename(&mut self.export_name);
         }
         {
             let fields = self
@@ -227,19 +263,19 @@ impl Item for Struct {
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &Vec<Type>,
+        generic_values: &[Type],
         library: &Library,
         out: &mut Monomorphs,
     ) {
         assert!(
             self.generic_params.len() > 0,
             "{} is not generic",
-            self.name
+            self.path
         );
         assert!(
             self.generic_params.len() == generic_values.len(),
             "{} has {} params but is being instantiated with {} values",
-            self.name,
+            self.path,
             self.generic_params.len(),
             generic_values.len(),
         );
@@ -255,7 +291,7 @@ impl Item for Struct {
         // Instantiate any monomorphs for any generic paths we may have just created.
         monomorph.add_monomorphs(library, out);
 
-        out.insert_struct(self, monomorph, generic_values.clone());
+        out.insert_struct(self, monomorph, generic_values.to_owned());
     }
 }
 
@@ -263,7 +299,8 @@ impl Source for Struct {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if self.is_transparent {
             let typedef = Typedef {
-                name: self.name.clone(),
+                path: self.path.clone(),
+                export_name: self.export_name.to_owned(),
                 generic_params: self.generic_params.clone(),
                 aliased: self.fields[0].1.clone(),
                 cfg: self.cfg.clone(),
@@ -296,7 +333,7 @@ impl Source for Struct {
         out.write("struct");
 
         if config.language == Language::Cxx || config.style.generate_tag() {
-            write!(out, " {}", self.name);
+            write!(out, " {}", self.export_name());
         }
 
         out.open_brace();
@@ -304,14 +341,12 @@ impl Source for Struct {
         if config.documentation {
             out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
         } else {
-            out.write_vertical_source_list(
-                &self
-                    .fields
-                    .iter()
-                    .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
-                    .collect(),
-                ListType::Cap(";"),
-            );
+            let vec: Vec<_> = self
+                .fields
+                .iter()
+                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
+                .collect();
+            out.write_vertical_source_list(&vec[..], ListType::Cap(";"));
         }
 
         if config.language == Language::Cxx {
@@ -333,29 +368,25 @@ impl Source for Struct {
                         .unwrap_or(&RenameRule::GeckoCase)
                         .apply_to_snake_case(name, IdentifierType::FunctionArg)
                 };
-                write!(out, "{}(", self.name);
-                out.write_vertical_source_list(
-                    &self
-                        .fields
-                        .iter()
-                        .map(|&(ref name, ref ty, _)| {
-                            // const-ref args to constructor
-                            (format!("const& {}", arg_renamer(name)), ty.clone())
-                        })
-                        .collect(),
-                    ListType::Join(","),
-                );
+                write!(out, "{}(", self.export_name());
+                let vec: Vec<_> = self
+                    .fields
+                    .iter()
+                    .map(|&(ref name, ref ty, _)| {
+                        // const-ref args to constructor
+                        (format!("const& {}", arg_renamer(name)), ty.clone())
+                    })
+                    .collect();
+                out.write_vertical_source_list(&vec[..], ListType::Join(","));
                 write!(out, ")");
                 out.new_line();
                 write!(out, "  : ");
-                out.write_vertical_source_list(
-                    &self
-                        .fields
-                        .iter()
-                        .map(|x| format!("{}({})", x.0, arg_renamer(&x.0)))
-                        .collect(),
-                    ListType::Join(","),
-                );
+                let vec: Vec<_> = self
+                    .fields
+                    .iter()
+                    .map(|x| format!("{}({})", x.0, arg_renamer(&x.0)))
+                    .collect();
+                out.write_vertical_source_list(&vec[..], ListType::Join(","));
                 out.new_line();
                 write!(out, "{{}}");
                 out.new_line();
@@ -380,19 +411,19 @@ impl Source for Struct {
                 write!(
                     out,
                     "bool operator{}(const {}& {}) const",
-                    op, self.name, other
+                    op,
+                    self.export_name(),
+                    other
                 );
                 out.open_brace();
                 out.write("return ");
-                out.write_vertical_source_list(
-                    &self
-                        .fields
-                        .iter()
-                        .skip(skip_fields)
-                        .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
-                        .collect(),
-                    ListType::Join(&format!(" {}", conjuc)),
-                );
+                let vec: Vec<_> = self
+                    .fields
+                    .iter()
+                    .skip(skip_fields)
+                    .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
+                    .collect();
+                out.write_vertical_source_list(&vec[..], ListType::Join(&format!(" {}", conjuc)));
                 out.write(";");
                 out.close_brace(false);
             };
@@ -431,7 +462,7 @@ impl Source for Struct {
 
         if config.language == Language::C && config.style.generate_typedef() {
             out.close_brace(false);
-            write!(out, " {};", self.name);
+            write!(out, " {};", self.export_name());
         } else {
             out.close_brace(true);
         }

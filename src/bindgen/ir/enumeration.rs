@@ -11,7 +11,7 @@ use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath, Item,
-    ItemContainer, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
+    ItemContainer, Path, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -23,6 +23,7 @@ use bindgen::writer::{ListType, Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct EnumVariant {
     pub name: String,
+    pub export_name: String,
     pub discriminant: Option<u64>,
     pub body: Option<(String, Struct)>,
     pub documentation: Documentation,
@@ -58,11 +59,7 @@ impl EnumVariant {
             if is_tagged {
                 res.push((
                     "tag".to_string(),
-                    Type::Path(GenericPath {
-                        name: "Tag".to_string(),
-                        generics: vec![],
-                        ctype: None,
-                    }),
+                    Type::Path(GenericPath::new(Path::new("Tag"), vec![])),
                     Documentation::none(),
                 ));
             }
@@ -85,36 +82,42 @@ impl EnumVariant {
 
         let body = match variant.fields {
             syn::Fields::Unit => None,
-            syn::Fields::Named(ref fields) => Some(Struct {
-                name: format!("{}_Body", variant.ident),
-                generic_params,
-                fields: parse_fields(is_tagged, &fields.named)?,
-                is_tagged,
-                is_enum_variant_body: true,
-                is_transparent: false,
-                tuple_struct: false,
-                cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
-                annotations: AnnotationSet::load(&variant.attrs)?,
-                documentation: Documentation::none(),
-            }),
-            syn::Fields::Unnamed(ref fields) => Some(Struct {
-                name: format!("{}_Body", variant.ident),
-                generic_params,
-                fields: parse_fields(is_tagged, &fields.unnamed)?,
-                is_tagged,
-                is_enum_variant_body: true,
-                is_transparent: false,
-                tuple_struct: true,
-                cfg: Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
-                annotations: AnnotationSet::load(&variant.attrs)?,
-                documentation: Documentation::none(),
-            }),
+            syn::Fields::Named(ref fields) => {
+                let path = Path::new(format!("{}_Body", variant.ident));
+                Some(Struct::new(
+                    path,
+                    generic_params,
+                    parse_fields(is_tagged, &fields.named)?,
+                    is_tagged,
+                    true,
+                    false,
+                    false,
+                    Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
+                    AnnotationSet::load(&variant.attrs)?,
+                    Documentation::none(),
+                ))
+            }
+            syn::Fields::Unnamed(ref fields) => {
+                let path = Path::new(format!("{}_Body", variant.ident));
+                Some(Struct::new(
+                    path,
+                    generic_params,
+                    parse_fields(is_tagged, &fields.unnamed)?,
+                    is_tagged,
+                    true,
+                    false,
+                    true,
+                    Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
+                    AnnotationSet::load(&variant.attrs)?,
+                    Documentation::none(),
+                ))
+            }
         };
 
-        Ok(EnumVariant {
-            name: variant.ident.to_string(),
+        Ok(EnumVariant::new(
+            variant.ident.to_string(),
             discriminant,
-            body: body.map(|body| {
+            body.map(|body| {
                 (
                     RenameRule::SnakeCase.apply_to_pascal_case(
                         &format!("{}", variant.ident),
@@ -123,8 +126,24 @@ impl EnumVariant {
                     body,
                 )
             }),
-            documentation: Documentation::load(&variant.attrs),
-        })
+            Documentation::load(&variant.attrs),
+        ))
+    }
+
+    pub fn new(
+        name: String,
+        discriminant: Option<u64>,
+        body: Option<(String, Struct)>,
+        documentation: Documentation,
+    ) -> Self {
+        let export_name = name.clone();
+        Self {
+            name,
+            export_name,
+            discriminant,
+            body,
+            documentation,
+        }
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
@@ -139,16 +158,15 @@ impl EnumVariant {
         }
     }
 
-    fn specialize(&self, generic_values: &Vec<Type>, mappings: &Vec<(&String, &Type)>) -> Self {
-        Self {
-            name: mangle::mangle_path(&self.name, generic_values),
-            discriminant: self.discriminant,
-            body: self
-                .body
+    fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)]) -> Self {
+        Self::new(
+            mangle::mangle_name(&self.name, generic_values),
+            self.discriminant,
+            self.body
                 .as_ref()
                 .map(|&(ref name, ref ty)| (name.clone(), ty.specialize(generic_values, mappings))),
-            documentation: self.documentation.clone(),
-        }
+            self.documentation.clone(),
+        )
     }
 
     fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -167,7 +185,7 @@ impl EnumVariant {
 impl Source for EnumVariant {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         self.documentation.write(config, out);
-        write!(out, "{}", self.name);
+        write!(out, "{}", self.export_name);
         if let Some(discriminant) = self.discriminant {
             write!(out, " = {}", discriminant);
         }
@@ -177,7 +195,8 @@ impl Source for EnumVariant {
 
 #[derive(Debug, Clone)]
 pub struct Enum {
-    pub name: String,
+    pub path: Path,
+    pub export_name: String,
     pub generic_params: GenericParams,
     pub repr: Repr,
     pub variants: Vec<EnumVariant>,
@@ -223,7 +242,7 @@ impl Enum {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }
 
-        let generics = GenericParams::new(&item.generics);
+        let generic_params = GenericParams::new(&item.generics);
 
         let mut variants = Vec::new();
         let mut is_tagged = false;
@@ -232,7 +251,7 @@ impl Enum {
             let variant = EnumVariant::load(
                 repr.style == ReprStyle::Rust,
                 variant,
-                generics.clone(),
+                generic_params.clone(),
                 mod_cfg,
             )?;
             is_tagged = is_tagged || variant.body.is_some();
@@ -243,35 +262,60 @@ impl Enum {
 
         if let Some(names) = annotations.list("enum-trailing-values") {
             for name in names {
-                variants.push(EnumVariant {
-                    name,
-                    discriminant: None,
-                    body: None,
-                    documentation: Documentation::none(),
-                });
+                variants.push(EnumVariant::new(name, None, None, Documentation::none()));
             }
         }
 
-        Ok(Enum {
-            generic_params: generics,
-            name: item.ident.to_string(),
+        let path = Path::new(item.ident.to_string());
+        let tag = if is_tagged {
+            Some("Tag".to_string())
+        } else {
+            None
+        };
+        Ok(Enum::new(
+            path,
+            generic_params,
             repr,
             variants,
-            tag: if is_tagged {
-                Some("Tag".to_string())
-            } else {
-                None
-            },
-            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            tag,
+            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             annotations,
-            documentation: Documentation::load(&item.attrs),
-        })
+            Documentation::load(&item.attrs),
+        ))
+    }
+
+    pub fn new(
+        path: Path,
+        generic_params: GenericParams,
+        repr: Repr,
+        variants: Vec<EnumVariant>,
+        tag: Option<String>,
+        cfg: Option<Cfg>,
+        annotations: AnnotationSet,
+        documentation: Documentation,
+    ) -> Self {
+        let export_name = path.name().to_owned();
+        Self {
+            path,
+            export_name,
+            generic_params,
+            repr,
+            variants,
+            tag,
+            cfg,
+            annotations,
+            documentation,
+        }
     }
 }
 
 impl Item for Enum {
-    fn name(&self) -> &str {
-        &self.name
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn export_name(&self) -> &str {
+        &self.export_name
     }
 
     fn cfg(&self) -> &Option<Cfg> {
@@ -292,11 +336,11 @@ impl Item for Enum {
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
         if self.tag.is_some() && self.repr.style == ReprStyle::C {
-            resolver.add_struct(&self.name);
+            resolver.add_struct(&self.path);
         } else if self.tag.is_some() && self.repr.style != ReprStyle::C {
-            resolver.add_union(&self.name);
+            resolver.add_union(&self.path);
         } else if self.repr.style == ReprStyle::C {
-            resolver.add_enum(&self.name);
+            resolver.add_enum(&self.path);
         }
     }
 
@@ -307,19 +351,17 @@ impl Item for Enum {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.name);
+        config.export.rename(&mut self.export_name);
 
         if config.language == Language::C && self.tag.is_some() {
             // it makes sense to always prefix Tag with type name in C
-            let new_tag = format!("{}_Tag", self.name);
+            let new_tag = format!("{}_Tag", self.export_name);
             if self.repr.style == ReprStyle::Rust {
                 for variant in &mut self.variants {
                     if let Some((_, ref mut body)) = variant.body {
-                        body.fields[0].1 = Type::Path(GenericPath {
-                            name: new_tag.clone(),
-                            generics: vec![],
-                            ctype: None,
-                        });
+                        let path = Path::new(new_tag.clone());
+                        let generic_path = GenericPath::new(path, vec![]);
+                        body.fields[0].1 = Type::Path(generic_path);
                     }
                 }
             }
@@ -336,9 +378,9 @@ impl Item for Enum {
             || self.annotations.bool("prefix-with-name").unwrap_or(false)
         {
             for variant in &mut self.variants {
-                variant.name = format!("{}_{}", self.name, variant.name);
+                variant.export_name = format!("{}_{}", self.export_name, variant.export_name);
                 if let Some((_, ref mut body)) = variant.body {
-                    body.name = format!("{}_{}", self.name, body.name);
+                    body.export_name = format!("{}_{}", self.export_name, body.export_name());
                 }
             }
         }
@@ -352,16 +394,18 @@ impl Item for Enum {
             self.variants = self
                 .variants
                 .iter()
-                .map(|variant| EnumVariant {
-                    name: r.apply_to_pascal_case(&variant.name, IdentifierType::EnumVariant(self)),
-                    discriminant: variant.discriminant.clone(),
-                    body: variant.body.as_ref().map(|body| {
-                        (
-                            r.apply_to_snake_case(&body.0, IdentifierType::StructMember),
-                            body.1.clone(),
-                        )
-                    }),
-                    documentation: variant.documentation.clone(),
+                .map(|variant| {
+                    EnumVariant::new(
+                        r.apply_to_pascal_case(&variant.name, IdentifierType::EnumVariant(self)),
+                        variant.discriminant.clone(),
+                        variant.body.as_ref().map(|body| {
+                            (
+                                r.apply_to_snake_case(&body.0, IdentifierType::StructMember),
+                                body.1.clone(),
+                            )
+                        }),
+                        variant.documentation.clone(),
+                    )
                 })
                 .collect();
         }
@@ -369,19 +413,19 @@ impl Item for Enum {
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &Vec<Type>,
+        generic_values: &[Type],
         library: &Library,
         out: &mut Monomorphs,
     ) {
         assert!(
             self.generic_params.len() > 0,
             "{} is not generic",
-            self.name
+            self.path.name()
         );
         assert!(
             self.generic_params.len() == generic_values.len(),
             "{} has {} params but is being instantiated with {} values",
-            self.name,
+            self.path.name(),
             self.generic_params.len(),
             generic_values.len(),
         );
@@ -398,24 +442,24 @@ impl Item for Enum {
             }
         }
 
-        let monomorph = Enum {
-            name: mangle::mangle_path(&self.name, generic_values),
-            tag: self.tag.clone(),
-            generic_params: GenericParams::default(),
-            repr: self.repr.clone(),
-            variants: self
-                .variants
+        let mangled_path = mangle::mangle_path(&self.path, generic_values);
+        let monomorph = Enum::new(
+            mangled_path,
+            GenericParams::default(),
+            self.repr.clone(),
+            self.variants
                 .iter()
                 .map(|v| v.specialize(generic_values, &mappings))
                 .collect(),
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        };
+            self.tag.clone(),
+            self.cfg.clone(),
+            self.annotations.clone(),
+            self.documentation.clone(),
+        );
 
         monomorph.add_monomorphs(library, out);
 
-        out.insert_enum(self, monomorph, generic_values.clone());
+        out.insert_enum(self, monomorph, generic_values.to_owned());
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
@@ -451,14 +495,14 @@ impl Source for Enum {
         self.generic_params.write(config, out);
         if is_tagged && config.language == Language::Cxx {
             out.write(if separate_tag { "struct " } else { "union " });
-            write!(out, "{}", self.name);
+            write!(out, "{}", self.export_name());
             out.open_brace();
         }
 
         let enum_name = if let Some(ref tag) = self.tag {
             tag
         } else {
-            &self.name
+            self.export_name()
         };
 
         // Emit the actual enum
@@ -531,7 +575,7 @@ impl Source for Enum {
                 out.write(if separate_tag { "struct" } else { "union" });
 
                 if config.style.generate_tag() {
-                    write!(out, " {}", self.name);
+                    write!(out, " {}", self.export_name());
                 }
 
                 out.open_brace();
@@ -573,9 +617,9 @@ impl Source for Enum {
                     out.new_line();
                 }
                 if config.style.generate_typedef() {
-                    write!(out, "{} {};", body.name, field_name);
+                    write!(out, "{} {};", body.export_name(), field_name);
                 } else {
-                    write!(out, "struct {} {};", body.name, field_name);
+                    write!(out, "struct {} {};", body.export_name(), field_name);
                 }
             }
 
@@ -602,27 +646,25 @@ impl Source for Enum {
                             .apply_to_snake_case(name, IdentifierType::FunctionArg)
                     };
 
-                    write!(out, "static {} {}(", self.name, variant.name);
+                    write!(out, "static {} {}(", self.export_name, variant.export_name);
 
                     if let Some((_, ref body)) = variant.body {
-                        out.write_vertical_source_list(
-                            &body
-                                .fields
-                                .iter()
-                                .skip(skip_fields)
-                                .map(|&(ref name, ref ty, _)| {
-                                    // const-ref args to constructor
-                                    (format!("const& {}", arg_renamer(name)), ty.clone())
-                                })
-                                .collect(),
-                            ListType::Join(","),
-                        );
+                        let vec: Vec<_> = body
+                            .fields
+                            .iter()
+                            .skip(skip_fields)
+                            .map(|&(ref name, ref ty, _)| {
+                                // const-ref args to constructor
+                                (format!("const& {}", arg_renamer(name)), ty.clone())
+                            })
+                            .collect();
+                        out.write_vertical_source_list(&vec[..], ListType::Join(","));
                     }
 
                     write!(out, ")");
                     out.open_brace();
 
-                    write!(out, "{} result;", self.name);
+                    write!(out, "{} result;", self.export_name);
 
                     if let Some((ref variant_name, ref body)) = variant.body {
                         for &(ref field_name, ..) in body.fields.iter().skip(skip_fields) {
@@ -638,7 +680,7 @@ impl Source for Enum {
                     }
 
                     out.new_line();
-                    write!(out, "result.tag = {}::{};", enum_name, variant.name);
+                    write!(out, "result.tag = {}::{};", enum_name, variant.export_name);
                     out.new_line();
                     write!(out, "return result;");
                     out.close_brace(false);
@@ -649,9 +691,9 @@ impl Source for Enum {
                     out.new_line();
 
                     // FIXME: create a config for method case
-                    write!(out, "bool Is{}() const", variant.name);
+                    write!(out, "bool Is{}() const", variant.export_name);
                     out.open_brace();
-                    write!(out, "return tag == {}::{};", enum_name, variant.name);
+                    write!(out, "return tag == {}::{};", enum_name, variant.export_name);
                     out.close_brace(false);
                 }
             }
@@ -668,7 +710,11 @@ impl Source for Enum {
 
                 out.new_line();
                 out.new_line();
-                write!(out, "bool operator==(const {}& {}) const", self.name, other);
+                write!(
+                    out,
+                    "bool operator==(const {}& {}) const",
+                    self.export_name, other
+                );
                 out.open_brace();
                 write!(out, "if (tag != {}.tag)", other);
                 out.open_brace();
@@ -683,7 +729,7 @@ impl Source for Enum {
                             out,
                             "case {}::{}: return {} == {}.{};",
                             self.tag.as_ref().unwrap(),
-                            variant.name,
+                            variant.export_name,
                             variant_name,
                             other,
                             variant_name
@@ -698,7 +744,11 @@ impl Source for Enum {
                 if config.structure.derive_neq(&self.annotations) {
                     out.new_line();
                     out.new_line();
-                    write!(out, "bool operator!=(const {}& {}) const", self.name, other);
+                    write!(
+                        out,
+                        "bool operator!=(const {}& {}) const",
+                        self.export_name, other
+                    );
                     out.open_brace();
                     write!(out, "return !(*this == {});", other);
                     out.close_brace(false);
@@ -708,7 +758,7 @@ impl Source for Enum {
             if config.language == Language::C {
                 if config.style.generate_typedef() {
                     out.close_brace(false);
-                    write!(out, " {};", self.name);
+                    write!(out, " {};", self.export_name);
                 } else {
                     out.close_brace(true);
                 }
