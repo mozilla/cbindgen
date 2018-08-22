@@ -10,7 +10,7 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, Item, ItemContainer, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, Item, ItemContainer, Path, ToCondition, Type,
 };
 use bindgen::writer::{Source, SourceWriter};
 
@@ -93,7 +93,8 @@ impl LiteralExpr {
 
 #[derive(Debug, Clone)]
 pub struct Constant {
-    pub name: String,
+    pub path: Path,
+    pub export_name: String,
     pub ty: Type,
     pub value: LiteralExpr,
     pub cfg: Option<Cfg>,
@@ -103,7 +104,7 @@ pub struct Constant {
 
 impl Constant {
     pub fn load(
-        name: String,
+        path: Path,
         item: &syn::ItemConst,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Constant, String> {
@@ -115,21 +116,22 @@ impl Constant {
 
         let ty = ty.unwrap();
 
-        if !ty.is_primitive_or_ptr_primitive() && match *item.expr {
-            syn::Expr::Struct(_) => false,
-            _ => true,
-        } {
+        if !ty.is_primitive_or_ptr_primitive()
+            && match *item.expr {
+                syn::Expr::Struct(_) => false,
+                _ => true,
+            } {
             return Err("Unhanded const definition".to_owned());
         }
 
-        Ok(Constant {
-            name: name,
-            ty: ty,
-            value: LiteralExpr::load(&item.expr)?,
-            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-            annotations: AnnotationSet::load(&item.attrs)?,
-            documentation: Documentation::load(&item.attrs),
-        })
+        Ok(Constant::new(
+            path,
+            ty,
+            LiteralExpr::load(&item.expr)?,
+            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            AnnotationSet::load(&item.attrs)?,
+            Documentation::load(&item.attrs),
+        ))
     }
 
     pub fn load_assoc(
@@ -137,6 +139,8 @@ impl Constant {
         item: &syn::ImplItemConst,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Constant, String> {
+        let path = Path::new(name);
+
         let ty = Type::load(&item.ty)?;
 
         if ty.is_none() {
@@ -145,27 +149,52 @@ impl Constant {
 
         let ty = ty.unwrap();
 
-        if !ty.is_primitive_or_ptr_primitive() && match item.expr {
-            syn::Expr::Struct(_) => false,
-            _ => true,
-        } {
+        if !ty.is_primitive_or_ptr_primitive()
+            && match item.expr {
+                syn::Expr::Struct(_) => false,
+                _ => true,
+            } {
             return Err("Unhanded const definition".to_owned());
         }
 
-        Ok(Constant {
-            name: name,
-            ty: ty,
-            value: LiteralExpr::load(&item.expr)?,
-            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-            annotations: AnnotationSet::load(&item.attrs)?,
-            documentation: Documentation::load(&item.attrs),
-        })
+        Ok(Constant::new(
+            path,
+            ty,
+            LiteralExpr::load(&item.expr)?,
+            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            AnnotationSet::load(&item.attrs)?,
+            Documentation::load(&item.attrs),
+        ))
+    }
+
+    pub fn new(
+        path: Path,
+        ty: Type,
+        value: LiteralExpr,
+        cfg: Option<Cfg>,
+        annotations: AnnotationSet,
+        documentation: Documentation,
+    ) -> Self {
+        let export_name = path.name().to_owned();
+        Self {
+            path,
+            export_name,
+            ty,
+            value,
+            cfg,
+            annotations,
+            documentation,
+        }
     }
 }
 
 impl Item for Constant {
-    fn name(&self) -> &str {
-        &self.name
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn export_name(&self) -> &str {
+        &self.export_name
     }
 
     fn cfg(&self) -> &Option<Cfg> {
@@ -185,7 +214,7 @@ impl Item for Constant {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.name);
+        config.export.rename(&mut self.export_name);
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
@@ -204,9 +233,9 @@ impl Source for Constant {
                 out.write("static const ");
             }
             self.ty.write(config, out);
-            write!(out, " {} = {};", self.name, self.value.0)
+            write!(out, " {} = {};", self.export_name(), self.value.0)
         } else {
-            write!(out, "#define {} {}", self.name, self.value.0)
+            write!(out, "#define {} {}", self.export_name(), self.value.0)
         }
         condition.write_after(config, out);
     }

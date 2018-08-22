@@ -55,16 +55,16 @@ impl Library {
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
         self.remove_excluded();
-        self.functions.sort_by(|x, y| x.name.cmp(&y.name));
+        self.functions.sort_by(|x, y| x.path.cmp(&y.path));
         self.transfer_annotations();
-        self.rename_items();
         self.simplify_standard_types();
 
         if self.config.language == Language::C {
             self.instantiate_monomorphs();
-
             self.resolve_declaration_types();
         }
+
+        self.rename_items();
 
         let mut dependencies = Dependencies::new();
 
@@ -75,9 +75,10 @@ impl Library {
             global.add_dependencies(&self, &mut dependencies);
         });
         for name in &self.config.export.include {
-            if let Some(items) = self.get_items(name) {
-                if !dependencies.items.contains(name) {
-                    dependencies.items.insert(name.clone());
+            let path = Path::new(name.clone());
+            if let Some(items) = self.get_items(&path) {
+                if !dependencies.items.contains(&path) {
+                    dependencies.items.insert(path);
 
                     for item in &items {
                         item.deref().add_dependencies(&self, &mut dependencies);
@@ -140,22 +141,23 @@ impl Library {
 
     fn remove_excluded(&mut self) {
         let config = &self.config;
+        // FIXME: interpret `config.export.exclude` as `Path`s.
         self.functions
-            .retain(|x| !config.export.exclude.contains(&x.name));
+            .retain(|x| !config.export.exclude.iter().any(|y| y == x.path().name()));
         self.enums
-            .filter(|x| config.export.exclude.contains(&x.name));
+            .filter(|x| config.export.exclude.iter().any(|y| y == x.path().name()));
         self.structs
-            .filter(|x| config.export.exclude.contains(&x.name));
+            .filter(|x| config.export.exclude.iter().any(|y| y == x.path().name()));
         self.unions
-            .filter(|x| config.export.exclude.contains(&x.name));
+            .filter(|x| config.export.exclude.iter().any(|y| y == x.path().name()));
         self.opaque_items
-            .filter(|x| config.export.exclude.contains(&x.name));
+            .filter(|x| config.export.exclude.iter().any(|y| y == x.path().name()));
         self.typedefs
-            .filter(|x| config.export.exclude.contains(&x.name));
+            .filter(|x| config.export.exclude.iter().any(|y| y == x.path().name()));
         self.globals
-            .filter(|x| config.export.exclude.contains(&x.name));
+            .filter(|x| config.export.exclude.iter().any(|y| y == x.path().name()));
         self.constants
-            .filter(|x| config.export.exclude.contains(&x.name));
+            .filter(|x| config.export.exclude.iter().any(|y| y == x.path().name()));
     }
 
     fn transfer_annotations(&mut self) {

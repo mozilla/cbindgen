@@ -28,13 +28,13 @@ impl Dependencies {
             (&ItemContainer::Enum(ref x), &ItemContainer::Enum(ref y))
                 if x.tag.is_none() && y.tag.is_none() =>
             {
-                x.name.cmp(&y.name)
+                x.path.cmp(&y.path)
             }
             (&ItemContainer::Enum(ref x), _) if x.tag.is_none() => Ordering::Less,
             (_, &ItemContainer::Enum(ref x)) if x.tag.is_none() => Ordering::Greater,
 
             (&ItemContainer::OpaqueItem(ref x), &ItemContainer::OpaqueItem(ref y)) => {
-                x.name.cmp(&y.name)
+                x.path.cmp(&y.path)
             }
             (&ItemContainer::OpaqueItem(_), _) => Ordering::Less,
             (_, &ItemContainer::OpaqueItem(_)) => Ordering::Greater,

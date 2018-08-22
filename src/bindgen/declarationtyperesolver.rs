@@ -4,10 +4,12 @@
 
 use std::collections::HashSet;
 
+use bindgen::ir::Path;
+
 pub struct DeclarationTypeResolver {
-    structs: HashSet<String>,
-    enums: HashSet<String>,
-    unions: HashSet<String>,
+    structs: HashSet<Path>,
+    enums: HashSet<Path>,
+    unions: HashSet<Path>,
 }
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
@@ -36,24 +38,25 @@ impl DeclarationTypeResolver {
         }
     }
 
-    pub fn add_enum(&mut self, name: &str) {
-        self.enums.insert(name.to_owned());
+    pub fn add_enum(&mut self, path: &Path) {
+        self.enums.insert(path.clone());
     }
 
-    pub fn add_struct(&mut self, name: &str) {
-        self.structs.insert(name.to_owned());
+    pub fn add_struct(&mut self, path: &Path) {
+        self.structs.insert(path.clone());
     }
 
-    pub fn add_union(&mut self, name: &str) {
-        self.unions.insert(name.to_owned());
+    pub fn add_union(&mut self, path: &Path) {
+        self.unions.insert(path.clone());
     }
 
-    pub fn type_for(&self, name: &str) -> Option<DeclarationType> {
-        if self.structs.contains(name) {
+    pub fn type_for(&self, path: &Path) -> Option<DeclarationType> {
+        // FIXME: don't look up by name, but by full path:
+        if self.structs.contains(path) {
             Some(DeclarationType::Struct)
-        } else if self.enums.contains(name) {
+        } else if self.enums.contains(path) {
             Some(DeclarationType::Enum)
-        } else if self.unions.contains(name) {
+        } else if self.unions.contains(path) {
             Some(DeclarationType::Union)
         } else {
             None
