@@ -11,8 +11,8 @@ use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::SynFieldHelpers;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Repr,
-    ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
+    Repr, ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -23,7 +23,8 @@ use bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Union {
-    pub name: String,
+    pub path: Path,
+    pub export_name: String,
     pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
     pub tuple_union: bool,
@@ -47,15 +48,37 @@ impl Union {
             (out, false)
         };
 
-        Ok(Union {
-            name: item.ident.to_string(),
-            generic_params: GenericParams::new(&item.generics),
+        Ok(Union::new(
+            Path::new(item.ident.to_string()),
+            GenericParams::new(&item.generics),
+            fields,
+            tuple_union,
+            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            AnnotationSet::load(&item.attrs)?,
+            Documentation::load(&item.attrs),
+        ))
+    }
+
+    pub fn new(
+        path: Path,
+        generic_params: GenericParams,
+        fields: Vec<(String, Type, Documentation)>,
+        tuple_union: bool,
+        cfg: Option<Cfg>,
+        annotations: AnnotationSet,
+        documentation: Documentation,
+    ) -> Self {
+        let export_name = path.name().to_owned();
+        Self {
+            path: path,
+            export_name: export_name,
+            generic_params: generic_params,
             fields: fields,
             tuple_union: tuple_union,
-            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-            annotations: AnnotationSet::load(&item.attrs)?,
-            documentation: Documentation::load(&item.attrs),
-        })
+            cfg: cfg,
+            annotations: annotations,
+            documentation: documentation,
+        }
     }
 
     pub fn simplify_option_to_ptr(&mut self) {
@@ -88,8 +111,12 @@ impl Union {
 }
 
 impl Item for Union {
-    fn name(&self) -> &str {
-        &self.name
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn export_name(&self) -> &str {
+        &self.export_name
     }
 
     fn cfg(&self) -> &Option<Cfg> {
@@ -109,7 +136,7 @@ impl Item for Union {
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
-        resolver.add_union(&self.name);
+        resolver.add_union(&self.path);
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
@@ -119,7 +146,7 @@ impl Item for Union {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.name);
+        config.export.rename(&mut self.export_name);
         for &mut (_, ref mut ty, _) in &mut self.fields {
             ty.rename_for_config(config, &self.generic_params);
         }
@@ -170,19 +197,19 @@ impl Item for Union {
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &Vec<Type>,
+        generic_values: &[Type],
         library: &Library,
         out: &mut Monomorphs,
     ) {
         assert!(
             self.generic_params.len() > 0,
             "{} is not generic",
-            self.name
+            self.path
         );
         assert!(
             self.generic_params.len() == generic_values.len(),
             "{} has {} params but is being instantiated with {} values",
-            self.name,
+            self.path,
             self.generic_params.len(),
             generic_values.len(),
         );
@@ -193,24 +220,24 @@ impl Item for Union {
             .zip(generic_values.iter())
             .collect::<Vec<_>>();
 
-        let monomorph = Union {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: GenericParams::default(),
-            fields: self
-                .fields
+        let mangled_path = mangle::mangle_path(&self.path, generic_values);
+        let monomorph = Union::new(
+            mangled_path,
+            GenericParams::default(),
+            self.fields
                 .iter()
                 .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                 .collect(),
-            tuple_union: self.tuple_union,
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        };
+            self.tuple_union,
+            self.cfg.clone(),
+            self.annotations.clone(),
+            self.documentation.clone(),
+        );
 
         // Instantiate any monomorphs for any generic paths we may have just created.
         monomorph.add_monomorphs(library, out);
 
-        out.insert_union(self, monomorph, generic_values.clone());
+        out.insert_union(self, monomorph, generic_values.to_owned());
     }
 }
 
@@ -237,7 +264,7 @@ impl Source for Union {
         out.write("union");
 
         if config.language == Language::Cxx || config.style.generate_tag() {
-            write!(out, " {}", self.name);
+            write!(out, " {}", self.export_name);
         }
 
         out.open_brace();
@@ -245,19 +272,17 @@ impl Source for Union {
         if config.documentation {
             out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
         } else {
-            out.write_vertical_source_list(
-                &self
-                    .fields
-                    .iter()
-                    .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
-                    .collect(),
-                ListType::Cap(";"),
-            );
+            let vec: Vec<_> = self
+                .fields
+                .iter()
+                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
+                .collect();
+            out.write_vertical_source_list(&vec[..], ListType::Cap(";"));
         }
 
         if config.language == Language::C && config.style.generate_typedef() {
             out.close_brace(false);
-            write!(out, " {};", self.name);
+            write!(out, " {};", self.export_name);
         } else {
             out.close_brace(true);
         }

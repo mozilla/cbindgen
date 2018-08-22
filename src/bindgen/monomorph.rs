@@ -5,11 +5,11 @@
 use std::collections::HashMap;
 use std::mem;
 
-use bindgen::ir::{Enum, GenericPath, OpaqueItem, Path, Struct, Type, Typedef, Union};
+use bindgen::ir::{Enum, Generic, OpaqueItem, Path, Struct, Type, Typedef, Union};
 
 #[derive(Default, Clone, Debug)]
 pub struct Monomorphs {
-    replacements: HashMap<GenericPath, Path>,
+    replacements: HashMap<Generic, Path>,
     opaques: Vec<OpaqueItem>,
     structs: Vec<Struct>,
     unions: Vec<Union>,
@@ -18,40 +18,40 @@ pub struct Monomorphs {
 }
 
 impl Monomorphs {
-    pub fn contains(&self, path: &GenericPath) -> bool {
+    pub fn contains(&self, path: &Generic) -> bool {
         self.replacements.contains_key(path)
     }
 
     pub fn insert_struct(&mut self, generic: &Struct, monomorph: Struct, parameters: Vec<Type>) {
-        let replacement_path = GenericPath::new(generic.name.clone(), parameters);
+        let replacement_path = Generic::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
-            .insert(replacement_path, monomorph.name.clone());
+            .insert(replacement_path, monomorph.path.clone());
         self.structs.push(monomorph);
     }
 
     pub fn insert_enum(&mut self, generic: &Enum, monomorph: Enum, parameters: Vec<Type>) {
-        let replacement_path = GenericPath::new(generic.name.clone(), parameters);
+        let replacement_path = Generic::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
-            .insert(replacement_path, monomorph.name.clone());
+            .insert(replacement_path, monomorph.path.clone());
         self.enums.push(monomorph);
     }
 
     pub fn insert_union(&mut self, generic: &Union, monomorph: Union, parameters: Vec<Type>) {
-        let replacement_path = GenericPath::new(generic.name.clone(), parameters);
+        let replacement_path = Generic::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
-            .insert(replacement_path, monomorph.name.clone());
+            .insert(replacement_path, monomorph.path.clone());
         self.unions.push(monomorph);
     }
 
@@ -61,28 +61,28 @@ impl Monomorphs {
         monomorph: OpaqueItem,
         parameters: Vec<Type>,
     ) {
-        let replacement_path = GenericPath::new(generic.name.clone(), parameters);
+        let replacement_path = Generic::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
-            .insert(replacement_path, monomorph.name.clone());
+            .insert(replacement_path, monomorph.path.clone());
         self.opaques.push(monomorph);
     }
 
     pub fn insert_typedef(&mut self, generic: &Typedef, monomorph: Typedef, parameters: Vec<Type>) {
-        let replacement_path = GenericPath::new(generic.name.clone(), parameters);
+        let replacement_path = Generic::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
-            .insert(replacement_path, monomorph.name.clone());
+            .insert(replacement_path, monomorph.path.clone());
         self.typedefs.push(monomorph);
     }
 
-    pub fn mangle_path(&self, path: &GenericPath) -> Option<&Path> {
+    pub fn mangle_path(&self, path: &Generic) -> Option<&Path> {
         self.replacements.get(path)
     }
 

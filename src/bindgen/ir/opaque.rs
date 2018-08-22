@@ -20,7 +20,8 @@ use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct OpaqueItem {
-    pub name: Path,
+    pub path: Path,
+    pub export_name: String,
     pub generic_params: GenericParams,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -28,25 +29,47 @@ pub struct OpaqueItem {
 }
 
 impl OpaqueItem {
-    pub fn new(
-        name: String,
+    pub fn load(
+        path: Path,
         generics: &syn::Generics,
-        attrs: &Vec<syn::Attribute>,
+        attrs: &[syn::Attribute],
         mod_cfg: &Option<Cfg>,
+    ) -> Result<OpaqueItem, String> {
+        Ok(Self::new(
+            path,
+            GenericParams::new(generics),
+            Cfg::append(mod_cfg, Cfg::load(attrs)),
+            AnnotationSet::load(attrs).unwrap_or(AnnotationSet::new()),
+            Documentation::load(attrs),
+        ))
+    }
+
+    pub fn new(
+        path: Path,
+        generic_params: GenericParams,
+        cfg: Option<Cfg>,
+        annotations: AnnotationSet,
+        documentation: Documentation,
     ) -> OpaqueItem {
-        OpaqueItem {
-            name: name,
-            generic_params: GenericParams::new(generics),
-            cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-            annotations: AnnotationSet::load(attrs).unwrap_or(AnnotationSet::new()),
-            documentation: Documentation::load(attrs),
+        let export_name = path.name().to_owned();
+        Self {
+            path: path,
+            export_name: export_name,
+            generic_params: generic_params,
+            cfg: cfg,
+            annotations: annotations,
+            documentation: documentation,
         }
     }
 }
 
 impl Item for OpaqueItem {
-    fn name(&self) -> &str {
-        &self.name
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn export_name(&self) -> &str {
+        &self.export_name
     }
 
     fn cfg(&self) -> &Option<Cfg> {
@@ -66,43 +89,44 @@ impl Item for OpaqueItem {
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
-        resolver.add_struct(&self.name);
+        resolver.add_struct(&self.path);
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.name);
+        config.export.rename(&mut self.export_name);
     }
 
     fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {}
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &Vec<Type>,
+        generic_values: &[Type],
         _library: &Library,
         out: &mut Monomorphs,
     ) {
         assert!(
             self.generic_params.len() > 0,
             "{} is not generic",
-            self.name
+            self.path
         );
         assert!(
             self.generic_params.len() == generic_values.len(),
             "{} has {} params but is being instantiated with {} values",
-            self.name,
+            self.path,
             self.generic_params.len(),
             generic_values.len(),
         );
 
-        let monomorph = OpaqueItem {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: GenericParams::default(),
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        };
+        let mangled_path = mangle::mangle_path(&self.path, generic_values);
+        let monomorph = OpaqueItem::new(
+            mangled_path,
+            GenericParams::default(),
+            self.cfg.clone(),
+            self.annotations.clone(),
+            self.documentation.clone(),
+        );
 
-        out.insert_opaque(self, monomorph, generic_values.clone());
+        out.insert_opaque(self, monomorph, generic_values.to_owned());
     }
 }
 
@@ -116,9 +140,14 @@ impl Source for OpaqueItem {
         self.generic_params.write(config, out);
 
         if config.style.generate_typedef() && config.language == Language::C {
-            write!(out, "typedef struct {} {};", self.name, self.name);
+            write!(
+                out,
+                "typedef struct {} {};",
+                self.export_name(),
+                self.export_name()
+            );
         } else {
-            write!(out, "struct {};", self.name);
+            write!(out, "struct {};", self.export_name());
         }
 
         condition.write_after(config, out);

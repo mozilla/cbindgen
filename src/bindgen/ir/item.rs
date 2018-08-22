@@ -9,14 +9,20 @@ use bindgen::config::Config;
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 
 /// An item is any type of rust item besides a function
 pub trait Item {
-    fn name(&self) -> &str;
+    fn path(&self) -> &Path;
+    fn name(&self) -> &str {
+        self.path().name()
+    }
+    fn export_name(&self) -> &str {
+        self.name()
+    }
     fn cfg(&self) -> &Option<Cfg>;
     fn annotations(&self) -> &AnnotationSet;
     fn annotations_mut(&mut self) -> &mut AnnotationSet;
@@ -31,12 +37,7 @@ pub trait Item {
     }
     fn rename_for_config(&mut self, _config: &Config) {}
     fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) {}
-    fn instantiate_monomorph(
-        &self,
-        _generics: &Vec<Type>,
-        _library: &Library,
-        _out: &mut Monomorphs,
-    ) {
+    fn instantiate_monomorph(&self, _generics: &[Type], _library: &Library, _out: &mut Monomorphs) {
         unreachable!("Cannot instantiate {} as a generic.", self.name())
     }
 }
@@ -74,7 +75,7 @@ pub enum ItemValue<T: Item> {
 
 #[derive(Debug, Clone)]
 pub struct ItemMap<T: Item> {
-    data: BTreeMap<String, ItemValue<T>>,
+    data: BTreeMap<Path, ItemValue<T>>,
 }
 
 impl<T: Item + Clone> ItemMap<T> {
@@ -92,7 +93,7 @@ impl<T: Item + Clone> ItemMap<T> {
     }
 
     pub fn try_insert(&mut self, item: T) -> bool {
-        match (item.cfg().is_some(), self.data.get_mut(item.name())) {
+        match (item.cfg().is_some(), self.data.get_mut(item.path())) {
             (true, Some(&mut ItemValue::Cfg(ref mut items))) => {
                 items.push(item);
                 return true;
@@ -109,12 +110,11 @@ impl<T: Item + Clone> ItemMap<T> {
             _ => {}
         }
 
+        let path = item.path().clone();
         if item.cfg().is_some() {
-            self.data
-                .insert(item.name().to_owned(), ItemValue::Cfg(vec![item]));
+            self.data.insert(path, ItemValue::Cfg(vec![item]));
         } else {
-            self.data
-                .insert(item.name().to_owned(), ItemValue::Single(item));
+            self.data.insert(path, ItemValue::Single(item));
         }
 
         true
@@ -139,8 +139,8 @@ impl<T: Item + Clone> ItemMap<T> {
         result
     }
 
-    pub fn get_items(&self, name: &str) -> Option<Vec<ItemContainer>> {
-        match self.data.get(name) {
+    pub fn get_items(&self, path: &Path) -> Option<Vec<ItemContainer>> {
+        match self.data.get(path) {
             Some(&ItemValue::Cfg(ref items)) => Some(items.iter().map(|x| x.container()).collect()),
             Some(&ItemValue::Single(ref item)) => Some(vec![item.container()]),
             None => None,
@@ -208,11 +208,11 @@ impl<T: Item + Clone> ItemMap<T> {
     }
 
     #[allow(dead_code)]
-    pub fn for_items<F>(&self, name: &str, mut callback: F)
+    pub fn for_items<F>(&self, path: &Path, mut callback: F)
     where
         F: FnMut(&T),
     {
-        match self.data.get(name) {
+        match self.data.get(path) {
             Some(&ItemValue::Cfg(ref items)) => {
                 for item in items {
                     callback(item);
@@ -225,11 +225,11 @@ impl<T: Item + Clone> ItemMap<T> {
         }
     }
 
-    pub fn for_items_mut<F>(&mut self, name: &str, mut callback: F)
+    pub fn for_items_mut<F>(&mut self, path: &Path, mut callback: F)
     where
         F: FnMut(&mut T),
     {
-        match self.data.get_mut(name) {
+        match self.data.get_mut(path) {
             Some(&mut ItemValue::Cfg(ref mut items)) => {
                 for item in items {
                     callback(item);

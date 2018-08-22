@@ -11,7 +11,7 @@ use bindgen::cdecl;
 use bindgen::config::Config;
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{Documentation, GenericParams, GenericPath, Path};
+use bindgen::ir::{Documentation, Generic, GenericParams, Path};
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::utilities::IterHelpers;
@@ -179,13 +179,19 @@ impl ArrayLength {
             ArrayLength::Name(ref string) | ArrayLength::Value(ref string) => string,
         }
     }
+
+    fn rename_for_config(&mut self, config: &Config) {
+        if let ArrayLength::Name(ref mut name) = self {
+            config.export.rename(name);
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Type {
     ConstPtr(Box<Type>),
     Ptr(Box<Type>),
-    Path(GenericPath),
+    Path(Generic),
     Primitive(PrimitiveType),
     Array(Box<Type>, ArrayLength),
     FuncPtr(Box<Type>, Vec<Type>),
@@ -229,24 +235,25 @@ impl Type {
                 }
             }
             &syn::Type::Path(ref path) => {
-                let path = GenericPath::load(&path.path)?;
+                let generic = Generic::load(&path.path)?;
 
-                if path.name == "PhantomData" {
+                if generic.name() == "PhantomData" {
                     return Ok(None);
                 }
 
-                if let Some(prim) = PrimitiveType::maybe(&path.name) {
-                    if path.generics.len() > 0 {
+                // FIXME: this `generic_path.name()` seems wrong!
+                if let Some(prim) = PrimitiveType::maybe(generic.name()) {
+                    if generic.generics().len() > 0 {
                         return Err("Primitive has generics.".to_owned());
                     }
                     Type::Primitive(prim)
                 } else {
-                    Type::Path(path)
+                    Type::Path(generic)
                 }
             }
             &syn::Type::Array(syn::TypeArray {
                 ref elem,
-                len: syn::Expr::Path(ref path),
+                len: syn::Expr::Path(syn::ExprPath { ref path, .. }),
                 ..
             }) => {
                 let converted = Type::load(elem)?;
@@ -255,9 +262,9 @@ impl Type {
                     Some(converted) => converted,
                     None => return Err("Cannot have an array of zero sized types.".to_owned()),
                 };
-
-                let path = GenericPath::load(&path.path)?;
-                let len = ArrayLength::Name(path.name);
+                // FIXMe: An array's length cannot really be generic, or can it?
+                let generic_path = Generic::load(&path)?;
+                let len = ArrayLength::Name(generic_path.name().to_owned());
                 // panic!("panic -> name: {:?}", len);
                 Type::Array(Box::new(converted), len)
             }
@@ -330,13 +337,17 @@ impl Type {
 
     pub fn simplify_option_to_ptr(&mut self) {
         let mut simplified = None;
-
-        if let &mut Type::Path(ref mut path) = self {
-            if path.name == "Option" && path.generics.len() == 1 && path.generics[0].is_repr_ptr() {
-                simplified = Some(path.generics.pop().unwrap());
+        if let &mut Type::Path(ref generic) = self {
+            let option_path = Path::new("Option");
+            if generic.path() == &option_path
+                && generic.generics().len() == 1
+                && generic.generics()[0].is_repr_ptr()
+            {
+                if let Some(ty) = generic.generics().first() {
+                    simplified = Some(ty.clone());
+                }
             }
         }
-
         if let Some(ty) = simplified {
             *self = ty;
         }
@@ -348,8 +359,8 @@ impl Type {
             match current {
                 &Type::ConstPtr(ref ty) => current = ty,
                 &Type::Ptr(ref ty) => current = ty,
-                &Type::Path(ref path) => {
-                    return Some(path.name.clone());
+                &Type::Path(ref generic) => {
+                    return Some(generic.path().clone());
                 }
                 &Type::Primitive(..) => {
                     return None;
@@ -364,20 +375,21 @@ impl Type {
         }
     }
 
-    pub fn specialize(&self, mappings: &Vec<(&String, &Type)>) -> Type {
+    pub fn specialize(&self, mappings: &[(&Path, &Type)]) -> Type {
         match self {
             &Type::ConstPtr(ref ty) => Type::ConstPtr(Box::new(ty.specialize(mappings))),
             &Type::Ptr(ref ty) => Type::Ptr(Box::new(ty.specialize(mappings))),
-            &Type::Path(ref path) => {
+            &Type::Path(ref generic) => {
                 for &(param, value) in mappings {
-                    if *path.name == *param {
+                    if generic.path() == param {
                         return value.clone();
                     }
                 }
 
-                let specialized = GenericPath::new(
-                    path.name.clone(),
-                    path.generics
+                let specialized = Generic::new(
+                    generic.path().clone(),
+                    generic
+                        .generics()
                         .iter()
                         .map(|x| x.specialize(mappings))
                         .collect(),
@@ -408,14 +420,15 @@ impl Type {
             &Type::Ptr(ref ty) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
-            &Type::Path(ref path) => {
-                for generic_value in &path.generics {
+            &Type::Path(ref generic) => {
+                for generic_value in generic.generics() {
                     generic_value.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
-                if !generic_params.contains(&path.name) {
-                    if let Some(items) = library.get_items(&path.name) {
-                        if !out.items.contains(&path.name) {
-                            out.items.insert(path.name.clone());
+                let path = generic.path().clone();
+                if !generic_params.contains(&path) {
+                    if let Some(items) = library.get_items(&path) {
+                        if !out.items.contains(&path) {
+                            out.items.insert(path.clone());
 
                             for item in &items {
                                 item.deref().add_dependencies(library, out);
@@ -428,7 +441,7 @@ impl Type {
                         warn!(
                             "Can't find {}. This usually means that this type was incompatible or \
                              not found.",
-                            path.name
+                            path
                         );
                     }
                 }
@@ -458,15 +471,15 @@ impl Type {
             &Type::Ptr(ref ty) => {
                 ty.add_monomorphs(library, out);
             }
-            &Type::Path(ref path) => {
-                if path.generics.len() == 0 || out.contains(&path) {
+            &Type::Path(ref generic) => {
+                if generic.generics().len() == 0 || out.contains(&generic) {
                     return;
                 }
-
-                if let Some(items) = library.get_items(&path.name) {
+                let path = generic.path().clone();
+                if let Some(items) = library.get_items(&path) {
                     for item in items {
                         item.deref()
-                            .instantiate_monomorph(&path.generics, library, out);
+                            .instantiate_monomorph(generic.generics(), library, out);
                     }
                 }
             }
@@ -491,20 +504,13 @@ impl Type {
             &mut Type::Ptr(ref mut ty) => {
                 ty.rename_for_config(config, generic_params);
             }
-            &mut Type::Path(ref mut path) => {
-                for generic in &mut path.generics {
-                    generic.rename_for_config(config, generic_params);
-                }
-                if !generic_params.contains(&path.name) {
-                    config.export.rename(&mut path.name);
-                }
+            &mut Type::Path(ref mut ty) => {
+                ty.rename_for_config(config, generic_params);
             }
             &mut Type::Primitive(_) => {}
             &mut Type::Array(ref mut ty, ref mut len) => {
                 ty.rename_for_config(config, generic_params);
-                if let ArrayLength::Name(ref mut name) = len {
-                    config.export.rename(name);
-                }
+                len.rename_for_config(config);
             }
             &mut Type::FuncPtr(ref mut ret, ref mut args) => {
                 ret.rename_for_config(config, generic_params);
@@ -523,8 +529,8 @@ impl Type {
             &mut Type::Ptr(ref mut ty) => {
                 ty.resolve_declaration_types(resolver);
             }
-            &mut Type::Path(ref mut path) => {
-                path.resolve_declaration_types(resolver);
+            &mut Type::Path(ref mut generic_path) => {
+                generic_path.resolve_declaration_types(resolver);
             }
             &mut Type::Primitive(_) => {}
             &mut Type::Array(ref mut ty, _) => {
@@ -547,19 +553,18 @@ impl Type {
             &mut Type::Ptr(ref mut ty) => {
                 ty.mangle_paths(monomorphs);
             }
-            &mut Type::Path(ref mut path) => {
-                if path.generics.len() == 0 {
+            &mut Type::Path(ref mut generic) => {
+                if generic.generics().len() == 0 {
                     return;
                 }
 
-                if let Some(mangled) = monomorphs.mangle_path(path) {
-                    path.name = mangled.clone();
-                    path.generics = Vec::new();
+                if let Some(mangled_path) = monomorphs.mangle_path(&generic) {
+                    *generic = Generic::new(mangled_path.clone(), vec![]);
                 } else {
                     error!(
                         "Cannot find a mangling for generic path {:?}. This usually means that a \
                          type referenced by this generic was incompatible or not found.",
-                        path
+                        generic
                     );
                 }
             }

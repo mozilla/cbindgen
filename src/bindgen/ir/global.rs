@@ -9,13 +9,14 @@ use syn;
 use bindgen::config::Config;
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Type};
+use bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Path, Type};
 use bindgen::library::Library;
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Static {
-    pub name: String,
+    pub path: Path,
+    pub export_name: String,
     pub ty: Type,
     pub mutable: bool,
     pub cfg: Option<Cfg>,
@@ -31,14 +32,34 @@ impl Static {
             return Err("Cannot have a zero sized static definition.".to_owned());
         }
 
-        Ok(Static {
-            name: item.ident.to_string(),
-            ty: ty.unwrap(),
-            mutable: item.mutability.is_some(),
-            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-            annotations: AnnotationSet::load(&item.attrs)?,
-            documentation: Documentation::load(&item.attrs),
-        })
+        Ok(Static::new(
+            Path::new(item.ident.to_string()),
+            ty.unwrap(),
+            item.mutability.is_some(),
+            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            AnnotationSet::load(&item.attrs)?,
+            Documentation::load(&item.attrs),
+        ))
+    }
+
+    pub fn new(
+        path: Path,
+        ty: Type,
+        mutable: bool,
+        cfg: Option<Cfg>,
+        annotations: AnnotationSet,
+        documentation: Documentation,
+    ) -> Self {
+        let export_name = path.name().to_owned();
+        Self {
+            path: path,
+            export_name: export_name,
+            ty: ty,
+            mutable: mutable,
+            cfg: cfg,
+            annotations: annotations,
+            documentation: documentation,
+        }
     }
 
     pub fn simplify_option_to_ptr(&mut self) {
@@ -47,8 +68,12 @@ impl Static {
 }
 
 impl Item for Static {
-    fn name(&self) -> &str {
-        &self.name
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    fn export_name(&self) -> &str {
+        &self.export_name
     }
 
     fn cfg(&self) -> &Option<Cfg> {
@@ -90,6 +115,6 @@ impl Source for Static {
             }
         }
         self.ty.write(config, out);
-        write!(out, " {};", self.name);
+        write!(out, " {};", self.export_name());
     }
 }

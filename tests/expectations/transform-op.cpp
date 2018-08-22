@@ -3,8 +3,8 @@
 
 template<typename T>
 struct StylePoint {
-  T x;
-  T y;
+  StyleT x;
+  StyleT y;
 };
 
 template<typename T>
@@ -19,18 +19,18 @@ union StyleFoo {
   struct Foo_Body {
     Tag tag;
     int32_t x;
-    StylePoint<T> y;
+    StylePoint<StyleT> y;
     StylePoint<float> z;
   };
 
   struct Bar_Body {
     Tag tag;
-    T _0;
+    StyleT _0;
   };
 
   struct Baz_Body {
     Tag tag;
-    StylePoint<T> _0;
+    StylePoint<StyleT> _0;
   };
 
   struct {
