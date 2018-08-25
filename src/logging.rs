@@ -14,60 +14,69 @@ pub struct InfoLogger;
 
 impl TraceLogger {
     pub fn init() -> Result<(), SetLoggerError> {
-        log::set_logger(|max_log_level| {
-            max_log_level.set(LogLevelFilter::Trace);
-            Box::new(TraceLogger)
-        })
+        log::set_logger(&InfoLogger)?;
+        log::set_max_level(LevelFilter::Trace);
+        Ok(())
     }
 }
 impl log::Log for TraceLogger {
-    fn enabled(&self, metadata: &LogMetadata) -> bool {
-        metadata.level() <= LogLevel::Trace
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= Level::Trace
     }
 
-    fn log(&self, record: &LogRecord) {
+    fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
         }
+    }
+
+    fn flush(&self) {
+        io::stderr().flush().unwrap();
     }
 }
 
 impl WarnLogger {
     pub fn init() -> Result<(), SetLoggerError> {
-        log::set_logger(|max_log_level| {
-            max_log_level.set(LogLevelFilter::Warn);
-            Box::new(WarnLogger)
-        })
+        log::set_logger(&InfoLogger)?;
+        log::set_max_level(LevelFilter::Warn);
+        Ok(())
     }
 }
 impl log::Log for WarnLogger {
-    fn enabled(&self, metadata: &LogMetadata) -> bool {
-        metadata.level() <= LogLevel::Warn
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= Level::Warn
     }
 
-    fn log(&self, record: &LogRecord) {
+    fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
         }
+    }
+
+    fn flush(&self) {
+        io::stderr().flush().unwrap();
     }
 }
 
 impl InfoLogger {
     pub fn init() -> Result<(), SetLoggerError> {
-        log::set_logger(|max_log_level| {
-            max_log_level.set(LogLevelFilter::Info);
-            Box::new(InfoLogger)
-        })
+        log::set_logger(&InfoLogger)?;
+        log::set_max_level(LevelFilter::Info);
+        Ok(())
     }
 }
 impl log::Log for InfoLogger {
-    fn enabled(&self, metadata: &LogMetadata) -> bool {
-        metadata.level() <= LogLevel::Info
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= Level::Info
     }
 
-    fn log(&self, record: &LogRecord) {
+    fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
         }
+    }
+
+    fn flush(&self) {
+        io::stderr().flush().unwrap();
     }
 }
