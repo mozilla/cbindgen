@@ -8,8 +8,8 @@ use std::path::Path;
 use std::process::Command;
 use std::str::{from_utf8, Utf8Error};
 
-extern crate tempdir;
-use self::tempdir::TempDir;
+extern crate tempfile;
+use self::tempfile::Builder;
 
 #[derive(Debug)]
 /// Possible errors that can occur during `rustc --pretty=expanded`.
@@ -49,7 +49,7 @@ pub fn expand(
 
     let mut _temp_dir = None; // drop guard
     if use_tempdir {
-        _temp_dir = Some(TempDir::new("cbindgen-expand")?);
+        _temp_dir = Some(Builder::new().prefix("cbindgen-expand").tempdir()?);
         cmd.env("CARGO_TARGET_DIR", _temp_dir.unwrap().path());
     } else if let Ok(ref path) = env::var("CARGO_EXPAND_TARGET_DIR") {
         cmd.env("CARGO_TARGET_DIR", path);
