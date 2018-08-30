@@ -41,6 +41,12 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_no_includes(mut self) -> Builder {
+        self.config.no_includes = true;
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_include<S: AsRef<str>>(mut self, include: S) -> Builder {
         self.config.includes.push(String::from(include.as_ref()));
         self

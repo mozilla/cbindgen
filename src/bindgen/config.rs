@@ -534,6 +534,11 @@ pub struct Config {
     pub trailer: Option<String>,
     /// Optional name to use for an include guard
     pub include_guard: Option<String>,
+    /// Generates no includes at all. Overrides all other include options
+    ///
+    /// This option is useful when using cbindgen with tools such as python's cffi which
+    /// doesn't understand include directives
+    pub no_includes: bool,
     /// Optional text to output at major sections to deter manual editing
     pub autogen_warning: Option<String>,
     /// Include a comment with the version of cbindgen used to generate the file
@@ -584,6 +589,7 @@ impl Default for Config {
             include_guard: None,
             autogen_warning: None,
             include_version: false,
+            no_includes: false,
             namespace: None,
             namespaces: None,
             braces: Braces::SameLine,

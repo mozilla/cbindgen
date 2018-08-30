@@ -65,9 +65,7 @@ impl Bindings {
         }
     }
 
-    pub fn write<F: Write>(&self, file: F) {
-        let mut out = SourceWriter::new(file, &self.config);
-
+    pub fn write_headers<F: Write>(&self, out: &mut SourceWriter<F>) {
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
             write!(out, "{}", f);
@@ -118,6 +116,14 @@ impl Bindings {
         for include in &self.config.includes {
             write!(out, "#include \"{}\"", include);
             out.new_line();
+        }
+    }
+
+    pub fn write<F: Write>(&self, file: F) {
+        let mut out = SourceWriter::new(file, &self.config);
+
+        if !self.config.no_includes {
+            self.write_headers(&mut out);
         }
 
         if self.config.language == Language::Cxx {
