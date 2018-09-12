@@ -20,6 +20,16 @@ This project can be used to generate C bindings for Rust code. It is currently b
   * Support for generating `#ifdef`'s for `#[cfg]` attributes
   * Support for `#[repr(sized)]` tagged enum's
 
+## Installation  
+
+```
+cargo install cbindgen
+```
+or
+```
+cargo install --force cbindgen
+```
+
 ## Use
 
 ### Command line
