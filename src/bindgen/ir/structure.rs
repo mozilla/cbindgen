@@ -327,7 +327,8 @@ impl Source for Struct {
                         .map(|&(ref name, ref ty, _)| {
                             // const-ref args to constructor
                             (format!("const& {}", arg_renamer(name)), ty.clone())
-                        }).collect(),
+                        })
+                        .collect(),
                     ListType::Join(","),
                 );
                 write!(out, ")");

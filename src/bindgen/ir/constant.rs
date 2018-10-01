@@ -63,6 +63,29 @@ impl LiteralExpr {
                 lit: syn::Lit::Bool(ref value),
                 ..
             }) => Ok(LiteralExpr(format!("{}", value.value))),
+            &syn::Expr::Struct(syn::ExprStruct {
+                ref path,
+                ref fields,
+                ..
+            }) => {
+                let struct_name = path.segments[0].ident.to_string();
+
+                let mut field_pairs: Vec<String> = Vec::new();
+                for field in fields {
+                    let ident = match field.member {
+                        syn::Member::Named(ref name) => name.to_string(),
+                        syn::Member::Unnamed(ref index) => format!("_{}", index.index),
+                    };
+                    let key = ident.to_string();
+                    let LiteralExpr(value) = LiteralExpr::load(&field.expr)?;
+                    field_pairs.push(format!(".{} = {}", key, value));
+                }
+                Ok(LiteralExpr(format!(
+                    "({}){{ {} }}",
+                    struct_name,
+                    field_pairs.join(", ")
+                )))
+            }
             _ => Err("Unsupported literal expression.".to_owned()),
         }
     }
@@ -92,8 +115,41 @@ impl Constant {
 
         let ty = ty.unwrap();
 
-        if !ty.is_primitive_or_ptr_primitive() {
-            return Err("Cannot have a non primitive const definition.".to_owned());
+        if !ty.is_primitive_or_ptr_primitive() && match *item.expr {
+            syn::Expr::Struct(_) => false,
+            _ => true,
+        } {
+            return Err("Unhanded const definition".to_owned());
+        }
+
+        Ok(Constant {
+            name: name,
+            ty: ty,
+            value: LiteralExpr::load(&item.expr)?,
+            cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            annotations: AnnotationSet::load(&item.attrs)?,
+            documentation: Documentation::load(&item.attrs),
+        })
+    }
+
+    pub fn load_assoc(
+        name: String,
+        item: &syn::ImplItemConst,
+        mod_cfg: &Option<Cfg>,
+    ) -> Result<Constant, String> {
+        let ty = Type::load(&item.ty)?;
+
+        if ty.is_none() {
+            return Err("Cannot have a zero sized const definition.".to_owned());
+        }
+
+        let ty = ty.unwrap();
+
+        if !ty.is_primitive_or_ptr_primitive() && match item.expr {
+            syn::Expr::Struct(_) => false,
+            _ => true,
+        } {
+            return Err("Unhanded const definition".to_owned());
         }
 
         Ok(Constant {

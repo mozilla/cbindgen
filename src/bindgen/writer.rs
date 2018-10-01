@@ -183,9 +183,11 @@ impl<'a, F: Write> SourceWriter<'a, F> {
             item.write(self.config, self);
 
             match list_type {
-                ListType::Join(text) => if i != items.len() - 1 {
-                    write!(self, "{}", text);
-                },
+                ListType::Join(text) => {
+                    if i != items.len() - 1 {
+                        write!(self, "{}", text);
+                    }
+                }
                 ListType::Cap(text) => {
                     write!(self, "{}", text);
                 }
@@ -204,9 +206,11 @@ impl<'a, F: Write> SourceWriter<'a, F> {
             item.write(self.config, self);
 
             match list_type {
-                ListType::Join(text) => if i != items.len() - 1 {
-                    write!(self, "{}", text);
-                },
+                ListType::Join(text) => {
+                    if i != items.len() - 1 {
+                        write!(self, "{}", text);
+                    }
+                }
                 ListType::Cap(text) => {
                     write!(self, "{}", text);
                 }

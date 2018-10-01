@@ -120,16 +120,17 @@ impl Bindings {
             out.new_line();
         }
 
+        for constant in &self.constants {
+            if constant.ty.is_primitive_or_ptr_primitive() {
+                out.new_line_if_not_start();
+                constant.write(&self.config, &mut out);
+                out.new_line();
+            }
+        }
+
         if self.config.language == Language::Cxx {
             self.open_namespaces(&mut out);
         }
-
-        for constant in &self.constants {
-            out.new_line_if_not_start();
-            constant.write(&self.config, &mut out);
-            out.new_line();
-        }
-
         for item in &self.items {
             if item
                 .deref()
@@ -151,6 +152,14 @@ impl Bindings {
                 &ItemContainer::Typedef(ref x) => x.write(&self.config, &mut out),
             }
             out.new_line();
+        }
+
+        for constant in &self.constants {
+            if !constant.ty.is_primitive_or_ptr_primitive() {
+                out.new_line_if_not_start();
+                constant.write(&self.config, &mut out);
+                out.new_line();
+            }
         }
 
         if !self.functions.is_empty() || !self.globals.is_empty() {

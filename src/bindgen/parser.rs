@@ -180,7 +180,8 @@ impl Parser {
                         self.expand_all_features,
                         self.expand_default_features,
                         &self.expand_features,
-                    ).map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
+                    )
+                    .map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
                     crate_name: pkg.name.clone(),
                     src_path: "".to_owned(),
@@ -519,6 +520,21 @@ impl Parse {
                 &syn::Item::Type(ref item) => {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
+                &syn::Item::Impl(ref item_impl) => {
+                    for item in &item_impl.items {
+                        match item {
+                            &syn::ImplItem::Const(ref item) => {
+                                self.load_syn_assoc_const(
+                                    binding_crate_name,
+                                    crate_name,
+                                    mod_cfg,
+                                    item,
+                                );
+                            }
+                            _ => {}
+                        }
+                    }
+                }
                 _ => {}
             }
         }
@@ -627,6 +643,36 @@ impl Parse {
                 "Skip {}::{} - (non `extern \"C\"`).",
                 crate_name, &item.ident
             );
+        }
+    }
+
+    /// Loads an associated `const` declaration
+    fn load_syn_assoc_const(
+        &mut self,
+        binding_crate_name: &str,
+        crate_name: &str,
+        mod_cfg: &Option<Cfg>,
+        item: &syn::ImplItemConst,
+    ) {
+        if crate_name != binding_crate_name {
+            info!(
+                "Skip {}::{} - (const's outside of the binding crate are not used).",
+                crate_name, &item.ident
+            );
+            return;
+        }
+
+        let const_name = item.ident.to_string();
+
+        match Constant::load_assoc(const_name.clone(), item, mod_cfg) {
+            Ok(constant) => {
+                info!("Take {}::{}.", crate_name, &item.ident);
+
+                self.constants.try_insert(constant);
+            }
+            Err(msg) => {
+                warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
+            }
         }
     }
 
