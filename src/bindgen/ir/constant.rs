@@ -72,7 +72,7 @@ impl LiteralExpr {
 
                 let mut field_pairs: Vec<String> = Vec::new();
                 for field in fields {
-                    let ident = match field.member{
+                    let ident = match field.member {
                         syn::Member::Named(ref name) => name.to_string(),
                         syn::Member::Unnamed(ref index) => format!("_{}", index.index),
                     };
@@ -81,10 +81,10 @@ impl LiteralExpr {
                     field_pairs.push(format!(".{} = {}", key, value));
                 }
                 Ok(LiteralExpr(format!(
-                            "({}){{ {} }}",
-                            struct_name,
-                            field_pairs.join(", ")
-                            )))
+                    "({}){{ {} }}",
+                    struct_name,
+                    field_pairs.join(", ")
+                )))
             }
             _ => Err("Unsupported literal expression.".to_owned()),
         }
@@ -136,7 +136,7 @@ impl Constant {
         name: String,
         item: &syn::ImplItemConst,
         mod_cfg: &Option<Cfg>,
-        ) -> Result<Constant, String> {
+    ) -> Result<Constant, String> {
         let ty = Type::load(&item.ty)?;
 
         if ty.is_none() {

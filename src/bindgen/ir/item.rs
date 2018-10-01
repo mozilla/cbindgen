@@ -166,9 +166,11 @@ impl<T: Item + Clone> ItemMap<T> {
                         self.data.insert(name, ItemValue::Cfg(new_items));
                     }
                 }
-                ItemValue::Single(item) => if !callback(&item) {
-                    self.data.insert(name, ItemValue::Single(item));
-                },
+                ItemValue::Single(item) => {
+                    if !callback(&item) {
+                        self.data.insert(name, ItemValue::Single(item));
+                    }
+                }
             }
         }
     }
@@ -179,9 +181,11 @@ impl<T: Item + Clone> ItemMap<T> {
     {
         for container in self.data.values() {
             match container {
-                &ItemValue::Cfg(ref items) => for item in items {
-                    callback(item);
-                },
+                &ItemValue::Cfg(ref items) => {
+                    for item in items {
+                        callback(item);
+                    }
+                }
                 &ItemValue::Single(ref item) => callback(item),
             }
         }
@@ -193,9 +197,11 @@ impl<T: Item + Clone> ItemMap<T> {
     {
         for container in self.data.values_mut() {
             match container {
-                &mut ItemValue::Cfg(ref mut items) => for item in items {
-                    callback(item);
-                },
+                &mut ItemValue::Cfg(ref mut items) => {
+                    for item in items {
+                        callback(item);
+                    }
+                }
                 &mut ItemValue::Single(ref mut item) => callback(item),
             }
         }
@@ -207,9 +213,11 @@ impl<T: Item + Clone> ItemMap<T> {
         F: FnMut(&T),
     {
         match self.data.get(name) {
-            Some(&ItemValue::Cfg(ref items)) => for item in items {
-                callback(item);
-            },
+            Some(&ItemValue::Cfg(ref items)) => {
+                for item in items {
+                    callback(item);
+                }
+            }
             Some(&ItemValue::Single(ref item)) => {
                 callback(item);
             }
@@ -222,9 +230,11 @@ impl<T: Item + Clone> ItemMap<T> {
         F: FnMut(&mut T),
     {
         match self.data.get_mut(name) {
-            Some(&mut ItemValue::Cfg(ref mut items)) => for item in items {
-                callback(item);
-            },
+            Some(&mut ItemValue::Cfg(ref mut items)) => {
+                for item in items {
+                    callback(item);
+                }
+            }
             Some(&mut ItemValue::Single(ref mut item)) => {
                 callback(item);
             }

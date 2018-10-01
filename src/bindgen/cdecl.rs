@@ -170,17 +170,23 @@ impl CDecl {
             let next_is_pointer = iter_rev.peek().map_or(false, |x| x.is_ptr());
 
             match declarator {
-                &CDeclarator::Ptr(ref is_const) => if *is_const {
-                    out.write("*const ");
-                } else {
-                    out.write("*");
-                },
-                &CDeclarator::Array(..) => if next_is_pointer {
-                    out.write("(");
-                },
-                &CDeclarator::Func(..) => if next_is_pointer {
-                    out.write("(");
-                },
+                &CDeclarator::Ptr(ref is_const) => {
+                    if *is_const {
+                        out.write("*const ");
+                    } else {
+                        out.write("*");
+                    }
+                }
+                &CDeclarator::Array(..) => {
+                    if next_is_pointer {
+                        out.write("(");
+                    }
+                }
+                &CDeclarator::Func(..) => {
+                    if next_is_pointer {
+                        out.write("(");
+                    }
+                }
             }
         }
 

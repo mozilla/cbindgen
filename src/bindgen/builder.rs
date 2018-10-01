@@ -346,6 +346,7 @@ impl Builder {
             result.opaque_items,
             result.typedefs,
             result.functions,
-        ).generate()
+        )
+        .generate()
     }
 }

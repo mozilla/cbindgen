@@ -180,7 +180,8 @@ impl Parser {
                         self.expand_all_features,
                         self.expand_default_features,
                         &self.expand_features,
-                    ).map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
+                    )
+                    .map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
                     crate_name: pkg.name.clone(),
                     src_path: "".to_owned(),
@@ -523,12 +524,16 @@ impl Parse {
                     for item in &item_impl.items {
                         match item {
                             &syn::ImplItem::Const(ref item) => {
-                                self.load_syn_assoc_const(binding_crate_name, crate_name, mod_cfg, item);
+                                self.load_syn_assoc_const(
+                                    binding_crate_name,
+                                    crate_name,
+                                    mod_cfg,
+                                    item,
+                                );
                             }
                             _ => {}
                         }
                     }
-
                 }
                 _ => {}
             }
@@ -637,7 +642,7 @@ impl Parse {
             warn!(
                 "Skip {}::{} - (non `extern \"C\"`).",
                 crate_name, &item.ident
-                );
+            );
         }
     }
 
@@ -648,12 +653,12 @@ impl Parse {
         crate_name: &str,
         mod_cfg: &Option<Cfg>,
         item: &syn::ImplItemConst,
-        ) {
+    ) {
         if crate_name != binding_crate_name {
             info!(
                 "Skip {}::{} - (const's outside of the binding crate are not used).",
                 crate_name, &item.ident
-                );
+            );
             return;
         }
 
