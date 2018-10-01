@@ -22,7 +22,7 @@ serde_json = "1.0"
 tempfile = "3.0"
 toml = "0.4"
 
-# Workaround for #147 -- use a version that depends on different syn, quote, and
+# Workaround for #203 -- use a version that depends on different syn, quote, and
 # proc-macro2 than we do, so their use of proc-macro doesn't infect our binary.
 [dependencies.serde_derive]
 version = "=1.0.58"
