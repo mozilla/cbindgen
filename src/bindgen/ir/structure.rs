@@ -146,14 +146,22 @@ impl Item for Struct {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.name);
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            let generic_parameter = match ty.get_root_path() {
-                Some(ref p) => self.generic_params.contains(p),
-                None => false,
-            };
-            if !generic_parameter {
-                ty.rename_for_config(config);
+        if !self.is_tagged {
+            config.export.rename(&mut self.name);
+        }
+        {
+            let fields = self
+                .fields
+                .iter_mut()
+                .skip(if self.is_tagged { 1 } else { 0 });
+            for &mut (_, ref mut ty, _) in fields {
+                let generic_parameter = match ty.get_root_path() {
+                    Some(ref p) => self.generic_params.contains(p),
+                    None => false,
+                };
+                if !generic_parameter {
+                    ty.rename_for_config(config);
+                }
             }
         }
 
