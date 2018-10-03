@@ -50,7 +50,8 @@ impl GenericPath {
                 ..
             }) => args.iter().try_skip_map(|x| match *x {
                 &syn::GenericArgument::Type(ref x) => Type::load(x),
-                _ => Err(String::new()),
+                &syn::GenericArgument::Lifetime(_) => Ok(None),
+                _ => Err(format!("can't handle generic argument {:?}", x)),
             })?,
             &syn::PathArguments::Parenthesized(_) => {
                 return Err("Path contains parentheses.".to_owned());
