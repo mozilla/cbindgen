@@ -15,14 +15,14 @@ enum PREFIX_AbsoluteFontWeight_Tag {
 };
 typedef uint8_t PREFIX_AbsoluteFontWeight_Tag;
 
-struct Weight_Body {
+struct PREFIX_Weight_Body {
   PREFIX_AbsoluteFontWeight_Tag tag;
   float _0;
 };
 
 union PREFIX_AbsoluteFontWeight {
   enum PREFIX_AbsoluteFontWeight_Tag tag;
-  struct Weight_Body weight;
+  struct PREFIX_Weight_Body weight;
 };
 
 void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, union PREFIX_AbsoluteFontWeight z);
