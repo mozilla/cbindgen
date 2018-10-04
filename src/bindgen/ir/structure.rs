@@ -146,7 +146,7 @@ impl Item for Struct {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        if !self.is_tagged {
+        if !self.is_tagged || config.language == Language::C {
             config.export.rename(&mut self.name);
         }
         {
