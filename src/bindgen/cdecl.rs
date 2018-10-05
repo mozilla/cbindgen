@@ -127,7 +127,10 @@ impl CDecl {
                 self.build_type(t, false);
             }
             &Type::FuncPtr(ref ret, ref args) => {
-                let args = args.iter().map(|x| (None, CDecl::from_type(x))).collect();
+                let args = args
+                    .iter()
+                    .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty)))
+                    .collect();
                 self.declarators.push(CDeclarator::Ptr(false));
                 self.declarators.push(CDeclarator::Func(args, false));
                 self.build_type(ret, false);
