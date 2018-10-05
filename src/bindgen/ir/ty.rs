@@ -198,7 +198,7 @@ pub enum Type {
     Path(GenericPath),
     Primitive(PrimitiveType),
     Array(Box<Type>, ArrayLength),
-    FuncPtr(Box<Type>, Vec<Type>),
+    FuncPtr(Box<Type>, Vec<(Option<String>, Type)>),
 }
 
 impl Type {
@@ -290,7 +290,19 @@ impl Type {
                 Type::Array(Box::new(converted), len)
             }
             &syn::Type::BareFn(ref function) => {
-                let args = function.inputs.iter().try_skip_map(|x| Type::load(&x.ty))?;
+                let args = function.inputs.iter().try_skip_map(|x| {
+                    Type::load(&x.ty).map(|opt_ty| {
+                        opt_ty.map(|ty| {
+                            (
+                                x.name.as_ref().map(|name| match name.0 {
+                                    syn::BareFnArgName::Named(ref ident) => ident.to_string(),
+                                    syn::BareFnArgName::Wild(_) => "_".to_owned(),
+                                }),
+                                ty,
+                            )
+                        })
+                    })
+                })?;
                 let ret = match function.output {
                     syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
                     syn::ReturnType::Type(_, ref ty) => {
@@ -412,7 +424,10 @@ impl Type {
             }
             &Type::FuncPtr(ref ret, ref args) => Type::FuncPtr(
                 Box::new(ret.specialize(mappings)),
-                args.iter().map(|x| x.specialize(mappings)).collect(),
+                args.iter()
+                    .cloned()
+                    .map(|(name, ty)| (name, ty.specialize(mappings)))
+                    .collect(),
             ),
         }
     }
@@ -462,7 +477,7 @@ impl Type {
             }
             &Type::FuncPtr(ref ret, ref args) => {
                 ret.add_dependencies_ignoring_generics(generic_params, library, out);
-                for arg in args {
+                for (_, ref arg) in args {
                     arg.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
             }
@@ -499,7 +514,7 @@ impl Type {
             }
             &Type::FuncPtr(ref ret, ref args) => {
                 ret.add_monomorphs(library, out);
-                for arg in args {
+                for (_, ref arg) in args {
                     arg.add_monomorphs(library, out);
                 }
             }
@@ -524,7 +539,7 @@ impl Type {
             }
             &mut Type::FuncPtr(ref mut ret, ref mut args) => {
                 ret.rename_for_config(config, generic_params);
-                for arg in args {
+                for (_, arg) in args {
                     arg.rename_for_config(config, generic_params);
                 }
             }
@@ -548,7 +563,7 @@ impl Type {
             }
             &mut Type::FuncPtr(ref mut ret, ref mut args) => {
                 ret.resolve_declaration_types(resolver);
-                for arg in args {
+                for (_, ref mut arg) in args {
                     arg.resolve_declaration_types(resolver);
                 }
             }
@@ -584,7 +599,7 @@ impl Type {
             }
             &mut Type::FuncPtr(ref mut ret, ref mut args) => {
                 ret.mangle_paths(monomorphs);
-                for arg in args {
+                for (_, ref mut arg) in args {
                     arg.mangle_paths(monomorphs);
                 }
             }
