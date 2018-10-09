@@ -19,6 +19,8 @@ type N = [fn (i32, i32) -> (); 16];
 pub extern "C" fn O() -> fn ()
 { }
 
+type P = fn (named1st: i32, bool, named3rd: bool, _: i32);
+
 #[no_mangle]
 pub extern "C" fn root(
     a: A,
@@ -34,5 +36,6 @@ pub extern "C" fn root(
     k: K,
     l: L,
     m: M,
-    n: N
+    n: N,
+    p: P
 ) { }
