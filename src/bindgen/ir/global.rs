@@ -68,7 +68,7 @@ impl Item for Static {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        self.ty.rename_for_config(config);
+        self.ty.rename_for_config(config, &Default::default());
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {

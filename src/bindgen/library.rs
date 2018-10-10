@@ -354,6 +354,9 @@ impl Library {
         self.unions.for_all_items(|x| {
             x.add_monomorphs(self, &mut monomorphs);
         });
+        self.enums.for_all_items(|x| {
+            x.add_monomorphs(self, &mut monomorphs);
+        });
         self.typedefs.for_all_items(|x| {
             x.add_monomorphs(self, &mut monomorphs);
         });
@@ -374,17 +377,23 @@ impl Library {
         for monomorph in monomorphs.drain_typedefs() {
             self.typedefs.try_insert(monomorph);
         }
+        for monomorph in monomorphs.drain_enums() {
+            self.enums.try_insert(monomorph);
+        }
 
         // Remove structs and opaque items that are generic
         self.opaque_items.filter(|x| x.generic_params.len() > 0);
         self.structs.filter(|x| x.generic_params.len() > 0);
         self.unions.filter(|x| x.generic_params.len() > 0);
+        self.enums.filter(|x| x.generic_params.len() > 0);
         self.typedefs.filter(|x| x.generic_params.len() > 0);
 
         // Mangle the paths that remain
         self.unions
             .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         self.structs
+            .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
+        self.enums
             .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         self.typedefs
             .for_all_items_mut(|x| x.mangle_paths(&monomorphs));

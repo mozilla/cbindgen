@@ -97,9 +97,10 @@ impl Function {
     }
 
     pub fn rename_for_config(&mut self, config: &Config) {
-        self.ret.rename_for_config(config);
+        let generic_params = Default::default();
+        self.ret.rename_for_config(config, &generic_params);
         for &mut (_, ref mut ty) in &mut self.args {
-            ty.rename_for_config(config);
+            ty.rename_for_config(config, &generic_params);
         }
 
         let rules = [

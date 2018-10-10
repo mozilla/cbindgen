@@ -789,7 +789,7 @@ impl Parse {
 
     /// Loads a `enum` declaration
     fn load_syn_enum(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemEnum) {
-        if item.generics.lifetimes().count() > 0 || item.generics.type_params().count() > 0 {
+        if item.generics.lifetimes().count() > 0 {
             info!(
                 "Skip {}::{} - (has generics or lifetimes or where bounds).",
                 crate_name, &item.ident

@@ -121,13 +121,7 @@ impl Item for Union {
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.name);
         for &mut (_, ref mut ty, _) in &mut self.fields {
-            let generic_parameter = match ty.get_root_path() {
-                Some(ref p) => self.generic_params.contains(p),
-                None => false,
-            };
-            if !generic_parameter {
-                ty.rename_for_config(config);
-            }
+            ty.rename_for_config(config, &self.generic_params);
         }
 
         let rules = [

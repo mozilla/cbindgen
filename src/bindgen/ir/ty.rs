@@ -483,31 +483,33 @@ impl Type {
         }
     }
 
-    pub fn rename_for_config(&mut self, config: &Config) {
+    pub fn rename_for_config(&mut self, config: &Config, generic_params: &GenericParams) {
         match self {
             &mut Type::ConstPtr(ref mut ty) => {
-                ty.rename_for_config(config);
+                ty.rename_for_config(config, generic_params);
             }
             &mut Type::Ptr(ref mut ty) => {
-                ty.rename_for_config(config);
+                ty.rename_for_config(config, generic_params);
             }
             &mut Type::Path(ref mut path) => {
                 for generic in &mut path.generics {
-                    generic.rename_for_config(config);
+                    generic.rename_for_config(config, generic_params);
                 }
-                config.export.rename(&mut path.name);
+                if !generic_params.contains(&path.name) {
+                    config.export.rename(&mut path.name);
+                }
             }
             &mut Type::Primitive(_) => {}
             &mut Type::Array(ref mut ty, ref mut len) => {
-                ty.rename_for_config(config);
+                ty.rename_for_config(config, generic_params);
                 if let ArrayLength::Name(ref mut name) = len {
                     config.export.rename(name);
                 }
             }
             &mut Type::FuncPtr(ref mut ret, ref mut args) => {
-                ret.rename_for_config(config);
+                ret.rename_for_config(config, generic_params);
                 for arg in args {
-                    arg.rename_for_config(config);
+                    arg.rename_for_config(config, generic_params);
                 }
             }
         }
