@@ -110,6 +110,24 @@ impl Struct {
             ty.mangle_paths(monomorphs);
         }
     }
+
+    pub fn specialize(&self, generic_values: &Vec<Type>, mappings: &Vec<(&String, &Type)>) -> Self {
+        Self {
+            name: mangle::mangle_path(&self.name, generic_values),
+            generic_params: GenericParams::default(),
+            fields: self
+                .fields
+                .iter()
+                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
+                .collect(),
+            is_tagged: self.is_tagged,
+            is_transparent: self.is_transparent,
+            tuple_struct: self.tuple_struct,
+            cfg: self.cfg.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        }
+    }
 }
 
 impl Item for Struct {
@@ -155,13 +173,7 @@ impl Item for Struct {
                 .iter_mut()
                 .skip(if self.is_tagged { 1 } else { 0 });
             for &mut (_, ref mut ty, _) in fields {
-                let generic_parameter = match ty.get_root_path() {
-                    Some(ref p) => self.generic_params.contains(p),
-                    None => false,
-                };
-                if !generic_parameter {
-                    ty.rename_for_config(config);
-                }
+                ty.rename_for_config(config, &self.generic_params);
             }
         }
 
@@ -232,21 +244,7 @@ impl Item for Struct {
             .zip(generic_values.iter())
             .collect::<Vec<_>>();
 
-        let monomorph = Struct {
-            name: mangle::mangle_path(&self.name, generic_values),
-            generic_params: GenericParams::default(),
-            fields: self
-                .fields
-                .iter()
-                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
-                .collect(),
-            is_tagged: self.is_tagged,
-            is_transparent: self.is_transparent,
-            tuple_struct: self.tuple_struct,
-            cfg: self.cfg.clone(),
-            annotations: self.annotations.clone(),
-            documentation: self.documentation.clone(),
-        };
+        let monomorph = self.specialize(generic_values, &mappings);
 
         // Instantiate any monomorphs for any generic paths we may have just created.
         monomorph.add_monomorphs(library, out);
@@ -274,7 +272,9 @@ impl Source for Struct {
 
         self.documentation.write(config, out);
 
-        self.generic_params.write(config, out);
+        if !self.is_tagged {
+            self.generic_params.write(config, out);
+        }
 
         // The following results in
         // C++ or C with Tag as style:

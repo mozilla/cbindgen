@@ -14,6 +14,8 @@ use bindgen::ir::{
     ItemContainer, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
 };
 use bindgen::library::Library;
+use bindgen::mangle;
+use bindgen::monomorph::Monomorphs;
 use bindgen::rename::{IdentifierType, RenameRule};
 use bindgen::utilities::find_first_some;
 use bindgen::writer::{ListType, Source, SourceWriter};
@@ -30,6 +32,7 @@ impl EnumVariant {
     pub fn load(
         is_tagged: bool,
         variant: &syn::Variant,
+        generic_params: GenericParams,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Self, String> {
         let discriminant = match &variant.discriminant {
@@ -84,7 +87,7 @@ impl EnumVariant {
             syn::Fields::Unit => None,
             syn::Fields::Named(ref fields) => Some(Struct {
                 name: format!("{}_Body", variant.ident),
-                generic_params: GenericParams::default(),
+                generic_params,
                 fields: parse_fields(is_tagged, &fields.named)?,
                 is_tagged,
                 is_transparent: false,
@@ -95,7 +98,7 @@ impl EnumVariant {
             }),
             syn::Fields::Unnamed(ref fields) => Some(Struct {
                 name: format!("{}_Body", variant.ident),
-                generic_params: GenericParams::default(),
+                generic_params,
                 fields: parse_fields(is_tagged, &fields.unnamed)?,
                 is_tagged,
                 is_transparent: false,
@@ -123,7 +126,7 @@ impl EnumVariant {
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        if let &Some((_, ref item)) = &self.body {
+        if let Some((_, ref item)) = self.body {
             item.add_dependencies(library, out);
         }
     }
@@ -131,6 +134,30 @@ impl EnumVariant {
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         if let Some((_, ref mut ty)) = self.body {
             ty.resolve_declaration_types(resolver);
+        }
+    }
+
+    fn specialize(&self, generic_values: &Vec<Type>, mappings: &Vec<(&String, &Type)>) -> Self {
+        Self {
+            name: mangle::mangle_path(&self.name, generic_values),
+            discriminant: self.discriminant,
+            body: self
+                .body
+                .as_ref()
+                .map(|&(ref name, ref ty)| (name.clone(), ty.specialize(generic_values, mappings))),
+            documentation: self.documentation.clone(),
+        }
+    }
+
+    fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
+        if let Some((_, ref ty)) = self.body {
+            ty.add_monomorphs(library, out);
+        }
+    }
+
+    fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+        if let Some((_, ref mut ty)) = self.body {
+            ty.mangle_paths(monomorphs);
         }
     }
 }
@@ -149,6 +176,7 @@ impl Source for EnumVariant {
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub name: String,
+    pub generic_params: GenericParams,
     pub repr: Repr,
     pub variants: Vec<EnumVariant>,
     pub tag: Option<String>,
@@ -158,6 +186,16 @@ pub struct Enum {
 }
 
 impl Enum {
+    pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
+        if self.generic_params.len() > 0 {
+            return;
+        }
+
+        for v in &self.variants {
+            v.add_monomorphs(library, out);
+        }
+    }
+
     fn can_derive_eq(&self) -> bool {
         if self.tag.is_none() {
             return false;
@@ -171,17 +209,30 @@ impl Enum {
         })
     }
 
+    pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
+        for variant in &mut self.variants {
+            variant.mangle_paths(monomorphs);
+        }
+    }
+
     pub fn load(item: &syn::ItemEnum, mod_cfg: &Option<Cfg>) -> Result<Enum, String> {
         let repr = Repr::load(&item.attrs)?;
         if repr == Repr::RUST {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
         }
 
+        let generics = GenericParams::new(&item.generics);
+
         let mut variants = Vec::new();
         let mut is_tagged = false;
 
         for variant in item.variants.iter() {
-            let variant = EnumVariant::load(repr.style == ReprStyle::Rust, variant, mod_cfg)?;
+            let variant = EnumVariant::load(
+                repr.style == ReprStyle::Rust,
+                variant,
+                generics.clone(),
+                mod_cfg,
+            )?;
             is_tagged = is_tagged || variant.body.is_some();
             variants.push(variant);
         }
@@ -200,6 +251,7 @@ impl Enum {
         }
 
         Ok(Enum {
+            generic_params: generics,
             name: item.ident.to_string(),
             repr,
             variants,
@@ -313,6 +365,57 @@ impl Item for Enum {
         }
     }
 
+    fn instantiate_monomorph(
+        &self,
+        generic_values: &Vec<Type>,
+        library: &Library,
+        out: &mut Monomorphs,
+    ) {
+        assert!(
+            self.generic_params.len() > 0,
+            "{} is not generic",
+            self.name
+        );
+        assert!(
+            self.generic_params.len() == generic_values.len(),
+            "{} has {} params but is being instantiated with {} values",
+            self.name,
+            self.generic_params.len(),
+            generic_values.len(),
+        );
+
+        let mappings = self
+            .generic_params
+            .iter()
+            .zip(generic_values.iter())
+            .collect::<Vec<_>>();
+
+        for variant in &self.variants {
+            if let Some((_, ref body)) = variant.body {
+                body.instantiate_monomorph(generic_values, library, out);
+            }
+        }
+
+        let monomorph = Enum {
+            name: mangle::mangle_path(&self.name, generic_values),
+            tag: self.tag.clone(),
+            generic_params: GenericParams::default(),
+            repr: self.repr.clone(),
+            variants: self
+                .variants
+                .iter()
+                .map(|v| v.specialize(generic_values, &mappings))
+                .collect(),
+            cfg: self.cfg.clone(),
+            annotations: self.annotations.clone(),
+            documentation: self.documentation.clone(),
+        };
+
+        monomorph.add_monomorphs(library, out);
+
+        out.insert_enum(self, monomorph, generic_values.clone());
+    }
+
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         for variant in &self.variants {
             variant.add_dependencies(library, out);
@@ -343,6 +446,7 @@ impl Source for Enum {
         let separate_tag = self.repr.style == ReprStyle::C;
 
         // If tagged, we need to emit a proper struct/union wrapper around our enum
+        self.generic_params.write(config, out);
         if is_tagged && config.language == Language::Cxx {
             out.write(if separate_tag { "struct " } else { "union " });
             write!(out, "{}", self.name);

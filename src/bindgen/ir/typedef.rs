@@ -114,7 +114,7 @@ impl Item for Typedef {
 
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.name);
-        self.aliased.rename_for_config(config);
+        self.aliased.rename_for_config(config, &self.generic_params);
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {

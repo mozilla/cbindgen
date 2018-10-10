@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::mem;
 
-use bindgen::ir::{GenericPath, OpaqueItem, Path, Struct, Type, Typedef, Union};
+use bindgen::ir::{Enum, GenericPath, OpaqueItem, Path, Struct, Type, Typedef, Union};
 
 #[derive(Default, Clone, Debug)]
 pub struct Monomorphs {
@@ -14,6 +14,7 @@ pub struct Monomorphs {
     structs: Vec<Struct>,
     unions: Vec<Union>,
     typedefs: Vec<Typedef>,
+    enums: Vec<Enum>,
 }
 
 impl Monomorphs {
@@ -30,6 +31,17 @@ impl Monomorphs {
         self.replacements
             .insert(replacement_path, monomorph.name.clone());
         self.structs.push(monomorph);
+    }
+
+    pub fn insert_enum(&mut self, generic: &Enum, monomorph: Enum, parameters: Vec<Type>) {
+        let replacement_path = GenericPath::new(generic.name.clone(), parameters);
+
+        debug_assert!(generic.generic_params.len() > 0);
+        debug_assert!(!self.contains(&replacement_path));
+
+        self.replacements
+            .insert(replacement_path, monomorph.name.clone());
+        self.enums.push(monomorph);
     }
 
     pub fn insert_union(&mut self, generic: &Union, monomorph: Union, parameters: Vec<Type>) {
@@ -88,5 +100,9 @@ impl Monomorphs {
 
     pub fn drain_typedefs(&mut self) -> Vec<Typedef> {
         mem::replace(&mut self.typedefs, Vec::new())
+    }
+
+    pub fn drain_enums(&mut self) -> Vec<Enum> {
+        mem::replace(&mut self.enums, Vec::new())
     }
 }

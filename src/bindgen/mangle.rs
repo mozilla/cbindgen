@@ -9,11 +9,6 @@ pub fn mangle_path(name: &str, generic_values: &[Type]) -> String {
 }
 
 fn internal_mangle_path(name: &str, generic_values: &[Type], last_in_parent: bool) -> String {
-    assert!(
-        !name.contains("_"),
-        format!("name '{}' contains an underscore", name)
-    );
-
     if generic_values.is_empty() {
         return String::from(name);
     }
@@ -103,14 +98,4 @@ fn generics() {
         ),
         "Foo_Bar_T_____Bar_E"
     );
-}
-
-#[test]
-#[should_panic(expected = "name 'foo_bar' contains an underscore")]
-fn invalid() {
-    use bindgen::ir::PrimitiveType;
-
-    // foo_bar<u32> => foo_bar_f32
-    let t = Type::Primitive(PrimitiveType::UInt32);
-    assert_eq!(mangle_path("foo_bar", &vec![t]), "foo_bar_u32");
 }
