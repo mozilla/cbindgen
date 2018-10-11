@@ -9,7 +9,6 @@ description = "A tool for generating C bindings to Rust code."
 keywords = ["bindings", "ffi", "code-generation"]
 categories = ["external-ffi-bindings", "development-tools::ffi"]
 repository = "https://github.com/eqrion/cbindgen/"
-exclude = ["test.py", "tests/**"]
 
 [badges]
 travis-ci = { repository = "eqrion/cbindgen" }
