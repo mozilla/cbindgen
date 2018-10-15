@@ -62,6 +62,7 @@ pub fn lock(manifest_path: &Path) -> Result<Lock, Error> {
 
 // Generated from `serde_derive 1.80.0`
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -333,6 +334,7 @@ const _IMPL_DESERIALIZE_FOR_Lock: () =
         }
     };
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -673,4 +675,3 @@ const _IMPL_DESERIALIZE_FOR_Package: () =
             }
         }
     };
-

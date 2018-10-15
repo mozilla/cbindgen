@@ -58,6 +58,7 @@ pub fn manifest(manifest_path: &Path) -> Result<Manifest, Error> {
 
 // Generated from `serde_derive 1.80.0`
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -266,6 +267,7 @@ const _IMPL_DESERIALIZE_FOR_Manifest: () =
         }
     };
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]

@@ -132,6 +132,7 @@ pub fn metadata(manifest_path: &Path) -> Result<Metadata, Error> {
 
 // Generated from `serde_derive 1.80.0`
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -474,6 +475,8 @@ const _IMPL_DESERIALIZE_FOR_Metadata: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -1147,6 +1150,8 @@ const _IMPL_DESERIALIZE_FOR_Package: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -1821,6 +1826,8 @@ const _IMPL_DESERIALIZE_FOR_Dependency: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]

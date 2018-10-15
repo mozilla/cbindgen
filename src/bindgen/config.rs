@@ -668,6 +668,7 @@ impl Config {
 
 // Generated from `serde_derive 1.80.0`
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -1093,6 +1094,7 @@ const _IMPL_DESERIALIZE_FOR_ExportConfig: () =
         }
     };
 
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -1457,6 +1459,8 @@ const _IMPL_DESERIALIZE_FOR_FunctionConfig: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -2047,6 +2051,8 @@ const _IMPL_DESERIALIZE_FOR_StructConfig: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -2412,6 +2418,8 @@ const _IMPL_DESERIALIZE_FOR_EnumConfig: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -2606,6 +2614,8 @@ const _IMPL_DESERIALIZE_FOR_ConstantConfig: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -2971,6 +2981,8 @@ const _IMPL_DESERIALIZE_FOR_ParseExpandConfig: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
@@ -3478,6 +3490,8 @@ const _IMPL_DESERIALIZE_FOR_ParseConfig: () =
             }
         }
     };
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
 #[allow(non_upper_case_globals,
         unused_attributes,
         unused_qualifications)]
