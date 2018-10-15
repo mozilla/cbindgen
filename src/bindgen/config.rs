@@ -520,7 +520,10 @@ pub struct ParseConfig {
     /// The names of crates to not parse
     pub exclude: Vec<String>,
     /// The configuration options for `rustc --pretty=expanded`
-    #[cfg_attr(serde_derive, serde(deserialize_with = "retrocomp_parse_expand_config_deserialize"))]
+    #[cfg_attr(
+        serde_derive,
+        serde(deserialize_with = "retrocomp_parse_expand_config_deserialize"))
+    ]
     pub expand: ParseExpandConfig,
     /// Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
     /// This may be required for some build processes.
