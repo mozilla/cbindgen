@@ -1,0 +1,25 @@
+See issue #203 for background on why this exists.
+
+To update the `impl`s for (1) changes to data structures or (2) updates to `serde` you'll need to do this manual process.
+
+1. Uncomment the `serde` dependency with `features = ["derive"]`
+2. Comment out the `serde` dependency without `features = ["derive"]`
+3. Run `cbindgen` through `cargo expand`
+
+```bash
+cargo +nightly rustc --lib --features serde_derive -p cbindgen -- -Z unstable-options --pretty=expanded > expanded.rs
+```
+
+Note the `--features serde_derive`. This activates `#[serde]` configuration attributes so that `serde_derive` generates correct impls. These attributes cannot be left enabled by default as the rust compiler will complain.
+
+4. Open `expanded.rs`
+5. Find the appropriate `impl`s and copy and paste them into the appropriate `mod`s.
+    1. Keep the `impl`s in source file order
+    2. Unindent the `impl`s to be aligned properly
+6. Update the comments with the version of `serde_derive` used to generate the `impl`s
+   1. You can find this in `Cargo.lock`
+7. Revert the changes to `Cargo.toml`
+8. Delete `expanded.rs`
+9. Test your changes
+
+This is very unfortunate, but it's better than keeping a stale dependency on `serde_derive`.
