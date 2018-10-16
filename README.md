@@ -27,6 +27,7 @@ cargo install cbindgen
 ```
 or
 ```
+# This will update cbindgen if it's already installed
 cargo install --force cbindgen
 ```
 
@@ -61,6 +62,10 @@ fn main() {
 }
 
 ```
+
+You can add configuration options using the [`Builder`](https://docs.rs/cbindgen/*/cbindgen/struct.Builder.html#methods) interface.
+
+If you'd like to use a `build.rs` script with a `cbindgen.toml`, consider using [`cbindgen::generate()`](https://docs.rs/cbindgen/*/cbindgen/fn.generate.html) instead.
 
 ## Configuration
 
