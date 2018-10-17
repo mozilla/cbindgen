@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::mem;
 
-use bindgen::ir::{Enum, Generic, OpaqueItem, Path, Struct, Type, Typedef, Union};
+use bindgen::ir::{Enum, GenericPath, OpaqueItem, Path, Struct, Type, Typedef, Union};
 
 #[derive(Default, Clone, Debug)]
 pub struct Monomorphs {
@@ -34,7 +34,7 @@ impl Monomorphs {
     }
 
     pub fn insert_enum(&mut self, generic: &Enum, monomorph: Enum, parameters: Vec<Type>) {
-        let replacement_path = Generic::new(generic.path.clone(), parameters);
+        let replacement_path = GenericPath::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
