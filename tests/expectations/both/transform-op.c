@@ -44,4 +44,34 @@ typedef union StyleFoo_i32 {
   StyleBaz_Body_i32 baz;
 } StyleFoo_i32;
 
-void foo(const StyleFoo_i32 *foo);
+typedef enum StyleBar_Tag {
+  Bar1_i32,
+  Bar2_i32,
+  Bar3_i32,
+  Bar4_i32,
+} StyleBar_Tag;
+
+typedef struct StyleBar1_Body_i32 {
+  int32_t x;
+  StylePoint_i32 y;
+  StylePoint_f32 z;
+} StyleBar1_Body_i32;
+
+typedef struct StyleBar2_Body_i32 {
+  int32_t _0;
+} StyleBar2_Body_i32;
+
+typedef struct StyleBar3_Body_i32 {
+  StylePoint_i32 _0;
+} StyleBar3_Body_i32;
+
+typedef struct StyleBar_i32 {
+  StyleBar_Tag tag;
+  union {
+    StyleBar1_Body_i32 bar1;
+    StyleBar2_Body_i32 bar2;
+    StyleBar3_Body_i32 bar3;
+  };
+} StyleBar_i32;
+
+void foo(const StyleFoo_i32 *foo, const StyleBar_i32 *bar);

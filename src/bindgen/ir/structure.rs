@@ -25,7 +25,11 @@ pub struct Struct {
     pub name: String,
     pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
+    /// Whether there's a tag field on the body of this struct. When this is
+    /// true, is_enum_variant_body is also guaranteed to be true.
     pub is_tagged: bool,
+    /// Whether this is an enum variant body.
+    pub is_enum_variant_body: bool,
     pub is_transparent: bool,
     pub tuple_struct: bool,
     pub cfg: Option<Cfg>,
@@ -39,7 +43,7 @@ impl Struct {
         !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq())
     }
 
-    pub fn load(item: &syn::ItemStruct, mod_cfg: &Option<Cfg>) -> Result<Struct, String> {
+    pub fn load(item: &syn::ItemStruct, mod_cfg: &Option<Cfg>) -> Result<Self, String> {
         let is_transparent = match Repr::load(&item.attrs)? {
             Repr::C => false,
             Repr::TRANSPARENT => true,
@@ -70,11 +74,12 @@ impl Struct {
             }
         };
 
-        Ok(Struct {
+        Ok(Self {
             name: item.ident.to_string(),
             generic_params: GenericParams::new(&item.generics),
             fields: fields,
             is_tagged: false,
+            is_enum_variant_body: false,
             is_transparent: is_transparent,
             tuple_struct: tuple_struct,
             cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
@@ -120,6 +125,7 @@ impl Struct {
                 .iter()
                 .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                 .collect(),
+            is_enum_variant_body: self.is_enum_variant_body,
             is_tagged: self.is_tagged,
             is_transparent: self.is_transparent,
             tuple_struct: self.tuple_struct,
@@ -272,7 +278,7 @@ impl Source for Struct {
 
         self.documentation.write(config, out);
 
-        if !self.is_tagged {
+        if !self.is_enum_variant_body {
             self.generic_params.write(config, out);
         }
 

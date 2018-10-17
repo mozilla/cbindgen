@@ -12,5 +12,13 @@ pub enum Foo<T> {
     Bazz,
 }
 
+#[repr(C)]
+pub enum Bar<T> {
+    Bar1 { x: i32, y: Point<T>, z: Point<f32>, },
+    Bar2(T),
+    Bar3(Point<T>),
+    Bar4,
+}
+
 #[no_mangle]
-pub extern "C" fn foo(foo: *const Foo<i32>) {}
+pub extern "C" fn foo(foo: *const Foo<i32>, bar: *const Bar<i32>) {}
