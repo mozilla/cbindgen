@@ -53,12 +53,12 @@ impl OpaqueItem {
     ) -> OpaqueItem {
         let export_name = path.name().to_owned();
         Self {
-            path: path,
-            export_name: export_name,
-            generic_params: generic_params,
-            cfg: cfg,
-            annotations: annotations,
-            documentation: documentation,
+            path,
+            export_name,
+            generic_params,
+            cfg,
+            annotations,
+            documentation,
         }
     }
 }

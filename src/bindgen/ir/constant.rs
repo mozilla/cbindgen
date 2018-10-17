@@ -175,13 +175,13 @@ impl Constant {
     ) -> Self {
         let export_name = path.name().to_owned();
         Self {
-            path: path,
-            export_name: export_name,
-            ty: ty,
-            value: value,
-            cfg: cfg,
-            annotations: annotations,
-            documentation: documentation,
+            path,
+            export_name,
+            ty,
+            value,
+            cfg,
+            annotations,
+            documentation,
         }
     }
 }

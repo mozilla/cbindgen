@@ -58,13 +58,13 @@ impl Typedef {
     ) -> Self {
         let export_name = path.name().to_owned();
         Self {
-            path: path,
-            export_name: export_name,
-            generic_params: generic_params,
-            aliased: aliased,
-            cfg: cfg,
-            annotations: annotations,
-            documentation: documentation,
+            path,
+            export_name,
+            generic_params,
+            aliased,
+            cfg,
+            annotations,
+            documentation,
         }
     }
 

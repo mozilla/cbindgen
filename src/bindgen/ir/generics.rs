@@ -67,9 +67,9 @@ impl Generic {
     pub fn new(path: Path, generics: Vec<Type>) -> Generic {
         let export_name = path.name().to_owned();
         Self {
-            path: path,
-            export_name: export_name,
-            generics: generics,
+            path,
+            export_name,
+            generics,
             ctype: None,
         }
     }

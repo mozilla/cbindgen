@@ -51,10 +51,10 @@ impl Function {
         };
 
         Ok(Function {
-            path: path,
-            ret: ret,
-            args: args,
-            extern_decl: extern_decl,
+            path,
+            ret,
+            args,
+            extern_decl,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
             documentation: Documentation::load(attrs),
