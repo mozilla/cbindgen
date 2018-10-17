@@ -46,8 +46,8 @@ impl Typedef {
         }
     }
 
-    pub fn simplify_option_to_ptr(&mut self) {
-        self.aliased.simplify_option_to_ptr();
+    pub fn simplify_standard_types(&mut self) {
+        self.aliased.simplify_standard_types();
     }
 
     pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {

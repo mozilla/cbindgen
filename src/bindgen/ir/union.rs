@@ -58,9 +58,9 @@ impl Union {
         })
     }
 
-    pub fn simplify_option_to_ptr(&mut self) {
+    pub fn simplify_standard_types(&mut self) {
         for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.simplify_option_to_ptr();
+            ty.simplify_standard_types();
         }
     }
 
