@@ -421,10 +421,10 @@ impl Type {
                 for generic_value in generic.generics() {
                     generic_value.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
-                let path = generic.path().clone();
-                if !generic_params.contains(&path) {
-                    if let Some(items) = library.get_items(&path) {
-                        if !out.items.contains(&path) {
+                let path = generic.path();
+                if !generic_params.contains(path) {
+                    if let Some(items) = library.get_items(path) {
+                        if !out.items.contains(path) {
                             out.items.insert(path.clone());
 
                             for item in &items {
@@ -472,8 +472,8 @@ impl Type {
                 if generic.generics().len() == 0 || out.contains(&generic) {
                     return;
                 }
-                let path = generic.path().clone();
-                if let Some(items) = library.get_items(&path) {
+                let path = generic.path();
+                if let Some(items) = library.get_items(path) {
                     for item in items {
                         item.deref()
                             .instantiate_monomorph(generic.generics(), library, out);
