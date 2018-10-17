@@ -59,7 +59,7 @@ fn internal_mangle_name(name: &str, generic_values: &[Type], last_in_parent: boo
 
 #[test]
 fn generics() {
-    use bindgen::ir::{Generic, PrimitiveType};
+    use bindgen::ir::{GenericPath, PrimitiveType};
 
     fn float() -> Type {
         Type::Primitive(PrimitiveType::Float)
@@ -71,8 +71,8 @@ fn generics() {
 
     fn generic_path(path: &str, generics: &[Type]) -> Type {
         let path = Path::new(path);
-        let generic = Generic::new(path, generics.to_owned());
-        Type::Path(generic)
+        let generic_path = GenericPath::new(path, generics.to_owned());
+        Type::Path(generic_path)
     }
 
     // Foo<f32> => Foo_f32

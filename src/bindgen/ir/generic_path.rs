@@ -56,15 +56,15 @@ impl Source for GenericParams {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Generic {
+pub struct GenericPath {
     path: Path,
     export_name: String,
     generics: Vec<Type>,
     ctype: Option<DeclarationType>,
 }
 
-impl Generic {
-    pub fn new(path: Path, generics: Vec<Type>) -> Generic {
+impl GenericPath {
+    pub fn new(path: Path, generics: Vec<Type>) -> Self {
         let export_name = path.name().to_owned();
         Self {
             path,
@@ -105,7 +105,7 @@ impl Generic {
         self.ctype = resolver.type_for(&self.path);
     }
 
-    pub fn load(path: &syn::Path) -> Result<Generic, String> {
+    pub fn load(path: &syn::Path) -> Result<Self, String> {
         assert!(
             path.segments.len() > 0,
             "{:?} doesn't have any segments",
@@ -118,7 +118,7 @@ impl Generic {
         let path = Path::new(name);
         let phantom_data_path = Path::new("PhantomData");
         if path == phantom_data_path {
-            return Ok(Generic::new(path, Vec::new()));
+            return Ok(Self::new(path, Vec::new()));
         }
 
         let generics = match &last_segment.arguments {
@@ -135,6 +135,6 @@ impl Generic {
             _ => Vec::new(),
         };
 
-        Ok(Generic::new(path, generics))
+        Ok(Self::new(path, generics))
     }
 }

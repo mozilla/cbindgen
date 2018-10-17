@@ -10,8 +10,8 @@ use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, Generic, GenericParams, Item, ItemContainer,
-    Path, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath, Item,
+    ItemContainer, Path, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -59,7 +59,7 @@ impl EnumVariant {
             if is_tagged {
                 res.push((
                     "tag".to_string(),
-                    Type::Path(Generic::new(Path::new("Tag"), vec![])),
+                    Type::Path(GenericPath::new(Path::new("Tag"), vec![])),
                     Documentation::none(),
                 ));
             }
@@ -358,8 +358,8 @@ impl Item for Enum {
                 for variant in &mut self.variants {
                     if let Some((_, ref mut body)) = variant.body {
                         let path = Path::new(new_tag.clone());
-                        let generic = Generic::new(path, vec![]);
-                        body.fields[0].1 = Type::Path(generic);
+                        let generic_path = GenericPath::new(path, vec![]);
+                        body.fields[0].1 = Type::Path(generic_path);
                     }
                 }
             }
