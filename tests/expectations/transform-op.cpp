@@ -41,8 +41,39 @@ union StyleFoo {
   Baz_Body baz;
 };
 
+template<typename T>
+struct StyleBar {
+  enum class Tag {
+    Bar1,
+    Bar2,
+    Bar3,
+    Bar4,
+  };
+
+  struct StyleBar1_Body {
+    int32_t x;
+    StylePoint<T> y;
+    StylePoint<float> z;
+  };
+
+  struct StyleBar2_Body {
+    T _0;
+  };
+
+  struct StyleBar3_Body {
+    StylePoint<T> _0;
+  };
+
+  Tag tag;
+  union {
+    StyleBar1_Body bar1;
+    StyleBar2_Body bar2;
+    StyleBar3_Body bar3;
+  };
+};
+
 extern "C" {
 
-void foo(const StyleFoo<int32_t> *foo);
+void foo(const StyleFoo<int32_t> *foo, const StyleBar<int32_t> *bar);
 
 } // extern "C"
