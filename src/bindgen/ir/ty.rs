@@ -328,16 +328,29 @@ impl Type {
         }
     }
 
-    pub fn simplify_option_to_ptr(&mut self) {
-        let mut simplified = None;
+    fn simplified_type(&self) -> Option<Self> {
+        let path = match *self {
+            Type::Path(ref p) => p,
+            _ => return None,
+        };
 
-        if let &mut Type::Path(ref mut path) = self {
-            if path.name == "Option" && path.generics.len() == 1 && path.generics[0].is_repr_ptr() {
-                simplified = Some(path.generics.pop().unwrap());
-            }
+        if path.generics.len() != 1 {
+            return None;
         }
 
-        if let Some(ty) = simplified {
+        let mut generic = path.generics[0].clone();
+        generic.simplify_standard_types();
+
+        match &*path.name {
+            // FIXME(#223): This is not quite correct.
+            "Option" if generic.is_repr_ptr() => Some(generic),
+            "NonNull" => Some(Type::Ptr(Box::new(generic))),
+            _ => None,
+        }
+    }
+
+    pub fn simplify_standard_types(&mut self) {
+        if let Some(ty) = self.simplified_type() {
             *self = ty;
         }
     }

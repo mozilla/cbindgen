@@ -464,6 +464,7 @@ impl Parse {
         add_opaque("Arc", vec!["T"]);
         add_opaque("Result", vec!["T", "E"]);
         add_opaque("Option", vec!["T"]);
+        add_opaque("NonNull", vec!["T"]);
         add_opaque("Vec", vec!["T"]);
         add_opaque("HashMap", vec!["K", "V"]);
         add_opaque("BTreeMap", vec!["K", "V"]);

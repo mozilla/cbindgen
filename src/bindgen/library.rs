@@ -58,7 +58,7 @@ impl Library {
         self.functions.sort_by(|x, y| x.name.cmp(&y.name));
         self.transfer_annotations();
         self.rename_items();
-        self.simplify_option_to_ptr();
+        self.simplify_standard_types();
 
         if self.config.language == Language::C {
             self.instantiate_monomorphs();
@@ -326,21 +326,21 @@ impl Library {
         }
     }
 
-    fn simplify_option_to_ptr(&mut self) {
+    fn simplify_standard_types(&mut self) {
         self.structs.for_all_items_mut(|x| {
-            x.simplify_option_to_ptr();
+            x.simplify_standard_types();
         });
         self.unions.for_all_items_mut(|x| {
-            x.simplify_option_to_ptr();
+            x.simplify_standard_types();
         });
         self.globals.for_all_items_mut(|x| {
-            x.simplify_option_to_ptr();
+            x.simplify_standard_types();
         });
         self.typedefs.for_all_items_mut(|x| {
-            x.simplify_option_to_ptr();
+            x.simplify_standard_types();
         });
         for x in &mut self.functions {
-            x.simplify_option_to_ptr();
+            x.simplify_standard_types();
         }
     }
 

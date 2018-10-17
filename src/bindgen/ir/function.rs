@@ -61,10 +61,10 @@ impl Function {
         })
     }
 
-    pub fn simplify_option_to_ptr(&mut self) {
-        self.ret.simplify_option_to_ptr();
+    pub fn simplify_standard_types(&mut self) {
+        self.ret.simplify_standard_types();
         for &mut (_, ref mut ty) in &mut self.args {
-            ty.simplify_option_to_ptr();
+            ty.simplify_standard_types();
         }
     }
 

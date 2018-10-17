@@ -41,8 +41,8 @@ impl Static {
         })
     }
 
-    pub fn simplify_option_to_ptr(&mut self) {
-        self.ty.simplify_option_to_ptr();
+    pub fn simplify_standard_types(&mut self) {
+        self.ty.simplify_standard_types();
     }
 }
 
