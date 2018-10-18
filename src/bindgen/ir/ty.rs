@@ -286,13 +286,21 @@ impl Type {
                 Type::Array(Box::new(converted), len)
             }
             &syn::Type::BareFn(ref function) => {
+                let mut wildcard_counter = 0;
                 let args = function.inputs.iter().try_skip_map(|x| {
                     Type::load(&x.ty).map(|opt_ty| {
                         opt_ty.map(|ty| {
                             (
                                 x.name.as_ref().map(|name| match name.0 {
                                     syn::BareFnArgName::Named(ref ident) => ident.to_string(),
-                                    syn::BareFnArgName::Wild(_) => "_".to_owned(),
+                                    syn::BareFnArgName::Wild(_) => {
+                                        wildcard_counter += 1;
+                                        if wildcard_counter == 1 {
+                                            "_".to_owned()
+                                        } else {
+                                            format!("_{}", wildcard_counter - 1)
+                                        }
+                                    }
                                 }),
                                 ty,
                             )
