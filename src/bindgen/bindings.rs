@@ -126,6 +126,9 @@ impl Bindings {
             self.write_headers(&mut out);
         }
 
+        if self.config.language == Language::Cxx {
+            self.open_namespaces(&mut out);
+        }
         for constant in &self.constants {
             if constant.ty.is_primitive_or_ptr_primitive() {
                 out.new_line_if_not_start();
@@ -134,9 +137,6 @@ impl Bindings {
             }
         }
 
-        if self.config.language == Language::Cxx {
-            self.open_namespaces(&mut out);
-        }
         for item in &self.items {
             if item
                 .deref()

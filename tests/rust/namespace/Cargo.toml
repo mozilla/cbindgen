@@ -1,0 +1,6 @@
+[package]
+name = "namespace"
+version = "0.1.0"
+authors = ["cbindgen"]
+
+[dependencies]
