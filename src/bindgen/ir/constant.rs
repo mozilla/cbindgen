@@ -115,10 +115,11 @@ impl Constant {
 
         let ty = ty.unwrap();
 
-        if !ty.is_primitive_or_ptr_primitive() && match *item.expr {
-            syn::Expr::Struct(_) => false,
-            _ => true,
-        } {
+        if !ty.is_primitive_or_ptr_primitive()
+            && match *item.expr {
+                syn::Expr::Struct(_) => false,
+                _ => true,
+            } {
             return Err("Unhanded const definition".to_owned());
         }
 
@@ -145,10 +146,11 @@ impl Constant {
 
         let ty = ty.unwrap();
 
-        if !ty.is_primitive_or_ptr_primitive() && match item.expr {
-            syn::Expr::Struct(_) => false,
-            _ => true,
-        } {
+        if !ty.is_primitive_or_ptr_primitive()
+            && match item.expr {
+                syn::Expr::Struct(_) => false,
+                _ => true,
+            } {
             return Err("Unhanded const definition".to_owned());
         }
 
