@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define GA 10
+#define Foo_GA 10
 
-#define ZO 3.14
+#define Foo_ZO 3.14
 
 typedef struct Foo {
 

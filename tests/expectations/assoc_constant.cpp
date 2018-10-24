@@ -1,9 +1,9 @@
 #include <cstdint>
 #include <cstdlib>
 
-static const int32_t GA = 10;
+static const int32_t Foo_GA = 10;
 
-static const float ZO = 3.14;
+static const float Foo_ZO = 3.14;
 
 struct Foo {
 

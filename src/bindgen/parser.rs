@@ -499,42 +499,40 @@ impl Parse {
                 continue;
             }
             match item {
-                &syn::Item::ForeignMod(ref item) => {
+                syn::Item::ForeignMod(ref item) => {
                     self.load_syn_foreign_mod(binding_crate_name, crate_name, mod_cfg, item);
                 }
-                &syn::Item::Fn(ref item) => {
+                syn::Item::Fn(ref item) => {
                     self.load_syn_fn(binding_crate_name, crate_name, mod_cfg, item);
                 }
-                &syn::Item::Const(ref item) => {
+                syn::Item::Const(ref item) => {
                     self.load_syn_const(binding_crate_name, crate_name, mod_cfg, item);
                 }
-                &syn::Item::Static(ref item) => {
+                syn::Item::Static(ref item) => {
                     self.load_syn_static(binding_crate_name, crate_name, mod_cfg, item);
                 }
-                &syn::Item::Struct(ref item) => {
+                syn::Item::Struct(ref item) => {
                     self.load_syn_struct(crate_name, mod_cfg, item);
                 }
-                &syn::Item::Union(ref item) => {
+                syn::Item::Union(ref item) => {
                     self.load_syn_union(crate_name, mod_cfg, item);
                 }
-                &syn::Item::Enum(ref item) => {
+                syn::Item::Enum(ref item) => {
                     self.load_syn_enum(crate_name, mod_cfg, item);
                 }
-                &syn::Item::Type(ref item) => {
+                syn::Item::Type(ref item) => {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
-                &syn::Item::Impl(ref item_impl) => {
+                syn::Item::Impl(ref item_impl) => {
                     for item in &item_impl.items {
-                        match item {
-                            &syn::ImplItem::Const(ref item) => {
-                                self.load_syn_assoc_const(
-                                    binding_crate_name,
-                                    crate_name,
-                                    mod_cfg,
-                                    item,
-                                );
-                            }
-                            _ => {}
+                        if let syn::ImplItem::Const(ref item) = item {
+                            self.load_syn_assoc_const(
+                                binding_crate_name,
+                                crate_name,
+                                mod_cfg,
+                                &item_impl.self_ty,
+                                item,
+                            );
                         }
                     }
                 }
@@ -644,6 +642,7 @@ impl Parse {
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: &Option<Cfg>,
+        impl_ty: &syn::Type,
         item: &syn::ImplItemConst,
     ) {
         if crate_name != binding_crate_name {
@@ -656,11 +655,14 @@ impl Parse {
 
         let const_name = item.ident.to_string();
 
-        match Constant::load_assoc(const_name.clone(), item, mod_cfg) {
+        match Constant::load_assoc(const_name.clone(), item, impl_ty, mod_cfg) {
             Ok(constant) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
-                self.constants.try_insert(constant);
+                let full_name = constant.name.clone();
+                if !self.constants.try_insert(constant) {
+                    error!("Conflicting name for constant {}", full_name);
+                }
             }
             Err(msg) => {
                 warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
@@ -690,7 +692,10 @@ impl Parse {
             Ok(constant) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
-                self.constants.try_insert(constant);
+                let full_name = constant.name.clone();
+                if !self.constants.try_insert(constant) {
+                    error!("Conflicting name for constant {}", full_name);
+                }
             }
             Err(msg) => {
                 warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
