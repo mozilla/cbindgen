@@ -171,6 +171,7 @@ impl Constant {
             AnnotationSet::load(&item.attrs)?,
             Documentation::load(&item.attrs),
         ))
+    }
 
     pub fn new(
         path: Path,

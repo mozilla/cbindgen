@@ -659,7 +659,7 @@ impl Parse {
             Ok(constant) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
-                let full_name = constant.name.clone();
+                let full_name = constant.path.clone();
                 if !self.constants.try_insert(constant) {
                     error!("Conflicting name for constant {}", full_name);
                 }
@@ -692,7 +692,7 @@ impl Parse {
             Ok(constant) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
-                let full_name = constant.name.clone();
+                let full_name = constant.path.clone();
                 if !self.constants.try_insert(constant) {
                     error!("Conflicting name for constant {}", full_name);
                 }
