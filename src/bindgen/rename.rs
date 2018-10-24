@@ -4,7 +4,7 @@
 
 use std::str::FromStr;
 
-use bindgen::ir::Enum;
+use bindgen::ir::{Enum, Item};
 
 /// The type of identifier to be renamed.
 #[derive(Debug, Clone, Copy)]
@@ -96,7 +96,7 @@ impl RenameRule {
                     if let &RenameRule::QualifiedScreamingSnakeCase = self {
                         result.push_str(
                             &RenameRule::ScreamingSnakeCase
-                                .apply_to_pascal_case(&e.name, IdentifierType::Enum),
+                                .apply_to_pascal_case(e.path().name(), IdentifierType::Enum),
                         );
                         result.push_str("_");
                     }
@@ -177,7 +177,7 @@ impl RenameRule {
                     if let &RenameRule::QualifiedScreamingSnakeCase = self {
                         result.push_str(
                             &RenameRule::ScreamingSnakeCase
-                                .apply_to_snake_case(&e.name, IdentifierType::Enum),
+                                .apply_to_snake_case(e.path().name(), IdentifierType::Enum),
                         );
                         result.push_str("_");
                     }

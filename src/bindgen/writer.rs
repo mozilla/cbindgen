@@ -176,7 +176,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
 
     pub fn write_horizontal_source_list<'b, S: Source>(
         &mut self,
-        items: &Vec<S>,
+        items: &[S],
         list_type: ListType<'b>,
     ) {
         for (i, ref item) in items.iter().enumerate() {
@@ -197,7 +197,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
 
     pub fn write_vertical_source_list<'b, S: Source>(
         &mut self,
-        items: &Vec<S>,
+        items: &[S],
         list_type: ListType<'b>,
     ) {
         let align_length = self.line_length_for_align();

@@ -71,7 +71,7 @@ impl CDecl {
 
     fn build_type(&mut self, t: &Type, is_const: bool) {
         match t {
-            &Type::Path(ref path) => {
+            &Type::Path(ref generic) => {
                 if is_const {
                     assert!(
                         self.type_qualifers.len() == 0,
@@ -86,14 +86,14 @@ impl CDecl {
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_name = path.name.clone();
+                self.type_name = generic.export_name().to_owned();
                 assert!(
                     self.type_generic_args.len() == 0,
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_generic_args = path.generics.clone();
-                self.type_ctype = path.ctype;
+                self.type_generic_args = generic.generics().to_owned();
+                self.type_ctype = generic.ctype().cloned();
             }
             &Type::Primitive(ref p) => {
                 if is_const {
@@ -263,7 +263,7 @@ pub fn write_func<F: Write>(
     layout_vertical: bool,
     void_prototype: bool,
 ) {
-    &CDecl::from_func(f, layout_vertical).write(out, Some(&f.name), void_prototype);
+    &CDecl::from_func(f, layout_vertical).write(out, Some(f.path().name()), void_prototype);
 }
 
 pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {

@@ -5,14 +5,16 @@
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
 use syn;
 
 use bindgen::cargo::{Cargo, PackageRef};
 use bindgen::error::Error;
-use bindgen::ir::{AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams};
-use bindgen::ir::{ItemMap, OpaqueItem, Static, Struct, Typedef, Union};
+use bindgen::ir::{
+    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
+    OpaqueItem, Path, Static, Struct, Typedef, Union,
+};
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 
 const STD_CRATES: &'static [&'static str] = &[
@@ -27,7 +29,7 @@ const STD_CRATES: &'static [&'static str] = &[
 type ParseResult = Result<Parse, Error>;
 
 /// Parses a single rust source file, not following `mod` or `extern crate`.
-pub fn parse_src(src_file: &Path) -> ParseResult {
+pub fn parse_src(src_file: &FilePath) -> ParseResult {
     let mod_name = src_file.file_stem().unwrap().to_str().unwrap();
 
     let mut context = Parser {
@@ -65,8 +67,8 @@ pub(crate) fn parse_lib(
     lib: Cargo,
     parse_deps: bool,
     include: &Option<Vec<String>>,
-    exclude: &Vec<String>,
-    expand: &Vec<String>,
+    exclude: &[String],
+    expand: &[String],
     expand_all_features: bool,
     expand_default_features: bool,
     expand_features: &Option<Vec<String>>,
@@ -76,8 +78,8 @@ pub(crate) fn parse_lib(
         lib: Some(lib),
         parse_deps: parse_deps,
         include: include.clone(),
-        exclude: exclude.clone(),
-        expand: expand.clone(),
+        exclude: exclude.to_owned(),
+        expand: expand.to_owned(),
         expand_all_features,
         expand_default_features,
         expand_features: expand_features.clone(),
@@ -107,7 +109,7 @@ struct Parser {
     expand_features: Option<Vec<String>>,
 
     parsed_crates: HashSet<String>,
-    cache_src: HashMap<PathBuf, Vec<syn::Item>>,
+    cache_src: HashMap<FilePathBuf, Vec<syn::Item>>,
     cache_expanded_crate: HashMap<String, Vec<syn::Item>>,
 
     cfg_stack: Vec<Cfg>,
@@ -267,7 +269,7 @@ impl Parser {
         Ok(())
     }
 
-    fn parse_mod(&mut self, pkg: &PackageRef, mod_path: &Path) -> Result<(), Error> {
+    fn parse_mod(&mut self, pkg: &PackageRef, mod_path: &FilePath) -> Result<(), Error> {
         let mod_parsed = {
             let owned_mod_path = mod_path.to_path_buf();
 
@@ -303,7 +305,7 @@ impl Parser {
     fn process_mod(
         &mut self,
         pkg: &PackageRef,
-        mod_dir: &Path,
+        mod_dir: &FilePath,
         items: &[syn::Item],
     ) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
@@ -446,16 +448,16 @@ impl Parse {
     }
 
     pub fn add_std_types(&mut self) {
-        let mut add_opaque = |name: &str, generic_params: Vec<&str>| {
-            self.opaque_items.try_insert(OpaqueItem {
-                name: name.to_owned(),
-                generic_params: GenericParams(
-                    generic_params.iter().map(|x| (*x).to_owned()).collect(),
-                ),
-                cfg: None,
-                annotations: AnnotationSet::new(),
-                documentation: Documentation::none(),
-            })
+        let mut add_opaque = |path: &str, generic_params: Vec<&str>| {
+            let path = Path::new(path);
+            let generic_params: Vec<_> = generic_params.into_iter().map(|s| Path::new(s)).collect();
+            self.opaque_items.try_insert(OpaqueItem::new(
+                path,
+                GenericParams(generic_params),
+                None,
+                AnnotationSet::new(),
+                Documentation::none(),
+            ))
         };
 
         add_opaque("String", vec![]);
@@ -562,14 +564,8 @@ impl Parse {
                         );
                         return;
                     }
-
-                    match Function::load(
-                        function.ident.to_string(),
-                        &function.decl,
-                        true,
-                        &function.attrs,
-                        mod_cfg,
-                    ) {
+                    let path = Path::new(function.ident.to_string());
+                    match Function::load(path, &function.decl, true, &function.attrs, mod_cfg) {
                         Ok(func) => {
                             info!("Take {}::{}.", crate_name, &function.ident);
 
@@ -606,13 +602,8 @@ impl Parse {
 
         if let syn::Visibility::Public(_) = item.vis {
             if item.is_no_mangle() && (item.abi.is_omitted() || item.abi.is_c()) {
-                match Function::load(
-                    item.ident.to_string(),
-                    &item.decl,
-                    false,
-                    &item.attrs,
-                    mod_cfg,
-                ) {
+                let path = Path::new(item.ident.to_string());
+                match Function::load(path, &item.decl, false, &item.attrs, mod_cfg) {
                     Ok(func) => {
                         info!("Take {}::{}.", crate_name, &item.ident);
 
@@ -695,9 +686,9 @@ impl Parse {
             return;
         }
 
-        let const_name = item.ident.to_string();
+        let path = Path::new(item.ident.to_string());
 
-        match Constant::load(const_name.clone(), item, mod_cfg) {
+        match Constant::load(path, item, mod_cfg) {
             Ok(constant) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
@@ -763,12 +754,10 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                self.opaque_items.try_insert(OpaqueItem::new(
-                    item.ident.to_string(),
-                    &item.generics,
-                    &item.attrs,
-                    mod_cfg,
-                ));
+                let path = Path::new(item.ident.to_string());
+                self.opaque_items.try_insert(
+                    OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
+                );
             }
         }
     }
@@ -783,12 +772,10 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                self.opaque_items.try_insert(OpaqueItem::new(
-                    item.ident.to_string(),
-                    &item.generics,
-                    &item.attrs,
-                    mod_cfg,
-                ));
+                let path = Path::new(item.ident.to_string());
+                self.opaque_items.try_insert(
+                    OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
+                );
             }
         }
     }
@@ -810,12 +797,10 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                self.opaque_items.try_insert(OpaqueItem::new(
-                    item.ident.to_string(),
-                    &item.generics,
-                    &item.attrs,
-                    mod_cfg,
-                ));
+                let path = Path::new(item.ident.to_string());
+                self.opaque_items.try_insert(
+                    OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
+                );
             }
         }
     }
@@ -830,12 +815,10 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                self.opaque_items.try_insert(OpaqueItem::new(
-                    item.ident.to_string(),
-                    &item.generics,
-                    &item.attrs,
-                    mod_cfg,
-                ));
+                let path = Path::new(item.ident.to_string());
+                self.opaque_items.try_insert(
+                    OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
+                );
             }
         }
     }
