@@ -8,7 +8,7 @@ struct Foo {
 
 static const Foo BAR = (Foo){ .a = 42, .b = 1337 };
 
-static const Foo FOO = (Foo){ .a = 42, .b = 47 };
+static const Foo Foo_FOO = (Foo){ .a = 42, .b = 47 };
 
 extern "C" {
 

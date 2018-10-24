@@ -9,6 +9,6 @@ struct Foo {
 
 #define BAR (Foo){ .a = 42, .b = 1337 }
 
-#define FOO (Foo){ .a = 42, .b = 47 }
+#define Foo_FOO (Foo){ .a = 42, .b = 47 }
 
 void root(struct Foo x);

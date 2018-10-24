@@ -115,10 +115,11 @@ impl Constant {
 
         let ty = ty.unwrap();
 
-        if !ty.is_primitive_or_ptr_primitive() && match *item.expr {
-            syn::Expr::Struct(_) => false,
-            _ => true,
-        } {
+        if !ty.is_primitive_or_ptr_primitive()
+            && match *item.expr {
+                syn::Expr::Struct(_) => false,
+                _ => true,
+            } {
             return Err("Unhanded const definition".to_owned());
         }
 
@@ -135,6 +136,7 @@ impl Constant {
     pub fn load_assoc(
         name: String,
         item: &syn::ImplItemConst,
+        impl_ty: &syn::Type,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Constant, String> {
         let ty = Type::load(&item.ty)?;
@@ -142,19 +144,27 @@ impl Constant {
         if ty.is_none() {
             return Err("Cannot have a zero sized const definition.".to_owned());
         }
-
         let ty = ty.unwrap();
-
-        if !ty.is_primitive_or_ptr_primitive() && match item.expr {
-            syn::Expr::Struct(_) => false,
-            _ => true,
-        } {
+        if !ty.is_primitive_or_ptr_primitive()
+            && match item.expr {
+                syn::Expr::Struct(_) => false,
+                _ => true,
+            } {
             return Err("Unhanded const definition".to_owned());
         }
 
+        let impl_ty = Type::load(impl_ty)?;
+        if impl_ty.is_none() {
+            return Err("impl has an empty type".to_owned());
+        }
+        let impl_ty = impl_ty.unwrap();
+
+        let struct_path = impl_ty.get_root_path().unwrap();
+        let full_name = format!("{}_{}", struct_path, name);
+
         Ok(Constant {
-            name: name,
-            ty: ty,
+            name: full_name,
+            ty,
             value: LiteralExpr::load(&item.expr)?,
             cfg: Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             annotations: AnnotationSet::load(&item.attrs)?,
