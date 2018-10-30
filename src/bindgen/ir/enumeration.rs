@@ -410,7 +410,10 @@ impl Item for Enum {
                 .iter()
                 .map(|variant| {
                     EnumVariant::new(
-                        r.apply_to_pascal_case(&variant.name, IdentifierType::EnumVariant(self)),
+                        r.apply_to_pascal_case(
+                            &variant.export_name,
+                            IdentifierType::EnumVariant(self),
+                        ),
                         variant.discriminant.clone(),
                         variant.body.as_ref().map(|body| {
                             (
