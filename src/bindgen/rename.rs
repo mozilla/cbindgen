@@ -94,9 +94,22 @@ impl RenameRule {
             RenameRule::ScreamingSnakeCase => {
                 // Same as SnakeCase code above, but uses to_uppercase
                 let mut result = String::new();
+                let mut add_separator = true;
+                let mut prev_uppercase = false;
                 for (i, c) in text.char_indices() {
-                    if c.is_uppercase() && i != 0 {
-                        result.push_str("_");
+                    if c == '_' {
+                        add_separator = false;
+                        prev_uppercase = false;
+                    }
+                    if c.is_uppercase() {
+                        if i != 0 && add_separator && !prev_uppercase {
+                            result.push_str("_");
+                        } else {
+                            add_separator = true;
+                        }
+                        prev_uppercase = true;
+                    } else {
+                        prev_uppercase = false;
                     }
                     for x in c.to_uppercase() {
                         result.push(x);
