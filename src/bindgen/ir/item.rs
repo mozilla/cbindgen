@@ -140,11 +140,10 @@ impl<T: Item + Clone> ItemMap<T> {
     }
 
     pub fn get_items(&self, path: &Path) -> Option<Vec<ItemContainer>> {
-        match self.data.get(path) {
-            Some(&ItemValue::Cfg(ref items)) => Some(items.iter().map(|x| x.container()).collect()),
-            Some(&ItemValue::Single(ref item)) => Some(vec![item.container()]),
-            None => None,
-        }
+        Some(match *self.data.get(path)? {
+            ItemValue::Cfg(ref items) => items.iter().map(|x| x.container()).collect(),
+            ItemValue::Single(ref item) => vec![item.container()],
+        })
     }
 
     pub fn filter<F>(&mut self, callback: F)
