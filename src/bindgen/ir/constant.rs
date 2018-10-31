@@ -11,7 +11,8 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, Item, ItemContainer, Path, ToCondition, Type, GenericParams,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
+    ToCondition, Type,
 };
 use bindgen::writer::{Source, SourceWriter};
 
@@ -157,10 +158,11 @@ impl Constant {
 
         let ty = ty.unwrap();
 
-        if !ty.is_primitive_or_ptr_primitive() && match *item.expr {
-            syn::Expr::Struct(_) => false,
-            _ => true,
-        } {
+        if !ty.is_primitive_or_ptr_primitive()
+            && match *item.expr {
+                syn::Expr::Struct(_) => false,
+                _ => true,
+            } {
             return Err("Unhanded const definition".to_owned());
         }
 
@@ -186,10 +188,11 @@ impl Constant {
             return Err("Cannot have a zero sized const definition.".to_owned());
         }
         let ty = ty.unwrap();
-        if !ty.is_primitive_or_ptr_primitive() && match item.expr {
-            syn::Expr::Struct(_) => false,
-            _ => true,
-        } {
+        if !ty.is_primitive_or_ptr_primitive()
+            && match item.expr {
+                syn::Expr::Struct(_) => false,
+                _ => true,
+            } {
             return Err("Unhanded const definition".to_owned());
         }
 
@@ -261,7 +264,7 @@ impl Item for Constant {
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.export_name);
         self.value.rename_for_config(config);
-        self.ty.rename_for_config(config, &GenericParams::default());// FIXME: should probably propagate something here
+        self.ty.rename_for_config(config, &GenericParams::default()); // FIXME: should probably propagate something here
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
