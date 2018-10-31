@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::fmt;
 use std::io::Write;
 use std::mem;
 
@@ -10,28 +11,68 @@ use syn;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, Item, ItemContainer, Path, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, Item, ItemContainer, Path, ToCondition, Type, GenericParams,
 };
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
-pub struct LiteralExpr(String);
+pub enum Literal {
+    Expr(String),
+    Struct {
+        name: String,
+        export_name: String,
+        fields: Vec<(String, Literal)>,
+    },
+}
 
-impl LiteralExpr {
-    pub fn load(expr: &syn::Expr) -> Result<LiteralExpr, String> {
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Literal::Expr(v) => write!(f, "{}", v),
+            Literal::Struct {
+                name: _,
+                export_name,
+                fields,
+            } => write!(
+                f,
+                "({}){{ {} }}",
+                export_name,
+                fields
+                    .iter()
+                    .map(|(key, lit)| format!(".{} = {}", key, lit))
+                    .collect::<Vec<String>>()
+                    .join(", "),
+            ),
+        }
+    }
+}
+
+impl Literal {
+    pub fn rename_for_config(&mut self, config: &Config) {
+        match self {
+            Literal::Struct {
+                name: _,
+                ref mut export_name,
+                fields: _,
+            } => config.export.rename(export_name),
+            Literal::Expr(_) => {}
+        }
+    }
+
+    pub fn load(expr: &syn::Expr) -> Result<Literal, String> {
         match expr {
             &syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Str(ref value),
                 ..
-            }) => Ok(LiteralExpr(format!("u8\"{}\"", value.value()))),
+            }) => Ok(Literal::Expr(format!("u8\"{}\"", value.value()))),
             &syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Byte(ref value),
                 ..
-            }) => Ok(LiteralExpr(format!("{}", value.value()))),
+            }) => Ok(Literal::Expr(format!("{}", value.value()))),
             &syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Char(ref value),
                 ..
-            }) => Ok(LiteralExpr(format!("{}", value.value()))),
+            }) => Ok(Literal::Expr(format!("{}", value.value()))),
             &syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref value),
                 ..
@@ -42,14 +83,14 @@ impl LiteralExpr {
                 | syn::IntSuffix::U32
                 | syn::IntSuffix::U64
                 | syn::IntSuffix::U128
-                | syn::IntSuffix::None => Ok(LiteralExpr(format!("{}", value.value()))),
+                | syn::IntSuffix::None => Ok(Literal::Expr(format!("{}", value.value()))),
                 syn::IntSuffix::Isize
                 | syn::IntSuffix::I8
                 | syn::IntSuffix::I16
                 | syn::IntSuffix::I32
                 | syn::IntSuffix::I64
                 | syn::IntSuffix::I128 => unsafe {
-                    Ok(LiteralExpr(format!(
+                    Ok(Literal::Expr(format!(
                         "{}",
                         mem::transmute::<u64, i64>(value.value())
                     )))
@@ -58,33 +99,33 @@ impl LiteralExpr {
             &syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Float(ref value),
                 ..
-            }) => Ok(LiteralExpr(format!("{}", value.value()))),
+            }) => Ok(Literal::Expr(format!("{}", value.value()))),
             &syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Bool(ref value),
                 ..
-            }) => Ok(LiteralExpr(format!("{}", value.value))),
+            }) => Ok(Literal::Expr(format!("{}", value.value))),
+
             &syn::Expr::Struct(syn::ExprStruct {
                 ref path,
                 ref fields,
                 ..
             }) => {
                 let struct_name = path.segments[0].ident.to_string();
-
-                let mut field_pairs: Vec<String> = Vec::new();
+                let mut field_pairs: Vec<(String, Literal)> = Vec::new();
                 for field in fields {
                     let ident = match field.member {
                         syn::Member::Named(ref name) => name.to_string(),
                         syn::Member::Unnamed(ref index) => format!("_{}", index.index),
                     };
                     let key = ident.to_string();
-                    let LiteralExpr(value) = LiteralExpr::load(&field.expr)?;
-                    field_pairs.push(format!(".{} = {}", key, value));
+                    let value = Literal::load(&field.expr)?;
+                    field_pairs.push((key, value));
                 }
-                Ok(LiteralExpr(format!(
-                    "({}){{ {} }}",
-                    struct_name,
-                    field_pairs.join(", ")
-                )))
+                Ok(Literal::Struct {
+                    name: struct_name.clone(),
+                    export_name: struct_name,
+                    fields: field_pairs,
+                })
             }
             _ => Err("Unsupported literal expression.".to_owned()),
         }
@@ -96,7 +137,7 @@ pub struct Constant {
     pub path: Path,
     pub export_name: String,
     pub ty: Type,
-    pub value: LiteralExpr,
+    pub value: Literal,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
@@ -116,18 +157,17 @@ impl Constant {
 
         let ty = ty.unwrap();
 
-        if !ty.is_primitive_or_ptr_primitive()
-            && match *item.expr {
-                syn::Expr::Struct(_) => false,
-                _ => true,
-            } {
+        if !ty.is_primitive_or_ptr_primitive() && match *item.expr {
+            syn::Expr::Struct(_) => false,
+            _ => true,
+        } {
             return Err("Unhanded const definition".to_owned());
         }
 
         Ok(Constant::new(
             path,
             ty,
-            LiteralExpr::load(&item.expr)?,
+            Literal::load(&item.expr)?,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,
             Documentation::load(&item.attrs),
@@ -146,11 +186,10 @@ impl Constant {
             return Err("Cannot have a zero sized const definition.".to_owned());
         }
         let ty = ty.unwrap();
-        if !ty.is_primitive_or_ptr_primitive()
-            && match item.expr {
-                syn::Expr::Struct(_) => false,
-                _ => true,
-            } {
+        if !ty.is_primitive_or_ptr_primitive() && match item.expr {
+            syn::Expr::Struct(_) => false,
+            _ => true,
+        } {
             return Err("Unhanded const definition".to_owned());
         }
 
@@ -166,7 +205,7 @@ impl Constant {
         Ok(Constant::new(
             full_name,
             ty,
-            LiteralExpr::load(&item.expr)?,
+            Literal::load(&item.expr)?,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,
             Documentation::load(&item.attrs),
@@ -176,7 +215,7 @@ impl Constant {
     pub fn new(
         path: Path,
         ty: Type,
-        value: LiteralExpr,
+        value: Literal,
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
@@ -221,6 +260,8 @@ impl Item for Constant {
 
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.export_name);
+        self.value.rename_for_config(config);
+        self.ty.rename_for_config(config, &GenericParams::default());// FIXME: should probably propagate something here
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
@@ -239,9 +280,9 @@ impl Source for Constant {
                 out.write("static const ");
             }
             self.ty.write(config, out);
-            write!(out, " {} = {};", self.export_name(), self.value.0)
+            write!(out, " {} = {};", self.export_name(), self.value)
         } else {
-            write!(out, "#define {} {}", self.export_name(), self.value.0)
+            write!(out, "#define {} {}", self.export_name(), self.value)
         }
         condition.write_after(config, out);
     }
