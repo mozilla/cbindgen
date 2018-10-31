@@ -54,8 +54,13 @@ impl Literal {
             Literal::Struct {
                 name: _,
                 ref mut export_name,
-                fields: _,
-            } => config.export.rename(export_name),
+                fields,
+            } => {
+                config.export.rename(export_name);
+                for (_, lit) in fields {
+                    lit.rename_for_config(config);
+                }
+            }
             Literal::Expr(_) => {}
         }
     }
