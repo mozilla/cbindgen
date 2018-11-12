@@ -30,6 +30,24 @@ struct TransparentPrimitiveWrapper<T> {
     marker: PhantomData<T>,
 }
 
+// Associated constant declared before struct declaration.
+impl TransparentPrimitiveWithAssociatedConstants {
+    pub const ZERO: TransparentPrimitiveWithAssociatedConstants = TransparentPrimitiveWithAssociatedConstants {
+        bits: 0
+    };
+}
+
+// Transparent structure wrapping a primitive with associated constants.
+#[repr(transparent)]
+struct TransparentPrimitiveWithAssociatedConstants { bits: u32 }
+
+// Associated constant declared after struct declaration.
+impl TransparentPrimitiveWithAssociatedConstants {
+    pub const ONE: TransparentPrimitiveWithAssociatedConstants = TransparentPrimitiveWithAssociatedConstants {
+        bits: 1
+    };
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     a: TransparentComplexWrappingStructTuple,
@@ -38,4 +56,5 @@ pub extern "C" fn root(
     d: TransparentPrimitiveWrappingStructure,
     e: TransparentComplexWrapper<i32>,
     f: TransparentPrimitiveWrapper<i32>,
+    g: TransparentPrimitiveWithAssociatedConstants,
 ) { }
