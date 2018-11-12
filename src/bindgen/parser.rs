@@ -12,8 +12,8 @@ use syn;
 use bindgen::cargo::{Cargo, PackageRef};
 use bindgen::error::Error;
 use bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
-    OpaqueItem, Path, Static, Struct, Typedef, Union,
+    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemContainer,
+    ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 
@@ -490,6 +490,8 @@ impl Parse {
         mod_cfg: &Option<Cfg>,
         items: &[syn::Item],
     ) {
+        let mut impls = Vec::new();
+
         for item in items {
             if item.has_test_attr() {
                 continue;
@@ -520,20 +522,24 @@ impl Parse {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
                 syn::Item::Impl(ref item_impl) => {
-                    for item in &item_impl.items {
-                        if let syn::ImplItem::Const(ref item) = item {
-                            self.load_syn_assoc_const(
-                                binding_crate_name,
-                                crate_name,
-                                mod_cfg,
-                                &item_impl.self_ty,
-                                item,
-                            );
-                        }
-                    }
+                    impls.push(item_impl);
                 }
                 _ => {}
             }
+        }
+
+        for item_impl in impls {
+            let associated_constants = item_impl.items.iter().filter_map(|item| match item {
+                syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
+                _ => None,
+            });
+            self.load_syn_assoc_consts(
+                binding_crate_name,
+                crate_name,
+                mod_cfg,
+                &item_impl.self_ty,
+                associated_constants,
+            );
         }
     }
 
@@ -632,36 +638,80 @@ impl Parse {
         }
     }
 
-    /// Loads an associated `const` declaration
-    fn load_syn_assoc_const(
+    /// Loads associated `const` declarations
+    fn load_syn_assoc_consts<'a, I>(
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: &Option<Cfg>,
         impl_ty: &syn::Type,
-        item: &syn::ImplItemConst,
-    ) {
-        if crate_name != binding_crate_name {
-            info!(
-                "Skip {}::{} - (const's outside of the binding crate are not used).",
-                crate_name, &item.ident
-            );
+        items: I,
+    ) where
+        I: IntoIterator<Item = &'a syn::ImplItemConst>,
+    {
+        let ty = Type::load(&impl_ty).unwrap();
+        if ty.is_none() {
             return;
         }
 
-        let const_name = item.ident.to_string();
+        let impl_struct_path = ty.unwrap().get_root_path().unwrap();
 
-        match Constant::load_assoc(const_name.clone(), item, impl_ty, mod_cfg) {
-            Ok(constant) => {
-                info!("Take {}::{}.", crate_name, &item.ident);
-
-                let full_name = constant.path.clone();
-                if !self.constants.try_insert(constant) {
-                    error!("Conflicting name for constant {}", full_name);
-                }
+        let is_transparent = if let Some(ref impl_items) = self.structs.get_items(&impl_struct_path)
+        {
+            if impl_items.len() != 1 {
+                error!(
+                    "Expected one struct to match path {}, but found {}",
+                    impl_struct_path,
+                    impl_items.len()
+                );
+                return;
             }
-            Err(msg) => {
-                warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
+            if let ItemContainer::Struct(ref s) = impl_items[0] {
+                s.is_transparent
+            } else {
+                info!(
+                        "Skip impl block for {}::{} (impl blocks for associated constants are only defined for structs).",
+                        crate_name, impl_struct_path
+                    );
+                return;
+            }
+        } else {
+            error!(
+                    "Cannot find type for {}::{} (impl blocks require the struct declaration to be known).",
+                    crate_name, impl_struct_path
+                );
+            return;
+        };
+
+        for item in items.into_iter() {
+            if crate_name != binding_crate_name {
+                info!(
+                    "Skip {}::{} - (const's outside of the binding crate are not used).",
+                    crate_name, &item.ident
+                );
+                continue;
+            }
+
+            let const_name = item.ident.to_string();
+
+            match Constant::load_assoc(
+                const_name.clone(),
+                item,
+                mod_cfg,
+                is_transparent,
+                &impl_struct_path,
+            ) {
+                Ok(constant) => {
+                    info!("Take {}::{}.", crate_name, &item.ident);
+
+                    let full_name = constant.path.clone();
+                    if !self.constants.try_insert(constant) {
+                        error!("Conflicting name for constant {}", full_name);
+                    }
+                }
+                Err(msg) => {
+                    warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
+                }
             }
         }
     }

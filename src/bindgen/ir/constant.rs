@@ -185,8 +185,9 @@ impl Constant {
     pub fn load_assoc(
         name: String,
         item: &syn::ImplItemConst,
-        impl_ty: &syn::Type,
         mod_cfg: &Option<Cfg>,
+        is_transparent: bool,
+        struct_path: &Path,
     ) -> Result<Constant, String> {
         let ty = Type::load(&item.ty)?;
 
@@ -203,19 +204,24 @@ impl Constant {
             return Err("Unhanded const definition".to_owned());
         }
 
-        let impl_ty = Type::load(impl_ty)?;
-        if impl_ty.is_none() {
-            return Err("impl has an empty type".to_owned());
-        }
-        let impl_ty = impl_ty.unwrap();
+        let expr = Literal::load(
+            if let syn::Expr::Struct(syn::ExprStruct { ref fields, .. }) = item.expr {
+                if is_transparent && fields.len() == 1 {
+                    &fields[0].expr
+                } else {
+                    &item.expr
+                }
+            } else {
+                &item.expr
+            },
+        )?;
 
-        let struct_path = impl_ty.get_root_path().unwrap();
         let full_name = Path::new(format!("{}_{}", struct_path, name));
 
         Ok(Constant::new(
             full_name,
             ty,
-            Literal::load(&item.expr)?,
+            expr,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,
             Documentation::load(&item.attrs),

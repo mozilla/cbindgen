@@ -3,4 +3,4 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define Foo_FOO 0
+#define Foo_FOO 42
