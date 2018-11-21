@@ -16,6 +16,7 @@ use bindgen::ir::{
 use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::rename::{IdentifierType, RenameRule};
+use bindgen::reserved;
 use bindgen::utilities::{find_first_some, IterHelpers};
 use bindgen::writer::{Source, SourceWriter};
 
@@ -101,12 +102,14 @@ impl Function {
     }
 
     pub fn rename_for_config(&mut self, config: &Config) {
+        // Rename the types used in arguments
         let generic_params = Default::default();
         self.ret.rename_for_config(config, &generic_params);
         for &mut (_, ref mut ty) in &mut self.args {
             ty.rename_for_config(config, &generic_params);
         }
 
+        // Apply rename rules to argument names
         let rules = [
             self.annotations.parse_atom::<RenameRule>("rename-all"),
             config.function.rename_args,
@@ -123,6 +126,11 @@ impl Function {
                     )
                 })
                 .collect()
+        }
+
+        // Escape C/C++ reserved keywords used in argument names
+        for args in &mut self.args {
+            reserved::escape(&mut args.0);
         }
     }
 }
