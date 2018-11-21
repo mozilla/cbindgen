@@ -50,6 +50,7 @@ mod mangle;
 mod monomorph;
 mod parser;
 mod rename;
+mod reserved;
 mod utilities;
 mod writer;
 

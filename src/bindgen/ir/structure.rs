@@ -17,6 +17,7 @@ use bindgen::library::Library;
 use bindgen::mangle;
 use bindgen::monomorph::Monomorphs;
 use bindgen::rename::{IdentifierType, RenameRule};
+use bindgen::reserved;
 use bindgen::utilities::{find_first_some, IterHelpers};
 use bindgen::writer::{ListType, Source, SourceWriter};
 
@@ -206,9 +207,12 @@ impl Item for Struct {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
+        // Rename the name of the struct
         if !self.is_tagged || config.language == Language::C {
             config.export.rename(&mut self.export_name);
         }
+
+        // Rename the types used in fields
         {
             let fields = self
                 .fields
@@ -219,32 +223,48 @@ impl Item for Struct {
             }
         }
 
-        let field_rules = [
-            self.annotations.parse_atom::<RenameRule>("rename-all"),
-            config.structure.rename_fields,
-        ];
+        // Apply renaming rules to fields in the following order
+        //   1. `cbindgen::field-names` annotation
+        //   2. `cbindgen::rename-all` annotation
+        //   3. config struct rename rule
+        // If the struct is a tuple struct and we have not renamed the
+        // fields, then prefix each of them with an underscore.
+        // If any field is a reserved keyword, then postfix it with an
+        // underscore.
 
-        let mut names = self.fields.iter_mut().map(|field| &mut field.0);
+        // Scope for mutable borrow of fields
+        {
+            let mut names = self.fields.iter_mut().map(|field| &mut field.0);
 
-        if let Some(o) = self.annotations.list("field-names") {
-            for (dest, src) in names.zip(o) {
-                *dest = src;
-            }
-        } else if let Some(r) = find_first_some(&field_rules) {
-            for name in names {
-                *name = r.apply_to_snake_case(name, IdentifierType::StructMember);
-            }
-        } else if self.tuple_struct {
-            // If there is a tag field, skip it
-            if self.is_tagged {
-                names.next();
-            }
+            let field_rules = [
+                self.annotations.parse_atom::<RenameRule>("rename-all"),
+                config.structure.rename_fields,
+            ];
 
-            // If we don't have any rules for a tuple struct, prefix them with
-            // an underscore so it still compiles
-            for name in names {
-                name.insert(0, '_');
+            if let Some(o) = self.annotations.list("field-names") {
+                for (dest, src) in names.zip(o) {
+                    *dest = src;
+                }
+            } else if let Some(r) = find_first_some(&field_rules) {
+                for name in names {
+                    *name = r.apply_to_snake_case(name, IdentifierType::StructMember);
+                }
+            } else if self.tuple_struct {
+                // If there is a tag field, skip it
+                if self.is_tagged {
+                    names.next();
+                }
+
+                // If we don't have any rules for a tuple struct, prefix them with
+                // an underscore so it still compiles
+                for name in names {
+                    name.insert(0, '_');
+                }
             }
+        }
+
+        for field in &mut self.fields {
+            reserved::escape(&mut field.0);
         }
     }
 
