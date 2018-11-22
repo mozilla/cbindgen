@@ -167,7 +167,8 @@ impl Constant {
             && match *item.expr {
                 syn::Expr::Struct(_) => false,
                 _ => true,
-            } {
+            }
+        {
             return Err("Unhanded const definition".to_owned());
         }
 
@@ -197,7 +198,8 @@ impl Constant {
             && match item.expr {
                 syn::Expr::Struct(_) => false,
                 _ => true,
-            } {
+            }
+        {
             return Err("Unhanded const definition".to_owned());
         }
 
