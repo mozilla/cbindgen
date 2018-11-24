@@ -43,6 +43,12 @@ enum class K {
   k4,
 };
 
+enum class L : int8_t {
+  l1 = -1,
+  l2 = 0,
+  l3 = 1,
+};
+
 struct I;
 
 struct J;
@@ -122,6 +128,6 @@ struct H {
 
 extern "C" {
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l);
 
 } // extern "C"

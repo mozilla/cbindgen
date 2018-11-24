@@ -49,6 +49,13 @@ enum K {
   k4,
 };
 
+enum L {
+  l1 = -1,
+  l2 = 0,
+  l3 = 1,
+};
+typedef int8_t L;
+
 struct I;
 
 struct J;
@@ -137,4 +144,5 @@ void root(struct Opaque *o,
           struct H h,
           struct I i,
           struct J j,
-          enum K k);
+          enum K k,
+          L l);
