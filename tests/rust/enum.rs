@@ -88,6 +88,13 @@ enum K {
     k4,
 }
 
+#[repr(i8)]
+enum L {
+    l1 = -1,
+    l2 = 0,
+    l3 = 1,
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     o: *mut Opaque,
@@ -102,4 +109,5 @@ pub extern "C" fn root(
     i: I,
     j: J,
     k: K,
+    l: L,
 ) { }

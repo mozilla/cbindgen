@@ -24,9 +24,29 @@ use bindgen::writer::{ListType, Source, SourceWriter};
 pub struct EnumVariant {
     pub name: String,
     pub export_name: String,
-    pub discriminant: Option<u64>,
+    pub discriminant: Option<i64>,
     pub body: Option<(String, Struct)>,
     pub documentation: Documentation,
+}
+
+fn value_from_expr(val: &syn::Expr) -> Option<i64> {
+    match *val {
+        syn::Expr::Lit(ref lit) => match lit.lit {
+            syn::Lit::Int(ref lit) if lit.value() <= ::std::i64::MAX as u64 => {
+                Some(lit.value() as i64)
+            }
+            _ => None,
+        },
+        syn::Expr::Unary(ref unary) => {
+            let v = value_from_expr(&unary.expr)?;
+            match unary.op {
+                syn::UnOp::Deref(..) => None,
+                syn::UnOp::Neg(..) => v.checked_mul(-1),
+                syn::UnOp::Not(..) => v.checked_neg(),
+            }
+        }
+        _ => None,
+    }
 }
 
 impl EnumVariant {
@@ -36,18 +56,12 @@ impl EnumVariant {
         generic_params: GenericParams,
         mod_cfg: &Option<Cfg>,
     ) -> Result<Self, String> {
-        let discriminant = match &variant.discriminant {
-            &Some((
-                _,
-                syn::Expr::Lit(syn::ExprLit {
-                    lit: syn::Lit::Int(ref lit),
-                    ..
-                }),
-            )) => Some(lit.value()),
-            &Some(_) => {
-                return Err("Unsupported discriminant.".to_owned());
-            }
-            &None => None,
+        let discriminant = match variant.discriminant {
+            Some((_, ref expr)) => match value_from_expr(expr) {
+                Some(v) => Some(v),
+                None => return Err(format!("Unsupported discriminant {:?}.", expr)),
+            },
+            None => None,
         };
 
         fn parse_fields(
@@ -132,7 +146,7 @@ impl EnumVariant {
 
     pub fn new(
         name: String,
-        discriminant: Option<u64>,
+        discriminant: Option<i64>,
         body: Option<(String, Struct)>,
         documentation: Documentation,
     ) -> Self {

@@ -49,6 +49,13 @@ typedef enum K {
   k4,
 } K;
 
+enum L {
+  l1 = -1,
+  l2 = 0,
+  l3 = 1,
+};
+typedef int8_t L;
+
 typedef struct I I;
 
 typedef struct J J;
@@ -126,4 +133,4 @@ typedef struct H {
   };
 } H;
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l);
