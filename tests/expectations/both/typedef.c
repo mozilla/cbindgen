@@ -1,6 +1,7 @@
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 typedef struct Foo_i32__i32 {
   int32_t x;
