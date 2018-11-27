@@ -1,6 +1,7 @@
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 typedef struct Option_i32 Option_i32;
 

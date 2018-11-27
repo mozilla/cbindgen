@@ -95,13 +95,17 @@ impl Bindings {
 
         out.new_line_if_not_start();
         if self.config.language == Language::C {
+            out.write("#include <stdarg.h>");
+            out.new_line();
+            out.write("#include <stdbool.h>");
+            out.new_line();
             out.write("#include <stdint.h>");
             out.new_line();
             out.write("#include <stdlib.h>");
             out.new_line();
-            out.write("#include <stdbool.h>");
-            out.new_line();
         } else {
+            out.write("#include <cstdarg>");
+            out.new_line();
             out.write("#include <cstdint>");
             out.new_line();
             out.write("#include <cstdlib>");

@@ -47,6 +47,7 @@ pub enum PrimitiveType {
     Double,
     SizeT,
     PtrDiffT,
+    VaList,
 }
 
 impl PrimitiveType {
@@ -82,6 +83,7 @@ impl PrimitiveType {
             "f64" => Some(PrimitiveType::Double),
             "size_t" => Some(PrimitiveType::SizeT),
             "ptrdiff_t" => Some(PrimitiveType::PtrDiffT),
+            "VaList" => Some(PrimitiveType::VaList),
             _ => None,
         }
     }
@@ -116,6 +118,7 @@ impl PrimitiveType {
             &PrimitiveType::Double => "f64",
             &PrimitiveType::SizeT => "size_t",
             &PrimitiveType::PtrDiffT => "ptrdiff_t",
+            &PrimitiveType::VaList => "va_list",
         }
     }
 
@@ -149,6 +152,7 @@ impl PrimitiveType {
             &PrimitiveType::Double => "double",
             &PrimitiveType::SizeT => "size_t",
             &PrimitiveType::PtrDiffT => "ptrdiff_t",
+            &PrimitiveType::VaList => "va_list",
         }
     }
 

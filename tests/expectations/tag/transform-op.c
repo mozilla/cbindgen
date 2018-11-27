@@ -1,6 +1,7 @@
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 struct StylePoint_i32 {
   int32_t x;

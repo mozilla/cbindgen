@@ -1,6 +1,7 @@
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 struct ExtType {
   uint32_t data;
