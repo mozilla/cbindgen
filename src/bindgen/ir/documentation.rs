@@ -69,12 +69,12 @@ impl Source for Documentation {
         }
 
         if config.language == Language::C {
-            out.write("/*");
+            out.write("/**");
             out.new_line();
         }
         for line in &self.doc_comment {
             if config.language != Language::C {
-                out.write("//");
+                out.write("///");
             } else {
                 out.write(" *");
             }
