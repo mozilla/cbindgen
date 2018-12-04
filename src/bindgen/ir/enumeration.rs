@@ -672,7 +672,7 @@ impl Source for Enum {
                             .skip(skip_fields)
                             .map(|&(ref name, ref ty, _)| {
                                 // const-ref args to constructor
-                                (format!("const& {}", arg_renamer(name)), ty.clone())
+                                (arg_renamer(name), Type::Ref(Box::new(ty.clone())))
                             })
                             .collect();
                         out.write_vertical_source_list(&vec[..], ListType::Join(","));
