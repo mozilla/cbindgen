@@ -199,6 +199,9 @@ impl ArrayLength {
 pub enum Type {
     ConstPtr(Box<Type>),
     Ptr(Box<Type>),
+    Ref(Box<Type>),
+    #[allow(dead_code)] // MutRef is not currently used
+    MutRef(Box<Type>),
     Path(GenericPath),
     Primitive(PrimitiveType),
     Array(Box<Type>, ArrayLength),
@@ -393,6 +396,8 @@ impl Type {
             match current {
                 &Type::ConstPtr(ref ty) => current = ty,
                 &Type::Ptr(ref ty) => current = ty,
+                &Type::Ref(ref ty) => current = ty,
+                &Type::MutRef(ref ty) => current = ty,
                 &Type::Path(ref generic) => {
                     return Some(generic.path().clone());
                 }
@@ -413,6 +418,8 @@ impl Type {
         match self {
             &Type::ConstPtr(ref ty) => Type::ConstPtr(Box::new(ty.specialize(mappings))),
             &Type::Ptr(ref ty) => Type::Ptr(Box::new(ty.specialize(mappings))),
+            &Type::Ref(ref ty) => Type::Ref(Box::new(ty.specialize(mappings))),
+            &Type::MutRef(ref ty) => Type::MutRef(Box::new(ty.specialize(mappings))),
             &Type::Path(ref generic_path) => {
                 for &(param, value) in mappings {
                     if generic_path.path() == param {
@@ -455,6 +462,9 @@ impl Type {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
             &Type::Ptr(ref ty) => {
+                ty.add_dependencies_ignoring_generics(generic_params, library, out);
+            }
+            &Type::Ref(ref ty) | &Type::MutRef(ref ty) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
             &Type::Path(ref generic) => {
@@ -508,6 +518,9 @@ impl Type {
             &Type::Ptr(ref ty) => {
                 ty.add_monomorphs(library, out);
             }
+            &Type::Ref(ref ty) | &Type::MutRef(ref ty) => {
+                ty.add_monomorphs(library, out);
+            }
             &Type::Path(ref generic) => {
                 if generic.generics().len() == 0 || out.contains(&generic) {
                     return;
@@ -541,6 +554,9 @@ impl Type {
             &mut Type::Ptr(ref mut ty) => {
                 ty.rename_for_config(config, generic_params);
             }
+            &mut Type::Ref(ref mut ty) | &mut Type::MutRef(ref mut ty) => {
+                ty.rename_for_config(config, generic_params);
+            }
             &mut Type::Path(ref mut ty) => {
                 ty.rename_for_config(config, generic_params);
             }
@@ -566,6 +582,9 @@ impl Type {
             &mut Type::Ptr(ref mut ty) => {
                 ty.resolve_declaration_types(resolver);
             }
+            &mut Type::Ref(ref mut ty) | &mut Type::MutRef(ref mut ty) => {
+                ty.resolve_declaration_types(resolver);
+            }
             &mut Type::Path(ref mut generic_path) => {
                 generic_path.resolve_declaration_types(resolver);
             }
@@ -588,6 +607,9 @@ impl Type {
                 ty.mangle_paths(monomorphs);
             }
             &mut Type::Ptr(ref mut ty) => {
+                ty.mangle_paths(monomorphs);
+            }
+            &mut Type::Ref(ref mut ty) | &mut Type::MutRef(ref mut ty) => {
                 ty.mangle_paths(monomorphs);
             }
             &mut Type::Path(ref mut generic_path) => {
@@ -622,6 +644,7 @@ impl Type {
         match self {
             &Type::ConstPtr(..) => true,
             &Type::Ptr(..) => true,
+            &Type::Ref(..) | &Type::MutRef(..) => false,
             &Type::Path(..) => true,
             &Type::Primitive(ref p) => p.can_cmp_order(),
             &Type::Array(..) => false,
@@ -633,6 +656,7 @@ impl Type {
         match self {
             &Type::ConstPtr(..) => true,
             &Type::Ptr(..) => true,
+            &Type::Ref(..) | &Type::MutRef(..) => false,
             &Type::Path(..) => true,
             &Type::Primitive(ref p) => p.can_cmp_eq(),
             &Type::Array(..) => false,
