@@ -10,7 +10,7 @@ typedef bool (*C)(int32_t, int32_t);
 
 typedef bool (*(*D)(int32_t))(float);
 
-typedef int32_t (*(*E)())[16];
+typedef const int32_t (*(*E)())[16];
 
 typedef const int32_t *F;
 
@@ -18,7 +18,7 @@ typedef const int32_t *const *G;
 
 typedef int32_t *const *H;
 
-typedef int32_t (*I)[16];
+typedef const int32_t (*I)[16];
 
 typedef double (**J)(float);
 

@@ -9,7 +9,7 @@ using C = bool(*)(int32_t, int32_t);
 
 using D = bool(*(*)(int32_t))(float);
 
-using E = int32_t(*(*)())[16];
+using E = const int32_t(*(*)())[16];
 
 using F = const int32_t*;
 
@@ -17,7 +17,7 @@ using G = const int32_t*const *;
 
 using H = int32_t*const *;
 
-using I = int32_t(*)[16];
+using I = const int32_t(*)[16];
 
 using J = double(**)(float);
 

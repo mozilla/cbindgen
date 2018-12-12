@@ -124,7 +124,7 @@ impl CDecl {
             &Type::Array(ref t, ref constant) => {
                 let len = constant.as_str().to_owned();
                 self.declarators.push(CDeclarator::Array(len));
-                self.build_type(t, false);
+                self.build_type(t, is_const);
             }
             &Type::FuncPtr(ref ret, ref args) => {
                 let args = args
