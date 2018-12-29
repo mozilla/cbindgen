@@ -108,10 +108,6 @@ impl Cfg {
         let mut configs = Vec::new();
 
         for attr in attrs {
-            if attr.is_sugared_doc {
-                continue;
-            }
-
             match attr.interpret_meta() {
                 Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) => {
                     if ident != "cfg" || nested.len() != 1 {
