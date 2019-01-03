@@ -7,6 +7,8 @@ use std::str::FromStr;
 
 use syn;
 
+use bindgen::utilities::SynAttributeHelpers;
+
 // A system for specifying properties on items. Annotations are
 // given through document comments and parsed by this code.
 //
@@ -46,26 +48,11 @@ impl AnnotationSet {
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
-        let mut lines = Vec::new();
-
-        for attr in attrs {
-            if attr.style == syn::AttrStyle::Outer {
-                if let Some(syn::Meta::NameValue(syn::MetaNameValue {
-                    ident,
-                    lit: syn::Lit::Str(comment),
-                    ..
-                })) = attr.interpret_meta()
-                {
-                    let comment = comment.value();
-                    if &*ident.to_string() == "doc" {
-                        let line = comment.trim_left_matches("///").trim();
-                        if line.starts_with("cbindgen:") {
-                            lines.push(line.to_owned());
-                        }
-                    }
-                }
-            }
-        }
+        let lines: Vec<String> = attrs
+            .get_comment_lines()
+            .into_iter()
+            .filter(|x| !x.is_empty() && x.starts_with("cbindgen:"))
+            .collect();
 
         let mut annotations = HashMap::new();
 

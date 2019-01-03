@@ -244,3 +244,44 @@ impl SynAbiHelpers for syn::Abi {
         self.name.is_none()
     }
 }
+
+pub trait SynAttributeHelpers {
+    fn get_comment_lines(&self) -> Vec<String>;
+}
+
+impl SynAttributeHelpers for [syn::Attribute] {
+    fn get_comment_lines(&self) -> Vec<String> {
+        let mut comment_lines = Vec::new();
+
+        for attr in self {
+            if attr.style == syn::AttrStyle::Outer {
+                if let Some(syn::Meta::NameValue(syn::MetaNameValue {
+                    ident,
+                    lit: syn::Lit::Str(comment),
+                    ..
+                })) = attr.interpret_meta()
+                {
+                    let name = ident.to_string();
+                    let comment = comment.value();
+
+                    if &*name == "doc" {
+                        for raw in comment.lines() {
+                            let line = raw
+                                .trim_left_matches(" ")
+                                .trim_left_matches("//")
+                                .trim_left_matches("///")
+                                .trim_left_matches("/**")
+                                .trim_left_matches("/*")
+                                .trim_left_matches("*/")
+                                .trim_left_matches("*")
+                                .trim_right();
+                            comment_lines.push(line.to_owned());
+                        }
+                    }
+                }
+            }
+        }
+
+        comment_lines
+    }
+}
