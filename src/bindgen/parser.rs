@@ -342,10 +342,6 @@ impl Parser {
                             // Last chance to find a module path
                             let mut path_attr_found = false;
                             for attr in &item.attrs {
-                                if attr.is_sugared_doc {
-                                    continue;
-                                }
-
                                 match attr.interpret_meta() {
                                     Some(syn::Meta::NameValue(syn::MetaNameValue {
                                         ident,

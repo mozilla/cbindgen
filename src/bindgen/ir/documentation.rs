@@ -36,14 +36,12 @@ impl Documentation {
                     let comment = comment.value();
 
                     if &*name == "doc" {
-                        let line = if attr.is_sugared_doc {
-                            comment
-                                .trim_left_matches("/// ")
-                                .trim_left_matches("///")
-                                .trim_right()
-                        } else {
-                            comment.trim_left_matches(" ").trim_right()
-                        };
+                        // Try to catch both sugared and unsugared doc
+                        // attributes.
+                        let line = comment
+                            .trim_left_matches("///")
+                            .trim_left_matches(" ")
+                            .trim_right();
                         if !line.starts_with("cbindgen:") {
                             doc.push(line.to_owned());
                         }

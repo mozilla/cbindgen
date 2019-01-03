@@ -55,12 +55,8 @@ impl Repr {
         let ids = attrs
             .iter()
             .filter_map(|attr| {
-                if attr.is_sugared_doc || attr.style != syn::AttrStyle::Outer {
-                    return None;
-                }
-
-                if let Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) =
-                    attr.interpret_meta()
+                if let syn::Meta::List(syn::MetaList { ident, nested, .. }) =
+                    attr.interpret_meta()?
                 {
                     if ident == "repr" {
                         return Some(nested.into_iter().collect::<Vec<_>>());
