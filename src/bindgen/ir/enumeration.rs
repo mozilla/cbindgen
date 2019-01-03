@@ -684,15 +684,33 @@ impl Source for Enum {
                     write!(out, "{} result;", self.export_name);
 
                     if let Some((ref variant_name, ref body)) = variant.body {
-                        for &(ref field_name, ..) in body.fields.iter().skip(skip_fields) {
+                        for &(ref field_name, ref ty, ..) in body.fields.iter().skip(skip_fields) {
                             out.new_line();
-                            write!(
-                                out,
-                                "result.{}.{} = {};",
-                                variant_name,
-                                field_name,
-                                arg_renamer(field_name)
-                            );
+                            match ty {
+                                Type::Array(ref _ty, ref length) => {
+                                    // arrays are not assignable in C++ so we
+                                    // need to manually copy the elements
+                                    write!(
+                                        out,
+                                        "for (int i = 0; i < {}; i++) {{\
+                                         result.{}.{}[i] = {}[i];\
+                                         }}",
+                                        length.as_str(),
+                                        variant_name,
+                                        field_name,
+                                        arg_renamer(field_name)
+                                    );
+                                }
+                                _ => {
+                                    write!(
+                                        out,
+                                        "result.{}.{} = {};",
+                                        variant_name,
+                                        field_name,
+                                        arg_renamer(field_name)
+                                    );
+                                }
+                            }
                         }
                     }
 
