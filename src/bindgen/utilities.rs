@@ -267,14 +267,14 @@ impl SynAttributeHelpers for [syn::Attribute] {
                     if &*name == "doc" {
                         for raw in comment.lines() {
                             let line = raw
-                                .trim_left_matches(" ")
-                                .trim_left_matches("//")
-                                .trim_left_matches("///")
-                                .trim_left_matches("/**")
-                                .trim_left_matches("/*")
-                                .trim_left_matches("*/")
-                                .trim_left_matches("*")
-                                .trim_right();
+                                .trim_start_matches(" ")
+                                .trim_start_matches("//")
+                                .trim_start_matches("///")
+                                .trim_start_matches("/**")
+                                .trim_start_matches("/*")
+                                .trim_start_matches("*/")
+                                .trim_start_matches("*")
+                                .trim_end();
                             comment_lines.push(line.to_owned());
                         }
                     }
