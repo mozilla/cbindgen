@@ -714,7 +714,7 @@ impl Parse {
             let const_name = item.ident.to_string();
 
             match Constant::load_assoc(
-                const_name.clone(),
+                const_name,
                 item,
                 mod_cfg,
                 is_assoc_const_of_transparent_struct,
