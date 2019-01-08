@@ -522,12 +522,10 @@ impl Parse {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
                 syn::Item::Impl(ref item_impl) => {
-                    let has_assoc_const = item_impl.items
-                        .iter()
-                        .any(|item| match item {
-                            syn::ImplItem::Const(_) => true,
-                            _ => false,
-                        });
+                    let has_assoc_const = item_impl.items.iter().any(|item| match item {
+                        syn::ImplItem::Const(_) => true,
+                        _ => false,
+                    });
                     if has_assoc_const {
                         impls_with_assoc_consts.push(item_impl);
                     }
@@ -537,12 +535,10 @@ impl Parse {
         }
 
         for item_impl in impls_with_assoc_consts {
-            let associated_constants = item_impl.items
-                .iter()
-                .filter_map(|item| match item {
-                    syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
-                    _ => None,
-                });
+            let associated_constants = item_impl.items.iter().filter_map(|item| match item {
+                syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
+                _ => None,
+            });
             self.load_syn_assoc_consts(
                 binding_crate_name,
                 crate_name,
@@ -648,7 +644,10 @@ impl Parse {
         }
     }
 
-    fn is_assoc_const_of_transparent_struct(&self, const_item: &syn::ImplItemConst) -> Result<bool, ()> {
+    fn is_assoc_const_of_transparent_struct(
+        &self,
+        const_item: &syn::ImplItemConst,
+    ) -> Result<bool, ()> {
         let ty = match Type::load(&const_item.ty) {
             Ok(Some(t)) => t,
             _ => return Ok(false),
@@ -698,10 +697,11 @@ impl Parse {
         let impl_path = ty.unwrap().get_root_path().unwrap();
 
         for item in items.into_iter() {
-            let is_assoc_const_of_transparent_struct = match self.is_assoc_const_of_transparent_struct(&item) {
-                Ok(b) => b,
-                Err(_) => continue,
-            };
+            let is_assoc_const_of_transparent_struct =
+                match self.is_assoc_const_of_transparent_struct(&item) {
+                    Ok(b) => b,
+                    Err(_) => continue,
+                };
 
             if crate_name != binding_crate_name {
                 info!(
