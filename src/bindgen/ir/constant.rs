@@ -195,25 +195,28 @@ impl Constant {
             return Err("Cannot have a zero sized const definition.".to_owned());
         }
         let ty = ty.unwrap();
-        if !ty.is_primitive_or_ptr_primitive()
-            && match item.expr {
-                syn::Expr::Struct(_) => false,
-                _ => true,
-            }
+
+        let can_handle_const_expr = match item.expr {
+            syn::Expr::Struct(_) => true,
+            _ => false,
+        };
+
+        if !ty.is_primitive_or_ptr_primitive() && !can_handle_const_expr
         {
-            return Err("Unhanded const definition".to_owned());
+            return Err("Unhandled const definition".to_owned());
         }
 
         let expr = Literal::load(
-            if let syn::Expr::Struct(syn::ExprStruct { ref fields, .. }) = item.expr {
-                if is_transparent && fields.len() == 1 {
-                    &fields[0].expr
-                } else {
-                    &item.expr
+            match item.expr {
+                syn::Expr::Struct(syn::ExprStruct { ref fields, .. }) => {
+                    if is_transparent && fields.len() == 1 {
+                        &fields[0].expr
+                    } else {
+                        &item.expr
+                    }
                 }
-            } else {
-                &item.expr
-            },
+                _ => &item.expr,
+            }
         )?;
 
         let full_name = Path::new(format!("{}_{}", struct_path, name));
