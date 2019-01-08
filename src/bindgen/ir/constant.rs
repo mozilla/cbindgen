@@ -201,23 +201,20 @@ impl Constant {
             _ => false,
         };
 
-        if !ty.is_primitive_or_ptr_primitive() && !can_handle_const_expr
-        {
+        if !ty.is_primitive_or_ptr_primitive() && !can_handle_const_expr {
             return Err("Unhandled const definition".to_owned());
         }
 
-        let expr = Literal::load(
-            match item.expr {
-                syn::Expr::Struct(syn::ExprStruct { ref fields, .. }) => {
-                    if is_transparent && fields.len() == 1 {
-                        &fields[0].expr
-                    } else {
-                        &item.expr
-                    }
+        let expr = Literal::load(match item.expr {
+            syn::Expr::Struct(syn::ExprStruct { ref fields, .. }) => {
+                if is_transparent && fields.len() == 1 {
+                    &fields[0].expr
+                } else {
+                    &item.expr
                 }
-                _ => &item.expr,
             }
-        )?;
+            _ => &item.expr,
+        })?;
 
         let full_name = Path::new(format!("{}_{}", struct_path, name));
 
