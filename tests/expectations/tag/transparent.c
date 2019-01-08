@@ -5,6 +5,8 @@
 
 struct DummyStruct;
 
+struct EnumWithAssociatedConstantInImpl;
+
 typedef struct DummyStruct TransparentComplexWrappingStructTuple;
 
 typedef uint32_t TransparentPrimitiveWrappingStructTuple;
@@ -19,6 +21,8 @@ typedef uint32_t TransparentPrimitiveWrapper_i32;
 
 typedef uint32_t TransparentPrimitiveWithAssociatedConstants;
 
+#define EnumWithAssociatedConstantInImpl_TEN 10
+
 #define TransparentPrimitiveWithAssociatedConstants_ONE 1
 
 #define TransparentPrimitiveWithAssociatedConstants_ZERO 0
@@ -29,4 +33,5 @@ void root(TransparentComplexWrappingStructTuple a,
           TransparentPrimitiveWrappingStructure d,
           TransparentComplexWrapper_i32 e,
           TransparentPrimitiveWrapper_i32 f,
-          TransparentPrimitiveWithAssociatedConstants g);
+          TransparentPrimitiveWithAssociatedConstants g,
+          struct EnumWithAssociatedConstantInImpl h);

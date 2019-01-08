@@ -490,7 +490,7 @@ impl Parse {
         mod_cfg: &Option<Cfg>,
         items: &[syn::Item],
     ) {
-        let mut impls = Vec::new();
+        let mut impls_with_assoc_consts = Vec::new();
 
         for item in items {
             if item.has_test_attr() {
@@ -522,17 +522,27 @@ impl Parse {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
                 syn::Item::Impl(ref item_impl) => {
-                    impls.push(item_impl);
+                    let has_assoc_const = item_impl.items
+                        .iter()
+                        .any(|item| match item {
+                            syn::ImplItem::Const(_) => true,
+                            _ => false,
+                        });
+                    if has_assoc_const {
+                        impls_with_assoc_consts.push(item_impl);
+                    }
                 }
                 _ => {}
             }
         }
 
-        for item_impl in impls {
-            let associated_constants = item_impl.items.iter().filter_map(|item| match item {
-                syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
-                _ => None,
-            });
+        for item_impl in impls_with_assoc_consts {
+            let associated_constants = item_impl.items
+                .iter()
+                .filter_map(|item| match item {
+                    syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
+                    _ => None,
+                });
             self.load_syn_assoc_consts(
                 binding_crate_name,
                 crate_name,
@@ -638,6 +648,37 @@ impl Parse {
         }
     }
 
+    fn is_assoc_const_of_transparent_struct(&self, const_item: &syn::ImplItemConst) -> Result<bool, ()> {
+        let ty = match Type::load(&const_item.ty) {
+            Ok(Some(t)) => t,
+            _ => return Ok(false),
+        };
+        let path = match ty.get_root_path() {
+            Some(p) => p,
+            _ => return Ok(false),
+        };
+
+        match self.structs.get_items(&path) {
+            Some(items) => {
+                if items.len() != 1 {
+                    error!(
+                        "Expected one struct to match path {}, but found {}",
+                        path,
+                        items.len(),
+                    );
+                    return Err(());
+                }
+
+                Ok(if let ItemContainer::Struct(ref s) = items[0] {
+                    s.is_transparent
+                } else {
+                    false
+                })
+            }
+            _ => Ok(false),
+        }
+    }
+
     /// Loads associated `const` declarations
     fn load_syn_assoc_consts<'a, I>(
         &mut self,
@@ -654,36 +695,14 @@ impl Parse {
             return;
         }
 
-        let impl_struct_path = ty.unwrap().get_root_path().unwrap();
-
-        let is_transparent = if let Some(ref impl_items) = self.structs.get_items(&impl_struct_path)
-        {
-            if impl_items.len() != 1 {
-                error!(
-                    "Expected one struct to match path {}, but found {}",
-                    impl_struct_path,
-                    impl_items.len()
-                );
-                return;
-            }
-            if let ItemContainer::Struct(ref s) = impl_items[0] {
-                s.is_transparent
-            } else {
-                info!(
-                        "Skip impl block for {}::{} (impl blocks for associated constants are only defined for structs).",
-                        crate_name, impl_struct_path
-                    );
-                return;
-            }
-        } else {
-            error!(
-                    "Cannot find type for {}::{} (impl blocks require the struct declaration to be known).",
-                    crate_name, impl_struct_path
-                );
-            return;
-        };
+        let impl_path = ty.unwrap().get_root_path().unwrap();
 
         for item in items.into_iter() {
+            let is_assoc_const_of_transparent_struct = match self.is_assoc_const_of_transparent_struct(&item) {
+                Ok(b) => b,
+                Err(_) => continue,
+            };
+
             if crate_name != binding_crate_name {
                 info!(
                     "Skip {}::{} - (const's outside of the binding crate are not used).",
@@ -698,8 +717,8 @@ impl Parse {
                 const_name.clone(),
                 item,
                 mod_cfg,
-                is_transparent,
-                &impl_struct_path,
+                is_assoc_const_of_transparent_struct,
+                &impl_path,
             ) {
                 Ok(constant) => {
                     info!("Take {}::{}.", crate_name, &item.ident);

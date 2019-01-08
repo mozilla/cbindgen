@@ -48,6 +48,12 @@ impl TransparentPrimitiveWithAssociatedConstants {
     };
 }
 
+enum EnumWithAssociatedConstantInImpl { A }
+
+impl EnumWithAssociatedConstantInImpl {
+    pub const TEN: TransparentPrimitiveWrappingStructure = TransparentPrimitiveWrappingStructure { only_field: 10 };
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     a: TransparentComplexWrappingStructTuple,
@@ -57,4 +63,5 @@ pub extern "C" fn root(
     e: TransparentComplexWrapper<i32>,
     f: TransparentPrimitiveWrapper<i32>,
     g: TransparentPrimitiveWithAssociatedConstants,
+    h: EnumWithAssociatedConstantInImpl,
 ) { }

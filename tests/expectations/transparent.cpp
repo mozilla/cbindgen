@@ -4,6 +4,8 @@
 
 struct DummyStruct;
 
+struct EnumWithAssociatedConstantInImpl;
+
 using TransparentComplexWrappingStructTuple = DummyStruct;
 
 using TransparentPrimitiveWrappingStructTuple = uint32_t;
@@ -20,6 +22,8 @@ using TransparentPrimitiveWrapper = uint32_t;
 
 using TransparentPrimitiveWithAssociatedConstants = uint32_t;
 
+static const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_TEN = 10;
+
 static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ONE = 1;
 
 static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ZERO = 0;
@@ -32,6 +36,7 @@ void root(TransparentComplexWrappingStructTuple a,
           TransparentPrimitiveWrappingStructure d,
           TransparentComplexWrapper<int32_t> e,
           TransparentPrimitiveWrapper<int32_t> f,
-          TransparentPrimitiveWithAssociatedConstants g);
+          TransparentPrimitiveWithAssociatedConstants g,
+          EnumWithAssociatedConstantInImpl h);
 
 } // extern "C"
