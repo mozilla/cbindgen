@@ -170,6 +170,12 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         write!(self, "{}", text);
     }
 
+    pub fn write_raw_block(&mut self, block: &str) {
+        self.new_line();
+        self.line_started = true;
+        write!(self, "{}", block);
+    }
+
     pub fn write_fmt(&mut self, fmt: ::std::fmt::Arguments) {
         InnerWriter(self).write_fmt(fmt).unwrap();
     }

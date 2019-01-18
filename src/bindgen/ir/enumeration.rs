@@ -790,13 +790,13 @@ impl Source for Enum {
                 }
             }
 
-            if config.language == Language::C {
-                if config.style.generate_typedef() {
-                    out.close_brace(false);
-                    write!(out, " {};", self.export_name);
-                } else {
-                    out.close_brace(true);
-                }
+            if let Some(body) = config.export.extra_body(&self.path) {
+                out.write_raw_block(body);
+            }
+
+            if config.language == Language::C && config.style.generate_typedef() {
+                out.close_brace(false);
+                write!(out, " {};", self.export_name);
             } else {
                 out.close_brace(true);
             }

@@ -155,6 +155,12 @@ item_types = ["constants", "globals", "enums", "structs", "unions", "typedefs", 
 [export.rename]
 "Struct" = "CAPI_Struct"
 
+# Table of stuff to add to an item body.
+[export.body]
+"Struct" = """
+  void cppMethod() const;
+"""
+
 [fn]
 # An optional prefix to put before every function declaration
 prefix = "string"
