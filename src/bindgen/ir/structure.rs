@@ -480,6 +480,10 @@ impl Source for Struct {
             }
         }
 
+        if let Some(body) = config.export.extra_body(&self.path) {
+            out.write_raw_block(body);
+        }
+
         if config.language == Language::C && config.style.generate_typedef() {
             out.close_brace(false);
             write!(out, " {};", self.export_name());
