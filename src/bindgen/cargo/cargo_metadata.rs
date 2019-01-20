@@ -11,6 +11,8 @@
 
 use std::collections::HashMap;
 use std::env;
+use std::error;
+use std::fmt;
 use std::io;
 use std::path::Path;
 use std::process::Command;
@@ -100,6 +102,26 @@ impl From<Utf8Error> for Error {
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Self {
         Error::Json(err)
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::Io(ref err) => err.fmt(f),
+            Error::Utf8(ref err) => err.fmt(f),
+            Error::Json(ref err) => err.fmt(f),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Error::Io(ref err) => Some(err),
+            Error::Utf8(ref err) => Some(err),
+            Error::Json(ref err) => Some(err),
+        }
     }
 }
 
