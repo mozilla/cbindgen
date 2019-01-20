@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::env;
+use std::error;
+use std::fmt;
 use std::io;
 use std::path::Path;
 use std::process::Command;
@@ -30,6 +32,26 @@ impl From<io::Error> for Error {
 impl From<Utf8Error> for Error {
     fn from(err: Utf8Error) -> Self {
         Error::Utf8(err)
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::Io(ref err) => err.fmt(f),
+            Error::Utf8(ref err) => err.fmt(f),
+            Error::Compile(ref err) => write!(f, "{}", err),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Error::Io(ref err) => Some(err),
+            Error::Utf8(ref err) => Some(err),
+            Error::Compile(..) => None,
+        }
     }
 }
 
