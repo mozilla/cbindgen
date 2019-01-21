@@ -610,8 +610,8 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn from_file(file_name: &str) -> Result<Config, String> {
-        fn read(file_name: &str) -> io::Result<String> {
+    pub fn from_file<P: AsRef<Path>>(file_name: P) -> Result<Config, String> {
+        fn read(file_name: &Path) -> io::Result<String> {
             let file = File::open(file_name)?;
             let mut reader = BufReader::new(&file);
             let mut contents = String::new();
@@ -619,7 +619,7 @@ impl Config {
             Ok(contents)
         }
 
-        let config_text = read(file_name).unwrap();
+        let config_text = read(file_name.as_ref()).unwrap();
 
         match toml::from_str::<Config>(&config_text) {
             Ok(x) => Ok(x),
@@ -627,11 +627,11 @@ impl Config {
         }
     }
 
-    pub fn from_root_or_default(root: &Path) -> Config {
-        let c = root.join("cbindgen.toml");
+    pub fn from_root_or_default<P: AsRef<Path>>(root: P) -> Config {
+        let c = root.as_ref().join("cbindgen.toml");
 
         if c.exists() {
-            Config::from_file(c.to_str().unwrap()).unwrap()
+            Config::from_file(c).unwrap()
         } else {
             Config::default()
         }
