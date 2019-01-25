@@ -341,7 +341,7 @@ impl Type {
                 }
                 return Err("Tuples are not supported types.".to_owned());
             }
-            _ => return Err("Unsupported type.".to_owned()),
+            _ => return Err(format!("Unsupported type: {:?}", ty)),
         };
 
         return Ok(Some(converted));
