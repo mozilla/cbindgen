@@ -689,7 +689,13 @@ impl Parse {
     ) where
         I: IntoIterator<Item = &'a syn::ImplItemConst>,
     {
-        let ty = Type::load(&impl_ty).unwrap();
+        let ty = match Type::load(impl_ty) {
+            Ok(ty) => ty,
+            Err(e) => {
+                warn!("Skipping associated constants for {:?}: {:?}", impl_ty, e);
+                return;
+            }
+        };
         if ty.is_none() {
             return;
         }
