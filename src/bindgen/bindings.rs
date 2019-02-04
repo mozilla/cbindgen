@@ -112,7 +112,6 @@ impl Bindings {
                 out.write("#include <cstdlib>");
                 out.new_line();
             }
-
         }
 
         for include in &self.config.sys_includes {
@@ -129,7 +128,10 @@ impl Bindings {
     pub fn write<F: Write>(&self, file: F) {
         let mut out = SourceWriter::new(file, &self.config);
 
-        if !self.config.no_includes || !self.config.includes.is_empty() || !self.config.sys_includes.is_empty() {
+        if !self.config.no_includes
+            || !self.config.includes.is_empty()
+            || !self.config.sys_includes.is_empty()
+        {
             self.write_headers(&mut out);
         }
 
