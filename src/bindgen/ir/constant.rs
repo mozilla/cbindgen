@@ -185,8 +185,9 @@ impl Constant {
     pub fn load_assoc(
         name: String,
         item: &syn::ImplItemConst,
-        impl_ty: &syn::Type,
         mod_cfg: &Option<Cfg>,
+        is_transparent: bool,
+        struct_path: &Path,
     ) -> Result<Constant, String> {
         let ty = Type::load(&item.ty)?;
 
@@ -194,28 +195,33 @@ impl Constant {
             return Err("Cannot have a zero sized const definition.".to_owned());
         }
         let ty = ty.unwrap();
-        if !ty.is_primitive_or_ptr_primitive()
-            && match item.expr {
-                syn::Expr::Struct(_) => false,
-                _ => true,
+
+        let can_handle_const_expr = match item.expr {
+            syn::Expr::Struct(_) => true,
+            _ => false,
+        };
+
+        if !ty.is_primitive_or_ptr_primitive() && !can_handle_const_expr {
+            return Err("Unhandled const definition".to_owned());
+        }
+
+        let expr = Literal::load(match item.expr {
+            syn::Expr::Struct(syn::ExprStruct { ref fields, .. }) => {
+                if is_transparent && fields.len() == 1 {
+                    &fields[0].expr
+                } else {
+                    &item.expr
+                }
             }
-        {
-            return Err("Unhanded const definition".to_owned());
-        }
+            _ => &item.expr,
+        })?;
 
-        let impl_ty = Type::load(impl_ty)?;
-        if impl_ty.is_none() {
-            return Err("impl has an empty type".to_owned());
-        }
-        let impl_ty = impl_ty.unwrap();
-
-        let struct_path = impl_ty.get_root_path().unwrap();
         let full_name = Path::new(format!("{}_{}", struct_path, name));
 
         Ok(Constant::new(
             full_name,
             ty,
-            Literal::load(&item.expr)?,
+            expr,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,
             Documentation::load(&item.attrs),

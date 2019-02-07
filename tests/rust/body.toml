@@ -1,0 +1,20 @@
+[export.body]
+"MyFancyStruct" = """
+#ifdef __cplusplus
+  inline void foo();
+#endif
+"""
+
+"MyFancyEnum" = """
+#ifdef __cplusplus
+  inline void wohoo();
+#endif
+"""
+
+"MyCLikeEnum" = """
+  BogusVariantForSerializationForExample,
+"""
+
+"MyUnion" = """
+  int32_t extra_member; // yolo
+"""

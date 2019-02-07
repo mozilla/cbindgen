@@ -1,3 +1,4 @@
+#include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
 
@@ -50,15 +51,15 @@ union F {
   Foo_Body foo;
   Bar_Body bar;
 
-  static F Foo(int16_t const& a0) {
+  static F Foo(const int16_t &a0) {
     F result;
     result.foo._0 = a0;
     result.tag = Tag::Foo;
     return result;
   }
 
-  static F Bar(uint8_t const& aX,
-               int16_t const& aY) {
+  static F Bar(const uint8_t &aX,
+               const int16_t &aY) {
     F result;
     result.bar.x = aX;
     result.bar.y = aY;
@@ -107,15 +108,15 @@ struct H {
     There_Body there;
   };
 
-  static H Hello(int16_t const& a0) {
+  static H Hello(const int16_t &a0) {
     H result;
     result.hello._0 = a0;
     result.tag = Tag::Hello;
     return result;
   }
 
-  static H There(uint8_t const& aX,
-                 int16_t const& aY) {
+  static H There(const uint8_t &aX,
+                 const int16_t &aY) {
     H result;
     result.there.x = aX;
     result.there.y = aY;

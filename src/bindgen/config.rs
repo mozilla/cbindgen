@@ -8,7 +8,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-use std::path::Path;
+use std::path::Path as StdPath;
 use std::str::FromStr;
 
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
@@ -17,6 +17,7 @@ use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use toml;
 
 use bindgen::ir::annotation::AnnotationSet;
+use bindgen::ir::path::Path;
 pub use bindgen::rename::RenameRule;
 
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
@@ -178,7 +179,7 @@ impl FromStr for ItemType {
 deserialize_enum_str!(ItemType);
 
 /// Settings to apply when exporting items.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
@@ -190,27 +191,21 @@ pub struct ExportConfig {
     pub exclude: Vec<String>,
     /// Table of name conversions to apply to item names
     pub rename: HashMap<String, String>,
+    /// Table of raw strings to append to the body of items.
+    pub body: HashMap<String, String>,
     /// A prefix to add before the name of every item
     pub prefix: Option<String>,
     /// Types of items to generate.
     pub item_types: Vec<ItemType>,
 }
 
-impl Default for ExportConfig {
-    fn default() -> ExportConfig {
-        ExportConfig {
-            include: Vec::new(),
-            exclude: Vec::new(),
-            rename: HashMap::new(),
-            prefix: None,
-            item_types: Vec::new(),
-        }
-    }
-}
-
 impl ExportConfig {
     pub(crate) fn should_generate(&self, item_type: ItemType) -> bool {
         self.item_types.is_empty() || self.item_types.contains(&item_type)
+    }
+
+    pub(crate) fn extra_body(&self, path: &Path) -> Option<&str> {
+        self.body.get(path.name()).map(|s| s.trim_matches('\n'))
     }
 
     pub(crate) fn rename(&self, item_name: &mut String) {
@@ -610,8 +605,8 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn from_file(file_name: &str) -> Result<Config, String> {
-        fn read(file_name: &str) -> io::Result<String> {
+    pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {
+        fn read(file_name: &StdPath) -> io::Result<String> {
             let file = File::open(file_name)?;
             let mut reader = BufReader::new(&file);
             let mut contents = String::new();
@@ -619,7 +614,7 @@ impl Config {
             Ok(contents)
         }
 
-        let config_text = read(file_name).unwrap();
+        let config_text = read(file_name.as_ref()).unwrap();
 
         match toml::from_str::<Config>(&config_text) {
             Ok(x) => Ok(x),
@@ -627,11 +622,11 @@ impl Config {
         }
     }
 
-    pub fn from_root_or_default(root: &Path) -> Config {
-        let c = root.join("cbindgen.toml");
+    pub fn from_root_or_default<P: AsRef<StdPath>>(root: P) -> Config {
+        let c = root.as_ref().join("cbindgen.toml");
 
         if c.exists() {
-            Config::from_file(c.to_str().unwrap()).unwrap()
+            Config::from_file(c).unwrap()
         } else {
             Config::default()
         }

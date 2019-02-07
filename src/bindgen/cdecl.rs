@@ -14,6 +14,7 @@ use bindgen::writer::{ListType, SourceWriter};
 
 enum CDeclarator {
     Ptr(bool),
+    Ref,
     Array(String),
     Func(Vec<(Option<String>, CDecl)>, bool),
 }
@@ -22,6 +23,7 @@ impl CDeclarator {
     fn is_ptr(&self) -> bool {
         match self {
             &CDeclarator::Ptr(..) => true,
+            &CDeclarator::Ref => true,
             &CDeclarator::Func(..) => true,
             _ => false,
         }
@@ -121,10 +123,18 @@ impl CDecl {
                 self.declarators.push(CDeclarator::Ptr(is_const));
                 self.build_type(t, false);
             }
+            &Type::Ref(ref t) => {
+                self.declarators.push(CDeclarator::Ref);
+                self.build_type(t, true);
+            }
+            &Type::MutRef(ref t) => {
+                self.declarators.push(CDeclarator::Ref);
+                self.build_type(t, false);
+            }
             &Type::Array(ref t, ref constant) => {
                 let len = constant.as_str().to_owned();
                 self.declarators.push(CDeclarator::Array(len));
-                self.build_type(t, false);
+                self.build_type(t, is_const);
             }
             &Type::FuncPtr(ref ret, ref args) => {
                 let args = args
@@ -180,6 +190,9 @@ impl CDecl {
                         out.write("*");
                     }
                 }
+                &CDeclarator::Ref => {
+                    out.write("&");
+                }
                 &CDeclarator::Array(..) => {
                     if next_is_pointer {
                         out.write("(");
@@ -205,6 +218,9 @@ impl CDecl {
         while let Some(declarator) = iter.next() {
             match declarator {
                 &CDeclarator::Ptr(..) => {
+                    last_was_pointer = true;
+                }
+                &CDeclarator::Ref => {
                     last_was_pointer = true;
                 }
                 &CDeclarator::Array(ref constant) => {

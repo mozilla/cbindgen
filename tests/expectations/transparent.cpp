@@ -1,7 +1,10 @@
+#include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
 
 struct DummyStruct;
+
+struct EnumWithAssociatedConstantInImpl;
 
 using TransparentComplexWrappingStructTuple = DummyStruct;
 
@@ -17,6 +20,14 @@ using TransparentComplexWrapper = DummyStruct;
 template<typename T>
 using TransparentPrimitiveWrapper = uint32_t;
 
+using TransparentPrimitiveWithAssociatedConstants = uint32_t;
+
+static const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_TEN = 10;
+
+static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ONE = 1;
+
+static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ZERO = 0;
+
 extern "C" {
 
 void root(TransparentComplexWrappingStructTuple a,
@@ -24,6 +35,8 @@ void root(TransparentComplexWrappingStructTuple a,
           TransparentComplexWrappingStructure c,
           TransparentPrimitiveWrappingStructure d,
           TransparentComplexWrapper<int32_t> e,
-          TransparentPrimitiveWrapper<int32_t> f);
+          TransparentPrimitiveWrapper<int32_t> f,
+          TransparentPrimitiveWithAssociatedConstants g,
+          EnumWithAssociatedConstantInImpl h);
 
 } // extern "C"

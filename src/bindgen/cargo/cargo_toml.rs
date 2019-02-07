@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::error;
+use std::fmt;
 use std::fs::File;
 use std::io;
 use std::io::Read;
@@ -26,6 +28,24 @@ impl From<io::Error> for Error {
 impl From<toml::de::Error> for Error {
     fn from(err: toml::de::Error) -> Self {
         Error::Toml(err)
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::Io(ref err) => err.fmt(f),
+            Error::Toml(ref err) => err.fmt(f),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Error::Io(ref err) => Some(err),
+            Error::Toml(ref err) => Some(err),
+        }
     }
 }
 

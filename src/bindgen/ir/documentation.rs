@@ -7,6 +7,7 @@ use std::io::Write;
 use syn;
 
 use bindgen::config::{Config, Language};
+use bindgen::utilities::SynAttributeHelpers;
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -16,41 +17,11 @@ pub struct Documentation {
 
 impl Documentation {
     pub fn load(attrs: &[syn::Attribute]) -> Self {
-        let mut doc = Vec::new();
-
-        for attr in attrs {
-            if attr.style == syn::AttrStyle::Outer {
-                // This requires a bit of explanation.  The syn intended way to
-                // deal with doc strings is to use the is_sugared_doc attribute.
-                // This however is not set when we go through the macro expansion
-                // step through rust.  In that case they are stored as doc
-                // attributes and the leading three slashes (and optional space)
-                // are not included.
-                if let Some(syn::Meta::NameValue(syn::MetaNameValue {
-                    ident,
-                    lit: syn::Lit::Str(comment),
-                    ..
-                })) = attr.interpret_meta()
-                {
-                    let name = ident.to_string();
-                    let comment = comment.value();
-
-                    if &*name == "doc" {
-                        let line = if attr.is_sugared_doc {
-                            comment
-                                .trim_left_matches("/// ")
-                                .trim_left_matches("///")
-                                .trim_right()
-                        } else {
-                            comment.trim_left_matches(" ").trim_right()
-                        };
-                        if !line.starts_with("cbindgen:") {
-                            doc.push(line.to_owned());
-                        }
-                    }
-                }
-            }
-        }
+        let doc = attrs
+            .get_comment_lines()
+            .into_iter()
+            .filter(|x| !x.is_empty() && !x.starts_with("cbindgen:"))
+            .collect();
 
         Documentation { doc_comment: doc }
     }
@@ -69,12 +40,12 @@ impl Source for Documentation {
         }
 
         if config.language == Language::C {
-            out.write("/*");
+            out.write("/**");
             out.new_line();
         }
         for line in &self.doc_comment {
             if config.language != Language::C {
-                out.write("//");
+                out.write("///");
             } else {
                 out.write(" *");
             }

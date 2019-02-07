@@ -43,9 +43,12 @@ fn internal_mangle_name(name: &str, generic_values: &[Type], last_in_parent: boo
             &Type::Primitive(ref primitive) => {
                 mangled.push_str(primitive.to_repr_rust());
             }
-            &Type::ConstPtr(..) | &Type::Ptr(..) | &Type::Array(..) | &Type::FuncPtr(..) => {
-                unimplemented!()
-            }
+            &Type::MutRef(..)
+            | &Type::Ref(..)
+            | &Type::ConstPtr(..)
+            | &Type::Ptr(..)
+            | &Type::Array(..)
+            | &Type::FuncPtr(..) => unimplemented!(),
         }
 
         // Skip writing the trailing '>' mangling when possible

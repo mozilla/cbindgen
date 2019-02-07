@@ -65,23 +65,25 @@ pub trait SynItemHelpers {
 
 macro_rules! syn_item_match_helper {
     ($s:ident => has_attrs: |$i:ident| $a:block, otherwise: || $b:block) => {
-        match $s {
-            &syn::Item::Const(ref item) => (|$i: &syn::ItemConst| $a)(item),
-            &syn::Item::Enum(ref item) => (|$i: &syn::ItemEnum| $a)(item),
-            &syn::Item::ExternCrate(ref item) => (|$i: &syn::ItemExternCrate| $a)(item),
-            &syn::Item::Fn(ref item) => (|$i: &syn::ItemFn| $a)(item),
-            &syn::Item::ForeignMod(ref item) => (|$i: &syn::ItemForeignMod| $a)(item),
-            &syn::Item::Impl(ref item) => (|$i: &syn::ItemImpl| $a)(item),
-            &syn::Item::Macro(ref item) => (|$i: &syn::ItemMacro| $a)(item),
-            &syn::Item::Macro2(ref item) => (|$i: &syn::ItemMacro2| $a)(item),
-            &syn::Item::Mod(ref item) => (|$i: &syn::ItemMod| $a)(item),
-            &syn::Item::Static(ref item) => (|$i: &syn::ItemStatic| $a)(item),
-            &syn::Item::Struct(ref item) => (|$i: &syn::ItemStruct| $a)(item),
-            &syn::Item::Trait(ref item) => (|$i: &syn::ItemTrait| $a)(item),
-            &syn::Item::Type(ref item) => (|$i: &syn::ItemType| $a)(item),
-            &syn::Item::Union(ref item) => (|$i: &syn::ItemUnion| $a)(item),
-            &syn::Item::Use(ref item) => (|$i: &syn::ItemUse| $a)(item),
-            &syn::Item::Verbatim(_) => (|| $b)(),
+        match *$s {
+            syn::Item::Const(ref item) => (|$i: &syn::ItemConst| $a)(item),
+            syn::Item::Enum(ref item) => (|$i: &syn::ItemEnum| $a)(item),
+            syn::Item::ExternCrate(ref item) => (|$i: &syn::ItemExternCrate| $a)(item),
+            syn::Item::Fn(ref item) => (|$i: &syn::ItemFn| $a)(item),
+            syn::Item::ForeignMod(ref item) => (|$i: &syn::ItemForeignMod| $a)(item),
+            syn::Item::Impl(ref item) => (|$i: &syn::ItemImpl| $a)(item),
+            syn::Item::Macro(ref item) => (|$i: &syn::ItemMacro| $a)(item),
+            syn::Item::Macro2(ref item) => (|$i: &syn::ItemMacro2| $a)(item),
+            syn::Item::Mod(ref item) => (|$i: &syn::ItemMod| $a)(item),
+            syn::Item::Static(ref item) => (|$i: &syn::ItemStatic| $a)(item),
+            syn::Item::Struct(ref item) => (|$i: &syn::ItemStruct| $a)(item),
+            syn::Item::Trait(ref item) => (|$i: &syn::ItemTrait| $a)(item),
+            syn::Item::Type(ref item) => (|$i: &syn::ItemType| $a)(item),
+            syn::Item::Union(ref item) => (|$i: &syn::ItemUnion| $a)(item),
+            syn::Item::Use(ref item) => (|$i: &syn::ItemUse| $a)(item),
+            syn::Item::Existential(ref item) => (|$i: &syn::ItemExistential| $a)(item),
+            syn::Item::TraitAlias(ref item) => (|$i: &syn::ItemTraitAlias| $a)(item),
+            syn::Item::Verbatim(_) => (|| $b)(),
         }
     };
 }
@@ -189,6 +191,8 @@ impl_syn_item_helper!(syn::ItemTrait);
 impl_syn_item_helper!(syn::ItemImpl);
 impl_syn_item_helper!(syn::ItemMacro);
 impl_syn_item_helper!(syn::ItemMacro2);
+impl_syn_item_helper!(syn::ItemExistential);
+impl_syn_item_helper!(syn::ItemTraitAlias);
 
 impl SynItemHelpers for syn::ItemVerbatim {
     fn has_attr_word(&self, _name: &str) -> bool {
@@ -238,5 +242,46 @@ impl SynAbiHelpers for syn::Abi {
     }
     fn is_omitted(&self) -> bool {
         self.name.is_none()
+    }
+}
+
+pub trait SynAttributeHelpers {
+    fn get_comment_lines(&self) -> Vec<String>;
+}
+
+impl SynAttributeHelpers for [syn::Attribute] {
+    fn get_comment_lines(&self) -> Vec<String> {
+        let mut comment_lines = Vec::new();
+
+        for attr in self {
+            if attr.style == syn::AttrStyle::Outer {
+                if let Some(syn::Meta::NameValue(syn::MetaNameValue {
+                    ident,
+                    lit: syn::Lit::Str(comment),
+                    ..
+                })) = attr.interpret_meta()
+                {
+                    let name = ident.to_string();
+                    let comment = comment.value();
+
+                    if &*name == "doc" {
+                        for raw in comment.lines() {
+                            let line = raw
+                                .trim_start_matches(" ")
+                                .trim_start_matches("//")
+                                .trim_start_matches("///")
+                                .trim_start_matches("/**")
+                                .trim_start_matches("/*")
+                                .trim_start_matches("*/")
+                                .trim_start_matches("*")
+                                .trim_end();
+                            comment_lines.push(line.to_owned());
+                        }
+                    }
+                }
+            }
+        }
+
+        comment_lines
     }
 }

@@ -12,8 +12,8 @@ use syn;
 use bindgen::cargo::{Cargo, PackageRef};
 use bindgen::error::Error;
 use bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
-    OpaqueItem, Path, Static, Struct, Typedef, Union,
+    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemContainer,
+    ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 
@@ -342,10 +342,6 @@ impl Parser {
                             // Last chance to find a module path
                             let mut path_attr_found = false;
                             for attr in &item.attrs {
-                                if attr.is_sugared_doc {
-                                    continue;
-                                }
-
                                 match attr.interpret_meta() {
                                     Some(syn::Meta::NameValue(syn::MetaNameValue {
                                         ident,
@@ -494,6 +490,8 @@ impl Parse {
         mod_cfg: &Option<Cfg>,
         items: &[syn::Item],
     ) {
+        let mut impls_with_assoc_consts = Vec::new();
+
         for item in items {
             if item.has_test_attr() {
                 continue;
@@ -524,20 +522,30 @@ impl Parse {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
                 syn::Item::Impl(ref item_impl) => {
-                    for item in &item_impl.items {
-                        if let syn::ImplItem::Const(ref item) = item {
-                            self.load_syn_assoc_const(
-                                binding_crate_name,
-                                crate_name,
-                                mod_cfg,
-                                &item_impl.self_ty,
-                                item,
-                            );
-                        }
+                    let has_assoc_const = item_impl.items.iter().any(|item| match item {
+                        syn::ImplItem::Const(_) => true,
+                        _ => false,
+                    });
+                    if has_assoc_const {
+                        impls_with_assoc_consts.push(item_impl);
                     }
                 }
                 _ => {}
             }
+        }
+
+        for item_impl in impls_with_assoc_consts {
+            let associated_constants = item_impl.items.iter().filter_map(|item| match item {
+                syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
+                _ => None,
+            });
+            self.load_syn_assoc_consts(
+                binding_crate_name,
+                crate_name,
+                mod_cfg,
+                &item_impl.self_ty,
+                associated_constants,
+            );
         }
     }
 
@@ -636,36 +644,99 @@ impl Parse {
         }
     }
 
-    /// Loads an associated `const` declaration
-    fn load_syn_assoc_const(
+    fn is_assoc_const_of_transparent_struct(
+        &self,
+        const_item: &syn::ImplItemConst,
+    ) -> Result<bool, ()> {
+        let ty = match Type::load(&const_item.ty) {
+            Ok(Some(t)) => t,
+            _ => return Ok(false),
+        };
+        let path = match ty.get_root_path() {
+            Some(p) => p,
+            _ => return Ok(false),
+        };
+
+        match self.structs.get_items(&path) {
+            Some(items) => {
+                if items.len() != 1 {
+                    error!(
+                        "Expected one struct to match path {}, but found {}",
+                        path,
+                        items.len(),
+                    );
+                    return Err(());
+                }
+
+                Ok(if let ItemContainer::Struct(ref s) = items[0] {
+                    s.is_transparent
+                } else {
+                    false
+                })
+            }
+            _ => Ok(false),
+        }
+    }
+
+    /// Loads associated `const` declarations
+    fn load_syn_assoc_consts<'a, I>(
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: &Option<Cfg>,
         impl_ty: &syn::Type,
-        item: &syn::ImplItemConst,
-    ) {
-        if crate_name != binding_crate_name {
-            info!(
-                "Skip {}::{} - (const's outside of the binding crate are not used).",
-                crate_name, &item.ident
-            );
+        items: I,
+    ) where
+        I: IntoIterator<Item = &'a syn::ImplItemConst>,
+    {
+        let ty = match Type::load(impl_ty) {
+            Ok(ty) => ty,
+            Err(e) => {
+                warn!("Skipping associated constants for {:?}: {:?}", impl_ty, e);
+                return;
+            }
+        };
+        if ty.is_none() {
             return;
         }
 
-        let const_name = item.ident.to_string();
+        let impl_path = ty.unwrap().get_root_path().unwrap();
 
-        match Constant::load_assoc(const_name.clone(), item, impl_ty, mod_cfg) {
-            Ok(constant) => {
-                info!("Take {}::{}.", crate_name, &item.ident);
+        for item in items.into_iter() {
+            let is_assoc_const_of_transparent_struct =
+                match self.is_assoc_const_of_transparent_struct(&item) {
+                    Ok(b) => b,
+                    Err(_) => continue,
+                };
 
-                let full_name = constant.path.clone();
-                if !self.constants.try_insert(constant) {
-                    error!("Conflicting name for constant {}", full_name);
-                }
+            if crate_name != binding_crate_name {
+                info!(
+                    "Skip {}::{} - (const's outside of the binding crate are not used).",
+                    crate_name, &item.ident
+                );
+                continue;
             }
-            Err(msg) => {
-                warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
+
+            let const_name = item.ident.to_string();
+
+            match Constant::load_assoc(
+                const_name,
+                item,
+                mod_cfg,
+                is_assoc_const_of_transparent_struct,
+                &impl_path,
+            ) {
+                Ok(constant) => {
+                    info!("Take {}::{}.", crate_name, &item.ident);
+
+                    let full_name = constant.path.clone();
+                    if !self.constants.try_insert(constant) {
+                        error!("Conflicting name for constant {}", full_name);
+                    }
+                }
+                Err(msg) => {
+                    warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
+                }
             }
         }
     }

@@ -672,7 +672,7 @@ impl Source for Enum {
                             .skip(skip_fields)
                             .map(|&(ref name, ref ty, _)| {
                                 // const-ref args to constructor
-                                (format!("const& {}", arg_renamer(name)), ty.clone())
+                                (arg_renamer(name), Type::Ref(Box::new(ty.clone())))
                             })
                             .collect();
                         out.write_vertical_source_list(&vec[..], ListType::Join(","));
@@ -684,15 +684,33 @@ impl Source for Enum {
                     write!(out, "{} result;", self.export_name);
 
                     if let Some((ref variant_name, ref body)) = variant.body {
-                        for &(ref field_name, ..) in body.fields.iter().skip(skip_fields) {
+                        for &(ref field_name, ref ty, ..) in body.fields.iter().skip(skip_fields) {
                             out.new_line();
-                            write!(
-                                out,
-                                "result.{}.{} = {};",
-                                variant_name,
-                                field_name,
-                                arg_renamer(field_name)
-                            );
+                            match ty {
+                                Type::Array(ref _ty, ref length) => {
+                                    // arrays are not assignable in C++ so we
+                                    // need to manually copy the elements
+                                    write!(
+                                        out,
+                                        "for (int i = 0; i < {}; i++) {{\
+                                         result.{}.{}[i] = {}[i];\
+                                         }}",
+                                        length.as_str(),
+                                        variant_name,
+                                        field_name,
+                                        arg_renamer(field_name)
+                                    );
+                                }
+                                _ => {
+                                    write!(
+                                        out,
+                                        "result.{}.{} = {};",
+                                        variant_name,
+                                        field_name,
+                                        arg_renamer(field_name)
+                                    );
+                                }
+                            }
                         }
                     }
 
@@ -772,13 +790,13 @@ impl Source for Enum {
                 }
             }
 
-            if config.language == Language::C {
-                if config.style.generate_typedef() {
-                    out.close_brace(false);
-                    write!(out, " {};", self.export_name);
-                } else {
-                    out.close_brace(true);
-                }
+            if let Some(body) = config.export.extra_body(&self.path) {
+                out.write_raw_block(body);
+            }
+
+            if config.language == Language::C && config.style.generate_typedef() {
+                out.close_brace(false);
+                write!(out, " {};", self.export_name);
             } else {
                 out.close_brace(true);
             }

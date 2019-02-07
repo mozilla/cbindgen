@@ -1,6 +1,6 @@
 [package]
 name = "cbindgen"
-version = "0.6.7"
+version = "0.7.1"
 authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>",
            "Kartikaya Gupta <kats@mozilla.com>",
            "Ryan Hunt <rhunt@eqrion.net>"]
@@ -23,7 +23,7 @@ tempfile = "3.0"
 toml = "0.4"
 
 [dependencies.syn]
-version = "0.14.0"
+version = "0.15.0"
 default-features = false
 features = ["clone-impls", "derive", "extra-traits", "full", "parsing", "printing"]
 

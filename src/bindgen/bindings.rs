@@ -94,18 +94,24 @@ impl Bindings {
         }
 
         out.new_line_if_not_start();
-        if self.config.language == Language::C {
-            out.write("#include <stdint.h>");
-            out.new_line();
-            out.write("#include <stdlib.h>");
-            out.new_line();
-            out.write("#include <stdbool.h>");
-            out.new_line();
-        } else {
-            out.write("#include <cstdint>");
-            out.new_line();
-            out.write("#include <cstdlib>");
-            out.new_line();
+        if !self.config.no_includes {
+            if self.config.language == Language::C {
+                out.write("#include <stdarg.h>");
+                out.new_line();
+                out.write("#include <stdbool.h>");
+                out.new_line();
+                out.write("#include <stdint.h>");
+                out.new_line();
+                out.write("#include <stdlib.h>");
+                out.new_line();
+            } else {
+                out.write("#include <cstdarg>");
+                out.new_line();
+                out.write("#include <cstdint>");
+                out.new_line();
+                out.write("#include <cstdlib>");
+                out.new_line();
+            }
         }
 
         for include in &self.config.sys_includes {
@@ -122,7 +128,10 @@ impl Bindings {
     pub fn write<F: Write>(&self, file: F) {
         let mut out = SourceWriter::new(file, &self.config);
 
-        if !self.config.no_includes {
+        if !self.config.no_includes
+            || !self.config.includes.is_empty()
+            || !self.config.sys_includes.is_empty()
+        {
             self.write_headers(&mut out);
         }
 

@@ -2,12 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::error;
 use std::fmt;
 
 pub use bindgen::cargo::cargo_expand::Error as CargoExpandError;
 pub use bindgen::cargo::cargo_metadata::Error as CargoMetadataError;
 pub use bindgen::cargo::cargo_toml::Error as CargoTomlError;
-pub use syn::synom::ParseError;
+pub use syn::parse::Error as ParseError;
 
 #[derive(Debug)]
 pub enum Error {
@@ -69,6 +70,18 @@ impl fmt::Display for Error {
                 "Parsing crate `{}`: cannot open file `{}`.",
                 crate_name, src_path
             ),
+        }
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Error::CargoMetadata(_, ref error) => Some(error),
+            Error::CargoToml(_, ref error) => Some(error),
+            Error::CargoExpand(_, ref error) => Some(error),
+            Error::ParseSyntaxError { ref error, .. } => Some(error),
+            Error::ParseCannotOpenFile { .. } => None,
         }
     }
 }

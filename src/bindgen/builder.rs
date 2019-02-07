@@ -243,8 +243,8 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_src(mut self, src: &path::Path) -> Builder {
-        self.srcs.push(src.to_owned());
+    pub fn with_src<P: AsRef<path::Path>>(mut self, src: P) -> Builder {
+        self.srcs.push(src.as_ref().to_owned());
         self
     }
 

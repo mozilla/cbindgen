@@ -1,8 +1,11 @@
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 struct DummyStruct;
+
+struct EnumWithAssociatedConstantInImpl;
 
 typedef struct DummyStruct TransparentComplexWrappingStructTuple;
 
@@ -16,9 +19,19 @@ typedef struct DummyStruct TransparentComplexWrapper_i32;
 
 typedef uint32_t TransparentPrimitiveWrapper_i32;
 
+typedef uint32_t TransparentPrimitiveWithAssociatedConstants;
+
+#define EnumWithAssociatedConstantInImpl_TEN 10
+
+#define TransparentPrimitiveWithAssociatedConstants_ONE 1
+
+#define TransparentPrimitiveWithAssociatedConstants_ZERO 0
+
 void root(TransparentComplexWrappingStructTuple a,
           TransparentPrimitiveWrappingStructTuple b,
           TransparentComplexWrappingStructure c,
           TransparentPrimitiveWrappingStructure d,
           TransparentComplexWrapper_i32 e,
-          TransparentPrimitiveWrapper_i32 f);
+          TransparentPrimitiveWrapper_i32 f,
+          TransparentPrimitiveWithAssociatedConstants g,
+          struct EnumWithAssociatedConstantInImpl h);
