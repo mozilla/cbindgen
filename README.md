@@ -1,4 +1,4 @@
-# `cbindgen` &emsp; [![Build Status]][travis] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc]
+# `cbindgen` &emsp; [![Build Status]][travis] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.32%2B-blue.svg?maxAge=3600)](https://github.com/eqrion/cbindgen)
 
 [Build Status]: https://api.travis-ci.org/eqrion/cbindgen.svg?branch=master
 [travis]: https://travis-ci.org/eqrion/cbindgen
