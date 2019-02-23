@@ -19,6 +19,11 @@ use bindgen::writer::{Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub enum Literal {
     Expr(String),
+    BinOp {
+        left: Box<Literal>,
+        op: &'static str,
+        right: Box<Literal>,
+    },
     Struct {
         name: String,
         export_name: String,
@@ -30,6 +35,9 @@ impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Literal::Expr(v) => write!(f, "{}", v),
+            Literal::BinOp { ref left, op, ref right } => {
+                write!(f, "{} {} {}", left, op, right)
+            },
             Literal::Struct {
                 name: _,
                 export_name,
@@ -61,12 +69,35 @@ impl Literal {
                     lit.rename_for_config(config);
                 }
             }
+            Literal::BinOp { ref mut left, ref mut right, .. } => {
+                left.rename_for_config(config);
+                right.rename_for_config(config);
+            }
             Literal::Expr(_) => {}
         }
     }
 
     pub fn load(expr: &syn::Expr) -> Result<Literal, String> {
         match *expr {
+            syn::Expr::Binary(ref bin_expr) => {
+                let l = Self::load(&bin_expr.left)?;
+                let r = Self::load(&bin_expr.right)?;
+                let op = match bin_expr.op {
+                    syn::BinOp::Add(..) => "+",
+                    syn::BinOp::Sub(..) => "-",
+                    syn::BinOp::Mul(..) => "*",
+                    syn::BinOp::Div(..) => "/",
+                    syn::BinOp::Rem(..) => "%",
+                    syn::BinOp::Shl(..) => "<<",
+                    syn::BinOp::Shr(..) => ">>",
+                    _ => return Err(format!("Unsupported binary op {:?}", bin_expr.op)),
+                };
+                Ok(Literal::BinOp {
+                    left: Box::new(l),
+                    op,
+                    right: Box::new(r),
+                })
+            },
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Str(ref value),
                 ..
