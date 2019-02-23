@@ -66,20 +66,20 @@ impl Literal {
     }
 
     pub fn load(expr: &syn::Expr) -> Result<Literal, String> {
-        match expr {
-            &syn::Expr::Lit(syn::ExprLit {
+        match *expr {
+            syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Str(ref value),
                 ..
             }) => Ok(Literal::Expr(format!("u8\"{}\"", value.value()))),
-            &syn::Expr::Lit(syn::ExprLit {
+            syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Byte(ref value),
                 ..
             }) => Ok(Literal::Expr(format!("{}", value.value()))),
-            &syn::Expr::Lit(syn::ExprLit {
+            syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Char(ref value),
                 ..
             }) => Ok(Literal::Expr(format!("{}", value.value()))),
-            &syn::Expr::Lit(syn::ExprLit {
+            syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref value),
                 ..
             }) => match value.suffix() {
@@ -102,16 +102,16 @@ impl Literal {
                     )))
                 },
             },
-            &syn::Expr::Lit(syn::ExprLit {
+            syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Float(ref value),
                 ..
             }) => Ok(Literal::Expr(format!("{}", value.value()))),
-            &syn::Expr::Lit(syn::ExprLit {
+            syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Bool(ref value),
                 ..
             }) => Ok(Literal::Expr(format!("{}", value.value))),
 
-            &syn::Expr::Struct(syn::ExprStruct {
+            syn::Expr::Struct(syn::ExprStruct {
                 ref path,
                 ref fields,
                 ..
