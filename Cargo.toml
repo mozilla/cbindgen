@@ -21,11 +21,13 @@ serde_json = "1.0"
 serde_derive = "1.0"
 tempfile = "3.0"
 toml = "0.4"
+proc-macro2 = "0.4"
+quote = "0.6"
 
 [dependencies.syn]
 version = "0.15.0"
 default-features = false
-features = ["clone-impls", "derive", "extra-traits", "full", "parsing", "printing"]
+features = ["clone-impls", "extra-traits", "full", "parsing", "printing"]
 
 [[bin]]
 name = "cbindgen"

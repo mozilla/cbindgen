@@ -16,6 +16,7 @@ use bindgen::ir::{
     ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
+use bindgen::bitflags;
 
 const STD_CRATES: &'static [&'static str] = &[
     "std",
@@ -530,23 +531,41 @@ impl Parse {
                         impls_with_assoc_consts.push(item_impl);
                     }
                 }
+                syn::Item::Macro(ref item) => {
+                    self.load_builtin_macro(binding_crate_name, crate_name, mod_cfg, item)
+                }
                 _ => {}
             }
         }
 
         for item_impl in impls_with_assoc_consts {
-            let associated_constants = item_impl.items.iter().filter_map(|item| match item {
-                syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
-                _ => None,
-            });
-            self.load_syn_assoc_consts(
+            self.load_syn_assoc_consts_from_impl(
                 binding_crate_name,
                 crate_name,
                 mod_cfg,
-                &item_impl.self_ty,
-                associated_constants,
-            );
+                item_impl,
+            )
         }
+    }
+
+    fn load_syn_assoc_consts_from_impl(
+        &mut self,
+        binding_crate_name: &str,
+        crate_name: &str,
+        mod_cfg: &Option<Cfg>,
+        item_impl: &syn::ItemImpl,
+    ) {
+        let associated_constants = item_impl.items.iter().filter_map(|item| match item {
+            syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
+            _ => None,
+        });
+        self.load_syn_assoc_consts(
+            binding_crate_name,
+            crate_name,
+            mod_cfg,
+            &item_impl.self_ty,
+            associated_constants,
+        );
     }
 
     /// Enters a `extern "C" { }` declaration and loads function declarations.
@@ -719,6 +738,8 @@ impl Parse {
 
             let const_name = item.ident.to_string();
 
+            // TODO(emilio): It'd be nice to load them as scoped constants in
+            // C++ mode.
             match Constant::load_assoc(
                 const_name,
                 item,
@@ -820,7 +841,6 @@ impl Parse {
         match Struct::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
-
                 self.structs.try_insert(st);
             }
             Err(msg) => {
@@ -892,5 +912,40 @@ impl Parse {
                 );
             }
         }
+    }
+
+    fn load_builtin_macro(
+        &mut self,
+        binding_crate_name: &str,
+        crate_name: &str,
+        mod_cfg: &Option<Cfg>,
+        item: &syn::ItemMacro,
+    ) {
+        let name = match item.mac.path.segments.last() {
+            Some(ref n) => n.value().ident.to_string(),
+            None => return,
+        };
+
+        if name != "bitflags" {
+            return;
+        }
+
+        let tokens = item.mac.tts.to_string();
+        let bitflags = match bitflags::parse(&tokens) {
+            Ok(b) => b,
+            Err(e) => {
+                warn!("Failed to parse bitflags invocation: {:?}", e);
+                return;
+            }
+        };
+
+        let (struct_, impl_) = bitflags.expand();
+        self.load_syn_struct(crate_name, mod_cfg, &struct_);
+        self.load_syn_assoc_consts_from_impl(
+            binding_crate_name,
+            crate_name,
+            mod_cfg,
+            &impl_,
+        );
     }
 }
