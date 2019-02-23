@@ -8,6 +8,8 @@ use std::mem;
 
 use syn;
 
+use bindgen::library::Library;
+use bindgen::dependencies::Dependencies;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::ir::{
@@ -283,6 +285,10 @@ impl Constant {
 impl Item for Constant {
     fn path(&self) -> &Path {
         &self.path
+    }
+
+    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+        self.ty.add_dependencies(library, out);
     }
 
     fn export_name(&self) -> &str {
