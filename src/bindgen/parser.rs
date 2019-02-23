@@ -210,8 +210,8 @@ impl Parser {
             if item.has_test_attr() {
                 continue;
             }
-            match item {
-                &syn::Item::Mod(ref item) => {
+            match *item {
+                syn::Item::Mod(ref item) => {
                     let cfg = Cfg::load(&item.attrs);
                     if let &Some(ref cfg) = &cfg {
                         self.cfg_stack.push(cfg.clone());
@@ -227,7 +227,7 @@ impl Parser {
                         self.cfg_stack.pop();
                     }
                 }
-                &syn::Item::ExternCrate(ref item) => {
+                syn::Item::ExternCrate(ref item) => {
                     let dep_pkg_name = item.ident.to_string();
 
                     let cfg = Cfg::load(&item.attrs);
@@ -319,8 +319,8 @@ impl Parser {
             if item.has_test_attr() {
                 continue;
             }
-            match item {
-                &syn::Item::Mod(ref item) => {
+            match *item {
+                syn::Item::Mod(ref item) => {
                     let next_mod_name = item.ident.to_string();
 
                     let cfg = Cfg::load(&item.attrs);
@@ -374,7 +374,7 @@ impl Parser {
                         self.cfg_stack.pop();
                     }
                 }
-                &syn::Item::ExternCrate(ref item) => {
+                syn::Item::ExternCrate(ref item) => {
                     let dep_pkg_name = item.ident.to_string();
 
                     let cfg = Cfg::load(&item.attrs);
@@ -563,8 +563,8 @@ impl Parse {
         }
 
         for foreign_item in &item.items {
-            match foreign_item {
-                &syn::ForeignItem::Fn(ref function) => {
+            match *foreign_item {
+                syn::ForeignItem::Fn(ref function) => {
                     if crate_name != binding_crate_name {
                         info!(
                             "Skip {}::{} - (fn's outside of the binding crate are not used).",
