@@ -129,3 +129,5 @@ for test in tests:
         print("Fail - %s" % test)
 
 print("Tests complete. %i passed, %i failed." % (num_pass, num_fail))
+if num_fail > 0:
+    sys.exit(1)
