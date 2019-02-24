@@ -206,7 +206,6 @@ impl<T: Item + Clone> ItemMap<T> {
         }
     }
 
-    #[allow(dead_code)]
     pub fn for_items<F>(&self, path: &Path, mut callback: F)
     where
         F: FnMut(&T),

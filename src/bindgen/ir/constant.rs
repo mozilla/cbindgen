@@ -5,6 +5,7 @@
 use std::fmt;
 use std::io::Write;
 use std::mem;
+use std::borrow::Cow;
 
 use syn;
 
@@ -15,6 +16,7 @@ use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
     ToCondition, Type,
+    Struct,
 };
 use bindgen::writer::{Source, SourceWriter};
 
@@ -27,7 +29,7 @@ pub enum Literal {
         right: Box<Literal>,
     },
     Struct {
-        name: String,
+        path: Path,
         export_name: String,
         fields: Vec<(String, Literal)>,
     },
@@ -41,7 +43,7 @@ impl fmt::Display for Literal {
                 write!(f, "{} {} {}", left, op, right)
             },
             Literal::Struct {
-                name: _,
+                path: _,
                 export_name,
                 fields,
             } => write!(
@@ -62,7 +64,7 @@ impl Literal {
     pub fn rename_for_config(&mut self, config: &Config) {
         match self {
             Literal::Struct {
-                name: _,
+                path: _,
                 ref mut export_name,
                 fields,
             } => {
@@ -161,7 +163,7 @@ impl Literal {
                     field_pairs.push((key, value));
                 }
                 Ok(Literal::Struct {
-                    name: struct_name.clone(),
+                    path: Path::new(struct_name.clone()),
                     export_name: struct_name,
                     fields: field_pairs,
                 })
@@ -180,84 +182,48 @@ pub struct Constant {
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
+    pub associated_to: Option<Path>,
+}
+
+fn can_handle(ty: &Type, expr: &syn::Expr) -> bool {
+    if ty.is_primitive_or_ptr_primitive() {
+        return true;
+    }
+    match *expr {
+        syn::Expr::Struct(_) => true,
+        _ => false,
+    }
 }
 
 impl Constant {
     pub fn load(
         path: Path,
-        item: &syn::ItemConst,
         mod_cfg: &Option<Cfg>,
+        ty: &syn::Type,
+        expr: &syn::Expr,
+        attrs: &[syn::Attribute],
+        associated_to: Option<Path>,
     ) -> Result<Constant, String> {
-        let ty = Type::load(&item.ty)?;
-
-        if ty.is_none() {
-            return Err("Cannot have a zero sized const definition.".to_owned());
-        }
-
-        let ty = ty.unwrap();
-
-        if !ty.is_primitive_or_ptr_primitive()
-            && match *item.expr {
-                syn::Expr::Struct(_) => false,
-                _ => true,
+        let ty = Type::load(ty)?;
+        let ty = match ty {
+            Some(ty) => ty,
+            None => {
+                return Err("Cannot have a zero sized const definition.".to_owned());
             }
-        {
+        };
+
+        if !can_handle(&ty, expr) {
             return Err("Unhanded const definition".to_owned());
         }
 
         Ok(Constant::new(
             path,
             ty,
-            Literal::load(&item.expr)?,
-            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-            AnnotationSet::load(&item.attrs)?,
-            Documentation::load(&item.attrs),
-        ))
-    }
-
-    pub fn load_assoc(
-        name: String,
-        item: &syn::ImplItemConst,
-        mod_cfg: &Option<Cfg>,
-        is_transparent: bool,
-        struct_path: &Path,
-    ) -> Result<Constant, String> {
-        let ty = Type::load(&item.ty)?;
-
-        if ty.is_none() {
-            return Err("Cannot have a zero sized const definition.".to_owned());
-        }
-        let ty = ty.unwrap();
-
-        let can_handle_const_expr = match item.expr {
-            syn::Expr::Struct(_) => true,
-            _ => false,
-        };
-
-        if !ty.is_primitive_or_ptr_primitive() && !can_handle_const_expr {
-            return Err("Unhandled const definition".to_owned());
-        }
-
-        let expr = Literal::load(match item.expr {
-            syn::Expr::Struct(syn::ExprStruct { ref fields, .. }) => {
-                if is_transparent && fields.len() == 1 {
-                    &fields[0].expr
-                } else {
-                    &item.expr
-                }
-            }
-            _ => &item.expr,
-        })?;
-
-        let full_name = Path::new(format!("{}_{}", struct_path, name));
-
-        Ok(Constant::new(
-            full_name,
-            ty,
-            expr,
-            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-            AnnotationSet::load(&item.attrs)?,
-            Documentation::load(&item.attrs),
+            Literal::load(&expr)?,
+            Cfg::append(mod_cfg, Cfg::load(attrs)),
+            AnnotationSet::load(attrs)?,
+            Documentation::load(attrs),
+            associated_to,
         ))
     }
 
@@ -268,6 +234,7 @@ impl Constant {
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
+        associated_to: Option<Path>,
     ) -> Self {
         let export_name = path.name().to_owned();
         Self {
@@ -278,6 +245,7 @@ impl Constant {
             cfg,
             annotations,
             documentation,
+            associated_to,
         }
     }
 }
@@ -312,7 +280,9 @@ impl Item for Constant {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.export_name);
+        if self.associated_to.is_none() {
+            config.export.rename(&mut self.export_name);
+        }
         self.value.rename_for_config(config);
         self.ty.rename_for_config(config, &GenericParams::default()); // FIXME: should probably propagate something here
     }
@@ -322,20 +292,92 @@ impl Item for Constant {
     }
 }
 
-impl Source for Constant {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+impl Constant {
+    pub fn write_declaration<F: Write>(
+        &self,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+        associated_to_struct: &Struct,
+    ) {
+        debug_assert!(self.associated_to.is_some());
+        debug_assert!(config.language == Language::Cxx);
+        debug_assert!(!associated_to_struct.is_transparent);
+        debug_assert!(config.structure.associated_constants_in_body);
+        debug_assert!(config.constant.allow_static_const);
+
+        if let Type::ConstPtr(..) = self.ty {
+            out.write("static ");
+        } else {
+            out.write("static const ");
+        }
+        self.ty.write(config, out);
+        write!(out, " {};", self.export_name())
+    }
+
+    pub fn write<F: Write>(
+        &self,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+        associated_to_struct: Option<&Struct>,
+    ) {
+        if let Some(assoc) = associated_to_struct {
+            if assoc.is_generic() {
+                return; // Not tested / implemented yet, so bail out.
+            }
+        }
+
+        let associated_to_transparent =
+            associated_to_struct.map_or(false, |s| s.is_transparent);
+
+        let in_body = associated_to_struct.is_some() &&
+            config.language == Language::Cxx &&
+            config.structure.associated_constants_in_body &&
+            config.constant.allow_static_const &&
+            !associated_to_transparent;
+
         let condition = (&self.cfg).to_condition(config);
         condition.write_before(config, out);
+
+        let name = if in_body {
+            Cow::Owned(format!(
+                "{}::{}",
+                associated_to_struct.unwrap().export_name(),
+                self.export_name(),
+            ))
+        } else if self.associated_to.is_none() {
+            Cow::Borrowed(self.export_name())
+        } else {
+            let associated_name = match associated_to_struct {
+                Some(s) => Cow::Borrowed(s.export_name()),
+                None => {
+                    let mut name =
+                        self.associated_to.as_ref().unwrap().name().to_owned();
+                    config.export.rename(&mut name);
+                    Cow::Owned(name)
+                }
+            };
+
+            Cow::Owned(format!("{}_{}", associated_name, self.export_name()))
+        };
+
+        let value = match self.value {
+            Literal::Struct { ref fields, ref path, .. } if out.bindings().struct_is_transparent(path) => {
+                &fields[0].1
+            }
+            _ => &self.value,
+        };
+
         if config.constant.allow_static_const && config.language == Language::Cxx {
+            out.write(if in_body { "inline " } else { "static " });
             if let Type::ConstPtr(..) = self.ty {
-                out.write("static ");
+                // Nothing.
             } else {
-                out.write("static const ");
+                out.write("const ");
             }
             self.ty.write(config, out);
-            write!(out, " {} = {};", self.export_name(), self.value)
+            write!(out, " {} = {};", name, value)
         } else {
-            write!(out, "#define {} {}", self.export_name(), self.value)
+            write!(out, "#define {} {}", name, value)
         }
         condition.write_after(config, out);
     }

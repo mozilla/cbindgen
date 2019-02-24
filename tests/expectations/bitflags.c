@@ -10,13 +10,10 @@
 typedef struct {
   uint8_t bits;
 } AlignFlags;
-
 #define AlignFlags_AUTO (AlignFlags){ .bits = 0 }
-
+#define AlignFlags_NORMAL (AlignFlags){ .bits = 1 }
+#define AlignFlags_START (AlignFlags){ .bits = 1 << 1 }
 #define AlignFlags_END (AlignFlags){ .bits = 1 << 2 }
-
 #define AlignFlags_FLEX_START (AlignFlags){ .bits = 1 << 3 }
 
-#define AlignFlags_NORMAL (AlignFlags){ .bits = 1 }
-
-#define AlignFlags_START (AlignFlags){ .bits = 1 << 1 }
+void root(AlignFlags flags);

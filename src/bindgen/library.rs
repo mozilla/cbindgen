@@ -115,6 +115,7 @@ impl Library {
 
         Ok(Bindings::new(
             self.config,
+            self.structs,
             constants,
             globals,
             items,

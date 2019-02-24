@@ -12,7 +12,7 @@ use syn;
 use bindgen::cargo::{Cargo, PackageRef};
 use bindgen::error::Error;
 use bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemContainer,
+    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams,
     ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
@@ -663,40 +663,6 @@ impl Parse {
         }
     }
 
-    fn is_assoc_const_of_transparent_struct(
-        &self,
-        const_item: &syn::ImplItemConst,
-    ) -> Result<bool, ()> {
-        let ty = match Type::load(&const_item.ty) {
-            Ok(Some(t)) => t,
-            _ => return Ok(false),
-        };
-        let path = match ty.get_root_path() {
-            Some(p) => p,
-            _ => return Ok(false),
-        };
-
-        match self.structs.get_items(&path) {
-            Some(items) => {
-                if items.len() != 1 {
-                    error!(
-                        "Expected one struct to match path {}, but found {}",
-                        path,
-                        items.len(),
-                    );
-                    return Err(());
-                }
-
-                Ok(if let ItemContainer::Struct(ref s) = items[0] {
-                    s.is_transparent
-                } else {
-                    false
-                })
-            }
-            _ => Ok(false),
-        }
-    }
-
     /// Loads associated `const` declarations
     fn load_syn_assoc_consts<'a, I>(
         &mut self,
@@ -722,12 +688,6 @@ impl Parse {
         let impl_path = ty.unwrap().get_root_path().unwrap();
 
         for item in items.into_iter() {
-            let is_assoc_const_of_transparent_struct =
-                match self.is_assoc_const_of_transparent_struct(&item) {
-                    Ok(b) => b,
-                    Err(_) => continue,
-                };
-
             if crate_name != binding_crate_name {
                 info!(
                     "Skip {}::{} - (const's outside of the binding crate are not used).",
@@ -736,23 +696,31 @@ impl Parse {
                 continue;
             }
 
-            let const_name = item.ident.to_string();
-
-            // TODO(emilio): It'd be nice to load them as scoped constants in
-            // C++ mode.
-            match Constant::load_assoc(
-                const_name,
-                item,
+            let path = Path::new(item.ident.to_string());
+            match Constant::load(
+                path,
                 mod_cfg,
-                is_assoc_const_of_transparent_struct,
-                &impl_path,
+                &item.ty,
+                &item.expr,
+                &item.attrs,
+                Some(impl_path.clone()),
             ) {
                 Ok(constant) => {
-                    info!("Take {}::{}.", crate_name, &item.ident);
-
-                    let full_name = constant.path.clone();
-                    if !self.constants.try_insert(constant) {
-                        error!("Conflicting name for constant {}", full_name);
+                    info!("Take {}::{}::{}.", crate_name, impl_path, &item.ident);
+                    let mut any = false;
+                    self.structs.for_items_mut(&impl_path, |item| {
+                        any = true;
+                        item.add_associated_constant(constant.clone());
+                    });
+                    // Handle associated constants to other item types that are
+                    // not structs like enums or such as regular constants.
+                    if !any && !self.constants.try_insert(constant) {
+                        error!(
+                            "Conflicting name for constant {}::{}::{}.",
+                            crate_name,
+                            impl_path,
+                            &item.ident,
+                        );
                     }
                 }
                 Err(msg) => {
@@ -779,8 +747,7 @@ impl Parse {
         }
 
         let path = Path::new(item.ident.to_string());
-
-        match Constant::load(path, item, mod_cfg) {
+        match Constant::load(path, mod_cfg, &item.ty, &item.expr, &item.attrs, None) {
             Ok(constant) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
