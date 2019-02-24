@@ -8,7 +8,9 @@ use std::io::{Read, Write};
 use std::path;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{Path as BindgenPath, ItemMap, Struct, Constant, Function, ItemContainer, Static};
+use bindgen::ir::{
+    Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct,
+};
 use bindgen::writer::{Source, SourceWriter};
 
 /// A bindings header that can be written.

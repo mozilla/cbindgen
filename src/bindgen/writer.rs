@@ -6,8 +6,8 @@ use std::cmp;
 use std::io;
 use std::io::Write;
 
-use bindgen::Bindings;
 use bindgen::config::{Braces, Config};
+use bindgen::Bindings;
 
 /// A type of way to format a list.
 pub enum ListType<'a> {
@@ -122,8 +122,8 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn push_tab(&mut self) {
-        let spaces =
-            self.spaces() - (self.spaces() % self.bindings.config.tab_width) + self.bindings.config.tab_width;
+        let spaces = self.spaces() - (self.spaces() % self.bindings.config.tab_width)
+            + self.bindings.config.tab_width;
         self.spaces.push(spaces);
     }
 

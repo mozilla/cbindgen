@@ -10,8 +10,8 @@ use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Repr, ToCondition, Type, Typedef, Constant,
+    AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, GenericParams, Item,
+    ItemContainer, Path, Repr, ToCondition, Type, Typedef,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -503,9 +503,9 @@ impl Source for Struct {
             out.write_raw_block(body);
         }
 
-        if config.language == Language::Cxx &&
-            config.structure.associated_constants_in_body &&
-            config.constant.allow_static_const
+        if config.language == Language::Cxx
+            && config.structure.associated_constants_in_body
+            && config.constant.allow_static_const
         {
             for constant in &self.associated_constants {
                 out.new_line();

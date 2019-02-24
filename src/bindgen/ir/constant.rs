@@ -2,22 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::fmt;
 use std::io::Write;
 use std::mem;
-use std::borrow::Cow;
 
 use syn;
 
-use bindgen::library::Library;
-use bindgen::dependencies::Dependencies;
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    ToCondition, Type,
-    Struct,
+    Struct, ToCondition, Type,
 };
+use bindgen::library::Library;
 use bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -39,9 +38,11 @@ impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Literal::Expr(v) => write!(f, "{}", v),
-            Literal::BinOp { ref left, op, ref right } => {
-                write!(f, "{} {} {}", left, op, right)
-            },
+            Literal::BinOp {
+                ref left,
+                op,
+                ref right,
+            } => write!(f, "{} {} {}", left, op, right),
             Literal::Struct {
                 path: _,
                 export_name,
@@ -73,7 +74,11 @@ impl Literal {
                     lit.rename_for_config(config);
                 }
             }
-            Literal::BinOp { ref mut left, ref mut right, .. } => {
+            Literal::BinOp {
+                ref mut left,
+                ref mut right,
+                ..
+            } => {
                 left.rename_for_config(config);
                 right.rename_for_config(config);
             }
@@ -101,7 +106,7 @@ impl Literal {
                     op,
                     right: Box::new(r),
                 })
-            },
+            }
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Str(ref value),
                 ..
@@ -326,14 +331,13 @@ impl Constant {
             }
         }
 
-        let associated_to_transparent =
-            associated_to_struct.map_or(false, |s| s.is_transparent);
+        let associated_to_transparent = associated_to_struct.map_or(false, |s| s.is_transparent);
 
-        let in_body = associated_to_struct.is_some() &&
-            config.language == Language::Cxx &&
-            config.structure.associated_constants_in_body &&
-            config.constant.allow_static_const &&
-            !associated_to_transparent;
+        let in_body = associated_to_struct.is_some()
+            && config.language == Language::Cxx
+            && config.structure.associated_constants_in_body
+            && config.constant.allow_static_const
+            && !associated_to_transparent;
 
         let condition = (&self.cfg).to_condition(config);
         condition.write_before(config, out);
@@ -350,8 +354,7 @@ impl Constant {
             let associated_name = match associated_to_struct {
                 Some(s) => Cow::Borrowed(s.export_name()),
                 None => {
-                    let mut name =
-                        self.associated_to.as_ref().unwrap().name().to_owned();
+                    let mut name = self.associated_to.as_ref().unwrap().name().to_owned();
                     config.export.rename(&mut name);
                     Cow::Owned(name)
                 }
@@ -361,9 +364,11 @@ impl Constant {
         };
 
         let value = match self.value {
-            Literal::Struct { ref fields, ref path, .. } if out.bindings().struct_is_transparent(path) => {
-                &fields[0].1
-            }
+            Literal::Struct {
+                ref fields,
+                ref path,
+                ..
+            } if out.bindings().struct_is_transparent(path) => &fields[0].1,
             _ => &self.value,
         };
 

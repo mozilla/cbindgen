@@ -9,14 +9,14 @@ use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
 use syn;
 
+use bindgen::bitflags;
 use bindgen::cargo::{Cargo, PackageRef};
 use bindgen::error::Error;
 use bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams,
-    ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
+    OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
-use bindgen::bitflags;
 
 const STD_CRATES: &'static [&'static str] = &[
     "std",
@@ -539,12 +539,7 @@ impl Parse {
         }
 
         for item_impl in impls_with_assoc_consts {
-            self.load_syn_assoc_consts_from_impl(
-                binding_crate_name,
-                crate_name,
-                mod_cfg,
-                item_impl,
-            )
+            self.load_syn_assoc_consts_from_impl(binding_crate_name, crate_name, mod_cfg, item_impl)
         }
     }
 
@@ -717,9 +712,7 @@ impl Parse {
                     if !any && !self.constants.try_insert(constant) {
                         error!(
                             "Conflicting name for constant {}::{}::{}.",
-                            crate_name,
-                            impl_path,
-                            &item.ident,
+                            crate_name, impl_path, &item.ident,
                         );
                     }
                 }
@@ -908,11 +901,6 @@ impl Parse {
 
         let (struct_, impl_) = bitflags.expand();
         self.load_syn_struct(crate_name, mod_cfg, &struct_);
-        self.load_syn_assoc_consts_from_impl(
-            binding_crate_name,
-            crate_name,
-            mod_cfg,
-            &impl_,
-        );
+        self.load_syn_assoc_consts_from_impl(binding_crate_name, crate_name, mod_cfg, &impl_);
     }
 }

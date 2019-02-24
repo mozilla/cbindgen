@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use syn;
-use syn::parse::{Parse, Parser, ParseStream, Result as ParseResult};
 use proc_macro2::TokenStream;
+use syn;
+use syn::parse::{Parse, ParseStream, Parser, Result as ParseResult};
 
 // $(#[$outer:meta])*
 // ($($vis:tt)*) $BitFlags:ident: $T:ty {
@@ -26,7 +26,14 @@ pub struct Bitflags {
 
 impl Bitflags {
     pub fn expand(&self) -> (syn::ItemStruct, syn::ItemImpl) {
-        let Bitflags { ref attrs, ref vis, ref name, ref repr, ref flags, .. } = *self;
+        let Bitflags {
+            ref attrs,
+            ref vis,
+            ref name,
+            ref repr,
+            ref flags,
+            ..
+        } = *self;
 
         let struct_ = parse_quote! {
             #(#attrs)*
@@ -74,7 +81,12 @@ struct Flag {
 
 impl Flag {
     fn expand(&self, struct_name: &syn::Ident) -> TokenStream {
-        let Flag { ref attrs, ref name, ref value, .. } = *self;
+        let Flag {
+            ref attrs,
+            ref name,
+            ref value,
+            ..
+        } = *self;
         quote! {
             #(#attrs)*
             const #name : #struct_name = #struct_name { bits: #value };

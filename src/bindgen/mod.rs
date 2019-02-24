@@ -36,8 +36,8 @@ macro_rules! deserialize_enum_str {
     };
 }
 
-mod bitflags;
 mod bindings;
+mod bitflags;
 mod builder;
 mod cargo;
 mod cdecl;
