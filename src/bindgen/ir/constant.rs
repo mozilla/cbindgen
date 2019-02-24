@@ -203,7 +203,7 @@ fn can_handle(ty: &Type, expr: &syn::Expr) -> bool {
 impl Constant {
     pub fn load(
         path: Path,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         ty: &syn::Type,
         expr: &syn::Expr,
         attrs: &[syn::Attribute],
@@ -268,8 +268,8 @@ impl Item for Constant {
         &self.export_name
     }
 
-    fn cfg(&self) -> &Option<Cfg> {
-        &self.cfg
+    fn cfg(&self) -> Option<&Cfg> {
+        self.cfg.as_ref()
     }
 
     fn annotations(&self) -> &AnnotationSet {

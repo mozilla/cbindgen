@@ -54,7 +54,7 @@ impl EnumVariant {
         is_tagged: bool,
         variant: &syn::Variant,
         generic_params: GenericParams,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
     ) -> Result<Self, String> {
         let discriminant = match variant.discriminant {
             Some((_, ref expr)) => match value_from_expr(expr) {
@@ -250,7 +250,7 @@ impl Enum {
         }
     }
 
-    pub fn load(item: &syn::ItemEnum, mod_cfg: &Option<Cfg>) -> Result<Enum, String> {
+    pub fn load(item: &syn::ItemEnum, mod_cfg: Option<&Cfg>) -> Result<Enum, String> {
         let repr = Repr::load(&item.attrs)?;
         if repr == Repr::RUST {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
@@ -332,8 +332,8 @@ impl Item for Enum {
         &self.export_name
     }
 
-    fn cfg(&self) -> &Option<Cfg> {
-        &self.cfg
+    fn cfg(&self) -> Option<&Cfg> {
+        self.cfg.as_ref()
     }
 
     fn annotations(&self) -> &AnnotationSet {

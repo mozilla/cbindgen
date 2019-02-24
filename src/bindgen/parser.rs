@@ -203,7 +203,7 @@ impl Parser {
         self.out.load_syn_crate_mod(
             &self.binding_crate_name,
             &pkg.name,
-            &Cfg::join(&self.cfg_stack),
+            Cfg::join(&self.cfg_stack).as_ref(),
             items,
         );
 
@@ -312,7 +312,7 @@ impl Parser {
         self.out.load_syn_crate_mod(
             &self.binding_crate_name,
             &pkg.name,
-            &Cfg::join(&self.cfg_stack),
+            Cfg::join(&self.cfg_stack).as_ref(),
             items,
         );
 
@@ -488,7 +488,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         items: &[syn::Item],
     ) {
         let mut impls_with_assoc_consts = Vec::new();
@@ -547,7 +547,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item_impl: &syn::ItemImpl,
     ) {
         let associated_constants = item_impl.items.iter().filter_map(|item| match item {
@@ -568,7 +568,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemForeignMod,
     ) {
         if !item.abi.is_c() {
@@ -611,7 +611,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemFn,
     ) {
         if crate_name != binding_crate_name {
@@ -663,7 +663,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         impl_ty: &syn::Type,
         items: I,
     ) where
@@ -728,7 +728,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemConst,
     ) {
         if crate_name != binding_crate_name {
@@ -760,7 +760,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemStatic,
     ) {
         if crate_name != binding_crate_name {
@@ -797,7 +797,7 @@ impl Parse {
     }
 
     /// Loads a `struct` declaration
-    fn load_syn_struct(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemStruct) {
+    fn load_syn_struct(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemStruct) {
         match Struct::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
@@ -814,7 +814,7 @@ impl Parse {
     }
 
     /// Loads a `union` declaration
-    fn load_syn_union(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemUnion) {
+    fn load_syn_union(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemUnion) {
         match Union::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
@@ -832,7 +832,7 @@ impl Parse {
     }
 
     /// Loads a `enum` declaration
-    fn load_syn_enum(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemEnum) {
+    fn load_syn_enum(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemEnum) {
         if item.generics.lifetimes().count() > 0 {
             info!(
                 "Skip {}::{} - (has generics or lifetimes or where bounds).",
@@ -857,7 +857,7 @@ impl Parse {
     }
 
     /// Loads a `type` declaration
-    fn load_syn_ty(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemType) {
+    fn load_syn_ty(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemType) {
         match Typedef::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
@@ -878,7 +878,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemMacro,
     ) {
         let name = match item.mac.path.segments.last() {

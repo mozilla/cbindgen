@@ -37,7 +37,7 @@ impl Function {
         decl: &syn::FnDecl,
         extern_decl: bool,
         attrs: &[syn::Attribute],
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
         let args = decl.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
         let ret = match decl.output {

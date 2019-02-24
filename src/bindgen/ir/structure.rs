@@ -50,7 +50,7 @@ impl Struct {
         self.associated_constants.push(c);
     }
 
-    pub fn load(item: &syn::ItemStruct, mod_cfg: &Option<Cfg>) -> Result<Self, String> {
+    pub fn load(item: &syn::ItemStruct, mod_cfg: Option<&Cfg>) -> Result<Self, String> {
         let is_transparent = match Repr::load(&item.attrs)? {
             Repr::C => false,
             Repr::TRANSPARENT => true,
@@ -184,8 +184,8 @@ impl Item for Struct {
         &self.export_name
     }
 
-    fn cfg(&self) -> &Option<Cfg> {
-        &self.cfg
+    fn cfg(&self) -> Option<&Cfg> {
+        self.cfg.as_ref()
     }
 
     fn annotations(&self) -> &AnnotationSet {
