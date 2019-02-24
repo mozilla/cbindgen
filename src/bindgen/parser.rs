@@ -890,8 +890,7 @@ impl Parse {
             return;
         }
 
-        let tokens = item.mac.tts.to_string();
-        let bitflags = match bitflags::parse(&tokens) {
+        let bitflags = match bitflags::parse(item.mac.tts.clone()) {
             Ok(b) => b,
             Err(e) => {
                 warn!("Failed to parse bitflags invocation: {:?}", e);

@@ -132,7 +132,7 @@ impl Flags {
     }
 }
 
-pub fn parse(tokens: &str) -> ParseResult<Bitflags> {
+pub fn parse(tokens: TokenStream) -> ParseResult<Bitflags> {
     let parser = Bitflags::parse;
-    parser.parse_str(tokens)
+    parser.parse2(tokens)
 }
