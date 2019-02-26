@@ -900,6 +900,9 @@ impl Parse {
 
         let (struct_, impl_) = bitflags.expand();
         self.load_syn_struct(crate_name, mod_cfg, &struct_);
+        // We know that the expansion will only reference `struct_`, so it's
+        // fine to just do it here instead of deferring it like we do with the
+        // other calls to this function.
         self.load_syn_assoc_consts_from_impl(binding_crate_name, crate_name, mod_cfg, &impl_);
     }
 }
