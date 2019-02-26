@@ -93,14 +93,12 @@ impl Cfg {
         }
     }
 
-    pub fn append(parent: &Option<Cfg>, child: Option<Cfg>) -> Option<Cfg> {
+    pub fn append(parent: Option<&Cfg>, child: Option<Cfg>) -> Option<Cfg> {
         match (parent, child) {
-            (&None, None) => None,
-            (&None, Some(child)) => Some(child),
-            (&Some(ref parent), None) => Some(parent.clone()),
-            (&Some(ref parent), Some(ref child)) => {
-                Some(Cfg::All(vec![parent.clone(), child.clone()]))
-            }
+            (None, None) => None,
+            (None, Some(child)) => Some(child),
+            (Some(parent), None) => Some(parent.clone()),
+            (Some(parent), Some(child)) => Some(Cfg::All(vec![parent.clone(), child])),
         }
     }
 

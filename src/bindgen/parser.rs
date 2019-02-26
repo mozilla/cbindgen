@@ -9,11 +9,12 @@ use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
 use syn;
 
+use bindgen::bitflags;
 use bindgen::cargo::{Cargo, PackageRef};
 use bindgen::error::Error;
 use bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemContainer,
-    ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
+    OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 
@@ -202,7 +203,7 @@ impl Parser {
         self.out.load_syn_crate_mod(
             &self.binding_crate_name,
             &pkg.name,
-            &Cfg::join(&self.cfg_stack),
+            Cfg::join(&self.cfg_stack).as_ref(),
             items,
         );
 
@@ -210,8 +211,8 @@ impl Parser {
             if item.has_test_attr() {
                 continue;
             }
-            match item {
-                &syn::Item::Mod(ref item) => {
+            match *item {
+                syn::Item::Mod(ref item) => {
                     let cfg = Cfg::load(&item.attrs);
                     if let &Some(ref cfg) = &cfg {
                         self.cfg_stack.push(cfg.clone());
@@ -227,7 +228,7 @@ impl Parser {
                         self.cfg_stack.pop();
                     }
                 }
-                &syn::Item::ExternCrate(ref item) => {
+                syn::Item::ExternCrate(ref item) => {
                     let dep_pkg_name = item.ident.to_string();
 
                     let cfg = Cfg::load(&item.attrs);
@@ -311,7 +312,7 @@ impl Parser {
         self.out.load_syn_crate_mod(
             &self.binding_crate_name,
             &pkg.name,
-            &Cfg::join(&self.cfg_stack),
+            Cfg::join(&self.cfg_stack).as_ref(),
             items,
         );
 
@@ -319,8 +320,8 @@ impl Parser {
             if item.has_test_attr() {
                 continue;
             }
-            match item {
-                &syn::Item::Mod(ref item) => {
+            match *item {
+                syn::Item::Mod(ref item) => {
                     let next_mod_name = item.ident.to_string();
 
                     let cfg = Cfg::load(&item.attrs);
@@ -374,7 +375,7 @@ impl Parser {
                         self.cfg_stack.pop();
                     }
                 }
-                &syn::Item::ExternCrate(ref item) => {
+                syn::Item::ExternCrate(ref item) => {
                     let dep_pkg_name = item.ident.to_string();
 
                     let cfg = Cfg::load(&item.attrs);
@@ -487,7 +488,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         items: &[syn::Item],
     ) {
         let mut impls_with_assoc_consts = Vec::new();
@@ -530,23 +531,36 @@ impl Parse {
                         impls_with_assoc_consts.push(item_impl);
                     }
                 }
+                syn::Item::Macro(ref item) => {
+                    self.load_builtin_macro(binding_crate_name, crate_name, mod_cfg, item)
+                }
                 _ => {}
             }
         }
 
         for item_impl in impls_with_assoc_consts {
-            let associated_constants = item_impl.items.iter().filter_map(|item| match item {
-                syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
-                _ => None,
-            });
-            self.load_syn_assoc_consts(
-                binding_crate_name,
-                crate_name,
-                mod_cfg,
-                &item_impl.self_ty,
-                associated_constants,
-            );
+            self.load_syn_assoc_consts_from_impl(binding_crate_name, crate_name, mod_cfg, item_impl)
         }
+    }
+
+    fn load_syn_assoc_consts_from_impl(
+        &mut self,
+        binding_crate_name: &str,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        item_impl: &syn::ItemImpl,
+    ) {
+        let associated_constants = item_impl.items.iter().filter_map(|item| match item {
+            syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
+            _ => None,
+        });
+        self.load_syn_assoc_consts(
+            binding_crate_name,
+            crate_name,
+            mod_cfg,
+            &item_impl.self_ty,
+            associated_constants,
+        );
     }
 
     /// Enters a `extern "C" { }` declaration and loads function declarations.
@@ -554,7 +568,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemForeignMod,
     ) {
         if !item.abi.is_c() {
@@ -563,8 +577,8 @@ impl Parse {
         }
 
         for foreign_item in &item.items {
-            match foreign_item {
-                &syn::ForeignItem::Fn(ref function) => {
+            match *foreign_item {
+                syn::ForeignItem::Fn(ref function) => {
                     if crate_name != binding_crate_name {
                         info!(
                             "Skip {}::{} - (fn's outside of the binding crate are not used).",
@@ -597,7 +611,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemFn,
     ) {
         if crate_name != binding_crate_name {
@@ -644,46 +658,12 @@ impl Parse {
         }
     }
 
-    fn is_assoc_const_of_transparent_struct(
-        &self,
-        const_item: &syn::ImplItemConst,
-    ) -> Result<bool, ()> {
-        let ty = match Type::load(&const_item.ty) {
-            Ok(Some(t)) => t,
-            _ => return Ok(false),
-        };
-        let path = match ty.get_root_path() {
-            Some(p) => p,
-            _ => return Ok(false),
-        };
-
-        match self.structs.get_items(&path) {
-            Some(items) => {
-                if items.len() != 1 {
-                    error!(
-                        "Expected one struct to match path {}, but found {}",
-                        path,
-                        items.len(),
-                    );
-                    return Err(());
-                }
-
-                Ok(if let ItemContainer::Struct(ref s) = items[0] {
-                    s.is_transparent
-                } else {
-                    false
-                })
-            }
-            _ => Ok(false),
-        }
-    }
-
     /// Loads associated `const` declarations
     fn load_syn_assoc_consts<'a, I>(
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         impl_ty: &syn::Type,
         items: I,
     ) where
@@ -703,12 +683,6 @@ impl Parse {
         let impl_path = ty.unwrap().get_root_path().unwrap();
 
         for item in items.into_iter() {
-            let is_assoc_const_of_transparent_struct =
-                match self.is_assoc_const_of_transparent_struct(&item) {
-                    Ok(b) => b,
-                    Err(_) => continue,
-                };
-
             if crate_name != binding_crate_name {
                 info!(
                     "Skip {}::{} - (const's outside of the binding crate are not used).",
@@ -717,21 +691,29 @@ impl Parse {
                 continue;
             }
 
-            let const_name = item.ident.to_string();
-
-            match Constant::load_assoc(
-                const_name,
-                item,
+            let path = Path::new(item.ident.to_string());
+            match Constant::load(
+                path,
                 mod_cfg,
-                is_assoc_const_of_transparent_struct,
-                &impl_path,
+                &item.ty,
+                &item.expr,
+                &item.attrs,
+                Some(impl_path.clone()),
             ) {
                 Ok(constant) => {
-                    info!("Take {}::{}.", crate_name, &item.ident);
-
-                    let full_name = constant.path.clone();
-                    if !self.constants.try_insert(constant) {
-                        error!("Conflicting name for constant {}", full_name);
+                    info!("Take {}::{}::{}.", crate_name, impl_path, &item.ident);
+                    let mut any = false;
+                    self.structs.for_items_mut(&impl_path, |item| {
+                        any = true;
+                        item.add_associated_constant(constant.clone());
+                    });
+                    // Handle associated constants to other item types that are
+                    // not structs like enums or such as regular constants.
+                    if !any && !self.constants.try_insert(constant) {
+                        error!(
+                            "Conflicting name for constant {}::{}::{}.",
+                            crate_name, impl_path, &item.ident,
+                        );
                     }
                 }
                 Err(msg) => {
@@ -746,7 +728,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemConst,
     ) {
         if crate_name != binding_crate_name {
@@ -758,8 +740,7 @@ impl Parse {
         }
 
         let path = Path::new(item.ident.to_string());
-
-        match Constant::load(path, item, mod_cfg) {
+        match Constant::load(path, mod_cfg, &item.ty, &item.expr, &item.attrs, None) {
             Ok(constant) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
@@ -779,7 +760,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
         item: &syn::ItemStatic,
     ) {
         if crate_name != binding_crate_name {
@@ -816,11 +797,10 @@ impl Parse {
     }
 
     /// Loads a `struct` declaration
-    fn load_syn_struct(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemStruct) {
+    fn load_syn_struct(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemStruct) {
         match Struct::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
-
                 self.structs.try_insert(st);
             }
             Err(msg) => {
@@ -834,7 +814,7 @@ impl Parse {
     }
 
     /// Loads a `union` declaration
-    fn load_syn_union(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemUnion) {
+    fn load_syn_union(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemUnion) {
         match Union::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
@@ -852,7 +832,7 @@ impl Parse {
     }
 
     /// Loads a `enum` declaration
-    fn load_syn_enum(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemEnum) {
+    fn load_syn_enum(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemEnum) {
         if item.generics.lifetimes().count() > 0 {
             info!(
                 "Skip {}::{} - (has generics or lifetimes or where bounds).",
@@ -877,7 +857,7 @@ impl Parse {
     }
 
     /// Loads a `type` declaration
-    fn load_syn_ty(&mut self, crate_name: &str, mod_cfg: &Option<Cfg>, item: &syn::ItemType) {
+    fn load_syn_ty(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemType) {
         match Typedef::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
@@ -892,5 +872,37 @@ impl Parse {
                 );
             }
         }
+    }
+
+    fn load_builtin_macro(
+        &mut self,
+        binding_crate_name: &str,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        item: &syn::ItemMacro,
+    ) {
+        let name = match item.mac.path.segments.last() {
+            Some(ref n) => n.value().ident.to_string(),
+            None => return,
+        };
+
+        if name != "bitflags" {
+            return;
+        }
+
+        let bitflags = match bitflags::parse(item.mac.tts.clone()) {
+            Ok(b) => b,
+            Err(e) => {
+                warn!("Failed to parse bitflags invocation: {:?}", e);
+                return;
+            }
+        };
+
+        let (struct_, impl_) = bitflags.expand();
+        self.load_syn_struct(crate_name, mod_cfg, &struct_);
+        // We know that the expansion will only reference `struct_`, so it's
+        // fine to just do it here instead of deferring it like we do with the
+        // other calls to this function.
+        self.load_syn_assoc_consts_from_impl(binding_crate_name, crate_name, mod_cfg, &impl_);
     }
 }

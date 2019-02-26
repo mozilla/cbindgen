@@ -74,6 +74,9 @@ impl Library {
         self.globals.for_all_items(|global| {
             global.add_dependencies(&self, &mut dependencies);
         });
+        self.constants.for_all_items(|constant| {
+            constant.add_dependencies(&self, &mut dependencies);
+        });
         for name in &self.config.export.include {
             let path = Path::new(name.clone());
             if let Some(items) = self.get_items(&path) {
@@ -112,6 +115,7 @@ impl Library {
 
         Ok(Bindings::new(
             self.config,
+            self.structs,
             constants,
             globals,
             items,

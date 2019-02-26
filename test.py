@@ -48,7 +48,7 @@ def gxx(src):
     if gxx_bin == None:
         gxx_bin = 'g++'
 
-    subprocess.check_output([gxx_bin, "-D", "DEFINED", "-std=c++11", "-c", src, "-o", "tests/expectations/tmp.o"])
+    subprocess.check_output([gxx_bin, "-D", "DEFINED", "-std=c++17", "-c", src, "-o", "tests/expectations/tmp.o"])
     os.remove("tests/expectations/tmp.o")
 
 def run_compile_test(rust_src, verify, c, style=""):
@@ -129,3 +129,5 @@ for test in tests:
         print("Fail - %s" % test)
 
 print("Tests complete. %i passed, %i failed." % (num_pass, num_fail))
+if num_fail > 0:
+    sys.exit(1)

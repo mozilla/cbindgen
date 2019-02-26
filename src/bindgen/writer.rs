@@ -7,6 +7,7 @@ use std::io;
 use std::io::Write;
 
 use bindgen::config::{Braces, Config};
+use bindgen::Bindings;
 
 /// A type of way to format a list.
 pub enum ListType<'a> {
@@ -57,7 +58,7 @@ impl<'a, 'b, F: Write> Write for InnerWriter<'a, 'b, F> {
 /// A utility writer for generating code easier.
 pub struct SourceWriter<'a, F: Write> {
     out: F,
-    config: &'a Config,
+    bindings: &'a Bindings,
     spaces: Vec<usize>,
     line_started: bool,
     line_length: usize,
@@ -67,16 +68,20 @@ pub struct SourceWriter<'a, F: Write> {
 pub type MeasureWriter<'a> = SourceWriter<'a, NullFile>;
 
 impl<'a, F: Write> SourceWriter<'a, F> {
-    pub fn new(out: F, config: &'a Config) -> SourceWriter<'a, F> {
+    pub fn new(out: F, bindings: &'a Bindings) -> Self {
         SourceWriter {
-            out: out,
-            config: config,
+            out,
+            bindings,
             spaces: vec![0],
             line_started: false,
             line_length: 0,
             line_number: 1,
             max_line_length: 0,
         }
+    }
+
+    pub fn bindings(&self) -> &Bindings {
+        &self.bindings
     }
 
     /// Takes a function that writes source and returns the maximum line length
@@ -87,7 +92,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     {
         let mut measurer = SourceWriter {
             out: NullFile,
-            config: self.config,
+            bindings: self.bindings,
             spaces: self.spaces.clone(),
             line_started: self.line_started,
             line_length: self.line_length,
@@ -117,8 +122,8 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn push_tab(&mut self) {
-        let spaces =
-            self.spaces() - (self.spaces() % self.config.tab_width) + self.config.tab_width;
+        let spaces = self.spaces() - (self.spaces() % self.bindings.config.tab_width)
+            + self.bindings.config.tab_width;
         self.spaces.push(spaces);
     }
 
@@ -141,7 +146,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn open_brace(&mut self) {
-        match self.config.braces {
+        match self.bindings.config.braces {
             Braces::SameLine => {
                 self.write(" {");
                 self.push_tab();
@@ -186,7 +191,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         list_type: ListType<'b>,
     ) {
         for (i, ref item) in items.iter().enumerate() {
-            item.write(self.config, self);
+            item.write(&self.bindings.config, self);
 
             match list_type {
                 ListType::Join(text) => {
@@ -209,7 +214,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
         for (i, ref item) in items.iter().enumerate() {
-            item.write(self.config, self);
+            item.write(&self.bindings.config, self);
 
             match list_type {
                 ListType::Join(text) => {

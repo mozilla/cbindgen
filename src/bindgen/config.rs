@@ -284,6 +284,9 @@ pub struct StructConfig {
     pub derive_gt: bool,
     /// Whether to generate a greater than or equal to operator on structs with one field
     pub derive_gte: bool,
+    /// Whether associated constants should be in the body. Only applicable to
+    /// non-transparent structs, and in C++-only.
+    pub associated_constants_in_body: bool,
 }
 
 impl Default for StructConfig {
@@ -297,6 +300,7 @@ impl Default for StructConfig {
             derive_lte: false,
             derive_gt: false,
             derive_gte: false,
+            associated_constants_in_body: false,
         }
     }
 }

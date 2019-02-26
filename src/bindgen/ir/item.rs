@@ -23,7 +23,7 @@ pub trait Item {
     fn export_name(&self) -> &str {
         self.name()
     }
-    fn cfg(&self) -> &Option<Cfg>;
+    fn cfg(&self) -> Option<&Cfg>;
     fn annotations(&self) -> &AnnotationSet;
     fn annotations_mut(&mut self) -> &mut AnnotationSet;
 
@@ -206,7 +206,6 @@ impl<T: Item + Clone> ItemMap<T> {
         }
     }
 
-    #[allow(dead_code)]
     pub fn for_items<F>(&self, path: &Path, mut callback: F)
     where
         F: FnMut(&T),

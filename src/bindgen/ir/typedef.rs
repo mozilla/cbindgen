@@ -32,7 +32,7 @@ pub struct Typedef {
 }
 
 impl Typedef {
-    pub fn load(item: &syn::ItemType, mod_cfg: &Option<Cfg>) -> Result<Typedef, String> {
+    pub fn load(item: &syn::ItemType, mod_cfg: Option<&Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(&item.ty)? {
             let path = Path::new(item.ident.to_string());
             Ok(Typedef::new(
@@ -122,8 +122,8 @@ impl Item for Typedef {
         &self.export_name
     }
 
-    fn cfg(&self) -> &Option<Cfg> {
-        &self.cfg
+    fn cfg(&self) -> Option<&Cfg> {
+        self.cfg.as_ref()
     }
 
     fn annotations(&self) -> &AnnotationSet {

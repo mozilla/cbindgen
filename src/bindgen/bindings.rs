@@ -8,12 +8,17 @@ use std::io::{Read, Write};
 use std::path;
 
 use bindgen::config::{Config, Language};
-use bindgen::ir::{Constant, Function, ItemContainer, Static};
+use bindgen::ir::{
+    Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct,
+};
 use bindgen::writer::{Source, SourceWriter};
 
 /// A bindings header that can be written.
 pub struct Bindings {
-    config: Config,
+    pub config: Config,
+    /// The map from path to struct, used to lookup whether a given type is a
+    /// transparent struct. This is needed to generate code for constants.
+    struct_map: ItemMap<Struct>,
     globals: Vec<Static>,
     constants: Vec<Constant>,
     items: Vec<ItemContainer>,
@@ -23,18 +28,27 @@ pub struct Bindings {
 impl Bindings {
     pub(crate) fn new(
         config: Config,
+        struct_map: ItemMap<Struct>,
         constants: Vec<Constant>,
         globals: Vec<Static>,
         items: Vec<ItemContainer>,
         functions: Vec<Function>,
     ) -> Bindings {
         Bindings {
-            config: config,
-            globals: globals,
-            constants: constants,
-            items: items,
-            functions: functions,
+            config,
+            struct_map,
+            globals,
+            constants,
+            items,
+            functions,
         }
+    }
+
+    // FIXME(emilio): What to do when the configuration doesn't match?
+    pub fn struct_is_transparent(&self, path: &BindgenPath) -> bool {
+        let mut any = false;
+        self.struct_map.for_items(path, |s| any |= s.is_transparent);
+        any
     }
 
     pub fn write_to_file<P: AsRef<path::Path>>(&self, path: P) -> bool {
@@ -126,7 +140,7 @@ impl Bindings {
     }
 
     pub fn write<F: Write>(&self, file: F) {
-        let mut out = SourceWriter::new(file, &self.config);
+        let mut out = SourceWriter::new(file, self);
 
         if !self.config.no_includes
             || !self.config.includes.is_empty()
@@ -142,7 +156,7 @@ impl Bindings {
         for constant in &self.constants {
             if constant.ty.is_primitive_or_ptr_primitive() {
                 out.new_line_if_not_start();
-                constant.write(&self.config, &mut out);
+                constant.write(&self.config, &mut out, None);
                 out.new_line();
             }
         }
@@ -158,14 +172,14 @@ impl Bindings {
             }
 
             out.new_line_if_not_start();
-            match item {
-                &ItemContainer::Constant(..) => unreachable!(),
-                &ItemContainer::Static(..) => unreachable!(),
-                &ItemContainer::Enum(ref x) => x.write(&self.config, &mut out),
-                &ItemContainer::Struct(ref x) => x.write(&self.config, &mut out),
-                &ItemContainer::Union(ref x) => x.write(&self.config, &mut out),
-                &ItemContainer::OpaqueItem(ref x) => x.write(&self.config, &mut out),
-                &ItemContainer::Typedef(ref x) => x.write(&self.config, &mut out),
+            match *item {
+                ItemContainer::Constant(..) => unreachable!(),
+                ItemContainer::Static(..) => unreachable!(),
+                ItemContainer::Enum(ref x) => x.write(&self.config, &mut out),
+                ItemContainer::Struct(ref x) => x.write(&self.config, &mut out),
+                ItemContainer::Union(ref x) => x.write(&self.config, &mut out),
+                ItemContainer::OpaqueItem(ref x) => x.write(&self.config, &mut out),
+                ItemContainer::Typedef(ref x) => x.write(&self.config, &mut out),
             }
             out.new_line();
         }
@@ -173,7 +187,7 @@ impl Bindings {
         for constant in &self.constants {
             if !constant.ty.is_primitive_or_ptr_primitive() {
                 out.new_line_if_not_start();
-                constant.write(&self.config, &mut out);
+                constant.write(&self.config, &mut out, None);
                 out.new_line();
             }
         }

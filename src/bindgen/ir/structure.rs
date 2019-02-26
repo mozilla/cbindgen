@@ -10,8 +10,8 @@ use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Repr, ToCondition, Type, Typedef,
+    AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, GenericParams, Item,
+    ItemContainer, Path, Repr, ToCondition, Type, Typedef,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -37,6 +37,7 @@ pub struct Struct {
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
+    pub associated_constants: Vec<Constant>,
 }
 
 impl Struct {
@@ -45,7 +46,11 @@ impl Struct {
         !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq())
     }
 
-    pub fn load(item: &syn::ItemStruct, mod_cfg: &Option<Cfg>) -> Result<Self, String> {
+    pub fn add_associated_constant(&mut self, c: Constant) {
+        self.associated_constants.push(c);
+    }
+
+    pub fn load(item: &syn::ItemStruct, mod_cfg: Option<&Cfg>) -> Result<Self, String> {
         let is_transparent = match Repr::load(&item.attrs)? {
             Repr::C => false,
             Repr::TRANSPARENT => true,
@@ -118,6 +123,7 @@ impl Struct {
             cfg,
             annotations,
             documentation,
+            associated_constants: vec![],
         }
     }
 
@@ -178,8 +184,8 @@ impl Item for Struct {
         &self.export_name
     }
 
-    fn cfg(&self) -> &Option<Cfg> {
-        &self.cfg
+    fn cfg(&self) -> Option<&Cfg> {
+        self.cfg.as_ref()
     }
 
     fn annotations(&self) -> &AnnotationSet {
@@ -266,6 +272,10 @@ impl Item for Struct {
         for field in &mut self.fields {
             reserved::escape(&mut field.0);
         }
+
+        for c in self.associated_constants.iter_mut() {
+            c.rename_for_config(config);
+        }
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
@@ -278,6 +288,10 @@ impl Item for Struct {
 
         for &(_, ref ty, _) in fields {
             ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
+        }
+
+        for c in &self.associated_constants {
+            c.add_dependencies(library, out);
         }
     }
 
@@ -327,7 +341,12 @@ impl Source for Struct {
                 annotations: self.annotations.clone(),
                 documentation: self.documentation.clone(),
             };
-            return typedef.write(config, out);
+            typedef.write(config, out);
+            for constant in &self.associated_constants {
+                out.new_line();
+                constant.write(config, out, Some(self));
+            }
+            return;
         }
 
         let condition = (&self.cfg).to_condition(config);
@@ -484,11 +503,26 @@ impl Source for Struct {
             out.write_raw_block(body);
         }
 
+        if config.language == Language::Cxx
+            && config.structure.associated_constants_in_body
+            && config.constant.allow_static_const
+        {
+            for constant in &self.associated_constants {
+                out.new_line();
+                constant.write_declaration(config, out, self);
+            }
+        }
+
         if config.language == Language::C && config.style.generate_typedef() {
             out.close_brace(false);
             write!(out, " {};", self.export_name());
         } else {
             out.close_brace(true);
+        }
+
+        for constant in &self.associated_constants {
+            out.new_line();
+            constant.write(config, out, Some(self));
         }
 
         condition.write_after(config, out);

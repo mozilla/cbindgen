@@ -33,7 +33,7 @@ impl OpaqueItem {
         path: Path,
         generics: &syn::Generics,
         attrs: &[syn::Attribute],
-        mod_cfg: &Option<Cfg>,
+        mod_cfg: Option<&Cfg>,
     ) -> Result<OpaqueItem, String> {
         Ok(Self::new(
             path,
@@ -72,8 +72,8 @@ impl Item for OpaqueItem {
         &self.export_name
     }
 
-    fn cfg(&self) -> &Option<Cfg> {
-        &self.cfg
+    fn cfg(&self) -> Option<&Cfg> {
+        self.cfg.as_ref()
     }
 
     fn annotations(&self) -> &AnnotationSet {

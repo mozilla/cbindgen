@@ -3,10 +3,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-struct Foo {
+typedef uint8_t Transparent;
 
-};
-#define Foo_GA 10
-#define Foo_ZO 3.14
-
-void root(struct Foo x);
+#define FOO 0
