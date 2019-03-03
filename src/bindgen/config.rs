@@ -351,7 +351,7 @@ impl StructConfig {
 }
 
 /// Settings to apply to generated enums.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
@@ -366,17 +366,14 @@ pub struct EnumConfig {
     /// Whether to generate static `::X(..)` constructors and `IsX()`
     /// methods for tagged enums.
     pub derive_helper_methods: bool,
-}
-
-impl Default for EnumConfig {
-    fn default() -> EnumConfig {
-        EnumConfig {
-            rename_variants: None,
-            add_sentinel: false,
-            prefix_with_name: false,
-            derive_helper_methods: false,
-        }
-    }
+    /// Whether to generate `AsX() const` methods for tagged enums.
+    pub derive_const_casts: bool,
+    /// Whether to generate `AsX()` methods for tagged enums.
+    pub derive_mut_casts: bool,
+    /// The name of the macro to use for `derive_{const,mut}casts`. If custom, you're
+    /// responsible to provide the necessary header, otherwise `assert` will be
+    /// used, and `<cassert>` will be included.
+    pub cast_assert_name: Option<String>,
 }
 
 impl EnumConfig {
@@ -391,6 +388,18 @@ impl EnumConfig {
             return x;
         }
         self.derive_helper_methods
+    }
+    pub(crate) fn derive_const_casts(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-const-casts") {
+            return x;
+        }
+        self.derive_const_casts
+    }
+    pub(crate) fn derive_mut_casts(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-mut-casts") {
+            return x;
+        }
+        self.derive_mut_casts
     }
 }
 

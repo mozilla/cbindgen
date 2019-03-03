@@ -75,4 +75,88 @@ struct StyleBar_i32 {
   };
 };
 
-void foo(const union StyleFoo_i32 *foo, const struct StyleBar_i32 *bar);
+struct StylePoint_u32 {
+  uint32_t x;
+  uint32_t y;
+};
+
+enum StyleBar_u32_Tag {
+  Bar1_u32,
+  Bar2_u32,
+  Bar3_u32,
+  Bar4_u32,
+};
+
+struct StyleBar1_Body_u32 {
+  int32_t x;
+  struct StylePoint_u32 y;
+  struct StylePoint_f32 z;
+};
+
+struct StyleBar2_Body_u32 {
+  uint32_t _0;
+};
+
+struct StyleBar3_Body_u32 {
+  struct StylePoint_u32 _0;
+};
+
+struct StyleBar_u32 {
+  enum StyleBar_u32_Tag tag;
+  union {
+    struct StyleBar1_Body_u32 bar1;
+    struct StyleBar2_Body_u32 bar2;
+    struct StyleBar3_Body_u32 bar3;
+  };
+};
+
+enum StyleBaz_Tag {
+  Baz1,
+  Baz2,
+  Baz3,
+};
+typedef uint8_t StyleBaz_Tag;
+
+struct StyleBaz1_Body {
+  StyleBaz_Tag tag;
+  struct StyleBar_u32 _0;
+};
+
+struct StyleBaz2_Body {
+  StyleBaz_Tag tag;
+  struct StylePoint_i32 _0;
+};
+
+union StyleBaz {
+  enum StyleBaz_Tag tag;
+  struct StyleBaz1_Body baz1;
+  struct StyleBaz2_Body baz2;
+};
+
+enum StyleTaz_Tag {
+  Taz1,
+  Taz2,
+  Taz3,
+};
+typedef uint8_t StyleTaz_Tag;
+
+struct StyleTaz1_Body {
+  struct StyleBar_u32 _0;
+};
+
+struct StyleTaz2_Body {
+  union StyleBaz _0;
+};
+
+struct StyleTaz {
+  enum StyleTaz_Tag tag;
+  union {
+    struct StyleTaz1_Body taz1;
+    struct StyleTaz2_Body taz2;
+  };
+};
+
+void foo(const union StyleFoo_i32 *foo,
+         const struct StyleBar_i32 *bar,
+         const union StyleBaz *baz,
+         const struct StyleTaz *taz);

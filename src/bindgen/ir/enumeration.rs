@@ -647,9 +647,8 @@ impl Source for Enum {
             let skip_fields = if separate_tag { 0 } else { 1 };
 
             // Emit convenience methods
-            if config.language == Language::Cxx
-                && config.enumeration.derive_helper_methods(&self.annotations)
-            {
+            let derive_helper_methods = config.enumeration.derive_helper_methods(&self.annotations);
+            if config.language == Language::Cxx && derive_helper_methods {
                 for variant in &self.variants {
                     out.new_line();
                     out.new_line();
@@ -730,6 +729,75 @@ impl Source for Enum {
                     out.open_brace();
                     write!(out, "return tag == {}::{};", enum_name, variant.export_name);
                     out.close_brace(false);
+                }
+            }
+
+            let derive_const_casts = config.enumeration.derive_const_casts(&self.annotations);
+            let derive_mut_casts = config.enumeration.derive_mut_casts(&self.annotations);
+            if config.language == Language::Cxx
+                && derive_helper_methods
+                && (derive_const_casts || derive_mut_casts)
+            {
+                let assert_name = match config.enumeration.cast_assert_name {
+                    Some(ref n) => &**n,
+                    None => "assert",
+                };
+
+                for variant in &self.variants {
+                    let (member_name, body) = match variant.body {
+                        Some((ref member_name, ref body)) => (member_name, body),
+                        None => continue,
+                    };
+
+                    let field_count = body.fields.len() - skip_fields;
+                    if field_count == 0 {
+                        continue;
+                    }
+
+                    let dig = field_count == 1 && body.tuple_struct;
+                    let mut derive_casts = |const_casts: bool| {
+                        out.new_line();
+                        out.new_line();
+
+                        if dig {
+                            let field = body.fields.iter().skip(skip_fields).next().unwrap();
+                            let return_type = field.1.clone();
+                            let return_type = if const_casts {
+                                Type::Ref(Box::new(return_type))
+                            } else {
+                                Type::MutRef(Box::new(return_type))
+                            };
+                            return_type.write(config, out);
+                        } else {
+                            if const_casts {
+                                write!(out, "const {}&", body.export_name());
+                            } else {
+                                write!(out, "{}&", body.export_name());
+                            }
+                        }
+
+                        write!(out, " As{}()", variant.export_name);
+                        if const_casts {
+                            write!(out, " const");
+                        }
+                        out.open_brace();
+                        write!(out, "{}(Is{}());", assert_name, variant.export_name);
+                        out.new_line();
+                        if dig {
+                            write!(out, "return {}._0;", member_name);
+                        } else {
+                            write!(out, "return {};", member_name);
+                        }
+                        out.close_brace(false);
+                    };
+
+                    if derive_const_casts {
+                        derive_casts(true)
+                    }
+
+                    if derive_mut_casts {
+                        derive_casts(false)
+                    }
                 }
             }
 

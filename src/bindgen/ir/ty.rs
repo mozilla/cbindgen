@@ -204,7 +204,6 @@ pub enum Type {
     ConstPtr(Box<Type>),
     Ptr(Box<Type>),
     Ref(Box<Type>),
-    #[allow(dead_code)] // MutRef is not currently used
     MutRef(Box<Type>),
     Path(GenericPath),
     Primitive(PrimitiveType),
