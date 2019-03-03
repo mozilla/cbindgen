@@ -1,0 +1,10 @@
+# This is a bit of an abuse of the warning config...
+autogen_warning = """
+#define MY_ASSERT(...) do { } while (0)
+"""
+
+[enum]
+derive_helper_methods = true
+derive_const_casts = true
+derive_mut_casts = true
+cast_assert_name = "MY_ASSERT"
