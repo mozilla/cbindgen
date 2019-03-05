@@ -11,6 +11,7 @@ use syn;
 
 use bindgen::bitflags;
 use bindgen::cargo::{Cargo, PackageRef};
+use bindgen::config::MacroExpansionConfig;
 use bindgen::error::Error;
 use bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
@@ -30,11 +31,15 @@ const STD_CRATES: &'static [&'static str] = &[
 type ParseResult = Result<Parse, Error>;
 
 /// Parses a single rust source file, not following `mod` or `extern crate`.
-pub fn parse_src(src_file: &FilePath) -> ParseResult {
+pub fn parse_src(
+    src_file: &FilePath,
+    macro_expansion_config: &MacroExpansionConfig,
+) -> ParseResult {
     let mod_name = src_file.file_stem().unwrap().to_str().unwrap();
 
     let mut context = Parser {
         binding_crate_name: mod_name.to_owned(),
+        macro_expansion_config,
         lib: None,
         parse_deps: true,
         include: None,
@@ -66,6 +71,7 @@ pub fn parse_src(src_file: &FilePath) -> ParseResult {
 /// command to find the location of dependencies.
 pub(crate) fn parse_lib(
     lib: Cargo,
+    macro_expansion_config: &MacroExpansionConfig,
     parse_deps: bool,
     include: &Option<Vec<String>>,
     exclude: &[String],
@@ -76,6 +82,7 @@ pub(crate) fn parse_lib(
 ) -> ParseResult {
     let mut context = Parser {
         binding_crate_name: lib.binding_crate_name().to_owned(),
+        macro_expansion_config,
         lib: Some(lib),
         parse_deps: parse_deps,
         include: include.clone(),
@@ -97,8 +104,9 @@ pub(crate) fn parse_lib(
 }
 
 #[derive(Debug, Clone)]
-struct Parser {
+struct Parser<'a> {
     binding_crate_name: String,
+    macro_expansion_config: &'a MacroExpansionConfig,
     lib: Option<Cargo>,
     parse_deps: bool,
 
@@ -118,7 +126,7 @@ struct Parser {
     out: Parse,
 }
 
-impl Parser {
+impl<'a> Parser<'a> {
     fn should_parse_dependency(&self, pkg_name: &String) -> bool {
         if self.parsed_crates.contains(pkg_name) {
             return false;
@@ -201,6 +209,7 @@ impl Parser {
 
     fn process_expanded_mod(&mut self, pkg: &PackageRef, items: &[syn::Item]) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
+            &self.macro_expansion_config,
             &self.binding_crate_name,
             &pkg.name,
             Cfg::join(&self.cfg_stack).as_ref(),
@@ -310,6 +319,7 @@ impl Parser {
         items: &[syn::Item],
     ) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
+            &self.macro_expansion_config,
             &self.binding_crate_name,
             &pkg.name,
             Cfg::join(&self.cfg_stack).as_ref(),
@@ -486,6 +496,7 @@ impl Parse {
 
     pub fn load_syn_crate_mod(
         &mut self,
+        macro_expansion_config: &MacroExpansionConfig,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
@@ -531,9 +542,13 @@ impl Parse {
                         impls_with_assoc_consts.push(item_impl);
                     }
                 }
-                syn::Item::Macro(ref item) => {
-                    self.load_builtin_macro(binding_crate_name, crate_name, mod_cfg, item)
-                }
+                syn::Item::Macro(ref item) => self.load_builtin_macro(
+                    macro_expansion_config,
+                    binding_crate_name,
+                    crate_name,
+                    mod_cfg,
+                    item,
+                ),
                 _ => {}
             }
         }
@@ -876,6 +891,7 @@ impl Parse {
 
     fn load_builtin_macro(
         &mut self,
+        macro_expansion_config: &MacroExpansionConfig,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
@@ -886,7 +902,7 @@ impl Parse {
             None => return,
         };
 
-        if name != "bitflags" {
+        if name != "bitflags" || !macro_expansion_config.bitflags {
             return;
         }
 
