@@ -412,6 +412,16 @@ impl Default for ConstantConfig {
     }
 }
 
+/// Settings for custom macro expansion.
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct MacroExpansionConfig {
+    /// Whether the `bitflags` macro should be expanded.
+    pub bitflags: bool,
+}
+
 /// Settings to apply when running `rustc --pretty=expanded`
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -560,6 +570,8 @@ pub struct Config {
     pub parse: ParseConfig,
     /// The configuration options for exporting
     pub export: ExportConfig,
+    /// The configuration options for macros.
+    pub macro_expansion: MacroExpansionConfig,
     /// The configuration options for functions
     #[serde(rename = "fn")]
     pub function: FunctionConfig,
@@ -596,6 +608,7 @@ impl Default for Config {
             tab_width: 2,
             language: Language::Cxx,
             style: Style::Type,
+            macro_expansion: Default::default(),
             parse: ParseConfig::default(),
             export: ExportConfig::default(),
             function: FunctionConfig::default(),

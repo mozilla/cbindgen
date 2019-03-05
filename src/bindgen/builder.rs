@@ -295,7 +295,7 @@ impl Builder {
         }
 
         for x in &self.srcs {
-            result.extend_with(&parser::parse_src(x)?);
+            result.extend_with(&parser::parse_src(x, &self.config.macro_expansion)?);
         }
 
         if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
@@ -321,6 +321,7 @@ impl Builder {
 
             result.extend_with(&parser::parse_lib(
                 cargo,
+                &self.config.macro_expansion,
                 self.config.parse.parse_deps,
                 &self.config.parse.include,
                 &self.config.parse.exclude,
@@ -332,6 +333,7 @@ impl Builder {
         } else if let Some(cargo) = self.lib_cargo.clone() {
             result.extend_with(&parser::parse_lib(
                 cargo,
+                &self.config.macro_expansion,
                 self.config.parse.parse_deps,
                 &self.config.parse.include,
                 &self.config.parse.exclude,
