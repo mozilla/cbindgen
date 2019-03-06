@@ -36,6 +36,7 @@ impl Bitflags {
         } = *self;
 
         let struct_ = parse_quote! {
+            /// cbindgen:internal-derive-bitflags=true
             #(#attrs)*
             #vis struct #name {
                 bits: #repr,

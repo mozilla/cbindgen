@@ -437,6 +437,82 @@ impl Source for Struct {
                 String::from("other")
             };
 
+            if self
+                .annotations
+                .bool("internal-derive-bitflags")
+                .unwrap_or(false)
+            {
+                if !wrote_start_newline {
+                    wrote_start_newline = true;
+                    out.new_line();
+                }
+                out.new_line();
+                write!(out, "explicit operator bool() const");
+                out.open_brace();
+                write!(out, "return !!bits;");
+                out.close_brace(false);
+
+                out.new_line();
+                write!(
+                    out,
+                    "{} operator|(const {}& {}) const",
+                    self.export_name(),
+                    self.export_name(),
+                    other
+                );
+                out.open_brace();
+                write!(
+                    out,
+                    "return {{static_cast<decltype(bits)>(this->bits | {}.bits)}};",
+                    other
+                );
+                out.close_brace(false);
+
+                out.new_line();
+                write!(
+                    out,
+                    "{}& operator|=(const {}& {})",
+                    self.export_name(),
+                    self.export_name(),
+                    other
+                );
+                out.open_brace();
+                write!(out, "*this = (*this | {});", other);
+                out.new_line();
+                write!(out, "return *this;");
+                out.close_brace(false);
+
+                out.new_line();
+                write!(
+                    out,
+                    "{} operator&(const {}& {}) const",
+                    self.export_name(),
+                    self.export_name(),
+                    other
+                );
+                out.open_brace();
+                write!(
+                    out,
+                    "return {{static_cast<decltype(bits)>(this->bits & {}.bits)}};",
+                    other
+                );
+                out.close_brace(false);
+
+                out.new_line();
+                write!(
+                    out,
+                    "{}& operator&=(const {}& {})",
+                    self.export_name(),
+                    self.export_name(),
+                    other
+                );
+                out.open_brace();
+                write!(out, "*this = (*this & {});", other);
+                out.new_line();
+                write!(out, "return *this;");
+                out.close_brace(false);
+            }
+
             let skip_fields = if self.is_tagged { 1 } else { 0 };
 
             let mut emit_op = |op, conjuc| {
