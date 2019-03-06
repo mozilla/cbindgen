@@ -6,6 +6,24 @@
 /// These constants match Gecko's `NS_STYLE_ALIGN_*` constants.
 struct AlignFlags {
   uint8_t bits;
+
+  explicit operator bool() const {
+    return !!bits;
+  }
+  AlignFlags operator|(const AlignFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits | other.bits)};
+  }
+  AlignFlags& operator|=(const AlignFlags& other) {
+    *this = (*this | other);
+    return *this;
+  }
+  AlignFlags operator&(const AlignFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits & other.bits)};
+  }
+  AlignFlags& operator&=(const AlignFlags& other) {
+    *this = (*this & other);
+    return *this;
+  }
 };
 static const AlignFlags AlignFlags_AUTO = (AlignFlags){ .bits = 0 };
 static const AlignFlags AlignFlags_NORMAL = (AlignFlags){ .bits = 1 };
