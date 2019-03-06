@@ -18,6 +18,7 @@ use bindgen::ir::{
 };
 use bindgen::library::Library;
 use bindgen::writer::{Source, SourceWriter};
+use bindgen::Bindings;
 
 #[derive(Debug, Clone)]
 pub enum Literal {
@@ -32,6 +33,20 @@ pub enum Literal {
         export_name: String,
         fields: Vec<(String, Literal)>,
     },
+}
+
+impl Literal {
+    fn is_valid(&self, bindings: &Bindings) -> bool {
+        match *self {
+            Literal::Expr(..) => true,
+            Literal::BinOp {
+                ref left,
+                ref right,
+                ..
+            } => left.is_valid(bindings) && right.is_valid(bindings),
+            Literal::Struct { ref path, .. } => bindings.struct_exists(path),
+        }
+    }
 }
 
 impl fmt::Display for Literal {
@@ -329,6 +344,10 @@ impl Constant {
             if assoc.is_generic() {
                 return; // Not tested / implemented yet, so bail out.
             }
+        }
+
+        if !self.value.is_valid(out.bindings()) {
+            return;
         }
 
         let associated_to_transparent = associated_to_struct.map_or(false, |s| s.is_transparent);

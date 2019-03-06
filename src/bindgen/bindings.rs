@@ -51,6 +51,12 @@ impl Bindings {
         any
     }
 
+    pub fn struct_exists(&self, path: &BindgenPath) -> bool {
+        let mut any = false;
+        self.struct_map.for_items(path, |_| any = true);
+        any
+    }
+
     pub fn write_to_file<P: AsRef<path::Path>>(&self, path: P) -> bool {
         // Don't compare files if we've never written this file before
         if !path.as_ref().is_file() {
