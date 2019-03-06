@@ -542,25 +542,20 @@ impl Parse {
                         impls_with_assoc_consts.push(item_impl);
                     }
                 }
-                syn::Item::Macro(ref item) => self.load_builtin_macro(
-                    macro_expansion_config,
-                    binding_crate_name,
-                    crate_name,
-                    mod_cfg,
-                    item,
-                ),
+                syn::Item::Macro(ref item) => {
+                    self.load_builtin_macro(macro_expansion_config, crate_name, mod_cfg, item)
+                }
                 _ => {}
             }
         }
 
         for item_impl in impls_with_assoc_consts {
-            self.load_syn_assoc_consts_from_impl(binding_crate_name, crate_name, mod_cfg, item_impl)
+            self.load_syn_assoc_consts_from_impl(crate_name, mod_cfg, item_impl)
         }
     }
 
     fn load_syn_assoc_consts_from_impl(
         &mut self,
-        binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item_impl: &syn::ItemImpl,
@@ -570,7 +565,6 @@ impl Parse {
             _ => None,
         });
         self.load_syn_assoc_consts(
-            binding_crate_name,
             crate_name,
             mod_cfg,
             &item_impl.self_ty,
@@ -676,7 +670,6 @@ impl Parse {
     /// Loads associated `const` declarations
     fn load_syn_assoc_consts<'a, I>(
         &mut self,
-        binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         impl_ty: &syn::Type,
@@ -698,14 +691,6 @@ impl Parse {
         let impl_path = ty.unwrap().get_root_path().unwrap();
 
         for item in items.into_iter() {
-            if crate_name != binding_crate_name {
-                info!(
-                    "Skip {}::{} - (const's outside of the binding crate are not used).",
-                    crate_name, &item.ident
-                );
-                continue;
-            }
-
             let path = Path::new(item.ident.to_string());
             match Constant::load(
                 path,
@@ -892,7 +877,6 @@ impl Parse {
     fn load_builtin_macro(
         &mut self,
         macro_expansion_config: &MacroExpansionConfig,
-        binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemMacro,
@@ -919,6 +903,6 @@ impl Parse {
         // We know that the expansion will only reference `struct_`, so it's
         // fine to just do it here instead of deferring it like we do with the
         // other calls to this function.
-        self.load_syn_assoc_consts_from_impl(binding_crate_name, crate_name, mod_cfg, &impl_);
+        self.load_syn_assoc_consts_from_impl(crate_name, mod_cfg, &impl_);
     }
 }
