@@ -393,24 +393,44 @@ impl Type {
         }
     }
 
+    pub fn replace_self_with(&mut self, self_ty: &Path) {
+        match *self {
+            Type::Array(ref mut ty, ..)
+            | Type::MutRef(ref mut ty)
+            | Type::Ref(ref mut ty)
+            | Type::Ptr(ref mut ty)
+            | Type::ConstPtr(ref mut ty) => ty.replace_self_with(self_ty),
+            Type::Path(ref mut generic_path) => {
+                generic_path.replace_self_with(self_ty);
+            }
+            Type::Primitive(..) => {}
+            Type::FuncPtr(ref mut ret, ref mut args) => {
+                ret.replace_self_with(self_ty);
+                for arg in args {
+                    arg.1.replace_self_with(self_ty);
+                }
+            }
+        }
+    }
+
     pub fn get_root_path(&self) -> Option<Path> {
         let mut current = self;
         loop {
-            match current {
-                &Type::ConstPtr(ref ty) => current = ty,
-                &Type::Ptr(ref ty) => current = ty,
-                &Type::Ref(ref ty) => current = ty,
-                &Type::MutRef(ref ty) => current = ty,
-                &Type::Path(ref generic) => {
+            match *current {
+                Type::ConstPtr(ref ty) => current = ty,
+                Type::Ptr(ref ty) => current = ty,
+                Type::Ref(ref ty) => current = ty,
+                Type::MutRef(ref ty) => current = ty,
+                Type::Path(ref generic) => {
                     return Some(generic.path().clone());
                 }
-                &Type::Primitive(..) => {
+                Type::Primitive(..) => {
                     return None;
                 }
-                &Type::Array(..) => {
+                Type::Array(..) => {
                     return None;
                 }
-                &Type::FuncPtr(..) => {
+                Type::FuncPtr(..) => {
                     return None;
                 }
             };

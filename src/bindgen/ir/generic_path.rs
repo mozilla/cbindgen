@@ -74,6 +74,15 @@ impl GenericPath {
         }
     }
 
+    pub fn replace_self_with(&mut self, self_ty: &Path) {
+        if self.path.replace_self_with(self_ty) {
+            self.export_name = self_ty.name().to_owned();
+        }
+        for ty in &mut self.generics {
+            ty.replace_self_with(self_ty);
+        }
+    }
+
     pub fn path(&self) -> &Path {
         &self.path
     }

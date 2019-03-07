@@ -10,6 +10,8 @@ typedef struct Foo {
   uint32_t b;
 } Foo;
 #define Foo_FOO (Foo){ .a = 42, .b = 47 }
+#define Foo_FOO2 (Foo){ .a = 42, .b = 47 }
+#define Foo_FOO3 (Foo){ .a = 42, .b = 47 }
 
 
 #define BAR (Foo){ .a = 42, .b = 1337 }
