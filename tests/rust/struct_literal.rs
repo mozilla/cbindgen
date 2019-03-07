@@ -11,6 +11,8 @@ struct Bar {
 
 impl Foo {
     const FOO: Foo = Foo { a: 42, b: 47, };
+    const FOO2: Self = Foo { a: 42, b: 47, };
+    const FOO3: Self = Self { a: 42, b: 47, };
     const BAZ: Bar = Bar { a: 42, b: 47, };
 }
 

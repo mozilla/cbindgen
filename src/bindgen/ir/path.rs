@@ -21,6 +21,14 @@ impl Path {
     pub fn name(&self) -> &str {
         &self.name
     }
+
+    pub fn replace_self_with(&mut self, path: &Self) -> bool {
+        if self.name() != "Self" {
+            return false;
+        }
+        *self = path.clone();
+        true
+    }
 }
 
 impl PartialOrd for Path {

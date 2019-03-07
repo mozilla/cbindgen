@@ -36,6 +36,24 @@ pub enum Literal {
 }
 
 impl Literal {
+    fn replace_self_with(&mut self, self_ty: &Path) {
+        match *self {
+            Literal::BinOp { .. } | Literal::Expr(..) => {}
+            Literal::Struct {
+                ref mut path,
+                ref mut export_name,
+                ref mut fields,
+            } => {
+                if path.replace_self_with(self_ty) {
+                    *export_name = self_ty.name().to_owned();
+                }
+                for &mut (ref _name, ref mut expr) in fields {
+                    expr.replace_self_with(self_ty);
+                }
+            }
+        }
+    }
+
     fn is_valid(&self, bindings: &Bindings) -> bool {
         match *self {
             Literal::Expr(..) => true,
@@ -225,7 +243,7 @@ impl Constant {
         associated_to: Option<Path>,
     ) -> Result<Constant, String> {
         let ty = Type::load(ty)?;
-        let ty = match ty {
+        let mut ty = match ty {
             Some(ty) => ty,
             None => {
                 return Err("Cannot have a zero sized const definition.".to_owned());
@@ -236,10 +254,17 @@ impl Constant {
             return Err("Unhanded const definition".to_owned());
         }
 
+        let mut lit = Literal::load(&expr)?;
+
+        if let Some(ref associated_to) = associated_to {
+            ty.replace_self_with(associated_to);
+            lit.replace_self_with(associated_to);
+        }
+
         Ok(Constant::new(
             path,
             ty,
-            Literal::load(&expr)?,
+            lit,
             Cfg::append(mod_cfg, Cfg::load(attrs)),
             AnnotationSet::load(attrs)?,
             Documentation::load(attrs),
