@@ -158,6 +158,7 @@ impl Bindings {
         if !self.config.no_includes
             || !self.config.includes.is_empty()
             || !self.config.sys_includes.is_empty()
+            || !self.config.header.is_none()
         {
             self.write_headers(&mut out);
         }
