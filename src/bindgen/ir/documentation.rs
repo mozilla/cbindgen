@@ -49,7 +49,6 @@ impl Source for Documentation {
         // Following these documents for style conventions:
         // https://en.wikibooks.org/wiki/C++_Programming/Code/Style_Conventions/Comments
         // https://www.cs.cmu.edu/~410/doc/doxygen.html
-        // https://www.oracle.com/technetwork/java/codeconventions-141999.html#385
         match style {
             DocumentationStyle::C => {
                 out.write("/*");
