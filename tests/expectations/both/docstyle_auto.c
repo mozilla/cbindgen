@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/*
- The root of all evil.
+/**
+ * The root of all evil.
  */
 void root(void);

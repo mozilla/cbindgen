@@ -117,7 +117,7 @@ impl FromStr for DocumentationStyle {
             "c" => Ok(DocumentationStyle::C),
             "cxx" => Ok(DocumentationStyle::Cxx),
             "c++" => Ok(DocumentationStyle::Cxx),
-            "doxylight" => Ok(DocumentationStyle::DoxyLight),
+            "doxy" => Ok(DocumentationStyle::DoxyLight),
             "auto" => Ok(DocumentationStyle::Auto),
             _ => Err(format!("Unrecognized documentation style: '{}'.", s)),
         }

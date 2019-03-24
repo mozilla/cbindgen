@@ -40,7 +40,7 @@ impl Source for Documentation {
         }
 
         let style = match &config.documentation_style {
-            DocumentationStyle::Auto if config.language == Language::C => DocumentationStyle::C,
+            DocumentationStyle::Auto if config.language == Language::C => DocumentationStyle::DoxyLight,
             DocumentationStyle::Auto if config.language == Language::Cxx => DocumentationStyle::Cxx,
             DocumentationStyle::Auto => DocumentationStyle::C, // Fallback if `Language` gets extended.
             other => *other,
