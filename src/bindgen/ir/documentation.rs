@@ -40,7 +40,7 @@ impl Source for Documentation {
         }
 
         let style = match &config.documentation_style {
-            DocumentationStyle::Auto if config.language == Language::C => DocumentationStyle::DoxyLight,
+            DocumentationStyle::Auto if config.language == Language::C => DocumentationStyle::Doxy,
             DocumentationStyle::Auto if config.language == Language::Cxx => DocumentationStyle::Cxx,
             DocumentationStyle::Auto => DocumentationStyle::C, // Fallback if `Language` gets extended.
             other => *other,
@@ -55,7 +55,7 @@ impl Source for Documentation {
                 out.new_line();
             }
 
-            DocumentationStyle::DoxyLight => {
+            DocumentationStyle::Doxy => {
                 out.write("/**");
                 out.new_line();
             }
@@ -66,7 +66,7 @@ impl Source for Documentation {
         for line in &self.doc_comment {
             match style {
                 DocumentationStyle::C => out.write(""),
-                DocumentationStyle::DoxyLight => out.write(" *"),
+                DocumentationStyle::Doxy => out.write(" *"),
                 DocumentationStyle::Cxx => out.write("///"),
                 DocumentationStyle::Auto => unreachable!(), // Auto case should always be covered
             }
@@ -84,7 +84,7 @@ impl Source for Documentation {
                 out.new_line();
             }
 
-            DocumentationStyle::DoxyLight => {
+            DocumentationStyle::Doxy => {
                 out.write(" */");
                 out.new_line();
             }

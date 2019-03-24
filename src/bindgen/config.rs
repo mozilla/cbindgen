@@ -104,7 +104,7 @@ deserialize_enum_str!(Layout);
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum DocumentationStyle {
     C,
-    DoxyLight,
+    Doxy,
     Cxx,
     Auto,
 }
@@ -117,7 +117,7 @@ impl FromStr for DocumentationStyle {
             "c" => Ok(DocumentationStyle::C),
             "cxx" => Ok(DocumentationStyle::Cxx),
             "c++" => Ok(DocumentationStyle::Cxx),
-            "doxy" => Ok(DocumentationStyle::DoxyLight),
+            "doxy" => Ok(DocumentationStyle::Doxy),
             "auto" => Ok(DocumentationStyle::Auto),
             _ => Err(format!("Unrecognized documentation style: '{}'.", s)),
         }
