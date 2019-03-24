@@ -100,7 +100,7 @@ impl FromStr for Layout {
 
 deserialize_enum_str!(Layout);
 
-/// How the documentation
+/// How the comments containing documentation should be styled.
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum DocumentationStyle {
     C,
