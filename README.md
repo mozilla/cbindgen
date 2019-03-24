@@ -20,7 +20,7 @@ This project can be used to generate C bindings for Rust code. It is currently b
   * Support for generating `#ifdef`'s for `#[cfg]` attributes
   * Support for `#[repr(sized)]` tagged enum's
 
-## Installation  
+## Installation
 
 ```
 cargo install cbindgen
@@ -139,6 +139,12 @@ default_features = true
 # being expanded. The crate's `Cargo.toml` must take care of enabling the
 # appropriate features in its dependencies
 features = ["cbindgen"]
+
+[embed]
+# A file that will be embedded into the generated output. It will be embedded
+# before any generated declarions, but after the common includes and guards. The
+# file is loaded from the directory containing `cbindgen.toml`.
+before = "file.h"
 
 [export]
 # A list of additional items not used by exported functions to include in
