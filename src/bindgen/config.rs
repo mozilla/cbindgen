@@ -100,6 +100,32 @@ impl FromStr for Layout {
 
 deserialize_enum_str!(Layout);
 
+/// How the comments containing documentation should be styled.
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum DocumentationStyle {
+    C,
+    Doxy,
+    Cxx,
+    Auto,
+}
+
+impl FromStr for DocumentationStyle {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<DocumentationStyle, Self::Err> {
+        match s.to_lowercase().as_ref() {
+            "c" => Ok(DocumentationStyle::C),
+            "cxx" => Ok(DocumentationStyle::Cxx),
+            "c++" => Ok(DocumentationStyle::Cxx),
+            "doxy" => Ok(DocumentationStyle::Doxy),
+            "auto" => Ok(DocumentationStyle::Auto),
+            _ => Err(format!("Unrecognized documentation style: '{}'.", s)),
+        }
+    }
+}
+
+deserialize_enum_str!(DocumentationStyle);
+
 /// A style of Style to use when generating structs and enums.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Style {
@@ -597,6 +623,8 @@ pub struct Config {
     pub defines: HashMap<String, String>,
     /// Include doc comments from rust as documentation
     pub documentation: bool,
+    /// How documentation comments should be styled.
+    pub documentation_style: DocumentationStyle,
 }
 
 impl Default for Config {
@@ -626,6 +654,7 @@ impl Default for Config {
             constant: ConstantConfig::default(),
             defines: HashMap::new(),
             documentation: true,
+            documentation_style: DocumentationStyle::Auto,
         }
     }
 }

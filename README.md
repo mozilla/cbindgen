@@ -20,7 +20,7 @@ This project can be used to generate C bindings for Rust code. It is currently b
   * Support for generating `#ifdef`'s for `#[cfg]` attributes
   * Support for `#[repr(sized)]` tagged enum's
 
-## Installation  
+## Installation
 
 ```
 cargo install cbindgen
@@ -104,6 +104,10 @@ tab_width = 2
 language = "[C|C++]"
 # A rule to use to select style of declaration in C, tagname vs typedef
 style = "[Both|Type|Tag]"
+# How the generated documentation should be commented.
+# C uses /* */; C++ uses //; Doxy is like C but with leading * per line.
+documentation_style = "[C, C++, Doxy]"
+
 
 [defines]
 # A rule for generating `#ifdef`s for matching `#[cfg]`ed items,
