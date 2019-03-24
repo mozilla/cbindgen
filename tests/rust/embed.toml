@@ -1,0 +1,6 @@
+[embed]
+before = "embed.h"
+
+[fn]
+prefix = "API"
+

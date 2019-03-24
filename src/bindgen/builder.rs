@@ -16,6 +16,7 @@ use bindgen::parser::{self, Parse};
 pub struct Builder {
     config: Config,
     srcs: Vec<path::PathBuf>,
+    root: Option<path::PathBuf>,
     lib: Option<(path::PathBuf, Option<String>)>,
     lib_cargo: Option<Cargo>,
     std_types: bool,
@@ -27,6 +28,7 @@ impl Builder {
         Builder {
             config: Config::default(),
             srcs: Vec::new(),
+            root: None,
             lib: None,
             lib_cargo: None,
             std_types: true,
@@ -149,6 +151,12 @@ impl Builder {
             .export
             .rename
             .insert(String::from(from.as_ref()), String::from(to.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_root<S: AsRef<path::Path>>(mut self, root: S) -> Builder {
+        self.root = Some(root.as_ref().to_path_buf());
         self
     }
 
@@ -346,6 +354,7 @@ impl Builder {
 
         Library::new(
             self.config,
+            self.root,
             result.constants,
             result.globals,
             result.enums,

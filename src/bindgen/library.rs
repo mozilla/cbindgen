@@ -14,10 +14,12 @@ use bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use bindgen::monomorph::Monomorphs;
 use bindgen::ItemType;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
 pub struct Library {
     config: Config,
+    root: Option<PathBuf>,
     constants: ItemMap<Constant>,
     globals: ItemMap<Static>,
     enums: ItemMap<Enum>,
@@ -31,6 +33,7 @@ pub struct Library {
 impl Library {
     pub fn new(
         config: Config,
+        root: Option<PathBuf>,
         constants: ItemMap<Constant>,
         globals: ItemMap<Static>,
         enums: ItemMap<Enum>,
@@ -42,6 +45,7 @@ impl Library {
     ) -> Library {
         Library {
             config: config,
+            root: root,
             constants: constants,
             globals: globals,
             enums: enums,
@@ -115,6 +119,7 @@ impl Library {
 
         Ok(Bindings::new(
             self.config,
+            self.root,
             self.structs,
             constants,
             globals,

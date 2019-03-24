@@ -24,7 +24,7 @@ use clap::{App, Arg, ArgMatches};
 mod bindgen;
 mod logging;
 
-use bindgen::{Bindings, Builder, Cargo, Config, Error, Language, Style};
+use bindgen::{Bindings, Builder, Cargo, Config, ConfigLoader, Error, Language, Style};
 
 fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // We allow specifying a language to override the config default. This is
@@ -66,15 +66,19 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
     // If a file is specified then we load it as a single source
     if !input.is_dir() {
         // Load any config specified or search in the input directory
-        let mut config = match matches.value_of("config") {
-            Some(c) => Config::from_file(c).unwrap(),
-            None => Config::from_root_or_default(input),
+        let config_loader = match matches.value_of("config") {
+            Some(c) => ConfigLoader::from_file(c).unwrap(),
+            None => ConfigLoader::from_root_or_default(input),
         };
+
+        let root = config_loader.root().clone();
+        let mut config = config_loader.into();
 
         apply_config_overrides(&mut config, &matches);
 
         return Builder::new()
             .with_config(config)
+            .with_root(root)
             .with_src(input)
             .generate();
     }
@@ -89,25 +93,29 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
     )?;
 
     // Load any config specified or search in the binding crate directory
-    let mut config = match matches.value_of("config") {
-        Some(c) => Config::from_file(c).unwrap(),
+    let config_loader = match matches.value_of("config") {
+        Some(c) => ConfigLoader::from_file(c).unwrap(),
         None => {
             let binding_crate_dir = lib.find_crate_dir(&lib.binding_crate_ref());
 
             if let Some(binding_crate_dir) = binding_crate_dir {
-                Config::from_root_or_default(&binding_crate_dir)
+                ConfigLoader::from_root_or_default(&binding_crate_dir)
             } else {
                 // This shouldn't happen
-                Config::from_root_or_default(input)
+                ConfigLoader::from_root_or_default(input)
             }
         }
     };
+
+    let root = config_loader.root().clone();
+    let mut config = config_loader.into();
 
     apply_config_overrides(&mut config, &matches);
 
     Builder::new()
         .with_config(config)
         .with_cargo(lib)
+        .with_root(root)
         .generate()
 }
 

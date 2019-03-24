@@ -8,7 +8,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader};
-use std::path::Path as StdPath;
+use std::path::{Path as StdPath, PathBuf};
 use std::str::FromStr;
 
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
@@ -536,6 +536,22 @@ impl Default for ParseConfig {
     }
 }
 
+/// Settings to apply when parsing.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct EmbedConfig {
+    /// An optional file to embed before our generated parts (but after the guards)
+    pub before: Option<String>,
+}
+
+impl Default for EmbedConfig {
+    fn default() -> EmbedConfig {
+        EmbedConfig { before: None }
+    }
+}
+
 /// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -571,6 +587,8 @@ pub struct Config {
     pub line_length: usize,
     /// The amount of spaces in a tab
     pub tab_width: usize,
+    /// Embedding configuration
+    pub embed: EmbedConfig,
     /// The language to output bindings for
     pub language: Language,
     /// The style to declare structs, enums and unions in for C
@@ -624,14 +642,30 @@ impl Default for Config {
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),
             constant: ConstantConfig::default(),
+            embed: EmbedConfig::default(),
             defines: HashMap::new(),
             documentation: true,
         }
     }
 }
 
-impl Config {
-    pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {
+impl From<ConfigLoader> for Config {
+    fn from(c: ConfigLoader) -> Config {
+        c.config
+    }
+}
+
+/// Given a directory or file, makes sure a corresponding configuration is loaded (or created),
+/// and the respective `root` is set.
+pub struct ConfigLoader {
+    /// The loaded or generated config.
+    config: Config,
+    /// If the config was loaded, points to the config's parent directory.
+    root: PathBuf,
+}
+
+impl ConfigLoader {
+    pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<ConfigLoader, String> {
         fn read(file_name: &StdPath) -> io::Result<String> {
             let file = File::open(file_name)?;
             let mut reader = BufReader::new(&file);
@@ -643,18 +677,28 @@ impl Config {
         let config_text = read(file_name.as_ref()).unwrap();
 
         match toml::from_str::<Config>(&config_text) {
-            Ok(x) => Ok(x),
+            Ok(x) => Ok(ConfigLoader {
+                config: x,
+                root: file_name.as_ref().parent().unwrap().into(),
+            }),
             Err(e) => Err(format!("Couldn't parse config file: {}.", e)),
         }
     }
 
-    pub fn from_root_or_default<P: AsRef<StdPath>>(root: P) -> Config {
+    pub fn root(&self) -> &PathBuf {
+        &self.root
+    }
+
+    pub fn from_root_or_default<P: AsRef<StdPath>>(root: P) -> ConfigLoader {
         let c = root.as_ref().join("cbindgen.toml");
 
         if c.exists() {
-            Config::from_file(c).unwrap()
+            ConfigLoader::from_file(c).unwrap()
         } else {
-            Config::default()
+            ConfigLoader {
+                config: Config::default(),
+                root: root.as_ref().into(),
+            }
         }
     }
 }

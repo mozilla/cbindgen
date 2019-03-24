@@ -6,6 +6,7 @@ use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path;
+use std::path::PathBuf;
 
 use bindgen::config::{Config, Language};
 use bindgen::ir::{
@@ -16,6 +17,7 @@ use bindgen::writer::{Source, SourceWriter};
 /// A bindings header that can be written.
 pub struct Bindings {
     pub config: Config,
+    root: Option<PathBuf>,
     /// The map from path to struct, used to lookup whether a given type is a
     /// transparent struct. This is needed to generate code for constants.
     struct_map: ItemMap<Struct>,
@@ -28,6 +30,7 @@ pub struct Bindings {
 impl Bindings {
     pub(crate) fn new(
         config: Config,
+        root: Option<PathBuf>,
         struct_map: ItemMap<Struct>,
         constants: Vec<Constant>,
         globals: Vec<Static>,
@@ -36,6 +39,7 @@ impl Bindings {
     ) -> Bindings {
         Bindings {
             config,
+            root,
             struct_map,
             globals,
             constants,
@@ -83,6 +87,25 @@ impl Bindings {
         } else {
             false
         }
+    }
+
+    pub fn embed_file<P: AsRef<path::Path>, F: Write>(&self, out: &mut SourceWriter<F>, path: P) {
+        let mut src_content = String::new();
+
+        let src_file = self
+            .root
+            .as_ref()
+            .expect("Bindings::root must be set when embedding files.")
+            .join(path);
+
+        File::open(src_file)
+            .expect("Cannot open file to embed.")
+            .read_to_string(&mut src_content)
+            .expect("Cannot read file to embed.");
+
+        out.new_line_if_not_start();
+        write!(out, "{}", src_content);
+        out.new_line();
     }
 
     pub fn write_headers<F: Write>(&self, out: &mut SourceWriter<F>) {
@@ -160,6 +183,10 @@ impl Bindings {
             || !self.config.sys_includes.is_empty()
         {
             self.write_headers(&mut out);
+        }
+
+        if let Some(file) = &self.config.embed.before {
+            self.embed_file(&mut out, file);
         }
 
         if self.config.language == Language::Cxx {
