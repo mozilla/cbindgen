@@ -259,6 +259,8 @@ pub struct FunctionConfig {
     pub prefix: Option<String>,
     /// Optional text to output after each function declaration
     pub postfix: Option<String>,
+    /// The way to annotation this function as #[must_use].
+    pub must_use: Option<String>,
     /// The style to layout the args
     pub args: Layout,
     /// The rename rule to apply to function args
@@ -270,6 +272,7 @@ impl Default for FunctionConfig {
         FunctionConfig {
             prefix: None,
             postfix: None,
+            must_use: None,
             args: Layout::Auto,
             rename_args: None,
         }
@@ -293,7 +296,7 @@ impl FunctionConfig {
 }
 
 /// Settings to apply to generated structs.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Default, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
@@ -318,22 +321,8 @@ pub struct StructConfig {
     /// Whether associated constants should be in the body. Only applicable to
     /// non-transparent structs, and in C++-only.
     pub associated_constants_in_body: bool,
-}
-
-impl Default for StructConfig {
-    fn default() -> StructConfig {
-        StructConfig {
-            rename_fields: None,
-            derive_constructor: false,
-            derive_eq: false,
-            derive_neq: false,
-            derive_lt: false,
-            derive_lte: false,
-            derive_gt: false,
-            derive_gte: false,
-            associated_constants_in_body: false,
-        }
-    }
+    /// The way to annotation this struct as #[must_use].
+    pub must_use: Option<String>,
 }
 
 impl StructConfig {
@@ -405,6 +394,8 @@ pub struct EnumConfig {
     /// responsible to provide the necessary header, otherwise `assert` will be
     /// used, and `<cassert>` will be included.
     pub cast_assert_name: Option<String>,
+    /// The way to annotation this enum as #[must_use].
+    pub must_use: Option<String>,
 }
 
 impl EnumConfig {

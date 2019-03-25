@@ -151,8 +151,12 @@ impl Source for Function {
                 out.write("extern ");
             } else {
                 if let Some(ref prefix) = prefix {
-                    write!(out, "{}", prefix);
-                    out.write(" ");
+                    write!(out, "{} ", prefix);
+                }
+                if func.annotations.must_use {
+                    if let Some(ref anno) = config.function.must_use {
+                        write!(out, "{} ", anno);
+                    }
                 }
             }
             cdecl::write_func(out, &func, false, void_prototype);
@@ -184,6 +188,12 @@ impl Source for Function {
                 if let Some(ref prefix) = prefix {
                     write!(out, "{}", prefix);
                     out.new_line();
+                }
+                if func.annotations.must_use {
+                    if let Some(ref anno) = config.function.must_use {
+                        write!(out, "{}", anno);
+                        out.new_line();
+                    }
                 }
             }
             cdecl::write_func(out, &func, true, void_prototype);
