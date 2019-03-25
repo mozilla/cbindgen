@@ -223,6 +223,8 @@ pub struct ExportConfig {
     pub prefix: Option<String>,
     /// Types of items to generate.
     pub item_types: Vec<ItemType>,
+    /// Whether renaming overrides or extends prefixing.
+    pub renaming_overrides_prefixing: bool,
 }
 
 impl ExportConfig {
@@ -237,6 +239,9 @@ impl ExportConfig {
     pub(crate) fn rename(&self, item_name: &mut String) {
         if let Some(name) = self.rename.get(item_name) {
             *item_name = name.clone();
+            if self.renaming_overrides_prefixing {
+                return;
+            }
         }
         if let Some(ref prefix) = self.prefix {
             item_name.insert_str(0, &prefix);
