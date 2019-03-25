@@ -154,6 +154,8 @@ exclude = ["Bad"]
 prefix = "CAPI_"
 # Types of items that we'll generate.
 item_types = ["constants", "globals", "enums", "structs", "unions", "typedefs", "opaque", "functions"]
+# Whether applying rules in export.rename prevent export.prefix from applying.
+renaming_overrides_prefixing = true # default: false
 
 # Table of name conversions to apply to item names
 [export.rename]
