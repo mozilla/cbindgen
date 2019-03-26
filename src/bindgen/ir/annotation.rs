@@ -34,17 +34,19 @@ pub enum AnnotationValue {
 #[derive(Debug, Clone)]
 pub struct AnnotationSet {
     annotations: HashMap<String, AnnotationValue>,
+    pub must_use: bool,
 }
 
 impl AnnotationSet {
     pub fn new() -> AnnotationSet {
         AnnotationSet {
             annotations: HashMap::new(),
+            must_use: false,
         }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.annotations.is_empty()
+        self.annotations.is_empty() && !self.must_use
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
@@ -53,6 +55,8 @@ impl AnnotationSet {
             .into_iter()
             .filter(|x| !x.is_empty() && x.starts_with("cbindgen:"))
             .collect();
+
+        let must_use = attrs.has_attr_word("must_use");
 
         let mut annotations = HashMap::new();
 
@@ -104,7 +108,8 @@ impl AnnotationSet {
         }
 
         Ok(AnnotationSet {
-            annotations: annotations,
+            annotations,
+            must_use,
         })
     }
 

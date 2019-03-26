@@ -115,62 +115,15 @@ macro_rules! impl_syn_item_helper {
     ($t:ty) => {
         impl SynItemHelpers for $t {
             fn has_attr_word(&self, name: &str) -> bool {
-                return self
-                    .attrs
-                    .iter()
-                    .filter_map(|x| x.interpret_meta())
-                    .any(|attr| {
-                        if let syn::Meta::Word(ref ident) = attr {
-                            ident == name
-                        } else {
-                            false
-                        }
-                    });
+                self.attrs.has_attr_word(name)
             }
 
             fn has_attr_list(&self, name: &str, args: &[&str]) -> bool {
-                return self
-                    .attrs
-                    .iter()
-                    .filter_map(|x| x.interpret_meta())
-                    .any(|attr| {
-                        if let syn::Meta::List(syn::MetaList { ident, nested, .. }) = attr {
-                            if ident != name {
-                                return false;
-                            }
-                            args.iter().all(|arg| {
-                                nested.iter().any(|nested_meta| {
-                                    if let syn::NestedMeta::Meta(syn::Meta::Word(ident)) =
-                                        nested_meta
-                                    {
-                                        ident == arg
-                                    } else {
-                                        false
-                                    }
-                                })
-                            })
-                        } else {
-                            false
-                        }
-                    });
+                self.attrs.has_attr_list(name, args)
             }
 
             fn has_attr_name_value(&self, name: &str, value: &str) -> bool {
-                return self
-                    .attrs
-                    .iter()
-                    .filter_map(|x| x.interpret_meta())
-                    .any(|attr| {
-                        if let syn::Meta::NameValue(syn::MetaNameValue { ident, lit, .. }) = attr {
-                            if let syn::Lit::Str(lit) = lit {
-                                (ident == name) && (&lit.value() == value)
-                            } else {
-                                false
-                            }
-                        } else {
-                            false
-                        }
-                    });
+                self.attrs.has_attr_name_value(name, value)
             }
         }
     };
@@ -247,9 +200,57 @@ impl SynAbiHelpers for syn::Abi {
 
 pub trait SynAttributeHelpers {
     fn get_comment_lines(&self) -> Vec<String>;
+    fn has_attr_word(&self, name: &str) -> bool;
+    fn has_attr_list(&self, name: &str, args: &[&str]) -> bool;
+    fn has_attr_name_value(&self, name: &str, value: &str) -> bool;
 }
 
 impl SynAttributeHelpers for [syn::Attribute] {
+    fn has_attr_word(&self, name: &str) -> bool {
+        self.iter().filter_map(|x| x.interpret_meta()).any(|attr| {
+            if let syn::Meta::Word(ref ident) = attr {
+                ident == name
+            } else {
+                false
+            }
+        })
+    }
+
+    fn has_attr_list(&self, name: &str, args: &[&str]) -> bool {
+        self.iter().filter_map(|x| x.interpret_meta()).any(|attr| {
+            if let syn::Meta::List(syn::MetaList { ident, nested, .. }) = attr {
+                if ident != name {
+                    return false;
+                }
+                args.iter().all(|arg| {
+                    nested.iter().any(|nested_meta| {
+                        if let syn::NestedMeta::Meta(syn::Meta::Word(ident)) = nested_meta {
+                            ident == arg
+                        } else {
+                            false
+                        }
+                    })
+                })
+            } else {
+                false
+            }
+        })
+    }
+
+    fn has_attr_name_value(&self, name: &str, value: &str) -> bool {
+        self.iter().filter_map(|x| x.interpret_meta()).any(|attr| {
+            if let syn::Meta::NameValue(syn::MetaNameValue { ident, lit, .. }) = attr {
+                if let syn::Lit::Str(lit) = lit {
+                    (ident == name) && (&lit.value() == value)
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        })
+    }
+
     fn get_comment_lines(&self) -> Vec<String> {
         let mut comment_lines = Vec::new();
 

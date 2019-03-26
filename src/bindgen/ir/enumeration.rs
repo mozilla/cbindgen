@@ -511,8 +511,15 @@ impl Source for Enum {
         // If tagged, we need to emit a proper struct/union wrapper around our enum
         self.generic_params.write(config, out);
         if is_tagged && config.language == Language::Cxx {
-            out.write(if separate_tag { "struct " } else { "union " });
-            write!(out, "{}", self.export_name());
+            out.write(if separate_tag { "struct" } else { "union" });
+
+            if self.annotations.must_use {
+                if let Some(ref anno) = config.structure.must_use {
+                    write!(out, " {}", anno)
+                }
+            }
+
+            write!(out, " {}", self.export_name());
             out.open_brace();
         }
 
@@ -534,10 +541,17 @@ impl Source for Enum {
                 write!(out, " {}", enum_name);
             }
         } else {
+            out.write("enum class");
+
+            if self.annotations.must_use {
+                if let Some(ref anno) = config.enumeration.must_use {
+                    write!(out, " {}", anno)
+                }
+            }
+
+            write!(out, " {}", enum_name);
             if let Some(prim) = size {
-                write!(out, "enum class {} : {}", enum_name, prim);
-            } else {
-                write!(out, "enum class {}", enum_name);
+                write!(out, " : {}", prim);
             }
         }
         out.open_brace();

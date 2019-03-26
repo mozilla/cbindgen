@@ -371,6 +371,12 @@ impl Source for Struct {
 
         out.write("struct");
 
+        if self.annotations.must_use {
+            if let Some(ref anno) = config.structure.must_use {
+                write!(out, " {}", anno)
+            }
+        }
+
         if config.language == Language::Cxx || config.style.generate_tag() {
             write!(out, " {}", self.export_name());
         }
