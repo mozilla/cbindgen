@@ -1,9 +1,9 @@
-const FOO: i32 = 10;
+const FOO: usize = 10;
 const BAR: &'static str = "hello world";
 const ZOM: f32 = 3.14;
 
 #[repr(C)]
-struct Foo {
+pub struct Foo {
     x: [i32; FOO],
 }
 

@@ -1,0 +1,15 @@
+[package]
+name = "test"
+version = "0.0.1"
+authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>",
+           "Kartikaya Gupta <kats@mozilla.com>",
+           "Ryan Hunt <rhunt@eqrion.net>"]
+license = "MPL-2.0"
+description = "A tool for generating C bindings to Rust code."
+keywords = ["bindings", "ffi", "code-generation"]
+categories = ["external-ffi-bindings", "development-tools::ffi"]
+repository = "https://github.com/eqrion/cbindgen/"
+
+[lib]
+name = "constant"
+path = "./constant.rs"
