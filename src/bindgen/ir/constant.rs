@@ -251,7 +251,7 @@ impl Constant {
         };
 
         if !can_handle(&ty, expr) {
-            return Err("Unhanded const definition".to_owned());
+            return Err("Unhandled const definition".to_owned());
         }
 
         let mut lit = Literal::load(&expr)?;
