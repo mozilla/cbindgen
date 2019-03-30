@@ -1,6 +1,6 @@
+use std::fs;
 use std::fs::File;
 use std::io::Read;
-use std::fs;
 
 use cbindgen::Language;
 
@@ -22,7 +22,7 @@ pub fn test_a_crate(crate_to_test: &str, language: Language) {
 
     let ext = match language {
         Language::C => "c",
-        Language::Cxx => "cpp"
+        Language::Cxx => "cpp",
     };
 
     let mut old_file_contents = Vec::new();
@@ -33,4 +33,3 @@ pub fn test_a_crate(crate_to_test: &str, language: Language) {
 
     assert!(old_file_contents == new_file_contents);
 }
-
