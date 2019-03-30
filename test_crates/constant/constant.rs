@@ -8,4 +8,4 @@ pub struct Foo {
 }
 
 #[no_mangle]
-pub extern "C" fn root(x: Foo) { }
+pub extern "C" fn root(x: Foo) {}
