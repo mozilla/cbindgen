@@ -18,6 +18,13 @@ enum class FooType : uint32_t {
 };
 #endif
 
+struct ConditionalField {
+  #if defined(X11)
+  int32_t field
+  #endif
+  ;
+};
+
 #if (defined(PLATFORM_UNIX) && defined(X11))
 struct FooHandle {
   FooType ty;
@@ -35,6 +42,8 @@ struct BarHandle {
 #endif
 
 extern "C" {
+
+void cond(ConditionalField a);
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
 void root(FooHandle a);

@@ -26,7 +26,7 @@ pub struct Struct {
     pub path: Path,
     pub export_name: String,
     pub generic_params: GenericParams,
-    pub fields: Vec<(String, Type, Documentation)>,
+    pub fields: Vec<(String, Type, Documentation, Option<Cfg>)>,
     /// Whether there's a tag field on the body of this struct. When this is
     /// true, is_enum_variant_body is also guaranteed to be true.
     pub is_tagged: bool,
@@ -65,7 +65,7 @@ impl Struct {
                 let out = fields
                     .named
                     .iter()
-                    .try_skip_map(|x| x.as_ident_and_type())?;
+                    .try_skip_map(|x| x.as_ident_and_type(mod_cfg))?;
                 (out, false)
             }
             &syn::Fields::Unnamed(ref fields) => {
@@ -73,7 +73,7 @@ impl Struct {
                 let mut current = 0;
                 for field in fields.unnamed.iter() {
                     if let Some(x) = Type::load(&field.ty)? {
-                        out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
+                        out.push((format!("{}", current), x, Documentation::load(&field.attrs), Cfg::append(mod_cfg, Cfg::load(&field.attrs))));
                         current += 1;
                     }
                 }
@@ -101,7 +101,7 @@ impl Struct {
     pub fn new(
         path: Path,
         generic_params: GenericParams,
-        fields: Vec<(String, Type, Documentation)>,
+        fields: Vec<(String, Type, Documentation, Option<Cfg>)>,
         is_tagged: bool,
         is_enum_variant_body: bool,
         is_transparent: bool,
@@ -128,7 +128,7 @@ impl Struct {
     }
 
     pub fn simplify_standard_types(&mut self) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
+        for &mut (_, ref mut ty, _, _) in &mut self.fields {
             ty.simplify_standard_types();
         }
     }
@@ -144,13 +144,13 @@ impl Struct {
             return;
         }
 
-        for &(_, ref ty, _) in &self.fields {
+        for &(_, ref ty, _, _) in &self.fields {
             ty.add_monomorphs(library, out);
         }
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
+        for &mut (_, ref mut ty, _, _) in &mut self.fields {
             ty.mangle_paths(monomorphs);
         }
     }
@@ -162,7 +162,7 @@ impl Struct {
             GenericParams::default(),
             self.fields
                 .iter()
-                .map(|x| (x.0.clone(), x.1.specialize(mappings), x.2.clone()))
+                .map(|x| (x.0.clone(), x.1.specialize(mappings), x.2.clone(), x.3.clone()))
                 .collect(),
             self.is_tagged,
             self.is_enum_variant_body,
@@ -207,7 +207,7 @@ impl Item for Struct {
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
+        for &mut (_, ref mut ty, _, _) in &mut self.fields {
             ty.resolve_declaration_types(resolver);
         }
     }
@@ -224,7 +224,7 @@ impl Item for Struct {
                 .fields
                 .iter_mut()
                 .skip(if self.is_tagged { 1 } else { 0 });
-            for &mut (_, ref mut ty, _) in fields {
+            for &mut (_, ref mut ty, _, _) in fields {
                 ty.rename_for_config(config, &self.generic_params);
             }
         }
@@ -286,7 +286,7 @@ impl Item for Struct {
             fields.next();
         }
 
-        for &(_, ref ty, _) in fields {
+        for &(_, ref ty, _, _) in fields {
             ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
         }
 
@@ -389,7 +389,7 @@ impl Source for Struct {
             let vec: Vec<_> = self
                 .fields
                 .iter()
-                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
+                .map(|&(ref name, ref ty, _, _)| (name.clone(), ty.clone()))
                 .collect();
             out.write_vertical_source_list(&vec[..], ListType::Cap(";"));
         }
@@ -417,7 +417,7 @@ impl Source for Struct {
                 let vec: Vec<_> = self
                     .fields
                     .iter()
-                    .map(|&(ref name, ref ty, _)| {
+                    .map(|&(ref name, ref ty, _, _)| {
                         // const-ref args to constructor
                         (format!("const& {}", arg_renamer(name)), ty.clone())
                     })
@@ -612,11 +612,11 @@ impl Source for Struct {
 }
 
 pub trait SynFieldHelpers {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type, Documentation)>, String>;
+    fn as_ident_and_type(&self, mod_cfg: Option<&Cfg>) -> Result<Option<(String, Type, Documentation, Option<Cfg>)>, String>;
 }
 
 impl SynFieldHelpers for syn::Field {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type, Documentation)>, String> {
+    fn as_ident_and_type(&self, mod_cfg: Option<&Cfg>) -> Result<Option<(String, Type, Documentation, Option<Cfg>)>, String> {
         let ident = self
             .ident
             .as_ref()
@@ -629,6 +629,7 @@ impl SynFieldHelpers for syn::Field {
                 ident.to_string(),
                 x,
                 Documentation::load(&self.attrs),
+                Cfg::append(mod_cfg, Cfg::load(&self.attrs)),
             )))
         } else {
             Ok(None)

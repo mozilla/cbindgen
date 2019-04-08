@@ -30,6 +30,12 @@ struct BarHandle {
     y: f32,
 }
 
+#[repr(C)]
+struct ConditionalField {
+    #[cfg(x11)]
+    field: i32,
+}
+
 #[cfg(all(unix, x11))]
 #[no_mangle]
 pub extern "C" fn root(a: FooHandle)
@@ -38,4 +44,8 @@ pub extern "C" fn root(a: FooHandle)
 #[cfg(any(windows, target_pointer_width="32"))]
 #[no_mangle]
 pub extern "C" fn root(a: BarHandle)
+{ }
+
+#[no_mangle]
+pub extern "C" fn cond(a: ConditionalField)
 { }

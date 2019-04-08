@@ -67,7 +67,8 @@ impl EnumVariant {
         fn parse_fields(
             is_tagged: bool,
             fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
-        ) -> Result<Vec<(String, Type, Documentation)>, String> {
+            mod_cfg: Option<&Cfg>,
+        ) -> Result<Vec<(String, Type, Documentation, Option<Cfg>)>, String> {
             let mut res = Vec::new();
 
             if is_tagged {
@@ -75,6 +76,7 @@ impl EnumVariant {
                     "tag".to_string(),
                     Type::Path(GenericPath::new(Path::new("Tag"), vec![])),
                     Documentation::none(),
+                    None,
                 ));
             }
 
@@ -87,6 +89,7 @@ impl EnumVariant {
                         },
                         ty,
                         Documentation::load(&field.attrs),
+                        Cfg::append(mod_cfg, Cfg::load(&field.attrs)),
                     ));
                 }
             }
@@ -101,7 +104,7 @@ impl EnumVariant {
                 Some(Struct::new(
                     path,
                     generic_params,
-                    parse_fields(is_tagged, &fields.named)?,
+                    parse_fields(is_tagged, &fields.named, mod_cfg)?,
                     is_tagged,
                     true,
                     false,
@@ -116,7 +119,7 @@ impl EnumVariant {
                 Some(Struct::new(
                     path,
                     generic_params,
-                    parse_fields(is_tagged, &fields.unnamed)?,
+                    parse_fields(is_tagged, &fields.unnamed, mod_cfg)?,
                     is_tagged,
                     true,
                     false,
@@ -683,7 +686,7 @@ impl Source for Enum {
                             .fields
                             .iter()
                             .skip(skip_fields)
-                            .map(|&(ref name, ref ty, _)| {
+                            .map(|&(ref name, ref ty, _, _)| {
                                 // const-ref args to constructor
                                 (arg_renamer(name), Type::Ref(Box::new(ty.clone())))
                             })

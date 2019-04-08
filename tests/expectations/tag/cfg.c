@@ -21,6 +21,13 @@ enum FooType {
 typedef uint32_t FooType;
 #endif
 
+struct ConditionalField {
+  #if defined(X11)
+  int32_t field
+  #endif
+  ;
+};
+
 #if (defined(PLATFORM_UNIX) && defined(X11))
 struct FooHandle {
   FooType ty;
@@ -36,6 +43,8 @@ struct BarHandle {
   float y;
 };
 #endif
+
+void cond(struct ConditionalField a);
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
 void root(struct FooHandle a);

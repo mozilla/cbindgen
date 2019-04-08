@@ -16,6 +16,7 @@ use bindgen::library::Library;
 use bindgen::monomorph::Monomorphs;
 use bindgen::utilities::IterHelpers;
 use bindgen::writer::{Source, SourceWriter};
+use bindgen::ir::cfg::{Cfg, ToCondition, ConditionWrite};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrimitiveType {
@@ -710,5 +711,40 @@ impl Source for (String, Type, Documentation) {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         self.2.write(config, out);
         cdecl::write_field(out, &self.1, &self.0);
+    }
+}
+
+impl Source for (String, Type, Documentation, Option<Cfg>) {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        let condition = (&self.3).to_condition(config);
+        condition.write_before(config, out);
+
+        self.2.write(config, out);
+        cdecl::write_field(out, &self.1, &self.0);
+
+        condition.write_after(config, out);
+
+        // this is to ensure that we don't generate
+        //
+        // ```
+        // #ifdef defined(A)
+        // type field
+        // #endif;
+        // ```
+        //
+        // Instead we'll generate
+        //
+        // ```
+        // #ifdef defined(A)
+        // type field
+        // #endif
+        // ;
+        // ```
+        //
+        // It is still not perfect but at least it compiles
+        // without warnings.
+        if condition.is_some() {
+            out.new_line();
+        }
     }
 }
