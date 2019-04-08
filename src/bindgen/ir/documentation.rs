@@ -67,6 +67,7 @@ impl Source for Documentation {
             match style {
                 DocumentationStyle::C => out.write(""),
                 DocumentationStyle::Doxy => out.write(" *"),
+                DocumentationStyle::C99 => out.write("//"),
                 DocumentationStyle::Cxx => out.write("///"),
                 DocumentationStyle::Auto => unreachable!(), // Auto case should always be covered
             }
