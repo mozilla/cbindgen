@@ -104,6 +104,7 @@ deserialize_enum_str!(Layout);
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum DocumentationStyle {
     C,
+    C99,
     Doxy,
     Cxx,
     Auto,
@@ -115,6 +116,7 @@ impl FromStr for DocumentationStyle {
     fn from_str(s: &str) -> Result<DocumentationStyle, Self::Err> {
         match s.to_lowercase().as_ref() {
             "c" => Ok(DocumentationStyle::C),
+            "c99" => Ok(DocumentationStyle::C99),
             "cxx" => Ok(DocumentationStyle::Cxx),
             "c++" => Ok(DocumentationStyle::Cxx),
             "doxy" => Ok(DocumentationStyle::Doxy),

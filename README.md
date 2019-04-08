@@ -106,7 +106,7 @@ language = "[C|C++]"
 style = "[Both|Type|Tag]"
 # How the generated documentation should be commented.
 # C uses /* */; C++ uses //; Doxy is like C but with leading * per line.
-documentation_style = "[C, C++, Doxy]"
+documentation_style = "[C, C99, C++, Doxy]"
 
 
 [defines]
