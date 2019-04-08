@@ -1,4 +1,4 @@
-const LEN: i32 = 42;
+pub const LEN: i32 = 42;
 
 pub type NamedLenArray = [i32; LEN];
 pub type ValuedLenArray = [i32; 42];

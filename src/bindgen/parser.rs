@@ -691,6 +691,12 @@ impl Parse {
         let impl_path = ty.unwrap().get_root_path().unwrap();
 
         for item in items.into_iter() {
+            if let syn::Visibility::Public(_) = item.vis {
+            } else {
+                warn!("Skip {}::{} - (not `pub`).", crate_name, &item.ident);
+                return;
+            }
+
             let path = Path::new(item.ident.to_string());
             match Constant::load(
                 path,
@@ -736,6 +742,12 @@ impl Parse {
                 "Skip {}::{} - (const's outside of the binding crate are not used).",
                 crate_name, &item.ident
             );
+            return;
+        }
+
+        if let syn::Visibility::Public(_) = item.vis {
+        } else {
+            warn!("Skip {}::{} - (not `pub`).", crate_name, &item.ident);
             return;
         }
 

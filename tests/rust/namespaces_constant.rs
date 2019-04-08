@@ -1,6 +1,6 @@
-const FOO: i32 = 10;
-const BAR: &'static str = "hello world";
-const ZOM: f32 = 3.14;
+pub const FOO: i32 = 10;
+pub const BAR: &'static str = "hello world";
+pub const ZOM: f32 = 3.14;
 
 #[repr(C)]
 struct Foo {

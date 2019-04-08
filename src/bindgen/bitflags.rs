@@ -90,7 +90,7 @@ impl Flag {
         } = *self;
         quote! {
             #(#attrs)*
-            const #name : #struct_name = #struct_name { bits: #value };
+            pub const #name : #struct_name = #struct_name { bits: #value };
         }
     }
 }
