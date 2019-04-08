@@ -55,8 +55,13 @@ cdef extern from *:
       int32_t x;
       float y;
 
+  ctypedef struct ConditionalField:
+    int32_t field;
+
   IF (PLATFORM_UNIX and X11):
     void root(FooHandle a, C c);
 
   IF (PLATFORM_WIN or M_32):
     void root(BarHandle a, C c);
+
+  void cond(ConditionalField a);

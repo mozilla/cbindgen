@@ -40,6 +40,15 @@ struct BarHandle {
     y: f32,
 }
 
+// FIXME(#634): Support deriving methods for structs with conditional fields.
+/// cbindgen:derive-eq=false
+/// cbindgen:derive-neq=false
+#[repr(C)]
+struct ConditionalField {
+    #[cfg(x11)]
+    field: i32,
+}
+
 #[cfg(all(unix, x11))]
 #[no_mangle]
 pub extern "C" fn root(a: FooHandle, c: C)
@@ -48,4 +57,8 @@ pub extern "C" fn root(a: FooHandle, c: C)
 #[cfg(any(windows, target_pointer_width="32"))]
 #[no_mangle]
 pub extern "C" fn root(a: BarHandle, c: C)
+{ }
+
+#[no_mangle]
+pub extern "C" fn cond(a: ConditionalField)
 { }

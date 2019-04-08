@@ -2,13 +2,15 @@ use std::io::Write;
 
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
-use crate::bindgen::ir::{AnnotationSet, Documentation, Path, Type};
+use crate::bindgen::ir::{AnnotationSet, Cfg, ConditionWrite};
+use crate::bindgen::ir::{Documentation, Path, ToCondition, Type};
 use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Field {
     pub name: String,
     pub ty: Type,
+    pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
@@ -18,6 +20,7 @@ impl Field {
         Field {
             name,
             ty,
+            cfg: None,
             annotations: AnnotationSet::new(),
             documentation: Documentation::none(),
         }
@@ -33,6 +36,7 @@ impl Field {
                     .ok_or_else(|| "field is missing identifier".to_string())?
                     .to_string(),
                 ty,
+                cfg: Cfg::load(&field.attrs),
                 annotations: AnnotationSet::load(&field.attrs)?,
                 documentation: Documentation::load(&field.attrs),
             })
@@ -44,6 +48,12 @@ impl Field {
 
 impl Source for Field {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        // Cython doesn't support conditional fields.
+        let condition = self.cfg.to_condition(config);
+        if config.language != Language::Cython {
+            condition.write_before(config, out);
+        }
+
         self.documentation.write(config, out);
         cdecl::write_field(out, &self.ty, &self.name, config);
         // Cython extern declarations don't manage layouts, layouts are defined entierly by the
@@ -51,6 +61,16 @@ impl Source for Field {
         if config.language != Language::Cython {
             if let Some(bitfield) = self.annotations.atom("bitfield") {
                 write!(out, ": {}", bitfield.unwrap_or_default());
+            }
+        }
+
+        if config.language != Language::Cython {
+            condition.write_after(config, out);
+            // FIXME(#634): `write_vertical_source_list` should support
+            // configuring list elements natively. For now we print a newline
+            // here to avoid printing `#endif;` with semicolon.
+            if condition.is_some() {
+                out.new_line();
             }
         }
     }
