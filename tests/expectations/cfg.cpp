@@ -195,6 +195,13 @@ struct BarHandle {
 };
 #endif
 
+struct ConditionalField {
+#if defined(X11)
+  int32_t field
+#endif
+  ;
+};
+
 extern "C" {
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -204,5 +211,7 @@ void root(FooHandle a, C c);
 #if (defined(PLATFORM_WIN) || defined(M_32))
 void root(BarHandle a, C c);
 #endif
+
+void cond(ConditionalField a);
 
 } // extern "C"

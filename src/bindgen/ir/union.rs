@@ -180,6 +180,7 @@ impl Item for Union {
                     overriden_fields.push(Field {
                         name: o[i].clone(),
                         ty: field.ty.clone(),
+                        cfg: field.cfg.clone(),
                         annotations: field.annotations.clone(),
                         documentation: field.documentation.clone(),
                     });
@@ -196,6 +197,7 @@ impl Item for Union {
                         .apply(&field.name, IdentifierType::StructMember)
                         .into_owned(),
                     ty: field.ty.clone(),
+                    cfg: field.cfg.clone(),
                     annotations: field.annotations.clone(),
                     documentation: field.documentation.clone(),
                 })
@@ -256,6 +258,7 @@ impl Item for Union {
                 .map(|field| Field {
                     name: field.name.clone(),
                     ty: field.ty.specialize(&mappings),
+                    cfg: field.cfg.clone(),
                     annotations: field.annotations.clone(),
                     documentation: field.documentation.clone(),
                 })

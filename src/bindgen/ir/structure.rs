@@ -88,6 +88,7 @@ impl Struct {
                         out.push(Field {
                             name: format!("{}", current),
                             ty,
+                            cfg: Cfg::load(&field.attrs),
                             annotations: AnnotationSet::load(&field.attrs)?,
                             documentation: Documentation::load(&field.attrs),
                         });
@@ -191,6 +192,7 @@ impl Struct {
                 .map(|field| Field {
                     name: field.name.clone(),
                     ty: field.ty.specialize(mappings),
+                    cfg: field.cfg.clone(),
                     annotations: field.annotations.clone(),
                     documentation: field.documentation.clone(),
                 })
