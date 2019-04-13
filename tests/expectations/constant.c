@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define DELIMITER ':'
+
 #define FOO 10
 
 #define ZOM 3.14
