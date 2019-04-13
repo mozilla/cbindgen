@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <cstdlib>
 
+static const wchar_t DELIMITER = ':';
+
 static const int32_t FOO = 10;
 
 static const float ZOM = 3.14;

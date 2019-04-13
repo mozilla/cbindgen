@@ -1,5 +1,6 @@
 const FOO: i32 = 10;
 const BAR: &'static str = "hello world";
+pub const DELIMITER: char = ':';
 const ZOM: f32 = 3.14;
 
 #[repr(C)]
