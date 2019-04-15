@@ -7,6 +7,16 @@
 
 #define FOO 10
 
+#define HEART L'\u2764'
+
+#define LEFTCURLY '{'
+
+#define NEWLINE '\n'
+
+#define QUOTE '\''
+
+#define TAB '\t'
+
 #define ZOM 3.14
 
 typedef struct Foo {

@@ -151,7 +151,10 @@ impl Literal {
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Char(ref value),
                 ..
-            }) => Ok(Literal::Expr(format!("'{}'", value.value()))),
+            }) => Ok(Literal::Expr(match value.value() as u32 {
+                0..=255 => format!("'{}'", value.value().escape_default()),
+                other_code => format!(r"L'\u{:X}'", other_code),
+            })),
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref value),
                 ..
