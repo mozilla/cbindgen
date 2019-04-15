@@ -7,7 +7,7 @@
 
 #define FOO 10
 
-#define HEART '\u{2764}'
+#define HEART '\u2764'
 
 #define NEWLINE '\n'
 
