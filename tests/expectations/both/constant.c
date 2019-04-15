@@ -7,6 +7,12 @@
 
 #define FOO 10
 
+#define NEWLINE '\n'
+
+#define QUOTE '\''
+
+#define TAB '\t'
+
 #define ZOM 3.14
 
 typedef struct Foo {
