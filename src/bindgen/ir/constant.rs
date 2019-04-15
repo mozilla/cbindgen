@@ -151,15 +151,25 @@ impl Literal {
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Char(ref value),
                 ..
-            }) => Ok(Literal::Expr(format!(
-                "'{}'",
-                value
-                    .value()
-                    .escape_default()
-                    .to_string()
-                    .replace('{', "")
-                    .replace('}', "")
-            ))),
+            }) => {
+                let v = value.value();
+                if v.len_utf8() == 1 {
+                    Ok(Literal::Expr(format!(
+                        "'{}'",
+                        value.value().escape_default()
+                    )))
+                } else {
+                    Ok(Literal::Expr(format!(
+                        "L'{}'",
+                        value
+                            .value()
+                            .escape_default()
+                            .to_string()
+                            .replace('{', "")
+                            .replace('}', "")
+                    )))
+                }
+            }
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref value),
                 ..

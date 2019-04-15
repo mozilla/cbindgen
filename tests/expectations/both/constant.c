@@ -7,7 +7,9 @@
 
 #define FOO 10
 
-#define HEART '\u2764'
+#define HEART L'\u2764'
+
+#define LEFTCURLY '{'
 
 #define NEWLINE '\n'
 

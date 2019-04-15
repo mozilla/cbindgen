@@ -6,7 +6,9 @@ static const wchar_t DELIMITER = ':';
 
 static const int32_t FOO = 10;
 
-static const wchar_t HEART = '\u2764';
+static const wchar_t HEART = L'\u2764';
+
+static const wchar_t LEFTCURLY = '{';
 
 static const wchar_t NEWLINE = '\n';
 
