@@ -4,6 +4,7 @@ pub const DELIMITER: char = ':';
 pub const QUOTE: char = '\'';
 pub const TAB: char = '\t';
 pub const NEWLINE: char = '\n';
+pub const HEART: char = '❤';
 const ZOM: f32 = 3.14;
 
 #[repr(C)]
