@@ -151,7 +151,15 @@ impl Literal {
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Char(ref value),
                 ..
-            }) => Ok(Literal::Expr(format!("'{}'", value.value().escape_default().to_string().replace('{', "").replace('}', "")))),
+            }) => Ok(Literal::Expr(format!(
+                "'{}'",
+                value
+                    .value()
+                    .escape_default()
+                    .to_string()
+                    .replace('{', "")
+                    .replace('}', "")
+            ))),
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref value),
                 ..
