@@ -151,25 +151,10 @@ impl Literal {
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Char(ref value),
                 ..
-            }) => {
-                let v = value.value();
-                if v.len_utf8() == 1 {
-                    Ok(Literal::Expr(format!(
-                        "'{}'",
-                        value.value().escape_default()
-                    )))
-                } else {
-                    Ok(Literal::Expr(format!(
-                        "L'{}'",
-                        value
-                            .value()
-                            .escape_default()
-                            .to_string()
-                            .replace('{', "")
-                            .replace('}', "")
-                    )))
-                }
-            }
+            }) => Ok(Literal::Expr(match value.value() as u32 {
+                0..=255 => format!("'{}'", value.value().escape_default()),
+                other_code => format!(r"L'\u{:X}'", other_code),
+            })),
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref value),
                 ..
