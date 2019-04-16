@@ -31,7 +31,7 @@ type F = A;
 #[no_mangle]
 pub static G: i32 = 10;
 
-const H: i32 = 10;
+pub const H: i32 = 10;
 
 #[no_mangle]
 pub extern "C" fn root(

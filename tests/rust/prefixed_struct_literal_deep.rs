@@ -10,7 +10,7 @@ struct Bar {
     a: i32,
 }
 
-const VAL: Foo = Foo {
+pub const VAL: Foo = Foo {
     a: 42,
     b: 1337,
     bar: Bar { a: 323 },

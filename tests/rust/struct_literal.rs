@@ -10,14 +10,14 @@ struct Bar {
 }
 
 impl Foo {
-    const FOO: Foo = Foo { a: 42, b: 47, };
-    const FOO2: Self = Foo { a: 42, b: 47, };
-    const FOO3: Self = Self { a: 42, b: 47, };
-    const BAZ: Bar = Bar { a: 42, b: 47, };
+    pub const FOO: Foo = Foo { a: 42, b: 47, };
+    pub const FOO2: Self = Foo { a: 42, b: 47, };
+    pub const FOO3: Self = Self { a: 42, b: 47, };
+    pub const BAZ: Bar = Bar { a: 42, b: 47, };
 }
 
-const BAR: Foo = Foo { a: 42, b: 1337, };
-const BAZZ: Bar = Bar { a: 42, b: 1337, };
+pub const BAR: Foo = Foo { a: 42, b: 1337, };
+pub const BAZZ: Bar = Bar { a: 42, b: 1337, };
 
 #[no_mangle]
 pub extern "C" fn root(x: Foo, bar: Bar) { }
