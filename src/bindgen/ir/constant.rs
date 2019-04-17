@@ -210,7 +210,6 @@ impl Literal {
                     fields: field_pairs,
                 })
             }
-            // Unary(ExprUnary { attrs: [], op: Neg(Sub), expr: Lit(ExprLit { attrs: [], lit: Int(LitInt { token: Literal { lit: 1 } }) }) }))
             syn::Expr::Unary(syn::ExprUnary {
                 attrs: _,
                 ref op,
