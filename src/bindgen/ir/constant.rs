@@ -143,7 +143,7 @@ impl Literal {
             syn::Expr::Lit(syn::ExprLit {
                                lit: syn::Lit::Str(ref value),
                                ..
-                           }) => Ok(Literal::Expr(format!("u8\"{}\"", value.value()))),
+                           }) => Ok(Literal::Expr(format!("\"{}\"", value.value()))),
             syn::Expr::Lit(syn::ExprLit {
                                lit: syn::Lit::Byte(ref value),
                                ..
@@ -230,9 +230,6 @@ fn can_handle(ty: &Type, expr: &syn::Expr) -> bool {
     if ty.is_primitive_or_ptr_primitive() {
         return true;
     }
-//            ConstPtr(Path(GenericPath { path: Path { name: "str" }, export_name: "str", generics: [], ctype: None }))
-//            Lit(ExprLit { attrs: [], lit: Str(LitStr { token: Literal { lit: "hello world" } }) }))
-
     match *expr {
         syn::Expr::Struct(_) => true,
         syn::Expr::Lit(syn::ExprLit {

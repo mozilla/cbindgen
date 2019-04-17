@@ -12,6 +12,8 @@ struct Foo {
   int32_t x[FOO];
 };
 
+static const char* BAR = "hello world";
+
 extern "C" {
 
 void root(Foo x);

@@ -163,7 +163,11 @@ impl CDecl {
             write!(out, "{} ", ctype.to_str());
         }
 
-        write!(out, "{}", self.type_name);
+        if self.type_name == "str" {
+            write!(out, "char");
+        } else {
+            write!(out, "{}", self.type_name);
+        }
 
         if !self.type_generic_args.is_empty() {
             out.write("<");
