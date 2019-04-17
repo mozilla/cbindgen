@@ -508,11 +508,13 @@ impl Type {
                             }
                         }
                     } else {
-                        warn!(
-                            "Can't find {}. This usually means that this type was incompatible or \
-                             not found.",
-                            path
-                        );
+                        if path.name() != "str" {
+                            warn!(
+                                "Can't find {}. This usually means that this type was incompatible or \
+                                 not found.",
+                                path
+                            );
+                        }
                     }
                 }
             }

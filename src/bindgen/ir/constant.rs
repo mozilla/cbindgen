@@ -141,24 +141,24 @@ impl Literal {
                 })
             }
             syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Str(ref value),
-                ..
-            }) => Ok(Literal::Expr(format!("u8\"{}\"", value.value()))),
+                               lit: syn::Lit::Str(ref value),
+                               ..
+                           }) => Ok(Literal::Expr(format!("u8\"{}\"", value.value()))),
             syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Byte(ref value),
-                ..
-            }) => Ok(Literal::Expr(format!("{}", value.value()))),
+                               lit: syn::Lit::Byte(ref value),
+                               ..
+                           }) => Ok(Literal::Expr(format!("{}", value.value()))),
             syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Char(ref value),
-                ..
-            }) => Ok(Literal::Expr(match value.value() as u32 {
+                               lit: syn::Lit::Char(ref value),
+                               ..
+                           }) => Ok(Literal::Expr(match value.value() as u32 {
                 0..=255 => format!("'{}'", value.value().escape_default()),
                 other_code => format!(r"L'\u{:X}'", other_code),
             })),
             syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Int(ref value),
-                ..
-            }) => match value.suffix() {
+                               lit: syn::Lit::Int(ref value),
+                               ..
+                           }) => match value.suffix() {
                 syn::IntSuffix::Usize
                 | syn::IntSuffix::U8
                 | syn::IntSuffix::U16
@@ -179,19 +179,19 @@ impl Literal {
                 },
             },
             syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Float(ref value),
-                ..
-            }) => Ok(Literal::Expr(format!("{}", value.value()))),
+                               lit: syn::Lit::Float(ref value),
+                               ..
+                           }) => Ok(Literal::Expr(format!("{}", value.value()))),
             syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Bool(ref value),
-                ..
-            }) => Ok(Literal::Expr(format!("{}", value.value))),
+                               lit: syn::Lit::Bool(ref value),
+                               ..
+                           }) => Ok(Literal::Expr(format!("{}", value.value))),
 
             syn::Expr::Struct(syn::ExprStruct {
-                ref path,
-                ref fields,
-                ..
-            }) => {
+                                  ref path,
+                                  ref fields,
+                                  ..
+                              }) => {
                 let struct_name = path.segments[0].ident.to_string();
                 let mut field_pairs: Vec<(String, Literal)> = Vec::new();
                 for field in fields {
@@ -209,7 +209,7 @@ impl Literal {
                     fields: field_pairs,
                 })
             }
-            _ => Err("Unsupported literal expression.".to_owned()),
+            _ => Err(format!("Unsupported literal expression. {:?}", *expr)),
         }
     }
 }
@@ -230,8 +230,18 @@ fn can_handle(ty: &Type, expr: &syn::Expr) -> bool {
     if ty.is_primitive_or_ptr_primitive() {
         return true;
     }
+//            ConstPtr(Path(GenericPath { path: Path { name: "str" }, export_name: "str", generics: [], ctype: None }))
+//            Lit(ExprLit { attrs: [], lit: Str(LitStr { token: Literal { lit: "hello world" } }) }))
+
     match *expr {
         syn::Expr::Struct(_) => true,
+        syn::Expr::Lit(syn::ExprLit {
+                           attrs: _,
+                           ref lit,
+                       }) => match *lit {
+            syn::Lit::Str(_) => true,
+            _ => false,
+        },
         _ => false,
     }
 }
@@ -254,7 +264,7 @@ impl Constant {
         };
 
         if !can_handle(&ty, expr) {
-            return Err("Unhandled const definition".to_owned());
+            return Err(format!("Unhandled const definition\n{:?}\n{:?}", &ty, expr));
         }
 
         let mut lit = Literal::load(&expr)?;
