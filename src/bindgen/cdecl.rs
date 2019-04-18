@@ -164,7 +164,7 @@ impl CDecl {
         }
 
         if self.type_name == "str" {
-            write!(out, "char");
+            write!(out, "wchar_t");
         } else {
             write!(out, "{}", self.type_name);
         }
