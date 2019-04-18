@@ -143,7 +143,7 @@ impl Literal {
             syn::Expr::Lit(syn::ExprLit {
                                lit: syn::Lit::Str(ref value),
                                ..
-                           }) => Ok(Literal::Expr(format!("\"{}\"", value.value()))),
+                           }) => Ok(Literal::Expr(format!("L\"{}\"", value.value()))),
             syn::Expr::Lit(syn::ExprLit {
                                lit: syn::Lit::Byte(ref value),
                                ..

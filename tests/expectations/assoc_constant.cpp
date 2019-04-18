@@ -6,7 +6,7 @@ struct Foo {
 
 };
 static const int32_t Foo_GA = 10;
-static const char* Foo_BU = "hello world";
+static const wchar_t* Foo_BU = L"hello world";
 static const float Foo_ZO = 3.14;
 
 extern "C" {

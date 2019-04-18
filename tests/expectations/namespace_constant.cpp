@@ -12,7 +12,7 @@ struct Foo {
   int32_t x[FOO];
 };
 
-static const char* BAR = "hello world";
+static const wchar_t* BAR = L"hello world";
 
 extern "C" {
 

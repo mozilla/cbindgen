@@ -11,6 +11,6 @@ struct Foo {
   int32_t x[FOO];
 };
 
-#define BAR "hello world"
+#define BAR L"hello world"
 
 void root(struct Foo x);

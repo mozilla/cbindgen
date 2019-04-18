@@ -11,6 +11,6 @@ typedef struct Foo {
   int32_t x[FOO];
 } Foo;
 
-#define BAR "hello world"
+#define BAR L"hello world"
 
 void root(Foo x);
