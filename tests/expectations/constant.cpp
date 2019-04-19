@@ -10,7 +10,11 @@ static const wchar_t HEART = L'\u2764';
 
 static const wchar_t LEFTCURLY = '{';
 
+static const int8_t NEG_ONE = -1;
+
 static const wchar_t NEWLINE = '\n';
+
+static const int8_t POS_ONE = 1;
 
 static const wchar_t QUOTE = '\'';
 

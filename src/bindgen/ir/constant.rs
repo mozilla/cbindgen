@@ -19,6 +19,7 @@ use bindgen::ir::{
 use bindgen::library::Library;
 use bindgen::writer::{Source, SourceWriter};
 use bindgen::Bindings;
+use syn::UnOp;
 
 #[derive(Debug, Clone)]
 pub enum Literal {
@@ -209,7 +210,18 @@ impl Literal {
                     fields: field_pairs,
                 })
             }
-            _ => Err("Unsupported literal expression.".to_owned()),
+            syn::Expr::Unary(syn::ExprUnary {
+                attrs: _,
+                ref op,
+                ref expr,
+            }) => match *op {
+                UnOp::Neg(_) => {
+                    let val = Self::load(expr)?;
+                    Ok(Literal::Expr(format!("-{}", val)))
+                }
+                _ => Err(format!("Unsupported Unary expression. {:?}", *op)),
+            },
+            _ => Err(format!("Unsupported literal expression. {:?}", *expr)),
         }
     }
 }
