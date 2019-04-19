@@ -214,7 +214,8 @@ There may be other differences, but those are the ones that I know of. Please co
 ## Prominent users
 
 * [milksnake](https://github.com/getsentry/milksnake)
-* [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings/webrender_ffi_generated.h)
+* [webrender](https://searchfox.org/mozilla-central/source/__GENERATED__/gfx/webrender_bindings/webrender_ffi_generated.h)
+* [stylo](https://searchfox.org/mozilla-central/source/__GENERATED__/layout/style/ServoStyleConsts.h)
 * [wgpu](https://github.com/gfx-rs/wgpu/blob/master/wgpu-bindings/wgpu.h)
 
 If you're using `cbindgen` and would like to be added to this list, please open a pull request!

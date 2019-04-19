@@ -11,7 +11,11 @@
 
 #define LEFTCURLY '{'
 
+#define NEG_ONE -1
+
 #define NEWLINE '\n'
+
+#define POS_ONE 1
 
 #define QUOTE '\''
 
