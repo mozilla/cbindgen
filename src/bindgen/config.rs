@@ -23,7 +23,7 @@ pub use bindgen::rename::RenameRule;
 pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
 /// A language type to generate bindings for.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Language {
     Cxx,
     C,
@@ -129,7 +129,7 @@ impl FromStr for DocumentationStyle {
 deserialize_enum_str!(DocumentationStyle);
 
 /// A style of Style to use when generating structs and enums.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Style {
     Both,
     Tag,
