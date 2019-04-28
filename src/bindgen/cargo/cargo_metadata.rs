@@ -15,7 +15,7 @@ use std::error;
 use std::fmt;
 use std::io;
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Output};
 use std::str::{from_utf8, Utf8Error};
 
 use serde_json;
@@ -83,6 +83,8 @@ pub struct Target {
 pub enum Error {
     /// Error during execution of `cargo metadata`
     Io(io::Error),
+    /// Metadata extraction failure
+    Metadata(Output),
     /// Output of `cargo metadata` was not valid utf8
     Utf8(Utf8Error),
     /// Deserialization error (structure of json did not match expected structure)
@@ -109,6 +111,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::Io(ref err) => err.fmt(f),
+            Error::Metadata(_) => write!(f, "Metadata error"),
             Error::Utf8(ref err) => err.fmt(f),
             Error::Json(ref err) => err.fmt(f),
         }
@@ -119,6 +122,7 @@ impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Error::Io(ref err) => Some(err),
+            Error::Metadata(_) => None,
             Error::Utf8(ref err) => Some(err),
             Error::Json(ref err) => Some(err),
         }
@@ -135,6 +139,9 @@ pub fn metadata(manifest_path: &Path) -> Result<Metadata, Error> {
     cmd.arg("--manifest-path");
     cmd.arg(manifest_path.to_str().unwrap());
     let output = cmd.output()?;
+    if !output.status.success() {
+        return Err(Error::Metadata(output));
+    }
     let stdout = from_utf8(&output.stdout)?;
     let meta: Metadata = serde_json::from_str(stdout)?;
     Ok(meta)
