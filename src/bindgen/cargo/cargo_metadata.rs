@@ -53,6 +53,8 @@ pub struct Package {
 pub struct Dependency {
     /// Name as given in the `Cargo.toml`
     pub name: String,
+    /// If Some, "extern rename" will appears as "name" in the lock
+    pub rename: Option<String>,
     source: Option<String>,
     /// Whether this is required or optional
     pub req: String,

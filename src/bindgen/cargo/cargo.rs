@@ -116,7 +116,22 @@ impl Cargo {
 
         // the name in Cargo.lock could use '-' instead of '_', so we need to
         // look for that too.
-        let replaced_name = dependency_name.replace("_", "-");
+        let mut dependency_name = dependency_name;
+        let mut replaced_name = dependency_name.replace("_", "-");
+
+        // The Cargo.toml may contain a rename which we need to apply
+        for metadata_package in &self.metadata.packages {
+            if metadata_package.name == package.name {
+                for dep in &metadata_package.dependencies {
+                    if let Some(ref rename) = dep.rename {
+                        if rename == dependency_name || rename == &replaced_name {
+                            dependency_name = &dep.name;
+                            replaced_name = dependency_name.replace("_", "-");
+                        }
+                    }
+                }
+            }
+        }
 
         if let &Some(ref root) = &lock.root {
             if root.name == package.name && root.version == package.version {
