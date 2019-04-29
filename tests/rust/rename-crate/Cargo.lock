@@ -5,9 +5,14 @@ name = "dependency"
 version = "0.1.0"
 
 [[package]]
+name = "old-dep-name"
+version = "0.1.0"
+
+[[package]]
 name = "rename-crate"
 version = "0.1.0"
 dependencies = [
  "dependency 0.1.0",
+ "old-dep-name 0.1.0",
 ]
 
