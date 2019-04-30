@@ -156,6 +156,25 @@ impl<'a> Parser<'a> {
         assert!(self.lib.is_some());
         self.parsed_crates.insert(pkg.name.clone());
 
+        // Before we do anything with this crate, we must first parse all of its dependencies.
+        // This is guaranteed to terminate because the crate-graph is acyclic (and even if it
+        // wasn't, we've already marked the crate as parsed in the line above).
+        for (dep_pkg, cfg) in self.lib.as_ref().unwrap().dependencies(&pkg) {
+            if !self.should_parse_dependency(&dep_pkg.name) {
+                continue;
+            }
+
+            if let Some(ref cfg) = cfg {
+                self.cfg_stack.push(cfg.clone());
+            }
+
+            self.parse_crate(&dep_pkg)?;
+
+            if cfg.is_some() {
+                self.cfg_stack.pop();
+            }
+        }
+
         // Check if we should use cargo expand for this crate
         if self.expand.contains(&pkg.name) {
             return self.parse_expand_crate(pkg);
@@ -231,41 +250,6 @@ impl<'a> Parser<'a> {
                         self.process_expanded_mod(pkg, inline_items)?;
                     } else {
                         unreachable!();
-                    }
-
-                    if cfg.is_some() {
-                        self.cfg_stack.pop();
-                    }
-                }
-                syn::Item::ExternCrate(ref item) => {
-                    let dep_pkg_name = item.ident.to_string();
-
-                    let cfg = Cfg::load(&item.attrs);
-                    if let &Some(ref cfg) = &cfg {
-                        self.cfg_stack.push(cfg.clone());
-                    }
-
-                    if self.should_parse_dependency(&dep_pkg_name) {
-                        if self.lib.is_some() {
-                            let dep_pkg_ref =
-                                self.lib.as_ref().unwrap().find_dep_ref(pkg, &dep_pkg_name);
-
-                            if let Some(dep_pkg_ref) = dep_pkg_ref {
-                                self.parse_crate(&dep_pkg_ref)?;
-                            } else {
-                                error!(
-                                    "Parsing crate `{}`: can't find dependency version for `{}`.",
-                                    pkg.name, dep_pkg_name
-                                );
-                            }
-                        } else {
-                            error!(
-                                "Parsing crate `{}`: cannot parse external crate `{}` because \
-                                 cbindgen is in single source mode. Consider specifying a crate \
-                                 directory instead of a source file.",
-                                pkg.name, dep_pkg_name
-                            );
-                        }
                     }
 
                     if cfg.is_some() {
@@ -378,41 +362,6 @@ impl<'a> Parser<'a> {
                                     pkg.name, next_mod_name
                                 );
                             }
-                        }
-                    }
-
-                    if cfg.is_some() {
-                        self.cfg_stack.pop();
-                    }
-                }
-                syn::Item::ExternCrate(ref item) => {
-                    let dep_pkg_name = item.ident.to_string();
-
-                    let cfg = Cfg::load(&item.attrs);
-                    if let &Some(ref cfg) = &cfg {
-                        self.cfg_stack.push(cfg.clone());
-                    }
-
-                    if self.should_parse_dependency(&dep_pkg_name) {
-                        if self.lib.is_some() {
-                            let dep_pkg_ref =
-                                self.lib.as_ref().unwrap().find_dep_ref(pkg, &dep_pkg_name);
-
-                            if let Some(dep_pkg_ref) = dep_pkg_ref {
-                                self.parse_crate(&dep_pkg_ref)?;
-                            } else {
-                                error!(
-                                    "Parsing crate `{}`: can't find dependency version for `{}`.",
-                                    pkg.name, dep_pkg_name
-                                );
-                            }
-                        } else {
-                            error!(
-                                "Parsing crate `{}`: cannot parse external crate `{}` because \
-                                 cbindgen is in single source mode. Consider specifying a crate \
-                                 directory instead of a source file.",
-                                pkg.name, dep_pkg_name
-                            );
                         }
                     }
 

@@ -9,10 +9,12 @@
 //   3. Add `--all-features` argument
 //   4. Remove the `--no-deps` argument
 
-use std::collections::HashMap;
+use std::borrow::Borrow;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::error;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::io;
 use std::path::Path;
 use std::process::{Command, Output};
@@ -24,23 +26,28 @@ use serde_json;
 /// Starting point for metadata returned by `cargo metadata`
 pub struct Metadata {
     /// A list of all crates referenced by this crate (and the crate itself)
-    pub packages: Vec<Package>,
+    pub packages: HashSet<Package>,
     version: usize,
     /// path to the workspace containing the `Cargo.lock`
     pub workspace_root: String,
 }
 
+/// A reference to a package including it's name and the specific version.
+#[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+pub struct PackageRef {
+    pub name: String,
+    pub version: String,
+}
+
 #[derive(Clone, Deserialize, Debug)]
 /// A crate
 pub struct Package {
-    /// Name as given in the `Cargo.toml`
-    pub name: String,
-    /// Version given in the `Cargo.toml`
-    pub version: String,
+    #[serde(flatten)]
+    pub name_and_version: PackageRef,
     id: String,
     source: Option<String>,
     /// List of dependencies of this particular package
-    pub dependencies: Vec<Dependency>,
+    pub dependencies: HashSet<Dependency>,
     /// Targets provided by the crate (lib, bin, example, test, ...)
     pub targets: Vec<Target>,
     features: HashMap<String, Vec<String>>,
@@ -53,8 +60,6 @@ pub struct Package {
 pub struct Dependency {
     /// Name as given in the `Cargo.toml`
     pub name: String,
-    /// If Some, "extern rename" will appears as "name" in the lock
-    pub rename: Option<String>,
     source: Option<String>,
     /// Whether this is required or optional
     pub req: String,
@@ -62,7 +67,7 @@ pub struct Dependency {
     optional: bool,
     uses_default_features: bool,
     features: Vec<String>,
-    target: Option<String>,
+    pub target: Option<String>,
 }
 
 #[derive(Clone, Deserialize, Debug)]
@@ -130,6 +135,48 @@ impl error::Error for Error {
         }
     }
 }
+
+// Implementations that let us lookup Packages and Dependencies by name (string)
+
+impl Borrow<PackageRef> for Package {
+    fn borrow(&self) -> &PackageRef {
+        &self.name_and_version
+    }
+}
+
+impl Hash for Package {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name_and_version.hash(state);
+    }
+}
+
+impl PartialEq for Package {
+    fn eq(&self, other: &Self) -> bool {
+        self.name_and_version == other.name_and_version
+    }
+}
+
+impl Eq for Package {}
+
+impl Borrow<str> for Dependency {
+    fn borrow(&self) -> &str {
+        &self.name
+    }
+}
+
+impl Hash for Dependency {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+
+impl PartialEq for Dependency {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+impl Eq for Dependency {}
 
 /// The main entry point to obtaining metadata
 pub fn metadata(manifest_path: &Path) -> Result<Metadata, Error> {
