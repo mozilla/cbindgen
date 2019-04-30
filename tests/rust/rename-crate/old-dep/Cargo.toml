@@ -4,4 +4,5 @@ version = "0.1.0"
 authors = ["cbindgen"]
 edition = "2018"
 
-[dependencies]
+[target.'cfg(not(target_os = "freebsd"))'.dependencies]
+no-extern = { path = "../no-extern/" }

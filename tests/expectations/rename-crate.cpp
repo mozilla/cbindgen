@@ -2,6 +2,24 @@
 #include <cstdint>
 #include <cstdlib>
 
+#if !defined(DEFINE_FREEBSD)
+struct NoExternTy {
+  uint8_t field;
+};
+#endif
+
+#if !defined(DEFINE_FREEBSD)
+struct ContainsNoExternTy {
+  NoExternTy field;
+};
+#endif
+
+#if defined(DEFINE_FREEBSD)
+struct ContainsNoExternTy {
+  uint64_t field;
+};
+#endif
+
 struct RenamedTy {
   uint64_t y;
 };
@@ -11,6 +29,8 @@ struct Foo {
 };
 
 extern "C" {
+
+void no_extern_func(ContainsNoExternTy a);
 
 void renamed_func(RenamedTy a);
 
