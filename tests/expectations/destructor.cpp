@@ -134,8 +134,49 @@ union Baz {
   }
 };
 
+union Taz {
+  enum class Tag : uint8_t {
+    Bar3,
+    Taz1,
+  };
+
+  struct Taz1_Body {
+    Tag tag;
+    int32_t _0;
+  };
+
+  struct {
+    Tag tag;
+  };
+  Taz1_Body taz1;
+
+  ~Taz() {
+    switch (tag) {
+      case Tag::Taz1: taz1.~Taz1_Body(); break;
+      default: break;
+    }
+  }
+};
+
+union Tazz {
+  enum class Tag : uint8_t {
+    Bar4,
+    Taz2,
+  };
+
+  struct Taz2_Body {
+    Tag tag;
+    int32_t _0;
+  };
+
+  struct {
+    Tag tag;
+  };
+  Taz2_Body taz2;
+};
+
 extern "C" {
 
-void root(const Foo<uint32_t> *a, const Baz<int32_t> *b);
+void root(const Foo<uint32_t> *a, const Baz<int32_t> *b, const Taz *c, Tazz d);
 
 } // extern "C"

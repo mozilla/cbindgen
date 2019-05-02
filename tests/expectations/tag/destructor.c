@@ -126,4 +126,36 @@ union Baz_i32 {
   struct Slice24_Body_i32 slice24;
 };
 
-void root(const struct Foo_u32 *a, const union Baz_i32 *b);
+enum Taz_Tag {
+  Bar3,
+  Taz1,
+};
+typedef uint8_t Taz_Tag;
+
+struct Taz1_Body {
+  Taz_Tag tag;
+  int32_t _0;
+};
+
+union Taz {
+  enum Taz_Tag tag;
+  struct Taz1_Body taz1;
+};
+
+enum Tazz_Tag {
+  Bar4,
+  Taz2,
+};
+typedef uint8_t Tazz_Tag;
+
+struct Taz2_Body {
+  Tazz_Tag tag;
+  int32_t _0;
+};
+
+union Tazz {
+  enum Tazz_Tag tag;
+  struct Taz2_Body taz2;
+};
+
+void root(const struct Foo_u32 *a, const union Baz_i32 *b, const union Taz *c, union Tazz d);

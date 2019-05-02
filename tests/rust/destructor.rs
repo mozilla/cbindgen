@@ -17,7 +17,6 @@ pub struct Polygon<LengthPercentage> {
     pub coordinates: OwnedSlice<LengthPercentage>,
 }
 
-/// cbindgen:destructor
 #[repr(C, u8)]
 pub enum Foo<T> {
     Bar,
@@ -34,7 +33,6 @@ pub enum Foo<T> {
     },
 }
 
-/// cbindgen:destructor
 #[repr(u8)]
 pub enum Baz<T> {
     Bar2,
@@ -51,6 +49,18 @@ pub enum Baz<T> {
     },
 }
 
+#[repr(u8)]
+pub enum Taz {
+    Bar3,
+    Taz1(i32),
+}
+
+/// cbindgen:derive-tagged-enum-destructor=false
+#[repr(u8)]
+pub enum Tazz {
+    Bar4,
+    Taz2(i32),
+}
 
 #[no_mangle]
-pub extern "C" fn root(a: &Foo<u32>, b: &Baz<i32>) {}
+pub extern "C" fn root(a: &Foo<u32>, b: &Baz<i32>, c: &Taz, d: Tazz) {}

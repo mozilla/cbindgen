@@ -398,6 +398,8 @@ pub struct EnumConfig {
     pub cast_assert_name: Option<String>,
     /// The way to annotation this enum as #[must_use].
     pub must_use: Option<String>,
+    /// Whether to generate destructors of tagged enums.
+    pub derive_tagged_enum_destructor: bool,
 }
 
 impl EnumConfig {
@@ -424,6 +426,12 @@ impl EnumConfig {
             return x;
         }
         self.derive_mut_casts
+    }
+    pub(crate) fn derive_tagged_enum_destructor(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-tagged-enum-destructor") {
+            return x;
+        }
+        self.derive_tagged_enum_destructor
     }
 }
 

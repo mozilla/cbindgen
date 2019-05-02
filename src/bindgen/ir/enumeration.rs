@@ -873,7 +873,9 @@ impl Source for Enum {
             }
 
             if config.language == Language::Cxx
-                && self.annotations.bool("destructor").unwrap_or(false)
+                && config
+                    .enumeration
+                    .derive_tagged_enum_destructor(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
