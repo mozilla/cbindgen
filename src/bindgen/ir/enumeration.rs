@@ -872,6 +872,33 @@ impl Source for Enum {
                 }
             }
 
+            if config.language == Language::Cxx
+                && self.annotations.bool("destructor").unwrap_or(false)
+            {
+                out.new_line();
+                out.new_line();
+                write!(out, "~{}()", self.export_name);
+                out.open_brace();
+                write!(out, "switch (tag)");
+                out.open_brace();
+                for variant in &self.variants {
+                    if let Some((ref variant_name, ref item)) = variant.body {
+                        write!(
+                            out,
+                            "case {}::{}: {}.~{}(); break;",
+                            self.tag.as_ref().unwrap(),
+                            variant.export_name,
+                            variant_name,
+                            item.export_name(),
+                        );
+                        out.new_line();
+                    }
+                }
+                write!(out, "default: break;");
+                out.close_brace(false);
+                out.close_brace(false);
+            }
+
             if let Some(body) = config.export.extra_body(&self.path) {
                 out.write_raw_block(body);
             }
