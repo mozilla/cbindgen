@@ -75,4 +75,55 @@ typedef struct {
   };
 } Foo_u32;
 
-void root(const Foo_u32 *p);
+typedef struct {
+  FillRule fill;
+  OwnedSlice_i32 coordinates;
+} Polygon_i32;
+
+enum Baz_i32_Tag {
+  Bar2_i32,
+  Polygon21_i32,
+  Slice21_i32,
+  Slice22_i32,
+  Slice23_i32,
+  Slice24_i32,
+};
+typedef uint8_t Baz_i32_Tag;
+
+typedef struct {
+  Baz_i32_Tag tag;
+  Polygon_i32 _0;
+} Polygon21_Body_i32;
+
+typedef struct {
+  Baz_i32_Tag tag;
+  OwnedSlice_i32 _0;
+} Slice21_Body_i32;
+
+typedef struct {
+  Baz_i32_Tag tag;
+  OwnedSlice_i32 _0;
+} Slice22_Body_i32;
+
+typedef struct {
+  Baz_i32_Tag tag;
+  FillRule fill;
+  OwnedSlice_i32 coords;
+} Slice23_Body_i32;
+
+typedef struct {
+  Baz_i32_Tag tag;
+  FillRule fill;
+  OwnedSlice_i32 coords;
+} Slice24_Body_i32;
+
+typedef union {
+  Baz_i32_Tag tag;
+  Polygon21_Body_i32 polygon21;
+  Slice21_Body_i32 slice21;
+  Slice22_Body_i32 slice22;
+  Slice23_Body_i32 slice23;
+  Slice24_Body_i32 slice24;
+} Baz_i32;
+
+void root(const Foo_u32 *a, const Baz_i32 *b);

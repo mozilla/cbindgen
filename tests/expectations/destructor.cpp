@@ -75,8 +75,67 @@ struct Foo {
   }
 };
 
+template<typename T>
+union Baz {
+  enum class Tag : uint8_t {
+    Bar2,
+    Polygon21,
+    Slice21,
+    Slice22,
+    Slice23,
+    Slice24,
+  };
+
+  struct Polygon21_Body {
+    Tag tag;
+    Polygon<T> _0;
+  };
+
+  struct Slice21_Body {
+    Tag tag;
+    OwnedSlice<T> _0;
+  };
+
+  struct Slice22_Body {
+    Tag tag;
+    OwnedSlice<int32_t> _0;
+  };
+
+  struct Slice23_Body {
+    Tag tag;
+    FillRule fill;
+    OwnedSlice<T> coords;
+  };
+
+  struct Slice24_Body {
+    Tag tag;
+    FillRule fill;
+    OwnedSlice<int32_t> coords;
+  };
+
+  struct {
+    Tag tag;
+  };
+  Polygon21_Body polygon21;
+  Slice21_Body slice21;
+  Slice22_Body slice22;
+  Slice23_Body slice23;
+  Slice24_Body slice24;
+
+  ~Baz() {
+    switch (tag) {
+      case Tag::Polygon21: polygon21.~Polygon21_Body(); break;
+      case Tag::Slice21: slice21.~Slice21_Body(); break;
+      case Tag::Slice22: slice22.~Slice22_Body(); break;
+      case Tag::Slice23: slice23.~Slice23_Body(); break;
+      case Tag::Slice24: slice24.~Slice24_Body(); break;
+      default: break;
+    }
+  }
+};
+
 extern "C" {
 
-void root(const Foo<uint32_t> *p);
+void root(const Foo<uint32_t> *a, const Baz<int32_t> *b);
 
 } // extern "C"
