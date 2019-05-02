@@ -7,6 +7,7 @@ use std::io::Write;
 
 use syn;
 
+use bindgen::cargo::cargo_metadata::Dependency;
 use bindgen::config::Config;
 use bindgen::writer::SourceWriter;
 
@@ -125,6 +126,26 @@ impl Cfg {
             1 => Some(configs.pop().unwrap()),
             _ => Some(Cfg::All(configs)),
         }
+    }
+
+    pub fn load_metadata(dependency: &Dependency) -> Option<Cfg> {
+        dependency
+            .target
+            .as_ref()
+            .map(|target| {
+                syn::parse_str::<syn::Meta>(target)
+                    .expect("error parsing dependency's target metadata")
+            })
+            .and_then(|target| {
+                if let syn::Meta::List(syn::MetaList { ident, nested, .. }) = target {
+                    if ident != "cfg" || nested.len() != 1 {
+                        return None;
+                    }
+                    Cfg::load_single(nested.first().unwrap().value())
+                } else {
+                    None
+                }
+            })
     }
 
     fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {

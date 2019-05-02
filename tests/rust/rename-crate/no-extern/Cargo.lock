@@ -4,10 +4,3 @@
 name = "no-extern"
 version = "0.1.0"
 
-[[package]]
-name = "old-dep-name"
-version = "0.1.0"
-dependencies = [
- "no-extern 0.1.0",
-]
-
