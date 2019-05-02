@@ -196,6 +196,9 @@ derive_gte = false
 [enum]
 # A rule to use to rename enum variants
 rename_variants = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
+# Whether tagged enums should generate destructors. This makes them dangerous to
+# pass by value.
+derive_tagged_enum_destructor = false
 
 ```
 
