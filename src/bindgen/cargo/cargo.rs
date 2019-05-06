@@ -24,7 +24,6 @@ fn parse_dep_string(dep_string: &str) -> (&str, &str) {
 pub(crate) struct Cargo {
     manifest_path: PathBuf,
     binding_crate_name: String,
-
     lock: Option<Lock>,
     metadata: Metadata,
     clean: bool,
@@ -69,10 +68,10 @@ impl Cargo {
 
         Ok(Cargo {
             manifest_path: toml_path,
-            binding_crate_name: binding_crate_name,
-            lock: lock,
-            metadata: metadata,
-            clean: clean,
+            binding_crate_name,
+            lock,
+            metadata,
+            clean,
         })
     }
 
@@ -85,12 +84,15 @@ impl Cargo {
     }
 
     pub(crate) fn dependencies(&self, package: &PackageRef) -> Vec<(PackageRef, Option<Cfg>)> {
-        let lock = self.lock.as_ref().unwrap();
+        let lock = match self.lock {
+            Some(ref lock) => lock,
+            None => return vec![],
+        };
 
         let mut dependencies = None;
 
         // Find the dependencies listing in the lockfile
-        if let &Some(ref root) = &lock.root {
+        if let Some(ref root) = lock.root {
             if root.name == package.name && root.version == package.version {
                 dependencies = root.dependencies.as_ref();
             }
