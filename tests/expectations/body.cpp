@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 enum class MyCLikeEnum {
   Foo1,

@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 #include <cassert>
 
 template<typename T>
@@ -46,23 +47,23 @@ union StyleFoo {
                       const StylePoint<T> &aY,
                       const StylePoint<float> &aZ) {
     StyleFoo result;
-    result.foo.x = aX;
-    result.foo.y = aY;
-    result.foo.z = aZ;
+    ::new (&result.foo.x) (int32_t)(aX);
+    ::new (&result.foo.y) (StylePoint<T>)(aY);
+    ::new (&result.foo.z) (StylePoint<float>)(aZ);
     result.tag = Tag::Foo;
     return result;
   }
 
   static StyleFoo Bar(const T &a0) {
     StyleFoo result;
-    result.bar._0 = a0;
+    ::new (&result.bar._0) (T)(a0);
     result.tag = Tag::Bar;
     return result;
   }
 
   static StyleFoo Baz(const StylePoint<T> &a0) {
     StyleFoo result;
-    result.baz._0 = a0;
+    ::new (&result.baz._0) (StylePoint<T>)(a0);
     result.tag = Tag::Baz;
     return result;
   }
@@ -133,6 +134,7 @@ struct StyleBar {
     int32_t x;
     StylePoint<T> y;
     StylePoint<float> z;
+    int32_t (*u)(int32_t);
   };
 
   struct StyleBar2_Body {
@@ -152,25 +154,27 @@ struct StyleBar {
 
   static StyleBar Bar1(const int32_t &aX,
                        const StylePoint<T> &aY,
-                       const StylePoint<float> &aZ) {
+                       const StylePoint<float> &aZ,
+                       int32_t (*&aU)(int32_t)) {
     StyleBar result;
-    result.bar1.x = aX;
-    result.bar1.y = aY;
-    result.bar1.z = aZ;
+    ::new (&result.bar1.x) (int32_t)(aX);
+    ::new (&result.bar1.y) (StylePoint<T>)(aY);
+    ::new (&result.bar1.z) (StylePoint<float>)(aZ);
+    ::new (&result.bar1.u) (int32_t(*)(int32_t))(aU);
     result.tag = Tag::Bar1;
     return result;
   }
 
   static StyleBar Bar2(const T &a0) {
     StyleBar result;
-    result.bar2._0 = a0;
+    ::new (&result.bar2._0) (T)(a0);
     result.tag = Tag::Bar2;
     return result;
   }
 
   static StyleBar Bar3(const StylePoint<T> &a0) {
     StyleBar result;
-    result.bar3._0 = a0;
+    ::new (&result.bar3._0) (StylePoint<T>)(a0);
     result.tag = Tag::Bar3;
     return result;
   }
@@ -253,14 +257,14 @@ union StyleBaz {
 
   static StyleBaz Baz1(const StyleBar<uint32_t> &a0) {
     StyleBaz result;
-    result.baz1._0 = a0;
+    ::new (&result.baz1._0) (StyleBar<uint32_t>)(a0);
     result.tag = Tag::Baz1;
     return result;
   }
 
   static StyleBaz Baz2(const StylePoint<int32_t> &a0) {
     StyleBaz result;
-    result.baz2._0 = a0;
+    ::new (&result.baz2._0) (StylePoint<int32_t>)(a0);
     result.tag = Tag::Baz2;
     return result;
   }
@@ -327,14 +331,14 @@ struct StyleTaz {
 
   static StyleTaz Taz1(const StyleBar<uint32_t> &a0) {
     StyleTaz result;
-    result.taz1._0 = a0;
+    ::new (&result.taz1._0) (StyleBar<uint32_t>)(a0);
     result.tag = Tag::Taz1;
     return result;
   }
 
   static StyleTaz Taz2(const StyleBaz &a0) {
     StyleTaz result;
-    result.taz2._0 = a0;
+    ::new (&result.taz2._0) (StyleBaz)(a0);
     result.tag = Tag::Taz2;
     return result;
   }

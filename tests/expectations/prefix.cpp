@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 static const int32_t PREFIX_LEN = 42;
 

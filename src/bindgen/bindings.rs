@@ -131,6 +131,8 @@ impl Bindings {
                 out.new_line();
                 out.write("#include <cstdlib>");
                 out.new_line();
+                out.write("#include <new>");
+                out.new_line();
                 if self.config.enumeration.cast_assert_name.is_none()
                     && (self.config.enumeration.derive_mut_casts
                         || self.config.enumeration.derive_const_casts)

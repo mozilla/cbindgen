@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
 enum class BarType : uint32_t {

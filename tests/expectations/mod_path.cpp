@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 static const uint8_t EXPORT_ME_TOO = 42;
 

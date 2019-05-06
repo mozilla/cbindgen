@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 #if defined(NOT_DEFINED)
 static const int32_t DEFAULT_X = 8;

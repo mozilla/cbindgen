@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 enum class C : uint32_t {
   X = 2,
@@ -53,7 +54,7 @@ union F {
 
   static F Foo(const int16_t &a0) {
     F result;
-    result.foo._0 = a0;
+    ::new (&result.foo._0) (int16_t)(a0);
     result.tag = Tag::Foo;
     return result;
   }
@@ -61,8 +62,8 @@ union F {
   static F Bar(const uint8_t &aX,
                const int16_t &aY) {
     F result;
-    result.bar.x = aX;
-    result.bar.y = aY;
+    ::new (&result.bar.x) (uint8_t)(aX);
+    ::new (&result.bar.y) (int16_t)(aY);
     result.tag = Tag::Bar;
     return result;
   }
@@ -110,7 +111,7 @@ struct H {
 
   static H Hello(const int16_t &a0) {
     H result;
-    result.hello._0 = a0;
+    ::new (&result.hello._0) (int16_t)(a0);
     result.tag = Tag::Hello;
     return result;
   }
@@ -118,8 +119,8 @@ struct H {
   static H There(const uint8_t &aX,
                  const int16_t &aY) {
     H result;
-    result.there.x = aX;
-    result.there.y = aY;
+    ::new (&result.there.x) (uint8_t)(aX);
+    ::new (&result.there.y) (int16_t)(aY);
     result.tag = Tag::There;
     return result;
   }

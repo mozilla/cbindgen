@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 struct Foo {
   enum class Tag {
@@ -18,7 +19,9 @@ struct Foo {
 
   static Foo A(const float (&a0)[20]) {
     Foo result;
-    for (int i = 0; i < 20; i++) {result.a._0[i] = a0[i];}
+    for (int i = 0; i < 20; i++) {
+      ::new (&result.a._0[i]) (float)(a0[i]);
+    }
     result.tag = Tag::A;
     return result;
   }
