@@ -14,7 +14,7 @@ pub enum Foo<T> {
 
 #[repr(C)]
 pub enum Bar<T> {
-    Bar1 { x: i32, y: Point<T>, z: Point<f32>, },
+    Bar1 { x: i32, y: Point<T>, z: Point<f32>, u: unsafe extern "C" fn(i32) -> i32,  },
     Bar2(T),
     Bar3(Point<T>),
     Bar4,

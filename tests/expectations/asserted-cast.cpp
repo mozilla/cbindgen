@@ -4,6 +4,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 struct I;
 
@@ -31,7 +32,7 @@ struct H {
 
   static H H_Foo(const int16_t &a0) {
     H result;
-    result.foo._0 = a0;
+    ::new (&result.foo._0) (int16_t)(a0);
     result.tag = Tag::H_Foo;
     return result;
   }
@@ -39,8 +40,8 @@ struct H {
   static H H_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     H result;
-    result.bar.x = aX;
-    result.bar.y = aY;
+    ::new (&result.bar.x) (uint8_t)(aX);
+    ::new (&result.bar.y) (int16_t)(aY);
     result.tag = Tag::H_Bar;
     return result;
   }
@@ -108,7 +109,7 @@ struct J {
 
   static J J_Foo(const int16_t &a0) {
     J result;
-    result.foo._0 = a0;
+    ::new (&result.foo._0) (int16_t)(a0);
     result.tag = Tag::J_Foo;
     return result;
   }
@@ -116,8 +117,8 @@ struct J {
   static J J_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     J result;
-    result.bar.x = aX;
-    result.bar.y = aY;
+    ::new (&result.bar.x) (uint8_t)(aX);
+    ::new (&result.bar.y) (int16_t)(aY);
     result.tag = Tag::J_Bar;
     return result;
   }
@@ -187,7 +188,7 @@ union K {
 
   static K K_Foo(const int16_t &a0) {
     K result;
-    result.foo._0 = a0;
+    ::new (&result.foo._0) (int16_t)(a0);
     result.tag = Tag::K_Foo;
     return result;
   }
@@ -195,8 +196,8 @@ union K {
   static K K_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     K result;
-    result.bar.x = aX;
-    result.bar.y = aY;
+    ::new (&result.bar.x) (uint8_t)(aX);
+    ::new (&result.bar.y) (int16_t)(aY);
     result.tag = Tag::K_Bar;
     return result;
   }

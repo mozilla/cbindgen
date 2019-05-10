@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 #if !defined(DEFINE_FREEBSD)
 struct NoExternTy {

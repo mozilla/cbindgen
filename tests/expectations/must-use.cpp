@@ -6,6 +6,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <new>
 
 template<typename T>
 struct MUST_USE_STRUCT MaybeOwnedPtr {

@@ -700,28 +700,28 @@ impl Source for Enum {
                         for &(ref field_name, ref ty, ..) in body.fields.iter().skip(skip_fields) {
                             out.new_line();
                             match ty {
-                                Type::Array(ref _ty, ref length) => {
+                                Type::Array(ref ty, ref length) => {
                                     // arrays are not assignable in C++ so we
                                     // need to manually copy the elements
+                                    write!(out, "for (int i = 0; i < {}; i++)", length.as_str());
+                                    out.open_brace();
                                     write!(
                                         out,
-                                        "for (int i = 0; i < {}; i++) {{\
-                                         result.{}.{}[i] = {}[i];\
-                                         }}",
-                                        length.as_str(),
-                                        variant_name,
-                                        field_name,
-                                        arg_renamer(field_name)
+                                        "::new (&result.{}.{}[i]) (",
+                                        variant_name, field_name
                                     );
+                                    ty.write(config, out);
+                                    write!(out, ")({}[i]);", arg_renamer(field_name));
+                                    out.close_brace(false);
                                 }
-                                _ => {
+                                ref ty => {
                                     write!(
                                         out,
-                                        "result.{}.{} = {};",
-                                        variant_name,
-                                        field_name,
-                                        arg_renamer(field_name)
+                                        "::new (&result.{}.{}) (",
+                                        variant_name, field_name
                                     );
+                                    ty.write(config, out);
+                                    write!(out, ")({});", arg_renamer(field_name));
                                 }
                             }
                         }

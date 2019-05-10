@@ -56,6 +56,7 @@ typedef struct StyleBar1_Body_i32 {
   int32_t x;
   StylePoint_i32 y;
   StylePoint_f32 z;
+  int32_t (*u)(int32_t);
 } StyleBar1_Body_i32;
 
 typedef struct StyleBar2_Body_i32 {
@@ -91,6 +92,7 @@ typedef struct StyleBar1_Body_u32 {
   int32_t x;
   StylePoint_u32 y;
   StylePoint_f32 z;
+  int32_t (*u)(int32_t);
 } StyleBar1_Body_u32;
 
 typedef struct StyleBar2_Body_u32 {

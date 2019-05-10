@@ -56,6 +56,7 @@ struct StyleBar1_Body_i32 {
   int32_t x;
   struct StylePoint_i32 y;
   struct StylePoint_f32 z;
+  int32_t (*u)(int32_t);
 };
 
 struct StyleBar2_Body_i32 {
@@ -91,6 +92,7 @@ struct StyleBar1_Body_u32 {
   int32_t x;
   struct StylePoint_u32 y;
   struct StylePoint_f32 z;
+  int32_t (*u)(int32_t);
 };
 
 struct StyleBar2_Body_u32 {
