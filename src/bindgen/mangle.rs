@@ -32,23 +32,25 @@ fn internal_mangle_name(name: &str, generic_values: &[Type], last_in_parent: boo
         }
 
         let is_last = i == generic_values.len() - 1;
-        match ty {
-            &Type::Path(ref generic) => {
+        match *ty {
+            Type::Path(ref generic) => {
                 mangled.push_str(&internal_mangle_name(
                     generic.export_name(),
                     generic.generics(),
                     last_in_parent && is_last,
                 ));
             }
-            &Type::Primitive(ref primitive) => {
+            Type::Primitive(ref primitive) => {
                 mangled.push_str(primitive.to_repr_rust());
             }
-            &Type::MutRef(..)
-            | &Type::Ref(..)
-            | &Type::ConstPtr(..)
-            | &Type::Ptr(..)
-            | &Type::Array(..)
-            | &Type::FuncPtr(..) => unimplemented!(),
+            Type::MutRef(..)
+            | Type::Ref(..)
+            | Type::ConstPtr(..)
+            | Type::Ptr(..)
+            | Type::Array(..)
+            | Type::FuncPtr(..) => {
+                panic!("Unable to mangle generic parameter {:?} for '{}'", ty, name);
+            }
         }
 
         // Skip writing the trailing '>' mangling when possible
