@@ -199,6 +199,9 @@ rename_variants = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|Snak
 # Whether tagged enums should generate destructors. This makes them dangerous to
 # pass by value.
 derive_tagged_enum_destructor = false
+# Whether tagged enums should generate copy-constructor. This makes them
+# dangerous to pass by value.
+derive_tagged_enum_copy_constructor = false
 
 ```
 
