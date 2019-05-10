@@ -400,6 +400,8 @@ pub struct EnumConfig {
     pub must_use: Option<String>,
     /// Whether to generate destructors of tagged enums.
     pub derive_tagged_enum_destructor: bool,
+    /// Whether to generate copy-constructors of tagged enums.
+    pub derive_tagged_enum_copy_constructor: bool,
 }
 
 impl EnumConfig {
@@ -432,6 +434,12 @@ impl EnumConfig {
             return x;
         }
         self.derive_tagged_enum_destructor
+    }
+    pub(crate) fn derive_tagged_enum_copy_constructor(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-tagged-enum-copy-constructor") {
+            return x;
+        }
+        self.derive_tagged_enum_copy_constructor
     }
 }
 

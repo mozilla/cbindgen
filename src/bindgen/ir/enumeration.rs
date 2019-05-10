@@ -815,16 +815,16 @@ impl Source for Enum {
                 }
             }
 
+            let other = if let Some(r) = config.function.rename_args {
+                r.apply_to_snake_case("other", IdentifierType::FunctionArg)
+            } else {
+                String::from("other")
+            };
+
             if config.language == Language::Cxx
                 && self.can_derive_eq()
                 && config.structure.derive_eq(&self.annotations)
             {
-                let other = if let Some(r) = config.function.rename_args {
-                    r.apply_to_snake_case("other", IdentifierType::FunctionArg)
-                } else {
-                    String::from("other")
-                };
-
                 out.new_line();
                 out.new_line();
                 write!(
@@ -892,6 +892,43 @@ impl Source for Enum {
                             variant.export_name,
                             variant_name,
                             item.export_name(),
+                        );
+                        out.new_line();
+                    }
+                }
+                write!(out, "default: break;");
+                out.close_brace(false);
+                out.close_brace(false);
+            }
+
+            if config.language == Language::Cxx
+                && config
+                    .enumeration
+                    .derive_tagged_enum_copy_constructor(&self.annotations)
+            {
+                out.new_line();
+                out.new_line();
+                write!(
+                    out,
+                    "{}(const {}& {})",
+                    self.export_name, self.export_name, other
+                );
+                out.new_line();
+                write!(out, " : tag({}.tag)", other);
+                out.open_brace();
+                write!(out, "switch (tag)");
+                out.open_brace();
+                for variant in &self.variants {
+                    if let Some((ref variant_name, ref item)) = variant.body {
+                        write!(
+                            out,
+                            "case {}::{}: ::new (&{}) ({})({}.{}); break;",
+                            self.tag.as_ref().unwrap(),
+                            variant.export_name,
+                            variant_name,
+                            item.export_name(),
+                            other,
+                            variant_name,
                         );
                         out.new_line();
                     }

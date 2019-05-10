@@ -1,2 +1,3 @@
 [enum]
 derive_tagged_enum_destructor = true
+derive_tagged_enum_copy_constructor = true

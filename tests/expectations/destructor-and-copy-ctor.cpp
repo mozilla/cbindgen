@@ -74,6 +74,18 @@ struct Foo {
       default: break;
     }
   }
+
+  Foo(const Foo& other)
+   : tag(other.tag) {
+    switch (tag) {
+      case Tag::Polygon1: ::new (&polygon1) (Polygon1_Body)(other.polygon1); break;
+      case Tag::Slice1: ::new (&slice1) (Slice1_Body)(other.slice1); break;
+      case Tag::Slice2: ::new (&slice2) (Slice2_Body)(other.slice2); break;
+      case Tag::Slice3: ::new (&slice3) (Slice3_Body)(other.slice3); break;
+      case Tag::Slice4: ::new (&slice4) (Slice4_Body)(other.slice4); break;
+      default: break;
+    }
+  }
 };
 
 template<typename T>
@@ -133,6 +145,18 @@ union Baz {
       default: break;
     }
   }
+
+  Baz(const Baz& other)
+   : tag(other.tag) {
+    switch (tag) {
+      case Tag::Polygon21: ::new (&polygon21) (Polygon21_Body)(other.polygon21); break;
+      case Tag::Slice21: ::new (&slice21) (Slice21_Body)(other.slice21); break;
+      case Tag::Slice22: ::new (&slice22) (Slice22_Body)(other.slice22); break;
+      case Tag::Slice23: ::new (&slice23) (Slice23_Body)(other.slice23); break;
+      case Tag::Slice24: ::new (&slice24) (Slice24_Body)(other.slice24); break;
+      default: break;
+    }
+  }
 };
 
 union Taz {
@@ -154,6 +178,14 @@ union Taz {
   ~Taz() {
     switch (tag) {
       case Tag::Taz1: taz1.~Taz1_Body(); break;
+      default: break;
+    }
+  }
+
+  Taz(const Taz& other)
+   : tag(other.tag) {
+    switch (tag) {
+      case Tag::Taz1: ::new (&taz1) (Taz1_Body)(other.taz1); break;
       default: break;
     }
   }

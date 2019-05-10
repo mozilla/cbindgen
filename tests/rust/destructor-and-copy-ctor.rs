@@ -56,6 +56,7 @@ pub enum Taz {
 }
 
 /// cbindgen:derive-tagged-enum-destructor=false
+/// cbindgen:derive-tagged-enum-copy-constructor=false
 #[repr(u8)]
 pub enum Tazz {
     Bar4,
