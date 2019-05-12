@@ -71,6 +71,10 @@ fn compile(cbindgen_output: &Path, language: Language) {
     command.arg("-D").arg("DEFINED");
     command.arg("-c").arg(cbindgen_output);
     command.arg("-o").arg(&object);
+    if let Language::Cxx = language {
+        // enum class is a c++11 extension which makes g++ on macos 10.14 error out
+        command.arg("-std=c++11");
+    }
 
     println!("Running: {:?}", command);
     let out = command.output().expect("failed to compile");
