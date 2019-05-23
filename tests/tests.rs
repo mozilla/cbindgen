@@ -6,19 +6,14 @@ use std::process::Command;
 use std::{env, fs};
 
 fn run_cbindgen(
-    profile: &'static str,
+    cbindgen_path: &'static str,
     path: &Path,
     output: &Path,
     language: Language,
     style: Option<Style>,
 ) {
-    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let program = Path::new(&crate_dir)
-        .join("target")
-        .join(profile)
-        .join("cbindgen");
-
-    let mut command = Command::new(program);
+    let program = Path::new(cbindgen_path);
+    let mut command = Command::new(&program);
     match language {
         Language::Cxx => {}
         Language::C => {
@@ -86,7 +81,7 @@ fn compile(cbindgen_output: &Path, language: Language) {
 }
 
 fn run_compile_test(
-    profile: &'static str,
+    cbindgen_path: &'static str,
     name: &'static str,
     path: &Path,
     language: Language,
@@ -114,23 +109,23 @@ fn run_compile_test(
         }
     }
 
-    run_cbindgen(profile, path, &output, language, style);
+    run_cbindgen(cbindgen_path, path, &output, language, style);
     compile(&output, language);
 }
 
-fn test_file(profile: &'static str, name: &'static str, filename: &'static str) {
+fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static str) {
     let test = Path::new(filename);
     for style in &[Style::Type, Style::Tag, Style::Both] {
-        run_compile_test(profile, name, &test, Language::C, Some(*style));
+        run_compile_test(cbindgen_path, name, &test, Language::C, Some(*style));
     }
-    run_compile_test(profile, name, &test, Language::Cxx, None);
+    run_compile_test(cbindgen_path, name, &test, Language::Cxx, None);
 }
 
 macro_rules! test_file {
-    ($profile:ident, $test_function_name:ident, $name:expr, $file:tt) => {
+    ($cbindgen_path:expr, $test_function_name:ident, $name:expr, $file:tt) => {
         #[test]
         fn $test_function_name() {
-            test_file(stringify!($profile), $name, $file);
+            test_file($cbindgen_path, $name, $file);
         }
     };
 }

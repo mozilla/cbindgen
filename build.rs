@@ -5,7 +5,6 @@ fn generate_tests() {
     use std::io::Write;
     use std::path::{Path, PathBuf};
 
-    let profile = env::var("PROFILE").unwrap();
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let mut dst = File::create(Path::new(&out_dir).join("tests.rs")).unwrap();
 
@@ -16,6 +15,19 @@ fn generate_tests() {
     let entries = tests.map(|t| t.expect("Couldn't read test file"));
 
     println!("cargo:rerun-if-changed={}", tests_dir.display());
+
+    // Try to make a decent guess at where our binary will end up in.
+    //
+    // TODO(emilio): Ideally running tests will just use the library-version of
+    // cbindgen instead of the built binary.
+    let cbindgen_path = out_dir
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("cbindgen");
 
     for entry in entries {
         let path_segment = if entry.file_type().unwrap().is_file() {
@@ -41,8 +53,8 @@ fn generate_tests() {
 
         writeln!(
             dst,
-            "test_file!({}, test_{}, {:?}, {:?});",
-            profile,
+            "test_file!({:?}, test_{}, {:?}, {:?});",
+            cbindgen_path,
             identifier,
             path_segment,
             entry.path(),
