@@ -3,7 +3,7 @@ extern crate cbindgen;
 use cbindgen::*;
 use std::path::Path;
 use std::process::Command;
-use std::{env, fs};
+use std::{env, fs, str};
 
 fn run_cbindgen(
     cbindgen_path: &'static str,
@@ -48,8 +48,9 @@ fn run_cbindgen(
     let cbindgen_output = command.output().expect("failed to execute process");
     assert!(
         cbindgen_output.status.success(),
-        "cbindgen failed: {:?}",
-        output
+        "cbindgen failed: {:?} with error: {}",
+        output,
+        str::from_utf8(&cbindgen_output.stderr).unwrap_or_default()
     );
 }
 
