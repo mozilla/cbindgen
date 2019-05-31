@@ -613,6 +613,8 @@ pub struct Config {
     pub tab_width: usize,
     /// The language to output bindings for
     pub language: Language,
+    /// Include preprocessor defines in C bindings to ensure C++ compatibility
+    pub cpp_compat: bool,
     /// The style to declare structs, enums and unions in for C
     pub style: Style,
     /// The configuration options for parsing
@@ -658,6 +660,7 @@ impl Default for Config {
             line_length: 100,
             tab_width: 2,
             language: Language::Cxx,
+            cpp_compat: false,
             style: Style::Type,
             macro_expansion: Default::default(),
             parse: ParseConfig::default(),

@@ -10,6 +10,7 @@ fn run_cbindgen(
     path: &Path,
     output: &Path,
     language: Language,
+    cpp_compat: bool,
     style: Option<Style>,
 ) {
     let program = Path::new(cbindgen_path);
@@ -18,6 +19,10 @@ fn run_cbindgen(
         Language::Cxx => {}
         Language::C => {
             command.arg("--lang").arg("c");
+
+            if cpp_compat {
+                command.arg("--cpp-compat");
+            }
         }
     }
 
@@ -86,6 +91,7 @@ fn run_compile_test(
     name: &'static str,
     path: &Path,
     language: Language,
+    cpp_compat: bool,
     style: Option<Style>,
 ) {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
@@ -101,25 +107,35 @@ fn run_compile_test(
             Style::Type => {}
         }
     }
-    match language {
-        Language::Cxx => {
-            output.push(format!("{}.cpp", name));
-        }
-        Language::C => {
-            output.push(format!("{}.c", name));
-        }
-    }
 
-    run_cbindgen(cbindgen_path, path, &output, language, style);
+    let ext = match language {
+        Language::Cxx => "cpp",
+        Language::C => {
+            if cpp_compat {
+                "compat.c"
+            } else {
+                "c"
+            }
+        }
+    };
+
+    output.push(format!("{}.{}", name, ext));
+
+    run_cbindgen(cbindgen_path, path, &output, language, cpp_compat, style);
     compile(&output, language);
+
+    if language == Language::C && cpp_compat {
+        compile(&output, Language::Cxx)
+    }
 }
 
 fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static str) {
     let test = Path::new(filename);
     for style in &[Style::Type, Style::Tag, Style::Both] {
-        run_compile_test(cbindgen_path, name, &test, Language::C, Some(*style));
+        run_compile_test(cbindgen_path, name, &test, Language::C, true, Some(*style));
+        run_compile_test(cbindgen_path, name, &test, Language::C, false, Some(*style));
     }
-    run_compile_test(cbindgen_path, name, &test, Language::Cxx, None);
+    run_compile_test(cbindgen_path, name, &test, Language::Cxx, false, None);
 }
 
 macro_rules! test_file {

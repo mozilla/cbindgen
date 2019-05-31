@@ -42,6 +42,10 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
         };
     }
 
+    if matches.is_present("cpp-compat") {
+        config.cpp_compat = true;
+    }
+
     if let Some(style) = matches.value_of("style") {
         config.style = match style {
             "Both" => Style::Both,
@@ -140,6 +144,11 @@ fn main() {
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
                 .possible_values(&["c++", "C++", "c", "C"]),
+        )
+        .arg(
+            Arg::with_name("cpp-compat")
+                .long("cpp-compat")
+                .help("Whether to add C++ compatibility to generated C bindings")
         )
         .arg(
             Arg::with_name("style")
