@@ -55,10 +55,10 @@ fn run_cbindgen(
 }
 
 fn compile(cbindgen_output: &Path, language: Language) {
-    let cc = env::var("CC").unwrap_or_else(|_| match language {
-        Language::Cxx => "g++".to_owned(),
-        Language::C => "gcc".to_owned(),
-    });
+    let cc = match language {
+        Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
+        Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
+    };
 
     let mut object = cbindgen_output.to_path_buf();
     object.set_extension("o");
