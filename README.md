@@ -102,6 +102,8 @@ line_length = 80
 tab_width = 2
 # The language to output bindings in
 language = "[C|C++]"
+# Include preprocessor defines in C bindings to ensure C++ compatibility
+cpp_compat = true
 # A rule to use to select style of declaration in C, tagname vs typedef
 style = "[Both|Type|Tag]"
 # How the generated documentation should be commented.
