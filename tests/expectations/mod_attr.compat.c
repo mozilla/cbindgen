@@ -24,9 +24,7 @@ typedef struct {
 #endif
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 #if defined(BAR)
@@ -38,7 +36,5 @@ void foo(const Foo *foo);
 #endif
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

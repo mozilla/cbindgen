@@ -16,15 +16,11 @@ union NormalWithZST {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(struct Opaque *a, union Normal b, union NormalWithZST c);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

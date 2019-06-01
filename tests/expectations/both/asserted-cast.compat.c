@@ -18,10 +18,8 @@ enum H_Tag
   H_Baz,
 };
 #ifndef __cplusplus
-
 typedef uint8_t H_Tag;
 #endif // __cplusplus
-
 
 typedef struct H_Foo_Body {
   int16_t _0;
@@ -50,10 +48,8 @@ enum J_Tag
   J_Baz,
 };
 #ifndef __cplusplus
-
 typedef uint8_t J_Tag;
 #endif // __cplusplus
-
 
 typedef struct J_Foo_Body {
   int16_t _0;
@@ -82,10 +78,8 @@ enum K_Tag
   K_Baz,
 };
 #ifndef __cplusplus
-
 typedef uint8_t K_Tag;
 #endif // __cplusplus
-
 
 typedef struct K_Foo_Body {
   K_Tag tag;
@@ -105,15 +99,11 @@ typedef union K {
 } K;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void foo(H h, I i, J j, K k);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

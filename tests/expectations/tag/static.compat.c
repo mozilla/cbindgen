@@ -10,9 +10,7 @@ struct Foo {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 extern const struct Bar BAR;
@@ -24,7 +22,5 @@ extern const int32_t NUMBER;
 void root(void);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

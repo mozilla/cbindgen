@@ -21,10 +21,8 @@ enum C_Tag
   D,
 };
 #ifndef __cplusplus
-
 typedef uint8_t C_Tag;
 #endif // __cplusplus
-
 
 typedef struct D_Body {
   int32_t namespace_;
@@ -39,15 +37,11 @@ typedef struct C {
 } C;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(A a, B b, C c, int32_t namespace_, float float_);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

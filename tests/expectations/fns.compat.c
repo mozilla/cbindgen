@@ -12,15 +12,11 @@ typedef struct {
 } Fns;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(Fns _fns);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

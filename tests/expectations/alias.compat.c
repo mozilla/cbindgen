@@ -12,10 +12,8 @@ enum Status
   Err,
 };
 #ifndef __cplusplus
-
 typedef uint32_t Status;
 #endif // __cplusplus
-
 
 typedef struct {
   int32_t a;
@@ -43,15 +41,11 @@ typedef int32_t Unit;
 typedef Status SpecialStatus;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(IntFoo x, DoubleFoo y, Unit z, SpecialStatus w);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

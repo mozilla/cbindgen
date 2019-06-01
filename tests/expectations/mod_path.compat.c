@@ -10,15 +10,11 @@ typedef struct {
 } ExportMe;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void export_me(ExportMe *val);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

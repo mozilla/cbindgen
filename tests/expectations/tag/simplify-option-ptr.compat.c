@@ -18,15 +18,11 @@ union Bar {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(const struct Opaque *a, struct Opaque *b, struct Foo c, union Bar d);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

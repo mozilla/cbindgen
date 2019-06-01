@@ -17,15 +17,11 @@ struct StyleAlignFlags {
 #define StyleAlignFlags_FLEX_START (StyleAlignFlags){ .bits = 1 << 3 }
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(struct StyleAlignFlags flags);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

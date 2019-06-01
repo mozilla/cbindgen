@@ -11,15 +11,11 @@ typedef struct B {
 } B;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(const StyleA *a, B b);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

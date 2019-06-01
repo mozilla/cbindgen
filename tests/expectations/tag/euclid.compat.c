@@ -94,9 +94,7 @@ struct TypedTransform2D_f32__LayoutUnit__UnknownUnit {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(struct TypedLength_f32__UnknownUnit length_a,
@@ -123,7 +121,5 @@ void root(struct TypedLength_f32__UnknownUnit length_a,
           struct TypedTransform2D_f32__LayoutUnit__UnknownUnit transform_b);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

@@ -18,9 +18,7 @@ struct List_A {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void bar(struct List_B b);
@@ -28,7 +26,5 @@ void bar(struct List_B b);
 void foo(struct List_A a);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

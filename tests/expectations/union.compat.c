@@ -16,15 +16,11 @@ typedef union {
 } NormalWithZST;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(Opaque *a, Normal b, NormalWithZST c);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

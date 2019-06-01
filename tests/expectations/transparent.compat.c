@@ -26,9 +26,7 @@ typedef uint32_t TransparentPrimitiveWithAssociatedConstants;
 #define EnumWithAssociatedConstantInImpl_TEN 10
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(TransparentComplexWrappingStructTuple a,
@@ -41,7 +39,5 @@ void root(TransparentComplexWrappingStructTuple a,
           EnumWithAssociatedConstantInImpl h);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

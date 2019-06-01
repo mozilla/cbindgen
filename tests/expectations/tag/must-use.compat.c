@@ -17,10 +17,8 @@ enum MaybeOwnedPtr_i32_Tag
   None_i32,
 };
 #ifndef __cplusplus
-
 typedef uint8_t MaybeOwnedPtr_i32_Tag;
 #endif // __cplusplus
-
 
 struct Owned_Body_i32 {
   int32_t *_0;
@@ -38,15 +36,11 @@ struct MUST_USE_STRUCT OwnedPtr_i32 {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 MUST_USE_FUNC struct MaybeOwnedPtr_i32 maybe_consume(struct OwnedPtr_i32 input);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

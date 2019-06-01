@@ -19,10 +19,8 @@ enum Bar_Tag
   FooParen,
 };
 #ifndef __cplusplus
-
 typedef uint8_t Bar_Tag;
 #endif // __cplusplus
-
 
 struct Bazz_Body {
   Bar_Tag tag;
@@ -49,15 +47,11 @@ union Bar {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 struct Foo root(union Bar aBar);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

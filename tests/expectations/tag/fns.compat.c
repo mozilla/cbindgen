@@ -12,15 +12,11 @@ struct Fns {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(struct Fns _fns);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

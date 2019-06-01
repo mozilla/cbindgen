@@ -12,10 +12,8 @@ enum FillRule
   B,
 };
 #ifndef __cplusplus
-
 typedef uint8_t FillRule;
 #endif // __cplusplus
-
 
 /**
  * This will have a destructor manually implemented via variant_body, and
@@ -53,10 +51,8 @@ enum Foo_u32_Tag
   Slice4_u32,
 };
 #ifndef __cplusplus
-
 typedef uint8_t Foo_u32_Tag;
 #endif // __cplusplus
-
 
 struct Polygon1_Body_u32 {
   struct Polygon_u32 _0;
@@ -109,10 +105,8 @@ enum Baz_i32_Tag
   Slice24_i32,
 };
 #ifndef __cplusplus
-
 typedef uint8_t Baz_i32_Tag;
 #endif // __cplusplus
-
 
 struct Polygon21_Body_i32 {
   Baz_i32_Tag tag;
@@ -159,10 +153,8 @@ enum Taz_Tag
   Taz1,
 };
 #ifndef __cplusplus
-
 typedef uint8_t Taz_Tag;
 #endif // __cplusplus
-
 
 struct Taz1_Body {
   Taz_Tag tag;
@@ -183,10 +175,8 @@ enum Tazz_Tag
   Taz2,
 };
 #ifndef __cplusplus
-
 typedef uint8_t Tazz_Tag;
 #endif // __cplusplus
-
 
 struct Taz2_Body {
   Tazz_Tag tag;
@@ -199,15 +189,11 @@ union Tazz {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(const struct Foo_u32 *a, const union Baz_i32 *b, const union Taz *c, union Tazz d);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

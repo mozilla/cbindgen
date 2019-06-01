@@ -27,10 +27,8 @@ enum DisplayItem_Tag
   ClearScreen,
 };
 #ifndef __cplusplus
-
 typedef uint8_t DisplayItem_Tag;
 #endif // __cplusplus
-
 
 typedef struct Fill_Body {
   DisplayItem_Tag tag;
@@ -51,15 +49,11 @@ typedef union DisplayItem {
 } DisplayItem;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 bool push_item(DisplayItem item);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

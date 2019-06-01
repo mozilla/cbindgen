@@ -8,10 +8,6 @@ enum MyCLikeEnum {
   Bar1,
   Baz1,
 };
-#ifndef __cplusplus
-
-#endif // __cplusplus
-
 
 struct MyFancyStruct {
   int32_t i;
@@ -25,10 +21,6 @@ enum MyFancyEnum_Tag {
   Bar,
   Baz,
 };
-#ifndef __cplusplus
-
-#endif // __cplusplus
-
 
 struct Bar_Body {
   int32_t _0;
@@ -56,15 +48,11 @@ union MyUnion {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(struct MyFancyStruct s, struct MyFancyEnum e, enum MyCLikeEnum c, union MyUnion u);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

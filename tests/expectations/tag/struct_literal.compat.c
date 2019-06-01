@@ -19,15 +19,11 @@ struct Foo {
 
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(struct Foo x, struct Bar bar);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

@@ -18,15 +18,11 @@ typedef union {
 } Bar;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(const Opaque *a, Opaque *b, Foo c, Bar d);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

@@ -26,15 +26,11 @@ typedef struct TupleNamed {
 } TupleNamed;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

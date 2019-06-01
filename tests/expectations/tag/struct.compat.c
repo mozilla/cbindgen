@@ -26,9 +26,7 @@ struct TupleNamed {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(struct Opaque *a,
@@ -38,7 +36,5 @@ void root(struct Opaque *a,
           struct TupleNamed e);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

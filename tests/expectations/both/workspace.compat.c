@@ -8,15 +8,11 @@ typedef struct ExtType {
 } ExtType;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void consume_ext(ExtType _ext);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

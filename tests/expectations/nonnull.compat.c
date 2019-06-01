@@ -18,15 +18,11 @@ typedef struct {
 } Foo_u64;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(int32_t *arg, Foo_u64 *foo, Opaque **d);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

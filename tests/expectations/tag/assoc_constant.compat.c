@@ -10,15 +10,11 @@ struct Foo {
 #define Foo_ZO 3.14
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(struct Foo x);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

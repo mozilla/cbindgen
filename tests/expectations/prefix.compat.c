@@ -19,10 +19,8 @@ enum PREFIX_AbsoluteFontWeight_Tag
   Bold,
 };
 #ifndef __cplusplus
-
 typedef uint8_t PREFIX_AbsoluteFontWeight_Tag;
 #endif // __cplusplus
-
 
 typedef struct {
   PREFIX_AbsoluteFontWeight_Tag tag;
@@ -35,15 +33,11 @@ typedef union {
 } PREFIX_AbsoluteFontWeight;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, PREFIX_AbsoluteFontWeight z);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

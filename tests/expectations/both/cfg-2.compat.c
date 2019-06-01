@@ -34,15 +34,11 @@ typedef struct Root {
 } Root;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(Root a);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

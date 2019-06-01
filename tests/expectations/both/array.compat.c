@@ -6,10 +6,6 @@
 typedef enum Foo_Tag {
   A,
 } Foo_Tag;
-#ifndef __cplusplus
-
-#endif // __cplusplus
-
 
 typedef struct A_Body {
   float _0[20];
@@ -23,15 +19,11 @@ typedef struct Foo {
 } Foo;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(Foo a);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

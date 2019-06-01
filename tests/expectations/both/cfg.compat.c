@@ -14,10 +14,8 @@ enum BarType
   C,
 };
 #ifndef __cplusplus
-
 typedef uint32_t BarType;
 #endif // __cplusplus
-
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -31,10 +29,8 @@ enum FooType
   C,
 };
 #ifndef __cplusplus
-
 typedef uint32_t FooType;
 #endif // __cplusplus
-
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -54,9 +50,7 @@ typedef struct BarHandle {
 #endif
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -68,7 +62,5 @@ void root(BarHandle a);
 #endif
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

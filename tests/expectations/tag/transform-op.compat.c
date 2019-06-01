@@ -24,10 +24,8 @@ enum StyleFoo_i32_Tag
   Bazz_i32,
 };
 #ifndef __cplusplus
-
 typedef uint8_t StyleFoo_i32_Tag;
 #endif // __cplusplus
-
 
 struct StyleFoo_Body_i32 {
   StyleFoo_i32_Tag tag;
@@ -59,10 +57,6 @@ enum StyleBar_i32_Tag {
   Bar3_i32,
   Bar4_i32,
 };
-#ifndef __cplusplus
-
-#endif // __cplusplus
-
 
 struct StyleBar1_Body_i32 {
   int32_t x;
@@ -99,10 +93,6 @@ enum StyleBar_u32_Tag {
   Bar3_u32,
   Bar4_u32,
 };
-#ifndef __cplusplus
-
-#endif // __cplusplus
-
 
 struct StyleBar1_Body_u32 {
   int32_t x;
@@ -138,10 +128,8 @@ enum StyleBaz_Tag
   Baz3,
 };
 #ifndef __cplusplus
-
 typedef uint8_t StyleBaz_Tag;
 #endif // __cplusplus
-
 
 struct StyleBaz1_Body {
   StyleBaz_Tag tag;
@@ -169,10 +157,8 @@ enum StyleTaz_Tag
   Taz3,
 };
 #ifndef __cplusplus
-
 typedef uint8_t StyleTaz_Tag;
 #endif // __cplusplus
-
 
 struct StyleTaz1_Body {
   struct StyleBar_u32 _0;
@@ -191,9 +177,7 @@ struct StyleTaz {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void foo(const union StyleFoo_i32 *foo,
@@ -202,7 +186,5 @@ void foo(const union StyleFoo_i32 *foo,
          const struct StyleTaz *taz);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

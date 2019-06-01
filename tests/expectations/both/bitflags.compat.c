@@ -17,15 +17,11 @@ typedef struct AlignFlags {
 #define AlignFlags_FLEX_START (AlignFlags){ .bits = 1 << 3 }
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(AlignFlags flags);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

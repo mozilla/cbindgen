@@ -4,9 +4,7 @@
 #include <stdlib.h>
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void first(void);
@@ -14,7 +12,5 @@ void first(void);
 void second(void);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

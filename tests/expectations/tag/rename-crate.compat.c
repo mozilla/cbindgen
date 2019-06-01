@@ -30,9 +30,7 @@ struct Foo {
 };
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void no_extern_func(struct ContainsNoExternTy a);
@@ -42,7 +40,5 @@ void renamed_func(struct RenamedTy a);
 void root(struct Foo a);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

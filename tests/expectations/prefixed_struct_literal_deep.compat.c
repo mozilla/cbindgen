@@ -16,15 +16,11 @@ typedef struct {
 #define PREFIXVAL (PREFIXFoo){ .a = 42, .b = 1337, .bar = (PREFIXBar){ .a = 323 } }
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(PREFIXFoo x);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus

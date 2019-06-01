@@ -12,10 +12,8 @@ enum C
   Y,
 };
 #ifndef __cplusplus
-
 typedef uint32_t C;
 #endif // __cplusplus
-
 
 typedef struct A {
   int32_t m0;
@@ -36,10 +34,8 @@ enum F_Tag
   Baz,
 };
 #ifndef __cplusplus
-
 typedef uint8_t F_Tag;
 #endif // __cplusplus
-
 
 typedef struct Foo_Body {
   F_Tag tag;
@@ -68,10 +64,8 @@ enum H_Tag
   Everyone,
 };
 #ifndef __cplusplus
-
 typedef uint8_t H_Tag;
 #endif // __cplusplus
-
 
 typedef struct Hello_Body {
   int16_t _0;
@@ -91,15 +85,11 @@ typedef struct H {
 } H;
 
 #ifdef __cplusplus
-
 extern "C" {
-
 #endif // __cplusplus
 
 void root(A x, B y, C z, F f, H h);
 
 #ifdef __cplusplus
-
 } // extern "C"
-
 #endif // __cplusplus
