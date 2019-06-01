@@ -587,21 +587,19 @@ impl Source for Enum {
         }
 
         if config.language == Language::C {
-            if config.cpp_compat {
-                out.new_line_if_not_start();
-                out.write("#ifndef __cplusplus");
-                out.new_line();
-            }
-
             if let Some(prim) = size {
+                if config.cpp_compat {
+                    out.new_line_if_not_start();
+                    out.write("#ifndef __cplusplus");
+                }
+
                 out.new_line();
                 write!(out, "typedef {} {};", prim, enum_name);
-            }
 
-            if config.cpp_compat {
-                out.new_line_if_not_start();
-                out.write("#endif // __cplusplus");
-                out.new_line();
+                if config.cpp_compat {
+                    out.new_line_if_not_start();
+                    out.write("#endif // __cplusplus");
+                }
             }
         }
         // Done emitting the enum
