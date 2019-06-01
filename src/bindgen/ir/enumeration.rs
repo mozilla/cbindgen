@@ -540,6 +540,18 @@ impl Source for Enum {
             if !size.is_none() || config.style.generate_tag() {
                 write!(out, " {}", enum_name);
             }
+
+            if config.cpp_compat {
+                if let Some(prim) = size {
+                    out.new_line();
+                    out.write("#ifdef __cplusplus");
+                    out.new_line();
+                    write!(out, "  : {}", prim);
+                    out.new_line();
+                    out.write("#endif // __cplusplus");
+                    out.new_line();
+                }
+            }
         } else {
             out.write("enum class");
 
@@ -576,8 +588,18 @@ impl Source for Enum {
 
         if config.language == Language::C {
             if let Some(prim) = size {
+                if config.cpp_compat {
+                    out.new_line_if_not_start();
+                    out.write("#ifndef __cplusplus");
+                }
+
                 out.new_line();
                 write!(out, "typedef {} {};", prim, enum_name);
+
+                if config.cpp_compat {
+                    out.new_line_if_not_start();
+                    out.write("#endif // __cplusplus");
+                }
             }
         }
         // Done emitting the enum

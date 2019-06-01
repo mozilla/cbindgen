@@ -208,9 +208,19 @@ impl Bindings {
         }
 
         if !self.functions.is_empty() || !self.globals.is_empty() {
-            if self.config.language == Language::Cxx {
+            if self.config.language == Language::C && self.config.cpp_compat {
                 out.new_line_if_not_start();
+                out.write("#ifdef __cplusplus");
+            }
+
+            if self.config.language == Language::Cxx || self.config.cpp_compat {
+                out.new_line();
                 out.write("extern \"C\" {");
+                out.new_line();
+            }
+
+            if self.config.language == Language::C && self.config.cpp_compat {
+                out.write("#endif // __cplusplus");
                 out.new_line();
             }
 
@@ -226,9 +236,19 @@ impl Bindings {
                 out.new_line();
             }
 
-            if self.config.language == Language::Cxx {
-                out.new_line_if_not_start();
+            if self.config.language == Language::C && self.config.cpp_compat {
+                out.new_line();
+                out.write("#ifdef __cplusplus");
+            }
+
+            if self.config.language == Language::Cxx || self.config.cpp_compat {
+                out.new_line();
                 out.write("} // extern \"C\"");
+                out.new_line();
+            }
+
+            if self.config.language == Language::C && self.config.cpp_compat {
+                out.write("#endif // __cplusplus");
                 out.new_line();
             }
         }
