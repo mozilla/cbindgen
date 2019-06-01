@@ -132,10 +132,25 @@ fn run_compile_test(
 fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static str) {
     let test = Path::new(filename);
     for style in &[Style::Type, Style::Tag, Style::Both] {
-        run_compile_test(cbindgen_path, name, &test, Language::C, true, Some(*style));
-        run_compile_test(cbindgen_path, name, &test, Language::C, false, Some(*style));
+        for cpp_compat in &[true, false] {
+            run_compile_test(
+                cbindgen_path,
+                name,
+                &test,
+                Language::C,
+                *cpp_compat,
+                Some(*style),
+            );
+        }
     }
-    run_compile_test(cbindgen_path, name, &test, Language::Cxx, false, None);
+    run_compile_test(
+        cbindgen_path,
+        name,
+        &test,
+        Language::Cxx,
+        /* cpp_compat = */ false,
+        None,
+    );
 }
 
 macro_rules! test_file {
