@@ -113,7 +113,15 @@ impl Bindings {
             out.new_line();
         }
 
+        if self.config.no_includes
+            && self.config.sys_includes.is_empty()
+            && self.config.includes.is_empty()
+        {
+            return;
+        }
+
         out.new_line_if_not_start();
+
         if !self.config.no_includes {
             if self.config.language == Language::C {
                 out.write("#include <stdarg.h>");
@@ -157,12 +165,7 @@ impl Bindings {
     pub fn write<F: Write>(&self, file: F) {
         let mut out = SourceWriter::new(file, self);
 
-        if !self.config.no_includes
-            || !self.config.includes.is_empty()
-            || !self.config.sys_includes.is_empty()
-        {
-            self.write_headers(&mut out);
-        }
+        self.write_headers(&mut out);
 
         if self.config.language == Language::Cxx {
             self.open_namespaces(&mut out);
