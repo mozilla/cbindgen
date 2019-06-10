@@ -54,7 +54,7 @@ pub enum ItemContainer {
 }
 
 impl ItemContainer {
-    pub fn deref(&self) -> &Item {
+    pub fn deref(&self) -> &dyn Item {
         match self {
             &ItemContainer::Constant(ref x) => x,
             &ItemContainer::Static(ref x) => x,
