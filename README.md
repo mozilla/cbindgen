@@ -7,223 +7,65 @@
 [Api Rustdoc]: https://img.shields.io/badge/api-rustdoc-blue.svg
 [rustdoc]: https://docs.rs/cbindgen
 
-This project can be used to generate C bindings for Rust code. It is currently being developed to support creating bindings for [WebRender](https://github.com/servo/webrender/), but has been designed to support any project.
 
-## Features
 
-  * Builds bindings for a crate, its mods, its dependent crates, and their mods
-  * Only the necessary types for exposed functions are given bindings
-  * Can specify annotations for controlling some aspects of binding
-  * Support for generic structs and unions
-  * Support for exporting constants and statics
-  * Customizable formatting, can be used in C or C++ projects
-  * Support for generating `#ifdef`'s for `#[cfg]` attributes
-  * Support for `#[repr(sized)]` tagged enum's
 
-## Installation
+[Read the full user docs here!](docs.md)
 
-```
-cargo install cbindgen
-```
-or
-```
-# This will update cbindgen if it's already installed
+
+
+
+cbindgen creates C/C++11 headers for Rust libraries which expose a public C API.
+
+While you could do this by hand, it's not a particularly good use of your time. It's also much more likely to be error-prone than machine-generated headers that are based on your actual Rust code. The cbindgen developers have also worked closely with the developers of Rust to ensure that the headers we generate reflect actual guarantees about Rust's type layout and ABI.
+
+C++ headers are nice because we can use operator overloads, constructors, enum classes, and templates to make the API more ergonomic and Rust-like. C headers are nice because you can be more confident that whoever you're interoperating with can handle them. With cbindgen *you don't need to choose*! You can just tell it to emit both from the same Rust library.
+
+There are two ways to use cbindgen: as a standalone program, or as a library (presumably in your build.rs).
+There isn't really much practical difference, because cbindgen is a simple rust library with no interesting dependencies. Using it as a program means people building your software will need it installed. Using it in your library means people may have to build cbindgen more frequently (e.g. every time they update their rust compiler).
+
+It's worth noting that the development of cbindgen has been largely adhoc, as features have been added to support the usecases of the maintainers. This means cbindgen may randomly fail to support some particular situation simply because no one has put in the effort to handle it yet. [Please file an issue if you run into such a situation](https://github.com/eqrion/cbindgen/issues/new). Although since we all have other jobs, you might need to do the implementation work too :)
+
+
+
+
+# Quick Start
+
+To install cbindgen, you just need to run
+
+```text
 cargo install --force cbindgen
 ```
 
-## Use
+(--force just makes it update to the latest cbindgen if it's already installed)
 
-### Command line
+To use cbindgen you need two things:
 
-```
-cbindgen crate/ -o crate/bindings.h
+* A configuration (cbindgen.toml, which can be empty to start)
+* A Rust crate with a public C API
+
+Then all you need to do is run it:
+
+```text
+cbindgen --config cbindgen.toml --crate my_rust_library --output my_header.h`
 ```
 
 See `cbindgen --help` for more options.
 
-### `build.rs`
-
-`cbindgen` can also be used in build scripts. How this fits into compiling the native code depends on your project.
-
-Here's an example build.rs script:
-```rust
-extern crate cbindgen;
-
-use std::env;
-
-fn main() {
-    let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-
-    cbindgen::Builder::new()
-      .with_crate(crate_dir)
-      .generate()
-      .expect("Unable to generate bindings")
-      .write_to_file("bindings.h");
-}
-
-```
-
-You can add configuration options using the [`Builder`](https://docs.rs/cbindgen/*/cbindgen/struct.Builder.html#methods) interface.
-
-If you'd like to use a `build.rs` script with a `cbindgen.toml`, consider using [`cbindgen::generate()`](https://docs.rs/cbindgen/*/cbindgen/fn.generate.html) instead.
-
-## Configuration
-
-There are some options that can be used to configure the binding generation.
-
-For the command line, they can be specified by creating a `cbindgen.toml` with the options. This can be placed in the binding crate root or at a path manually specified.
-
-For build scripts, options can be specified on the builder or by writing a `cbindgen.toml` and using the helper function `cbindgen::generate`.
-
-Here is a description of the options available in a config.
-
-```toml
-# An optional string of text to output at the beginning of the generated file
-header = "/* Text to put at the beginning of the generated file. Probably a license. */"
-# An optional string of text to output at the end of the generated file
-trailer = "/* Text to put at the end of the generated file */"
-# An optional name to use as an include guard
-include_guard = "mozilla_wr_bindings_h"
-# An optional string of text to output between major sections of the generated
-# file as a warning against manual editing
-autogen_warning = "/* Warning, this file is autogenerated by cbindgen. Don't modify this manually. */"
-# Whether to include a comment with the version of cbindgen used to generate the
-# file
-include_version = true
-# An optional namespace to output around the generated bindings
-namespace = "ffi"
-# An optional list of namespaces to output around the generated bindings
-namespaces = ["mozilla", "wr"]
-# The style to use for curly braces
-braces = "[SameLine|NextLine]"
-# The desired length of a line to use when formatting lines
-line_length = 80
-# The amount of spaces in a tab
-tab_width = 2
-# The language to output bindings in
-language = "[C|C++]"
-# Include preprocessor defines in C bindings to ensure C++ compatibility
-cpp_compat = true
-# A rule to use to select style of declaration in C, tagname vs typedef
-style = "[Both|Type|Tag]"
-# How the generated documentation should be commented.
-# C uses /* */; C99 uses //; C++ uses ///; Doxy is like C but with leading * per line.
-documentation_style = "[C, C99, C++, Doxy]"
+[Read the full user docs here!](docs.md)
 
 
-[defines]
-# A rule for generating `#ifdef`s for matching `#[cfg]`ed items,
-# e.g. `#[cfg(foo = "bar")] ...` -> `#if defined(FOO_IS_BAR) ... #endif`
-"foo = bar" = "FOO_IS_BAR"
 
-[parse]
-# Whether to parse dependent crates and include their types in the generated
-# bindings
-parse_deps = true
-# A white list of crate names that are allowed to be parsed
-include = ["webrender", "webrender_traits"]
-# A black list of crate names that are not allowed to be parsed
-exclude = ["libc"]
-# Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
-# This may be required for some build processes.
-clean = false
 
-[parse.expand]
-# A list of crate names that should be run through `cargo expand` before
-# parsing to expand any macros
-crates = ["euclid"]
-# If enabled,  use the `--all-features` option when expanding. Ignored when
-# `features` is set. Disabled by default, except when using the
-# `expand = ["euclid"]` shorthand for backwards-compatibility.
-all_features = false
-# When `all_features` is disabled and this is also disabled, use the
-# `--no-default-features` option when expanding. Enabled by default.
-default_features = true
-# A list of feature names that should be used when running `cargo expand`. This
-# combines with `default_features` like in `Cargo.toml`. Note that the features
-# listed here are features for the current crate being built, *not* the crates
-# being expanded. The crate's `Cargo.toml` must take care of enabling the
-# appropriate features in its dependencies
-features = ["cbindgen"]
+# Examples
 
-[export]
-# A list of additional items not used by exported functions to include in
-# the generated bindings
-include = ["Foo", "Bar"]
-# A list of items to not include in the generated bindings
-exclude = ["Bad"]
-# A prefix to add before the name of every item
-prefix = "CAPI_"
-# Types of items that we'll generate.
-item_types = ["constants", "globals", "enums", "structs", "unions", "typedefs", "opaque", "functions"]
-# Whether applying rules in export.rename prevent export.prefix from applying.
-renaming_overrides_prefixing = true # default: false
+We don't currently have a nice tailored example application, but [the tests](tests/rust/) contain plenty of interesting examples of our features.
 
-# Table of name conversions to apply to item names
-[export.rename]
-"Struct" = "CAPI_Struct"
-
-# Table of stuff to add to an item body.
-[export.body]
-"Struct" = """
-  void cppMethod() const;
-"""
-
-[fn]
-# An optional prefix to put before every function declaration
-prefix = "string"
-# An optional postfix to put after any function declaration
-postfix = "string"
-# How to format function arguments
-args = "[Auto|Vertical|Horizontal]"
-# A rule to use to rename function argument names
-rename_args = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
-
-[struct]
-# A rule to use to rename field names
-rename_fields = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
-# Whether to derive an operator== for all structs
-derive_eq = false
-# Whether to derive an operator!= for all structs
-derive_neq = false
-# Whether to derive an operator< for all structs
-derive_lt = false
-# Whether to derive an operator<= for all structs
-derive_lte = false
-# Whether to derive an operator> for all structs
-derive_gt = false
-# Whether to derive an operator>= for all structs
-derive_gte = false
-
-[enum]
-# A rule to use to rename enum variants
-rename_variants = "[None|GeckoCase|LowerCase|UpperCase|PascalCase|CamelCase|SnakeCase|ScreamingSnakeCase|QualifiedScreamingSnakeCase]"
-# Whether tagged enums should generate destructors. This makes them dangerous to
-# pass by value.
-derive_tagged_enum_destructor = false
-# Whether tagged enums should generate copy-constructor. This makes them
-# dangerous to pass by value.
-derive_tagged_enum_copy_constructor = false
-
-```
-
-## Examples
-
-See `tests/rust/` for some examples of rust source that can be handled.
-
-## Major differences between `cbindgen` and `rusty-cheddar`
-
-1. `cbindgen` supports generics
-2. `cbindgen` supports C++ output using `enum class` and `template specialization`
-3. `cbindgen` supports generating bindings including multiple modules and crates
-
-There may be other differences, but those are the ones that I know of. Please correct me if I misrepresented anything.
-
-## Prominent users
+You may also find it interesting to browse the projects that are using cbindgen in production:
 
 * [milksnake](https://github.com/getsentry/milksnake)
-* [webrender](https://searchfox.org/mozilla-central/source/__GENERATED__/gfx/webrender_bindings/webrender_ffi_generated.h)
-* [stylo](https://searchfox.org/mozilla-central/source/__GENERATED__/layout/style/ServoStyleConsts.h)
-* [wgpu](https://github.com/gfx-rs/wgpu/blob/master/wgpu-bindings/wgpu.h)
+* [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/gfx/webrender_bindings/webrender_ffi_generated.h))
+* [stylo](https://searchfox.org/mozilla-central/source/layout/style) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/layout/style/ServoStyleConsts.h))
+* [wgpu](https://github.com/gfx-rs/wgpu/tree/master/wgpu-native) ([generated header](https://github.com/gfx-rs/wgpu/blob/master/ffi/wgpu.h))
 
 If you're using `cbindgen` and would like to be added to this list, please open a pull request!
