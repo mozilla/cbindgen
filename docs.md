@@ -38,6 +38,8 @@ cbindgen --config cbindgen.toml --crate my_rust_library --output my_header.h`
 
 See `cbindgen --help` for more options.
 
+[Get a template cbindgen.toml here.](template.toml)
+
 
 
 ## build.rs

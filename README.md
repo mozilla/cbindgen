@@ -54,6 +54,7 @@ See `cbindgen --help` for more options.
 
 [Read the full user docs here!](docs.md)
 
+[Get a template cbindgen.toml here.](template.toml)
 
 
 
