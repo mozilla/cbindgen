@@ -156,9 +156,27 @@ impl<'a> Parser<'a> {
         assert!(self.lib.is_some());
         self.parsed_crates.insert(pkg.name.clone());
 
-        // Before we do anything with this crate, we must first parse all of its dependencies.
-        // This is guaranteed to terminate because the crate-graph is acyclic (and even if it
-        // wasn't, we've already marked the crate as parsed in the line above).
+        // Check if we should use cargo expand for this crate
+        if self.expand.contains(&pkg.name) {
+            return self.parse_expand_crate(pkg);
+        }
+
+        // Parse the crate before the dependencies otherwise the same-named idents we
+        // want to generate bindings for would be replaced by the ones provided
+        // by the first dependency containing it.
+        let crate_src = self.lib.as_ref().unwrap().find_crate_src(pkg);
+
+        match crate_src {
+            Some(crate_src) => self.parse_mod(pkg, crate_src.as_path())?,
+            None => {
+                // This should be an error, but is common enough to just elicit a warning
+                warn!(
+                    "Parsing crate `{}`: can't find lib.rs with `cargo metadata`.",
+                    pkg.name
+                );
+            }
+        }
+
         for (dep_pkg, cfg) in self.lib.as_ref().unwrap().dependencies(&pkg) {
             if !self.should_parse_dependency(&dep_pkg.name) {
                 continue;
@@ -175,25 +193,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        // Check if we should use cargo expand for this crate
-        if self.expand.contains(&pkg.name) {
-            return self.parse_expand_crate(pkg);
-        }
-
-        // Otherwise do our normal parse
-        let crate_src = self.lib.as_ref().unwrap().find_crate_src(pkg);
-
-        match crate_src {
-            Some(crate_src) => self.parse_mod(pkg, crate_src.as_path()),
-            None => {
-                // This should be an error, but is common enough to just elicit a warning
-                warn!(
-                    "Parsing crate `{}`: can't find lib.rs with `cargo metadata`.",
-                    pkg.name
-                );
-                Ok(())
-            }
-        }
+        Ok(())
     }
 
     fn parse_expand_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
