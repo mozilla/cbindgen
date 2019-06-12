@@ -10,7 +10,7 @@
 
 
 
-[Read the full user docs here!](docs.md)
+[Read the full user docs here!](docs/user-guide.md)
 
 
 
@@ -52,9 +52,9 @@ cbindgen --config cbindgen.toml --crate my_rust_library --output my_header.h
 
 See `cbindgen --help` for more options.
 
-[Read the full user docs here!](docs.md)
+[Read the full user docs here!](docs/user-guide.md)
 
-[Get a template cbindgen.toml here.](template.toml)
+[Get a template cbindgen.toml here.](docs/template.toml)
 
 
 
