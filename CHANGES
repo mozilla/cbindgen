@@ -1,0 +1,68 @@
+## 0.8.7
+    
+     * Require C++11 to run the test-suite (#341, test-only)
+     * Improve mangling error message (#340)
+     * Add the ability to automatically derive copy-constructors for tagged enums (#339)
+     * Use placement new for constructing in tagged unions' helper methods (#333)
+
+## 0.8.6
+    
+    * Fixed a panic when missing a lock file
+
+## 0.8.5
+    
+    * Improved support for Rust 2018 modules
+    * Add possibility to autogenerate tagged union destructors
+
+## 0.8.4
+    
+    * Support for package renaming in Cargo.toml
+    * Improved error messages for |cargo metadata| failures
+    * Replaced 'test.py' harness with |cargo test|
+    * Char constants will now be escaped properly
+    * Visibility of constants will now be respected
+    * Added a C99 doc comment style
+
+## 0.8.2
+    
+     * Improvements to bitflags parsing
+
+## 0.8.1
+    
+     * Support for manual parsing and expanding of bitflags macros
+     * Support for optional tagged enum casts with asserts
+
+## 0.8.0
+    
+    * support for 'includes' without default includes
+    * removed dependency on ancient serde_derive!
+
+## 0.7.1
+    
+    * Fix for crash when unwrapping unsupported type with associated constants
+
+## 0.7.0
+    
+    * support for libc::ssize_t
+    * fixed some warnings on nightly
+    * fix for transparent associated constants
+    * switched more API's to use AsRef<Path>
+    * impl std::error::Error for cbindgen::Error
+    * now support putting user-defined content in item bodies
+
+## 0.6.8
+    
+    * ptrdiff_t is now a recognized primitive type
+    * named function type arguments are now propagated
+    * fixes for struct literals in constants
+    * reserved C/C++ keywords are now escaped automatically
+    * negative enum discriminants are now supported
+    * fix for prefixing and formatting variant names
+    * fix for snake_case formatter
+    * syn update
+    * doxygen style comments are now output by default
+    * VaList is now a recognized primitive type
+    * fix for comment processing
+    * constant is propagated into array types
+    * references are now supported in IR, and used for some helper method generation
+    * assignment helper functions will generate array copies if necessary
