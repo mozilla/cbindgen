@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <new>
 
+static const int32_t EXT_CONST = 0;
+
 struct ExtType {
   uint32_t data;
 };

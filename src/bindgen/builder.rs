@@ -329,6 +329,7 @@ impl Builder {
                 self.config.parse.expand.all_features,
                 self.config.parse.expand.default_features,
                 &self.config.parse.expand.features,
+                self.config.parse.top_level_items_outside_of_binding_crate,
             )?);
         } else if let Some(cargo) = self.lib_cargo.clone() {
             result.extend_with(&parser::parse_lib(
@@ -341,6 +342,7 @@ impl Builder {
                 self.config.parse.expand.all_features,
                 self.config.parse.expand.default_features,
                 &self.config.parse.expand.features,
+                self.config.parse.top_level_items_outside_of_binding_crate,
             )?);
         }
 

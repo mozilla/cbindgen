@@ -42,6 +42,7 @@ pub fn parse_src(
         macro_expansion_config,
         lib: None,
         parse_deps: true,
+        top_level_items_outside_of_binding_crate: false,
         include: None,
         exclude: Vec::new(),
         expand: Vec::new(),
@@ -79,12 +80,14 @@ pub(crate) fn parse_lib(
     expand_all_features: bool,
     expand_default_features: bool,
     expand_features: &Option<Vec<String>>,
+    top_level_items_outside_of_binding_crate: bool,
 ) -> ParseResult {
     let mut context = Parser {
         binding_crate_name: lib.binding_crate_name().to_owned(),
         macro_expansion_config,
         lib: Some(lib),
-        parse_deps: parse_deps,
+        parse_deps,
+        top_level_items_outside_of_binding_crate,
         include: include.clone(),
         exclude: exclude.to_owned(),
         expand: expand.to_owned(),
@@ -109,6 +112,7 @@ struct Parser<'a> {
     macro_expansion_config: &'a MacroExpansionConfig,
     lib: Option<Cargo>,
     parse_deps: bool,
+    top_level_items_outside_of_binding_crate: bool,
 
     include: Option<Vec<String>>,
     exclude: Vec<String>,
@@ -231,6 +235,7 @@ impl<'a> Parser<'a> {
             &self.macro_expansion_config,
             &self.binding_crate_name,
             &pkg.name,
+            self.top_level_items_outside_of_binding_crate,
             Cfg::join(&self.cfg_stack).as_ref(),
             items,
         );
@@ -306,6 +311,7 @@ impl<'a> Parser<'a> {
             &self.macro_expansion_config,
             &self.binding_crate_name,
             &pkg.name,
+            self.top_level_items_outside_of_binding_crate,
             Cfg::join(&self.cfg_stack).as_ref(),
             items,
         );
@@ -448,6 +454,7 @@ impl Parse {
         macro_expansion_config: &MacroExpansionConfig,
         binding_crate_name: &str,
         crate_name: &str,
+        top_level_items_outside_of_binding_crate: bool,
         mod_cfg: Option<&Cfg>,
         items: &[syn::Item],
     ) {
@@ -459,16 +466,40 @@ impl Parse {
             }
             match item {
                 syn::Item::ForeignMod(ref item) => {
-                    self.load_syn_foreign_mod(binding_crate_name, crate_name, mod_cfg, item);
+                    self.load_syn_foreign_mod(
+                        binding_crate_name,
+                        crate_name,
+                        top_level_items_outside_of_binding_crate,
+                        mod_cfg,
+                        item,
+                    );
                 }
                 syn::Item::Fn(ref item) => {
-                    self.load_syn_fn(binding_crate_name, crate_name, mod_cfg, item);
+                    self.load_syn_fn(
+                        binding_crate_name,
+                        crate_name,
+                        top_level_items_outside_of_binding_crate,
+                        mod_cfg,
+                        item,
+                    );
                 }
                 syn::Item::Const(ref item) => {
-                    self.load_syn_const(binding_crate_name, crate_name, mod_cfg, item);
+                    self.load_syn_const(
+                        binding_crate_name,
+                        crate_name,
+                        top_level_items_outside_of_binding_crate,
+                        mod_cfg,
+                        item,
+                    );
                 }
                 syn::Item::Static(ref item) => {
-                    self.load_syn_static(binding_crate_name, crate_name, mod_cfg, item);
+                    self.load_syn_static(
+                        binding_crate_name,
+                        crate_name,
+                        top_level_items_outside_of_binding_crate,
+                        mod_cfg,
+                        item,
+                    );
                 }
                 syn::Item::Struct(ref item) => {
                     self.load_syn_struct(crate_name, mod_cfg, item);
@@ -526,6 +557,7 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
+        top_level_items_outside_of_binding_crate: bool,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemForeignMod,
     ) {
@@ -537,7 +569,8 @@ impl Parse {
         for foreign_item in &item.items {
             match *foreign_item {
                 syn::ForeignItem::Fn(ref function) => {
-                    if crate_name != binding_crate_name {
+                    if !top_level_items_outside_of_binding_crate && crate_name != binding_crate_name
+                    {
                         info!(
                             "Skip {}::{} - (fn's outside of the binding crate are not used).",
                             crate_name, &function.ident
@@ -569,10 +602,11 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
+        top_level_items_outside_of_binding_crate: bool,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemFn,
     ) {
-        if crate_name != binding_crate_name {
+        if !top_level_items_outside_of_binding_crate && crate_name != binding_crate_name {
             info!(
                 "Skip {}::{} - (fn's outside of the binding crate are not used).",
                 crate_name, &item.ident
@@ -683,10 +717,11 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
+        top_level_items_outside_of_binding_crate: bool,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemConst,
     ) {
-        if crate_name != binding_crate_name {
+        if !top_level_items_outside_of_binding_crate && crate_name != binding_crate_name {
             info!(
                 "Skip {}::{} - (const's outside of the binding crate are not used).",
                 crate_name, &item.ident
@@ -721,10 +756,11 @@ impl Parse {
         &mut self,
         binding_crate_name: &str,
         crate_name: &str,
+        top_level_items_outside_of_binding_crate: bool,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemStatic,
     ) {
-        if crate_name != binding_crate_name {
+        if !top_level_items_outside_of_binding_crate && crate_name != binding_crate_name {
             info!(
                 "Skip {}::{} - (static's outside of the binding crate are not used).",
                 crate_name, &item.ident

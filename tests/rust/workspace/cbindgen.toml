@@ -1,2 +1,3 @@
 [parse]
 parse_deps = true
+top_level_items_outside_of_binding_crate = true
