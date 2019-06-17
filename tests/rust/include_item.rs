@@ -6,5 +6,5 @@ struct A {
 
 #[repr(C)]
 struct B {
-	data: A,
+    data: A,
 }
