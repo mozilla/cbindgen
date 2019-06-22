@@ -562,11 +562,26 @@ pub struct ParseConfig {
     /// Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
     /// This may be required for some build processes.
     pub clean: bool,
-    /// Whether consts, statics, and fns are generated even if outside of the
-    /// binding crate.
-    ///
-    /// It's probably a good idea to combine this with `exports.include`.
-    pub top_level_items_outside_of_binding_crate: bool,
+    /// List of crate names which generate consts, statics, and fns. By default
+    /// no dependent crates generate them.
+    pub deps_with_top_level_items: Vec<String>,
+}
+
+impl ParseConfig {
+    pub(crate) fn should_generate_top_level_item(
+        &self,
+        crate_name: &str,
+        binding_crate_name: &str,
+    ) -> bool {
+        if crate_name == binding_crate_name {
+            // Always generate items for the binding crate.
+            return true;
+        }
+
+        self.deps_with_top_level_items
+            .iter()
+            .any(|dep| dep == crate_name)
+    }
 }
 
 /// A collection of settings to customize the generated bindings.

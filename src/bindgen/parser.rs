@@ -539,8 +539,7 @@ impl Parse {
         for foreign_item in &item.items {
             match *foreign_item {
                 syn::ForeignItem::Fn(ref function) => {
-                    if !parse_config.top_level_items_outside_of_binding_crate
-                        && crate_name != binding_crate_name
+                    if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name)
                     {
                         info!(
                             "Skip {}::{} - (fn's outside of the binding crate are not used).",
@@ -577,9 +576,7 @@ impl Parse {
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemFn,
     ) {
-        if !parse_config.top_level_items_outside_of_binding_crate
-            && crate_name != binding_crate_name
-        {
+        if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
             info!(
                 "Skip {}::{} - (fn's outside of the binding crate are not used).",
                 crate_name, &item.ident
@@ -694,9 +691,7 @@ impl Parse {
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemConst,
     ) {
-        if !parse_config.top_level_items_outside_of_binding_crate
-            && crate_name != binding_crate_name
-        {
+        if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
             info!(
                 "Skip {}::{} - (const's outside of the binding crate are not used).",
                 crate_name, &item.ident
@@ -735,9 +730,7 @@ impl Parse {
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemStatic,
     ) {
-        if !parse_config.top_level_items_outside_of_binding_crate
-            && crate_name != binding_crate_name
-        {
+        if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
             info!(
                 "Skip {}::{} - (static's outside of the binding crate are not used).",
                 crate_name, &item.ident

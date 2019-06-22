@@ -751,11 +751,11 @@ exclude = ["libc"]
 # default: false
 clean = false
 
-# Whether to generate top-level constants / globals and functions defined in
-# dependent crates.
+# Which crates other than the top-level binding crate we should generate
+# top-level constants / globals and functions.
 #
-# default: false
-top_level_items_outside_of_binding_crate = true
+# default: []
+deps_with_top_level_items = ["my_awesome_dep"]
 
 [parse.expand]
 # A list of crate names that should be run through `cargo expand` before
