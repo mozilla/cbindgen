@@ -16,4 +16,5 @@ script:
   - export CXX=g++-7
   - cargo fmt --all -- --check
   - cargo build --verbose
+  - cargo build --verbose --no-default-features
   - CBINDGEN_TEST_VERIFY=1 cargo test --verbose
