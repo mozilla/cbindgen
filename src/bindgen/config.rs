@@ -564,7 +564,7 @@ pub struct ParseConfig {
     pub clean: bool,
     /// List of crate names which generate consts, statics, and fns. By default
     /// no dependent crates generate them.
-    pub deps_with_top_level_items: Vec<String>,
+    pub extra_bindings: Vec<String>,
 }
 
 impl ParseConfig {
@@ -578,9 +578,7 @@ impl ParseConfig {
             return true;
         }
 
-        self.deps_with_top_level_items
-            .iter()
-            .any(|dep| dep == crate_name)
+        self.extra_bindings.iter().any(|dep| dep == crate_name)
     }
 }
 
