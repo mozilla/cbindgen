@@ -538,7 +538,7 @@ fn retrocomp_parse_expand_config_deserialize<'de, D: Deserializer<'de>>(
 }
 
 /// Settings to apply when parsing.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Default, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
@@ -562,17 +562,23 @@ pub struct ParseConfig {
     /// Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
     /// This may be required for some build processes.
     pub clean: bool,
+    /// List of crate names which generate consts, statics, and fns. By default
+    /// no dependent crates generate them.
+    pub extra_bindings: Vec<String>,
 }
 
-impl Default for ParseConfig {
-    fn default() -> ParseConfig {
-        ParseConfig {
-            parse_deps: false,
-            include: None,
-            exclude: Vec::new(),
-            expand: ParseExpandConfig::default(),
-            clean: false,
+impl ParseConfig {
+    pub(crate) fn should_generate_top_level_item(
+        &self,
+        crate_name: &str,
+        binding_crate_name: &str,
+    ) -> bool {
+        if crate_name == binding_crate_name {
+            // Always generate items for the binding crate.
+            return true;
         }
+
+        self.extra_bindings.iter().any(|dep| dep == crate_name)
     }
 }
 

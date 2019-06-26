@@ -751,6 +751,12 @@ exclude = ["libc"]
 # default: false
 clean = false
 
+# Which crates other than the top-level binding crate we should generate
+# bindings for.
+#
+# default: []
+extra_bindings = ["my_awesome_dep"]
+
 [parse.expand]
 # A list of crate names that should be run through `cargo expand` before
 # parsing to expand any macros. Note that if a crate is named here, it

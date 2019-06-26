@@ -322,25 +322,13 @@ impl Builder {
             result.extend_with(&parser::parse_lib(
                 cargo,
                 &self.config.macro_expansion,
-                self.config.parse.parse_deps,
-                &self.config.parse.include,
-                &self.config.parse.exclude,
-                &self.config.parse.expand.crates,
-                self.config.parse.expand.all_features,
-                self.config.parse.expand.default_features,
-                &self.config.parse.expand.features,
+                &self.config.parse,
             )?);
         } else if let Some(cargo) = self.lib_cargo.clone() {
             result.extend_with(&parser::parse_lib(
                 cargo,
                 &self.config.macro_expansion,
-                self.config.parse.parse_deps,
-                &self.config.parse.include,
-                &self.config.parse.exclude,
-                &self.config.parse.expand.crates,
-                self.config.parse.expand.all_features,
-                self.config.parse.expand.default_features,
-                &self.config.parse.expand.features,
+                &self.config.parse,
             )?);
         }
 
