@@ -47,7 +47,7 @@ To use cbindgen you need two things:
 Then all you need to do is run it:
 
 ```text
-cbindgen --config cbindgen.toml --crate my_rust_library --output my_header.h`
+cbindgen --config cbindgen.toml --crate my_rust_library --output my_header.h
 ```
 
 See `cbindgen --help` for more options.
