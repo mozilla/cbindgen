@@ -179,6 +179,13 @@ impl<'a> Parser<'a> {
     fn parse_expand_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
         assert!(self.lib.is_some());
 
+        // If you want to expand the crate you run cbindgen on you might end up in an endless
+        // recursion if the cbindgen generation is triggered from build.rs. Hence don't run the
+        // expansion if the build was already triggered by cbindgen.
+        if std::env::var("_CBINDGEN_IS_RUNNING").is_ok() {
+            return Ok(());
+        }
+
         let mod_parsed = {
             if !self.cache_expanded_crate.contains_key(&pkg.name) {
                 let s = self
