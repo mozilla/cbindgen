@@ -83,6 +83,10 @@ pub fn expand(
         cmd.env("CARGO_TARGET_DIR", PathBuf::from(path).join("expanded"));
     }
 
+    // Set this variable so that we don't call it recursively if we expand a crate that is using
+    // cbindgen
+    cmd.env("_CBINDGEN_IS_RUNNING", "1");
+
     cmd.arg("rustc");
     cmd.arg("--lib");
     cmd.arg("--manifest-path");
