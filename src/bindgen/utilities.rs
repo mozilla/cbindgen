@@ -252,7 +252,7 @@ impl SynAttributeHelpers for [syn::Attribute] {
     }
 
     fn get_comment_lines(&self) -> Vec<String> {
-        let mut comment_lines = Vec::new();
+        let mut raw_comment = String::new();
 
         for attr in self {
             if attr.style == syn::AttrStyle::Outer {
@@ -263,24 +263,28 @@ impl SynAttributeHelpers for [syn::Attribute] {
                 })) = attr.interpret_meta()
                 {
                     let name = ident.to_string();
-                    let comment = comment.value();
-
                     if &*name == "doc" {
-                        for raw in comment.lines() {
-                            let line = raw
-                                .trim_start_matches(" ")
-                                .trim_start_matches("//")
-                                .trim_start_matches("///")
-                                .trim_start_matches("/**")
-                                .trim_start_matches("/*")
-                                .trim_start_matches("*/")
-                                .trim_start_matches("*")
-                                .trim_end();
-                            comment_lines.push(line.to_owned());
-                        }
+                        let text = comment.value();
+                        raw_comment += &text;
+                        raw_comment += "\n";
                     }
                 }
             }
+        }
+
+        let mut comment_lines = Vec::new();
+        for raw in raw_comment.lines() {
+            let line = raw
+                .trim_start_matches(" ")
+                .trim_start_matches("//")
+                .trim_start_matches("///")
+                .trim_start_matches("/**")
+                .trim_start_matches("/*")
+                .trim_start_matches("*/")
+                .trim_start_matches("*")
+                .trim_end();
+
+            comment_lines.push(line.to_owned());
         }
 
         comment_lines

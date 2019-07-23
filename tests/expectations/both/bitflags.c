@@ -5,6 +5,7 @@
 
 /**
  * Constants shared by multiple CSS Box Alignment properties
+ *
  * These constants match Gecko's `NS_STYLE_ALIGN_*` constants.
  */
 typedef struct AlignFlags {
