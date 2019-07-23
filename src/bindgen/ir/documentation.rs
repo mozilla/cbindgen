@@ -20,7 +20,7 @@ impl Documentation {
         let doc = attrs
             .get_comment_lines()
             .into_iter()
-            .filter(|x| !x.is_empty() && !x.starts_with("cbindgen:"))
+            .filter(|x| !x.starts_with("cbindgen:"))
             .collect();
 
         Documentation { doc_comment: doc }
