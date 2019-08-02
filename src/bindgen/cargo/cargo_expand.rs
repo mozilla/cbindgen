@@ -6,7 +6,7 @@ use std::env;
 use std::error;
 use std::fmt;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::{from_utf8, Utf8Error};
 
@@ -75,6 +75,12 @@ pub fn expand(
         cmd.env("CARGO_TARGET_DIR", _temp_dir.unwrap().path());
     } else if let Ok(ref path) = env::var("CARGO_EXPAND_TARGET_DIR") {
         cmd.env("CARGO_TARGET_DIR", path);
+    } else if let Ok(ref path) = env::var("OUT_DIR") {
+        // When cbindgen was started programatically from a build.rs file, Cargo is running and
+        // locking the default target directory. In this case we need to use another directory,
+        // else we would end up in a deadlock. If Cargo is running `OUT_DIR` will be set, so we
+        // can use a directory relative to that.
+        cmd.env("CARGO_TARGET_DIR", PathBuf::from(path).join("expanded"));
     }
 
     cmd.arg("rustc");
