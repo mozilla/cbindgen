@@ -626,7 +626,7 @@ derive_gte = false
 # * "CamelCase": MyVariant => myVariant
 # * "SnakeCase": MyVariant => my_variant
 # * "ScreamingSnakeCase": MyVariant => MY_VARIANT
-# * "QualifiedScreamingScakeCase": MyVariant => ENUM_NAME_MY_VARIANT
+# * "QualifiedScreamingSnakeCase": MyVariant => ENUM_NAME_MY_VARIANT
 # * "LowerCase": MyVariant => myvariant
 # * "UpperCase": MyVariant => MYVARIANT
 # * "None": apply no renaming
