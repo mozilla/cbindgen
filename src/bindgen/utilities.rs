@@ -264,7 +264,7 @@ impl SynAttributeHelpers for [syn::Attribute] {
                 {
                     let name = ident.to_string();
                     if &*name == "doc" {
-                        let text = content.value().trim().to_owned();
+                        let text = content.value().trim_end().to_owned();
                         comment.push(text);
                     }
                 }

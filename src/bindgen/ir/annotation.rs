@@ -50,10 +50,17 @@ impl AnnotationSet {
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
-        let lines: Vec<String> = attrs
-            .get_comment_lines()
-            .into_iter()
-            .filter(|x| !x.is_empty() && x.starts_with("cbindgen:"))
+        let lines = attrs.get_comment_lines();
+        let lines: Vec<&str> = lines
+            .iter()
+            .filter_map(|line| {
+                let line = line.trim_start();
+                if !line.starts_with("cbindgen:") {
+                    return None;
+                }
+
+                Some(line)
+            })
             .collect();
 
         let must_use = attrs.has_attr_word("must_use");
@@ -62,12 +69,9 @@ impl AnnotationSet {
 
         // Look at each line for an annotation
         for line in lines {
-            // Skip lines that don't start with cbindgen
-            if !line.starts_with("cbindgen:") {
-                continue;
-            }
+            debug_assert!(line.starts_with("cbindgen:"));
 
-            // Remove the "cbingen:" prefix
+            // Remove the "cbindgen:" prefix
             let annotation = &line[9..];
 
             // Split the annotation in two
