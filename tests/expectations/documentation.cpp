@@ -17,11 +17,12 @@ extern "C" {
 ///
 /// ////////////////////////////////////////////////////////////////////////////
 ///
-/// # Attention
+/// Attention:
 ///
-/// Rust is going to trim all leading `/` symbols. If you want to use them as a
-/// marker you need to add at least a single whitespace inbetween the tripple
-/// slash doc-comment marker and the rest.
+///    Rust is going to trim all leading `/` symbols. If you want to use them as a
+///    marker you need to add at least a single whitespace inbetween the tripple
+///    slash doc-comment marker and the rest.
+///
 void root();
 
 } // extern "C"

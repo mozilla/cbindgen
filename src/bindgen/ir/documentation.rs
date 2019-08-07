@@ -20,7 +20,7 @@ impl Documentation {
         let doc = attrs
             .get_comment_lines()
             .into_iter()
-            .filter(|x| !x.starts_with("cbindgen:"))
+            .filter(|x| !x.trim_start().starts_with("cbindgen:"))
             .collect();
 
         Documentation { doc_comment: doc }
@@ -72,9 +72,6 @@ impl Source for Documentation {
                 DocumentationStyle::Auto => unreachable!(), // Auto case should always be covered
             }
 
-            if line.len() != 0 {
-                out.write(" ");
-            }
             write!(out, "{}", line);
             out.new_line();
         }
