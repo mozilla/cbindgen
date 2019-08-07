@@ -252,41 +252,25 @@ impl SynAttributeHelpers for [syn::Attribute] {
     }
 
     fn get_comment_lines(&self) -> Vec<String> {
-        let mut raw_comment = String::new();
+        let mut comment = Vec::new();
 
         for attr in self {
             if attr.style == syn::AttrStyle::Outer {
                 if let Some(syn::Meta::NameValue(syn::MetaNameValue {
                     ident,
-                    lit: syn::Lit::Str(comment),
+                    lit: syn::Lit::Str(content),
                     ..
                 })) = attr.interpret_meta()
                 {
                     let name = ident.to_string();
                     if &*name == "doc" {
-                        let text = comment.value();
-                        raw_comment += &text;
-                        raw_comment += "\n";
+                        let text = content.value().trim().to_owned();
+                        comment.push(text);
                     }
                 }
             }
         }
 
-        let mut comment_lines = Vec::new();
-        for raw in raw_comment.lines() {
-            let line = raw
-                .trim_start_matches(" ")
-                .trim_start_matches("//")
-                .trim_start_matches("///")
-                .trim_start_matches("/**")
-                .trim_start_matches("/*")
-                .trim_start_matches("*/")
-                .trim_start_matches("*")
-                .trim_end();
-
-            comment_lines.push(line.to_owned());
-        }
-
-        comment_lines
+        comment
     }
 }
