@@ -1,3 +1,10 @@
 [enum]
 derive_tagged_enum_destructor = true
 derive_tagged_enum_copy_constructor = true
+derive_helper_methods = true
+private_default_tagged_enum_constructor = true
+
+[export.body]
+"OwnedSlice" = """
+  ~OwnedSlice() {}
+"""
