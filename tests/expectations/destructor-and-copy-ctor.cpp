@@ -137,7 +137,8 @@ struct Foo {
   private:
   Foo() {
 
-  }public:
+  }
+  public:
 
 
   ~Foo() {
@@ -283,7 +284,8 @@ union Baz {
   private:
   Baz() {
 
-  }public:
+  }
+  public:
 
 
   ~Baz() {
@@ -368,7 +370,8 @@ union Taz {
   private:
   Taz() {
 
-  }public:
+  }
+  public:
 
 
   ~Taz() {
@@ -429,7 +432,8 @@ union Tazz {
   private:
   Tazz() {
 
-  }public:
+  }
+  public:
 
 };
 
