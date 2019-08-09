@@ -270,6 +270,7 @@ The rest are just local overrides for the same options found in the cbindgen.tom
 * derive-tagged-enum-destructor
 * derive-tagged-enum-copy-constructor
 * prefix-with-name
+* private-default-tagged-enum-constructor
 
 
 
@@ -702,6 +703,14 @@ derive_tagged_enum_destructor = false
 #
 # default: false
 derive_tagged_enum_copy_constructor = false
+
+# Whether enums with fields should generate an empty, private destructor.
+# This allows the auto-generated constructor functions to compile, if there are
+# non-trivially constructible members. This falls in the same family of
+# dangerousness as `derive_tagged_enum_copy_constructor` and co.
+#
+# default: false
+private_default_tagged_enum_constructor = false
 
 
 
