@@ -53,6 +53,7 @@ pub enum Baz<T> {
 pub enum Taz {
     Bar3,
     Taz1(i32),
+    Taz3(OwnedSlice<i32>),
 }
 
 /// cbindgen:derive-tagged-enum-destructor=false

@@ -129,6 +129,7 @@ union Baz_i32 {
 enum Taz_Tag {
   Bar3,
   Taz1,
+  Taz3,
 };
 typedef uint8_t Taz_Tag;
 
@@ -137,9 +138,15 @@ struct Taz1_Body {
   int32_t _0;
 };
 
+struct Taz3_Body {
+  Taz_Tag tag;
+  struct OwnedSlice_i32 _0;
+};
+
 union Taz {
   enum Taz_Tag tag;
   struct Taz1_Body taz1;
+  struct Taz3_Body taz3;
 };
 
 enum Tazz_Tag {

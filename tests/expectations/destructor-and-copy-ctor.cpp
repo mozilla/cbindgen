@@ -14,6 +14,7 @@ template<typename T>
 struct OwnedSlice {
   uintptr_t len;
   T *ptr;
+  ~OwnedSlice() {}
 };
 
 template<typename LengthPercentage>
@@ -63,6 +64,81 @@ struct Foo {
     Slice3_Body slice3;
     Slice4_Body slice4;
   };
+
+  static Foo Bar() {
+    Foo result;
+    result.tag = Tag::Bar;
+    return result;
+  }
+
+  static Foo Polygon1(const Polygon<T> &a0) {
+    Foo result;
+    ::new (&result.polygon1._0) (Polygon<T>)(a0);
+    result.tag = Tag::Polygon1;
+    return result;
+  }
+
+  static Foo Slice1(const OwnedSlice<T> &a0) {
+    Foo result;
+    ::new (&result.slice1._0) (OwnedSlice<T>)(a0);
+    result.tag = Tag::Slice1;
+    return result;
+  }
+
+  static Foo Slice2(const OwnedSlice<int32_t> &a0) {
+    Foo result;
+    ::new (&result.slice2._0) (OwnedSlice<int32_t>)(a0);
+    result.tag = Tag::Slice2;
+    return result;
+  }
+
+  static Foo Slice3(const FillRule &aFill,
+                    const OwnedSlice<T> &aCoords) {
+    Foo result;
+    ::new (&result.slice3.fill) (FillRule)(aFill);
+    ::new (&result.slice3.coords) (OwnedSlice<T>)(aCoords);
+    result.tag = Tag::Slice3;
+    return result;
+  }
+
+  static Foo Slice4(const FillRule &aFill,
+                    const OwnedSlice<int32_t> &aCoords) {
+    Foo result;
+    ::new (&result.slice4.fill) (FillRule)(aFill);
+    ::new (&result.slice4.coords) (OwnedSlice<int32_t>)(aCoords);
+    result.tag = Tag::Slice4;
+    return result;
+  }
+
+  bool IsBar() const {
+    return tag == Tag::Bar;
+  }
+
+  bool IsPolygon1() const {
+    return tag == Tag::Polygon1;
+  }
+
+  bool IsSlice1() const {
+    return tag == Tag::Slice1;
+  }
+
+  bool IsSlice2() const {
+    return tag == Tag::Slice2;
+  }
+
+  bool IsSlice3() const {
+    return tag == Tag::Slice3;
+  }
+
+  bool IsSlice4() const {
+    return tag == Tag::Slice4;
+  }
+
+  private:
+  Foo() {
+
+  }public:
+
 
   ~Foo() {
     switch (tag) {
@@ -135,6 +211,81 @@ union Baz {
   Slice23_Body slice23;
   Slice24_Body slice24;
 
+  static Baz Bar2() {
+    Baz result;
+    result.tag = Tag::Bar2;
+    return result;
+  }
+
+  static Baz Polygon21(const Polygon<T> &a0) {
+    Baz result;
+    ::new (&result.polygon21._0) (Polygon<T>)(a0);
+    result.tag = Tag::Polygon21;
+    return result;
+  }
+
+  static Baz Slice21(const OwnedSlice<T> &a0) {
+    Baz result;
+    ::new (&result.slice21._0) (OwnedSlice<T>)(a0);
+    result.tag = Tag::Slice21;
+    return result;
+  }
+
+  static Baz Slice22(const OwnedSlice<int32_t> &a0) {
+    Baz result;
+    ::new (&result.slice22._0) (OwnedSlice<int32_t>)(a0);
+    result.tag = Tag::Slice22;
+    return result;
+  }
+
+  static Baz Slice23(const FillRule &aFill,
+                     const OwnedSlice<T> &aCoords) {
+    Baz result;
+    ::new (&result.slice23.fill) (FillRule)(aFill);
+    ::new (&result.slice23.coords) (OwnedSlice<T>)(aCoords);
+    result.tag = Tag::Slice23;
+    return result;
+  }
+
+  static Baz Slice24(const FillRule &aFill,
+                     const OwnedSlice<int32_t> &aCoords) {
+    Baz result;
+    ::new (&result.slice24.fill) (FillRule)(aFill);
+    ::new (&result.slice24.coords) (OwnedSlice<int32_t>)(aCoords);
+    result.tag = Tag::Slice24;
+    return result;
+  }
+
+  bool IsBar2() const {
+    return tag == Tag::Bar2;
+  }
+
+  bool IsPolygon21() const {
+    return tag == Tag::Polygon21;
+  }
+
+  bool IsSlice21() const {
+    return tag == Tag::Slice21;
+  }
+
+  bool IsSlice22() const {
+    return tag == Tag::Slice22;
+  }
+
+  bool IsSlice23() const {
+    return tag == Tag::Slice23;
+  }
+
+  bool IsSlice24() const {
+    return tag == Tag::Slice24;
+  }
+
+  private:
+  Baz() {
+
+  }public:
+
+
   ~Baz() {
     switch (tag) {
       case Tag::Polygon21: polygon21.~Polygon21_Body(); break;
@@ -163,6 +314,7 @@ union Taz {
   enum class Tag : uint8_t {
     Bar3,
     Taz1,
+    Taz3,
   };
 
   struct Taz1_Body {
@@ -170,14 +322,59 @@ union Taz {
     int32_t _0;
   };
 
+  struct Taz3_Body {
+    Tag tag;
+    OwnedSlice<int32_t> _0;
+  };
+
   struct {
     Tag tag;
   };
   Taz1_Body taz1;
+  Taz3_Body taz3;
+
+  static Taz Bar3() {
+    Taz result;
+    result.tag = Tag::Bar3;
+    return result;
+  }
+
+  static Taz Taz1(const int32_t &a0) {
+    Taz result;
+    ::new (&result.taz1._0) (int32_t)(a0);
+    result.tag = Tag::Taz1;
+    return result;
+  }
+
+  static Taz Taz3(const OwnedSlice<int32_t> &a0) {
+    Taz result;
+    ::new (&result.taz3._0) (OwnedSlice<int32_t>)(a0);
+    result.tag = Tag::Taz3;
+    return result;
+  }
+
+  bool IsBar3() const {
+    return tag == Tag::Bar3;
+  }
+
+  bool IsTaz1() const {
+    return tag == Tag::Taz1;
+  }
+
+  bool IsTaz3() const {
+    return tag == Tag::Taz3;
+  }
+
+  private:
+  Taz() {
+
+  }public:
+
 
   ~Taz() {
     switch (tag) {
       case Tag::Taz1: taz1.~Taz1_Body(); break;
+      case Tag::Taz3: taz3.~Taz3_Body(); break;
       default: break;
     }
   }
@@ -186,6 +383,7 @@ union Taz {
    : tag(other.tag) {
     switch (tag) {
       case Tag::Taz1: ::new (&taz1) (Taz1_Body)(other.taz1); break;
+      case Tag::Taz3: ::new (&taz3) (Taz3_Body)(other.taz3); break;
       default: break;
     }
   }
@@ -206,6 +404,33 @@ union Tazz {
     Tag tag;
   };
   Taz2_Body taz2;
+
+  static Tazz Bar4() {
+    Tazz result;
+    result.tag = Tag::Bar4;
+    return result;
+  }
+
+  static Tazz Taz2(const int32_t &a0) {
+    Tazz result;
+    ::new (&result.taz2._0) (int32_t)(a0);
+    result.tag = Tag::Taz2;
+    return result;
+  }
+
+  bool IsBar4() const {
+    return tag == Tag::Bar4;
+  }
+
+  bool IsTaz2() const {
+    return tag == Tag::Taz2;
+  }
+
+  private:
+  Tazz() {
+
+  }public:
+
 };
 
 extern "C" {
