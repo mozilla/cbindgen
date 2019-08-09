@@ -895,6 +895,22 @@ impl Source for Enum {
             if config.language == Language::Cxx
                 && config
                     .enumeration
+                    .private_default_tagged_enum_constructor(&self.annotations)
+            {
+                out.new_line();
+                out.new_line();
+                write!(out, "private:");
+                out.new_line();
+                write!(out, "{}()", self.export_name);
+                out.open_brace();
+                out.close_brace(false);
+                write!(out, "public:");
+                out.new_line();
+            }
+
+            if config.language == Language::Cxx
+                && config
+                    .enumeration
                     .derive_tagged_enum_destructor(&self.annotations)
             {
                 out.new_line();

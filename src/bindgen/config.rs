@@ -400,6 +400,9 @@ pub struct EnumConfig {
     pub derive_tagged_enum_destructor: bool,
     /// Whether to generate copy-constructors of tagged enums.
     pub derive_tagged_enum_copy_constructor: bool,
+    /// Whether to generate empty, private default-constructors for tagged
+    /// enums.
+    pub private_default_tagged_enum_constructor: bool,
 }
 
 impl EnumConfig {
@@ -438,6 +441,15 @@ impl EnumConfig {
             return x;
         }
         self.derive_tagged_enum_copy_constructor
+    }
+    pub(crate) fn private_default_tagged_enum_constructor(
+        &self,
+        annotations: &AnnotationSet,
+    ) -> bool {
+        if let Some(x) = annotations.bool("private-default-tagged-enum-constructor") {
+            return x;
+        }
+        self.private_default_tagged_enum_constructor
     }
 }
 
