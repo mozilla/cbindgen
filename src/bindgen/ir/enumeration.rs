@@ -902,6 +902,7 @@ impl Source for Enum {
                 write!(out, "{}()", self.export_name);
                 out.open_brace();
                 out.close_brace(false);
+                out.new_line();
                 write!(out, "public:");
                 out.new_line();
             }
