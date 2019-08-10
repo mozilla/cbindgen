@@ -52,12 +52,12 @@ pub enum RenameRule {
 
 impl RenameRule {
     /// Applies the rename rule to a string that is formatted in PascalCase.
-    pub fn apply_to_pascal_case(&self, text: &str, context: IdentifierType) -> String {
-        if text.len() == 0 {
+    pub fn apply_to_pascal_case(self, text: &str, context: IdentifierType) -> String {
+        if text.is_empty() {
             return String::new();
         }
 
-        match *self {
+        match self {
             RenameRule::None => String::from(text),
             RenameRule::GeckoCase => context.to_str().to_owned() + text,
             RenameRule::LowerCase => text.to_lowercase(),
@@ -121,7 +121,7 @@ impl RenameRule {
                 let mut result = String::new();
 
                 if let IdentifierType::EnumVariant(e) = context {
-                    if let &RenameRule::QualifiedScreamingSnakeCase = self {
+                    if let RenameRule::QualifiedScreamingSnakeCase = self {
                         result.push_str(
                             &RenameRule::ScreamingSnakeCase
                                 .apply_to_pascal_case(e.path().name(), IdentifierType::Enum),
@@ -138,12 +138,12 @@ impl RenameRule {
     }
 
     /// Applies the rename rule to a string that is formatted in snake_case.
-    pub fn apply_to_snake_case(&self, mut text: &str, context: IdentifierType) -> String {
-        if text.len() == 0 {
+    pub fn apply_to_snake_case(self, mut text: &str, context: IdentifierType) -> String {
+        if text.is_empty() {
             return String::new();
         }
 
-        match *self {
+        match self {
             RenameRule::None => String::from(text),
             RenameRule::GeckoCase => {
                 if &text[..1] == "_" {
@@ -202,7 +202,7 @@ impl RenameRule {
                 let mut result = String::new();
 
                 if let IdentifierType::EnumVariant(e) = context {
-                    if let &RenameRule::QualifiedScreamingSnakeCase = self {
+                    if let RenameRule::QualifiedScreamingSnakeCase = self {
                         result.push_str(
                             &RenameRule::ScreamingSnakeCase
                                 .apply_to_snake_case(e.path().name(), IdentifierType::Enum),

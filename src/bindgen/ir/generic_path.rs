@@ -18,8 +18,8 @@ impl GenericParams {
             generics
                 .params
                 .iter()
-                .filter_map(|x| match x {
-                    &syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => {
+                .filter_map(|x| match *x {
+                    syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => {
                         Some(Path::new(ident.to_string()))
                     }
                     _ => None,
@@ -39,18 +39,16 @@ impl Deref for GenericParams {
 
 impl Source for GenericParams {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if !self.0.is_empty() {
-            if config.language == Language::Cxx {
-                out.write("template<");
-                for (i, item) in self.0.iter().enumerate() {
-                    if i != 0 {
-                        out.write(", ");
-                    }
-                    write!(out, "typename {}", item);
+        if !self.0.is_empty() && config.language == Language::Cxx {
+            out.write("template<");
+            for (i, item) in self.0.iter().enumerate() {
+                if i != 0 {
+                    out.write(", ");
                 }
-                out.write(">");
-                out.new_line();
+                write!(out, "typename {}", item);
             }
+            out.write(">");
+            out.new_line();
         }
     }
 }
@@ -118,7 +116,7 @@ impl GenericPath {
 
     pub fn load(path: &syn::Path) -> Result<Self, String> {
         assert!(
-            path.segments.len() > 0,
+            !path.segments.is_empty(),
             "{:?} doesn't have any segments",
             path
         );
@@ -132,16 +130,16 @@ impl GenericPath {
             return Ok(Self::new(path, Vec::new()));
         }
 
-        let generics = match &last_segment.arguments {
-            &syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
+        let generics = match last_segment.arguments {
+            syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments {
                 ref args,
                 ..
             }) => args.iter().try_skip_map(|x| match *x {
-                &syn::GenericArgument::Type(ref x) => Type::load(x),
-                &syn::GenericArgument::Lifetime(_) => Ok(None),
+                syn::GenericArgument::Type(ref x) => Type::load(x),
+                syn::GenericArgument::Lifetime(_) => Ok(None),
                 _ => Err(format!("can't handle generic argument {:?}", x)),
             })?,
-            &syn::PathArguments::Parenthesized(_) => {
+            syn::PathArguments::Parenthesized(_) => {
                 return Err("Path contains parentheses.".to_owned());
             }
             _ => Vec::new(),

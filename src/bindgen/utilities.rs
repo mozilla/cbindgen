@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#![allow(clippy::redundant_closure_call)]
+
 use syn;
 
 pub trait IterHelpers: Iterator {
@@ -30,11 +32,11 @@ where
 
 pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
     for x in slice {
-        if let &Some(ref x) = x {
+        if let Some(ref x) = *x {
             return Some(x);
         }
     }
-    return None;
+    None
 }
 
 pub trait SynItemHelpers {
@@ -169,7 +171,7 @@ pub trait SynAbiHelpers {
 
 impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
-        if let &Some(ref abi) = self {
+        if let Some(ref abi) = *self {
             if let Some(ref lit_string) = abi.name {
                 return lit_string.value() == String::from("C");
             }
@@ -177,7 +179,7 @@ impl SynAbiHelpers for Option<syn::Abi> {
         false
     }
     fn is_omitted(&self) -> bool {
-        if let &Some(ref abi) = self {
+        if let Some(ref abi) = *self {
             abi.name.is_none()
         } else {
             false

@@ -109,10 +109,8 @@ impl Source for Static {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         out.write("extern ");
         if let Type::ConstPtr(..) = self.ty {
-        } else {
-            if !self.mutable {
-                out.write("const ");
-            }
+        } else if !self.mutable {
+            out.write("const ");
         }
         self.ty.write(config, out);
         write!(out, " {};", self.export_name());
