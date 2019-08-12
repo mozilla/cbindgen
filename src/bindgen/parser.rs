@@ -128,8 +128,7 @@ impl<'a> Parser<'a> {
         }
 
         // Check the blacklist
-        !STD_CRATES.contains(&pkg_name.as_ref())
-            && !self.parse_config.exclude.contains(&pkg_name)
+        !STD_CRATES.contains(&pkg_name.as_ref()) && !self.parse_config.exclude.contains(&pkg_name)
     }
 
     fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
@@ -323,10 +322,11 @@ impl<'a> Parser<'a> {
                         let mut path_attr_found = false;
                         for attr in &item.attrs {
                             if let Some(syn::Meta::NameValue(syn::MetaNameValue {
-                                    ident,
-                                    lit,
-                                    ..
-                                })) = attr.interpret_meta() {
+                                ident,
+                                lit,
+                                ..
+                            })) = attr.interpret_meta()
+                            {
                                 match lit {
                                     syn::Lit::Str(ref path) if ident == "path" => {
                                         path_attr_found = true;
@@ -538,8 +538,7 @@ impl Parse {
 
         for foreign_item in &item.items {
             if let syn::ForeignItem::Fn(ref function) = *foreign_item {
-                if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name)
-                {
+                if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
                     info!(
                         "Skip {}::{} - (fn's outside of the binding crate are not used).",
                         crate_name, &function.ident

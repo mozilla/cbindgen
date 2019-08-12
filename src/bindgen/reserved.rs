@@ -82,7 +82,10 @@ const RESERVED_KEYWORDS: &[&str] = &[
 ];
 
 pub fn escape(rust_identifier: &mut String) {
-    if (RESERVED_KEYWORDS).binary_search(&rust_identifier.as_ref()).is_ok() {
+    if RESERVED_KEYWORDS
+        .binary_search(&rust_identifier.as_ref())
+        .is_ok()
+    {
         rust_identifier.push('_');
     }
 }

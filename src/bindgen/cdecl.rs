@@ -22,9 +22,7 @@ enum CDeclarator {
 impl CDeclarator {
     fn is_ptr(&self) -> bool {
         match self {
-            CDeclarator::Ptr(..) => true,
-            CDeclarator::Ref => true,
-            CDeclarator::Func(..) => true,
+            CDeclarator::Ptr(..) | CDeclarator::Ref | CDeclarator::Func(..) => true,
             _ => false,
         }
     }
