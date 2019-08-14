@@ -34,13 +34,13 @@ pub struct Function {
 impl Function {
     pub fn load(
         path: Path,
-        decl: &syn::FnDecl,
+        sig: &syn::Signature,
         extern_decl: bool,
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
-        let args = decl.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
-        let ret = match decl.output {
+        let args = sig.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
+        let ret = match sig.output {
             syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
             syn::ReturnType::Type(_, ref ty) => {
                 if let Some(x) = Type::load(ty)? {
@@ -226,18 +226,19 @@ pub trait SynFnArgHelpers {
 
 impl SynFnArgHelpers for syn::FnArg {
     fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
-        match *self {
-            syn::FnArg::Captured(syn::ArgCaptured {
-                pat: syn::Pat::Ident(syn::PatIdent { ref ident, .. }),
-                ref ty,
-                ..
-            }) => {
-                if let Some(x) = Type::load(ty)? {
-                    Ok(Some((ident.to_string(), x)))
-                } else {
-                    Ok(None)
+        match self {
+            &syn::FnArg::Typed(syn::PatType {
+                ref pat, ref ty, ..
+            }) => match **pat {
+                syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
+                    if let Some(x) = Type::load(ty)? {
+                        Ok(Some((ident.to_string(), x)))
+                    } else {
+                        Ok(None)
+                    }
                 }
-            }
+                _ => Err("Parameter has an unsupported type.".to_owned()),
+            },
             _ => Err("Parameter has an unsupported type.".to_owned()),
         }
     }

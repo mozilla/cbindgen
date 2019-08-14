@@ -55,10 +55,10 @@ impl Repr {
         let ids = attrs
             .iter()
             .filter_map(|attr| {
-                if let syn::Meta::List(syn::MetaList { ident, nested, .. }) =
-                    attr.interpret_meta()?
+                if let syn::Meta::List(syn::MetaList { path, nested, .. }) =
+                    attr.parse_meta().ok()?
                 {
-                    if ident == "repr" {
+                    if path.is_ident("repr") {
                         return Some(nested.into_iter().collect::<Vec<_>>());
                     }
                 }
@@ -66,7 +66,9 @@ impl Repr {
             })
             .flat_map(|nested| nested)
             .filter_map(|meta| match meta {
-                syn::NestedMeta::Meta(syn::Meta::Word(ident)) => Some(ident.to_string()),
+                syn::NestedMeta::Meta(syn::Meta::Path(path)) => {
+                    Some(path.segments.first().unwrap().ident.to_string())
+                }
                 _ => None,
             });
 

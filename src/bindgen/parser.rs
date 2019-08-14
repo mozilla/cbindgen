@@ -321,20 +321,18 @@ impl<'a> Parser<'a> {
                         // Last chance to find a module path
                         let mut path_attr_found = false;
                         for attr in &item.attrs {
-                            if let Some(syn::Meta::NameValue(syn::MetaNameValue {
-                                ident,
-                                lit,
-                                ..
-                            })) = attr.interpret_meta()
-                            {
-                                match lit {
-                                    syn::Lit::Str(ref path) if ident == "path" => {
+                            match attr.parse_meta() {
+                                Ok(syn::Meta::NameValue(syn::MetaNameValue {
+                                    path, lit, ..
+                                })) => match lit {
+                                    syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
                                         path_attr_found = true;
-                                        self.parse_mod(pkg, &mod_dir.join(path.value()))?;
+                                        self.parse_mod(pkg, &mod_dir.join(path_lit.value()))?;
                                         break;
                                     }
                                     _ => (),
-                                }
+                                },
+                                _ => (),
                             }
                         }
 
@@ -541,21 +539,21 @@ impl Parse {
                 if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
                     info!(
                         "Skip {}::{} - (fn's outside of the binding crate are not used).",
-                        crate_name, &function.ident
+                        crate_name, &function.sig.ident
                     );
                     return;
                 }
-                let path = Path::new(function.ident.to_string());
-                match Function::load(path, &function.decl, true, &function.attrs, mod_cfg) {
+                let path = Path::new(function.sig.ident.to_string());
+                match Function::load(path, &function.sig, true, &function.attrs, mod_cfg) {
                     Ok(func) => {
-                        info!("Take {}::{}.", crate_name, &function.ident);
+                        info!("Take {}::{}.", crate_name, &function.sig.ident);
 
                         self.functions.push(func);
                     }
                     Err(msg) => {
                         error!(
                             "Cannot use fn {}::{} ({}).",
-                            crate_name, &function.ident, msg
+                            crate_name, &function.sig.ident, msg
                         );
                     }
                 }
@@ -575,22 +573,25 @@ impl Parse {
         if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
             info!(
                 "Skip {}::{} - (fn's outside of the binding crate are not used).",
-                crate_name, &item.ident
+                crate_name, &item.sig.ident
             );
             return;
         }
 
         if let syn::Visibility::Public(_) = item.vis {
-            if item.is_no_mangle() && (item.abi.is_omitted() || item.abi.is_c()) {
-                let path = Path::new(item.ident.to_string());
-                match Function::load(path, &item.decl, false, &item.attrs, mod_cfg) {
+            if item.is_no_mangle() && (item.sig.abi.is_omitted() || item.sig.abi.is_c()) {
+                let path = Path::new(item.sig.ident.to_string());
+                match Function::load(path, &item.sig, false, &item.attrs, mod_cfg) {
                     Ok(func) => {
-                        info!("Take {}::{}.", crate_name, &item.ident);
+                        info!("Take {}::{}.", crate_name, &item.sig.ident);
 
                         self.functions.push(func);
                     }
                     Err(msg) => {
-                        error!("Cannot use fn {}::{} ({}).", crate_name, &item.ident, msg);
+                        error!(
+                            "Cannot use fn {}::{} ({}).",
+                            crate_name, &item.sig.ident, msg
+                        );
                     }
                 }
                 return;
@@ -600,18 +601,18 @@ impl Parse {
         // TODO
         if let syn::Visibility::Public(_) = item.vis {
         } else {
-            warn!("Skip {}::{} - (not `pub`).", crate_name, &item.ident);
+            warn!("Skip {}::{} - (not `pub`).", crate_name, &item.sig.ident);
         }
-        if (item.abi.is_omitted() || item.abi.is_c()) && !item.is_no_mangle() {
+        if (item.sig.abi.is_omitted() || item.sig.abi.is_c()) && !item.is_no_mangle() {
             warn!(
                 "Skip {}::{} - (`extern` but not `no_mangle`).",
-                crate_name, &item.ident
+                crate_name, &item.sig.ident
             );
         }
-        if item.abi.is_some() && !(item.abi.is_omitted() || item.abi.is_c()) {
+        if item.sig.abi.is_some() && !(item.sig.abi.is_omitted() || item.sig.abi.is_c()) {
             warn!(
                 "Skip {}::{} - (non `extern \"C\"`).",
-                crate_name, &item.ident
+                crate_name, &item.sig.ident
             );
         }
     }
@@ -845,7 +846,7 @@ impl Parse {
         item: &syn::ItemMacro,
     ) {
         let name = match item.mac.path.segments.last() {
-            Some(ref n) => n.value().ident.to_string(),
+            Some(ref n) => n.ident.to_string(),
             None => return,
         };
 
@@ -853,7 +854,7 @@ impl Parse {
             return;
         }
 
-        let bitflags = match bitflags::parse(item.mac.tts.clone()) {
+        let bitflags = match bitflags::parse(item.mac.tokens.clone()) {
             Ok(b) => b,
             Err(e) => {
                 warn!("Failed to parse bitflags invocation: {:?}", e);

@@ -107,14 +107,12 @@ impl Cfg {
         let mut configs = Vec::new();
 
         for attr in attrs {
-            if let Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) =
-                attr.interpret_meta()
-            {
-                if ident != "cfg" || nested.len() != 1 {
+            if let Ok(syn::Meta::List(syn::MetaList { path, nested, .. })) = attr.parse_meta() {
+                if !path.is_ident("cfg") || nested.len() != 1 {
                     continue;
                 }
 
-                if let Some(config) = Cfg::load_single(nested.first().unwrap().value()) {
+                if let Some(config) = Cfg::load_single(nested.first().unwrap()) {
                     configs.push(config);
                 }
             }
@@ -136,11 +134,11 @@ impl Cfg {
                     .expect("error parsing dependency's target metadata")
             })
             .and_then(|target| {
-                if let syn::Meta::List(syn::MetaList { ident, nested, .. }) = target {
-                    if ident != "cfg" || nested.len() != 1 {
+                if let syn::Meta::List(syn::MetaList { path, nested, .. }) = target {
+                    if !path.is_ident("cfg") || nested.len() != 1 {
                         return None;
                     }
-                    Cfg::load_single(nested.first().unwrap().value())
+                    Cfg::load_single(nested.first().unwrap())
                 } else {
                     None
                 }
@@ -149,35 +147,39 @@ impl Cfg {
 
     fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {
         match *item {
-            syn::NestedMeta::Meta(syn::Meta::Word(ref ident)) => {
-                Some(Cfg::Boolean(format!("{}", ident)))
-            }
+            syn::NestedMeta::Meta(syn::Meta::Path(ref path)) => Some(Cfg::Boolean(format!(
+                "{}",
+                path.segments.first().unwrap().ident
+            ))),
             syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
-                ref ident,
+                ref path,
                 ref lit,
                 ..
-            })) => match *lit {
-                syn::Lit::Str(ref value) => Some(Cfg::Named(format!("{}", ident), value.value())),
+            })) => match lit {
+                &syn::Lit::Str(ref value) => Some(Cfg::Named(
+                    format!("{}", path.segments.first().unwrap().ident),
+                    value.value(),
+                )),
                 _ => None,
             },
             syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList {
-                ref ident,
+                ref path,
                 ref nested,
                 ..
             })) => {
-                if ident == "any" {
+                if path.is_ident("any") {
                     if let Some(configs) = Cfg::load_list(nested.iter()) {
                         Some(Cfg::Any(configs))
                     } else {
                         None
                     }
-                } else if ident == "all" {
+                } else if path.is_ident("all") {
                     if let Some(configs) = Cfg::load_list(nested.iter()) {
                         Some(Cfg::All(configs))
                     } else {
                         None
                     }
-                } else if ident == "not" {
+                } else if path.is_ident("not") {
                     if nested.len() != 1 {
                         return None;
                     }
