@@ -5,7 +5,6 @@
 use std::borrow::Cow;
 use std::fmt;
 use std::io::Write;
-use std::mem;
 
 use syn;
 
@@ -159,30 +158,11 @@ impl Literal {
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref value),
                 ..
-            }) => match value.suffix() {
-                syn::IntSuffix::Usize
-                | syn::IntSuffix::U8
-                | syn::IntSuffix::U16
-                | syn::IntSuffix::U32
-                | syn::IntSuffix::U64
-                | syn::IntSuffix::U128
-                | syn::IntSuffix::None => Ok(Literal::Expr(format!("{}", value.value()))),
-                syn::IntSuffix::Isize
-                | syn::IntSuffix::I8
-                | syn::IntSuffix::I16
-                | syn::IntSuffix::I32
-                | syn::IntSuffix::I64
-                | syn::IntSuffix::I128 => unsafe {
-                    Ok(Literal::Expr(format!(
-                        "{}",
-                        mem::transmute::<u64, i64>(value.value())
-                    )))
-                },
-            },
+            }) => Ok(Literal::Expr(value.base10_digits().to_string())),
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Float(ref value),
                 ..
-            }) => Ok(Literal::Expr(format!("{}", value.value()))),
+            }) => Ok(Literal::Expr(value.base10_digits().to_string())),
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Bool(ref value),
                 ..

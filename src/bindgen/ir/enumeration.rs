@@ -32,9 +32,7 @@ pub struct EnumVariant {
 fn value_from_expr(val: &syn::Expr) -> Option<i64> {
     match *val {
         syn::Expr::Lit(ref lit) => match lit.lit {
-            syn::Lit::Int(ref lit) if lit.value() <= ::std::i64::MAX as u64 => {
-                Some(lit.value() as i64)
-            }
+            syn::Lit::Int(ref lit) => lit.base10_parse::<i64>().ok(),
             _ => None,
         },
         syn::Expr::Unary(ref unary) => {

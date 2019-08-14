@@ -120,8 +120,7 @@ impl GenericPath {
             "{:?} doesn't have any segments",
             path
         );
-        let last_segment_token = path.segments.last().unwrap();
-        let last_segment = last_segment_token.value();
+        let last_segment = path.segments.last().unwrap();
         let name = last_segment.ident.to_string();
 
         let path = Path::new(name);

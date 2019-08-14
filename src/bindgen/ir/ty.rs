@@ -295,7 +295,7 @@ impl Type {
                     None => return Err("Cannot have an array of zero sized types.".to_owned()),
                 };
 
-                let len = ArrayLength::Value(format!("{}", len.value()));
+                let len = ArrayLength::Value(len.base10_digits().to_string());
                 // panic!("panic -> value: {:?}", len);
                 Type::Array(Box::new(converted), len)
             }
@@ -305,15 +305,16 @@ impl Type {
                     Type::load(&x.ty).map(|opt_ty| {
                         opt_ty.map(|ty| {
                             (
-                                x.name.as_ref().map(|name| match name.0 {
-                                    syn::BareFnArgName::Named(ref ident) => ident.to_string(),
-                                    syn::BareFnArgName::Wild(_) => {
+                                x.name.as_ref().map(|(ref ident, _)| {
+                                    if ident == "_" {
                                         wildcard_counter += 1;
                                         if wildcard_counter == 1 {
                                             "_".to_owned()
                                         } else {
                                             format!("_{}", wildcard_counter - 1)
                                         }
+                                    } else {
+                                        ident.to_string()
                                     }
                                 }),
                                 ty,
