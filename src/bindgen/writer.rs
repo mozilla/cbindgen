@@ -133,7 +133,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn new_line(&mut self) {
-        write!(self.out, "\n").unwrap();
+        writeln!(self.out).unwrap();
         self.line_started = false;
         self.line_length = 0;
         self.line_number += 1;

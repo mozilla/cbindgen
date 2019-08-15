@@ -77,20 +77,17 @@ impl Typedef {
             return;
         }
 
-        match self.aliased.get_root_path() {
-            Some(alias_path) => {
-                if out.contains_key(&alias_path) {
-                    warn!(
-                        "Multiple typedef's with annotations for {}. Ignoring annotations from {}.",
-                        alias_path, self.path
-                    );
-                    return;
-                }
-
-                out.insert(alias_path, self.annotations.clone());
-                self.annotations = AnnotationSet::new();
+        if let Some(alias_path) = self.aliased.get_root_path() {
+            if out.contains_key(&alias_path) {
+                warn!(
+                    "Multiple typedef's with annotations for {}. Ignoring annotations from {}.",
+                    alias_path, self.path
+                );
+                return;
             }
-            None => {}
+
+            out.insert(alias_path, self.annotations.clone());
+            self.annotations = AnnotationSet::new();
         }
     }
 

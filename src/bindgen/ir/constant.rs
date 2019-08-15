@@ -78,9 +78,9 @@ impl fmt::Display for Literal {
                 ref right,
             } => write!(f, "{} {} {}", left, op, right),
             Literal::Struct {
-                path: _,
                 export_name,
                 fields,
+                ..
             } => write!(
                 f,
                 "({}){{ {} }}",
@@ -99,9 +99,9 @@ impl Literal {
     pub fn rename_for_config(&mut self, config: &Config) {
         match self {
             Literal::Struct {
-                path: _,
                 ref mut export_name,
                 fields,
+                ..
             } => {
                 config.export.rename(export_name);
                 for (_, lit) in fields {
@@ -211,9 +211,7 @@ impl Literal {
                 })
             }
             syn::Expr::Unary(syn::ExprUnary {
-                attrs: _,
-                ref op,
-                ref expr,
+                ref op, ref expr, ..
             }) => match *op {
                 UnOp::Neg(_) => {
                     let val = Self::load(expr)?;

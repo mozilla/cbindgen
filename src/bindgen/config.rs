@@ -20,7 +20,7 @@ use bindgen::ir::annotation::AnnotationSet;
 use bindgen::ir::path::Path;
 pub use bindgen::rename::RenameRule;
 
-pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// A language type to generate bindings for.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -137,19 +137,17 @@ pub enum Style {
 }
 
 impl Style {
-    pub fn generate_tag(&self) -> bool {
+    pub fn generate_tag(self) -> bool {
         match self {
-            &Style::Both => true,
-            &Style::Tag => true,
-            &Style::Type => false,
+            Style::Both | Style::Tag => true,
+            Style::Type => false,
         }
     }
 
-    pub fn generate_typedef(&self) -> bool {
+    pub fn generate_typedef(self) -> bool {
         match self {
-            &Style::Both => true,
-            &Style::Tag => false,
-            &Style::Type => true,
+            Style::Both | Style::Type => true,
+            Style::Tag => false,
         }
     }
 }

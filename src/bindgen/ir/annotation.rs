@@ -75,7 +75,7 @@ impl AnnotationSet {
             let annotation = &line[9..];
 
             // Split the annotation in two
-            let parts: Vec<&str> = annotation.split("=").map(|x| x.trim()).collect();
+            let parts: Vec<&str> = annotation.split('=').map(|x| x.trim()).collect();
 
             if parts.len() > 2 {
                 return Err(format!("Couldn't parse {}.", line));
@@ -103,7 +103,7 @@ impl AnnotationSet {
             }
             annotations.insert(
                 name.to_string(),
-                if value.len() == 0 {
+                if value.is_empty() {
                     AnnotationValue::Atom(None)
                 } else {
                     AnnotationValue::Atom(Some(value.to_string()))

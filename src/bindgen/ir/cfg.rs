@@ -20,8 +20,8 @@ enum DefineKey<'a> {
 impl<'a> DefineKey<'a> {
     fn load(key: &str) -> DefineKey {
         // TODO: dirty parser
-        if key.contains("=") {
-            let mut splits = key.trim().split("=");
+        if key.contains('=') {
+            let mut splits = key.trim().split('=');
 
             let name = if let Some(name) = splits.next() {
                 name.trim()
@@ -41,7 +41,7 @@ impl<'a> DefineKey<'a> {
 
             DefineKey::Named(name, value)
         } else {
-            return DefineKey::Boolean(key);
+            DefineKey::Boolean(key)
         }
     }
 }
@@ -87,7 +87,7 @@ impl fmt::Display for Cfg {
 
 impl Cfg {
     pub fn join(cfgs: &[Cfg]) -> Option<Cfg> {
-        if cfgs.len() == 0 {
+        if cfgs.is_empty() {
             None
         } else {
             Some(Cfg::All(cfgs.to_owned()))
@@ -107,17 +107,16 @@ impl Cfg {
         let mut configs = Vec::new();
 
         for attr in attrs {
-            match attr.interpret_meta() {
-                Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) => {
-                    if ident != "cfg" || nested.len() != 1 {
-                        continue;
-                    }
-
-                    if let Some(config) = Cfg::load_single(nested.first().unwrap().value()) {
-                        configs.push(config);
-                    }
+            if let Some(syn::Meta::List(syn::MetaList { ident, nested, .. })) =
+                attr.interpret_meta()
+            {
+                if ident != "cfg" || nested.len() != 1 {
+                    continue;
                 }
-                _ => {}
+
+                if let Some(config) = Cfg::load_single(nested.first().unwrap().value()) {
+                    configs.push(config);
+                }
             }
         }
 
@@ -149,19 +148,19 @@ impl Cfg {
     }
 
     fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {
-        match item {
-            &syn::NestedMeta::Meta(syn::Meta::Word(ref ident)) => {
+        match *item {
+            syn::NestedMeta::Meta(syn::Meta::Word(ref ident)) => {
                 Some(Cfg::Boolean(format!("{}", ident)))
             }
-            &syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
+            syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
                 ref ident,
                 ref lit,
                 ..
-            })) => match lit {
-                &syn::Lit::Str(ref value) => Some(Cfg::Named(format!("{}", ident), value.value())),
+            })) => match *lit {
+                syn::Lit::Str(ref value) => Some(Cfg::Named(format!("{}", ident), value.value())),
                 _ => None,
             },
-            &syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList {
+            syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList {
                 ref ident,
                 ref nested,
                 ..
@@ -318,13 +317,13 @@ pub enum Condition {
 
 impl Condition {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        match self {
-            &Condition::Define(ref define) => {
+        match *self {
+            Condition::Define(ref define) => {
                 out.write("defined(");
                 write!(out, "{}", define);
                 out.write(")");
             }
-            &Condition::Any(ref conditions) => {
+            Condition::Any(ref conditions) => {
                 out.write("(");
                 for (i, condition) in conditions.iter().enumerate() {
                     if i != 0 {
@@ -334,7 +333,7 @@ impl Condition {
                 }
                 out.write(")");
             }
-            &Condition::All(ref conditions) => {
+            Condition::All(ref conditions) => {
                 out.write("(");
                 for (i, condition) in conditions.iter().enumerate() {
                     if i != 0 {
@@ -344,7 +343,7 @@ impl Condition {
                 }
                 out.write(")");
             }
-            &Condition::Not(ref condition) => {
+            Condition::Not(ref condition) => {
                 out.write("!");
                 condition.write(config, out);
             }
@@ -359,7 +358,7 @@ pub trait ConditionWrite {
 
 impl ConditionWrite for Option<Condition> {
     fn write_before<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if let &Some(ref cfg) = self {
+        if let Some(ref cfg) = *self {
             out.write("#if ");
             cfg.write(config, out);
             out.new_line();

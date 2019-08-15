@@ -5,7 +5,7 @@
 /// Taken from `https://en.cppreference.com/w/cpp/keyword`
 /// Some experimental keywords were filtered out and the resulting list was
 /// sorted using a rust program.
-const RESERVED_KEYWORDS: &[&'static str] = &[
+const RESERVED_KEYWORDS: &[&str] = &[
     "alignas",
     "alignof",
     "auto",
@@ -82,7 +82,10 @@ const RESERVED_KEYWORDS: &[&'static str] = &[
 ];
 
 pub fn escape(rust_identifier: &mut String) {
-    if let Ok(_) = (RESERVED_KEYWORDS).binary_search(&rust_identifier.as_ref()) {
+    if RESERVED_KEYWORDS
+        .binary_search(&rust_identifier.as_ref())
+        .is_ok()
+    {
         rust_identifier.push('_');
     }
 }

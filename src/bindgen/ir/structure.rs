@@ -59,16 +59,16 @@ impl Struct {
             }
         };
 
-        let (fields, tuple_struct) = match &item.fields {
-            &syn::Fields::Unit => (Vec::new(), false),
-            &syn::Fields::Named(ref fields) => {
+        let (fields, tuple_struct) = match item.fields {
+            syn::Fields::Unit => (Vec::new(), false),
+            syn::Fields::Named(ref fields) => {
                 let out = fields
                     .named
                     .iter()
                     .try_skip_map(|x| x.as_ident_and_type())?;
                 (out, false)
             }
-            &syn::Fields::Unnamed(ref fields) => {
+            syn::Fields::Unnamed(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields.unnamed.iter() {
@@ -620,7 +620,7 @@ impl SynFieldHelpers for syn::Field {
         let ident = self
             .ident
             .as_ref()
-            .ok_or(format!("field is missing identifier"))?
+            .ok_or_else(|| "field is missing identifier".to_string())?
             .clone();
         let converted_ty = Type::load(&self.ty)?;
 

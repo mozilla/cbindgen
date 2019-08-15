@@ -41,15 +41,15 @@ impl Library {
         functions: Vec<Function>,
     ) -> Library {
         Library {
-            config: config,
-            constants: constants,
-            globals: globals,
-            enums: enums,
-            structs: structs,
-            unions: unions,
-            opaque_items: opaque_items,
-            typedefs: typedefs,
-            functions: functions,
+            config,
+            constants,
+            globals,
+            enums,
+            structs,
+            unions,
+            opaque_items,
+            typedefs,
+            functions,
         }
     }
 

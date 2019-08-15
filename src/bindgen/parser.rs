@@ -19,7 +19,7 @@ use bindgen::ir::{
 };
 use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 
-const STD_CRATES: &'static [&'static str] = &[
+const STD_CRATES: &[&str] = &[
     "std",
     "std_unicode",
     "alloc",
@@ -128,8 +128,7 @@ impl<'a> Parser<'a> {
         }
 
         // Check the blacklist
-        return !STD_CRATES.contains(&pkg_name.as_ref())
-            && !self.parse_config.exclude.contains(&pkg_name);
+        !STD_CRATES.contains(&pkg_name.as_ref()) && !self.parse_config.exclude.contains(&pkg_name)
     }
 
     fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
@@ -227,24 +226,21 @@ impl<'a> Parser<'a> {
             if item.has_test_attr() {
                 continue;
             }
-            match *item {
-                syn::Item::Mod(ref item) => {
-                    let cfg = Cfg::load(&item.attrs);
-                    if let &Some(ref cfg) = &cfg {
-                        self.cfg_stack.push(cfg.clone());
-                    }
-
-                    if let Some((_, ref inline_items)) = item.content {
-                        self.process_expanded_mod(pkg, inline_items)?;
-                    } else {
-                        unreachable!();
-                    }
-
-                    if cfg.is_some() {
-                        self.cfg_stack.pop();
-                    }
+            if let syn::Item::Mod(ref item) = *item {
+                let cfg = Cfg::load(&item.attrs);
+                if let Some(ref cfg) = cfg {
+                    self.cfg_stack.push(cfg.clone());
                 }
-                _ => {}
+
+                if let Some((_, ref inline_items)) = item.content {
+                    self.process_expanded_mod(pkg, inline_items)?;
+                } else {
+                    unreachable!();
+                }
+
+                if cfg.is_some() {
+                    self.cfg_stack.pop();
+                }
             }
         }
 
@@ -303,62 +299,59 @@ impl<'a> Parser<'a> {
             if item.has_test_attr() {
                 continue;
             }
-            match *item {
-                syn::Item::Mod(ref item) => {
-                    let next_mod_name = item.ident.to_string();
+            if let syn::Item::Mod(ref item) = *item {
+                let next_mod_name = item.ident.to_string();
 
-                    let cfg = Cfg::load(&item.attrs);
-                    if let &Some(ref cfg) = &cfg {
-                        self.cfg_stack.push(cfg.clone());
-                    }
+                let cfg = Cfg::load(&item.attrs);
+                if let Some(ref cfg) = cfg {
+                    self.cfg_stack.push(cfg.clone());
+                }
 
-                    if let Some((_, ref inline_items)) = item.content {
-                        self.process_mod(pkg, &mod_dir.join(&next_mod_name), inline_items)?;
+                if let Some((_, ref inline_items)) = item.content {
+                    self.process_mod(pkg, &mod_dir.join(&next_mod_name), inline_items)?;
+                } else {
+                    let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
+                    let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
+
+                    if next_mod_path1.exists() {
+                        self.parse_mod(pkg, next_mod_path1.as_path())?;
+                    } else if next_mod_path2.exists() {
+                        self.parse_mod(pkg, next_mod_path2.as_path())?;
                     } else {
-                        let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
-                        let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
-
-                        if next_mod_path1.exists() {
-                            self.parse_mod(pkg, next_mod_path1.as_path())?;
-                        } else if next_mod_path2.exists() {
-                            self.parse_mod(pkg, next_mod_path2.as_path())?;
-                        } else {
-                            // Last chance to find a module path
-                            let mut path_attr_found = false;
-                            for attr in &item.attrs {
-                                match attr.interpret_meta() {
-                                    Some(syn::Meta::NameValue(syn::MetaNameValue {
-                                        ident,
-                                        lit,
-                                        ..
-                                    })) => match lit {
-                                        syn::Lit::Str(ref path) if ident == "path" => {
-                                            path_attr_found = true;
-                                            self.parse_mod(pkg, &mod_dir.join(path.value()))?;
-                                            break;
-                                        }
-                                        _ => (),
-                                    },
+                        // Last chance to find a module path
+                        let mut path_attr_found = false;
+                        for attr in &item.attrs {
+                            if let Some(syn::Meta::NameValue(syn::MetaNameValue {
+                                ident,
+                                lit,
+                                ..
+                            })) = attr.interpret_meta()
+                            {
+                                match lit {
+                                    syn::Lit::Str(ref path) if ident == "path" => {
+                                        path_attr_found = true;
+                                        self.parse_mod(pkg, &mod_dir.join(path.value()))?;
+                                        break;
+                                    }
                                     _ => (),
                                 }
                             }
+                        }
 
-                            // This should be an error, but it's common enough to
-                            // just elicit a warning
-                            if !path_attr_found {
-                                warn!(
-                                    "Parsing crate `{}`: can't find mod {}`.",
-                                    pkg.name, next_mod_name
-                                );
-                            }
+                        // This should be an error, but it's common enough to
+                        // just elicit a warning
+                        if !path_attr_found {
+                            warn!(
+                                "Parsing crate `{}`: can't find mod {}`.",
+                                pkg.name, next_mod_name
+                            );
                         }
                     }
-
-                    if cfg.is_some() {
-                        self.cfg_stack.pop();
-                    }
                 }
-                _ => {}
+
+                if cfg.is_some() {
+                    self.cfg_stack.pop();
+                }
             }
         }
 
@@ -395,7 +388,7 @@ impl Parse {
     pub fn add_std_types(&mut self) {
         let mut add_opaque = |path: &str, generic_params: Vec<&str>| {
             let path = Path::new(path);
-            let generic_params: Vec<_> = generic_params.into_iter().map(|s| Path::new(s)).collect();
+            let generic_params: Vec<_> = generic_params.into_iter().map(Path::new).collect();
             self.opaque_items.try_insert(OpaqueItem::new(
                 path,
                 GenericParams(generic_params),
@@ -544,32 +537,28 @@ impl Parse {
         }
 
         for foreign_item in &item.items {
-            match *foreign_item {
-                syn::ForeignItem::Fn(ref function) => {
-                    if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name)
-                    {
-                        info!(
-                            "Skip {}::{} - (fn's outside of the binding crate are not used).",
-                            crate_name, &function.ident
-                        );
-                        return;
-                    }
-                    let path = Path::new(function.ident.to_string());
-                    match Function::load(path, &function.decl, true, &function.attrs, mod_cfg) {
-                        Ok(func) => {
-                            info!("Take {}::{}.", crate_name, &function.ident);
+            if let syn::ForeignItem::Fn(ref function) = *foreign_item {
+                if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
+                    info!(
+                        "Skip {}::{} - (fn's outside of the binding crate are not used).",
+                        crate_name, &function.ident
+                    );
+                    return;
+                }
+                let path = Path::new(function.ident.to_string());
+                match Function::load(path, &function.decl, true, &function.attrs, mod_cfg) {
+                    Ok(func) => {
+                        info!("Take {}::{}.", crate_name, &function.ident);
 
-                            self.functions.push(func);
-                        }
-                        Err(msg) => {
-                            error!(
-                                "Cannot use fn {}::{} ({}).",
-                                crate_name, &function.ident, msg
-                            );
-                        }
+                        self.functions.push(func);
+                    }
+                    Err(msg) => {
+                        error!(
+                            "Cannot use fn {}::{} ({}).",
+                            crate_name, &function.ident, msg
+                        );
                     }
                 }
-                _ => {}
             }
         }
     }

@@ -226,8 +226,8 @@ pub trait SynFnArgHelpers {
 
 impl SynFnArgHelpers for syn::FnArg {
     fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
-        match self {
-            &syn::FnArg::Captured(syn::ArgCaptured {
+        match *self {
+            syn::FnArg::Captured(syn::ArgCaptured {
                 pat: syn::Pat::Ident(syn::PatIdent { ref ident, .. }),
                 ref ty,
                 ..

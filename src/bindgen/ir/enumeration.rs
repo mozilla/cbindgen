@@ -414,7 +414,7 @@ impl Item for Enum {
                             &variant.export_name,
                             IdentifierType::EnumVariant(self),
                         ),
-                        variant.discriminant.clone(),
+                        variant.discriminant,
                         variant.body.as_ref().map(|body| {
                             (
                                 r.apply_to_snake_case(&body.0, IdentifierType::StructMember),
@@ -463,7 +463,7 @@ impl Item for Enum {
         let monomorph = Enum::new(
             mangled_path,
             GenericParams::default(),
-            self.repr.clone(),
+            self.repr,
             self.variants
                 .iter()
                 .map(|v| v.specialize(generic_values, &mappings))
@@ -537,7 +537,7 @@ impl Source for Enum {
 
             out.write("enum");
 
-            if !size.is_none() || config.style.generate_tag() {
+            if size.is_some() || config.style.generate_tag() {
                 write!(out, " {}", enum_name);
             }
 
@@ -804,12 +804,10 @@ impl Source for Enum {
                                 Type::MutRef(Box::new(return_type))
                             };
                             return_type.write(config, out);
+                        } else if const_casts {
+                            write!(out, "const {}&", body.export_name());
                         } else {
-                            if const_casts {
-                                write!(out, "const {}&", body.export_name());
-                            } else {
-                                write!(out, "{}&", body.export_name());
-                            }
+                            write!(out, "{}&", body.export_name());
                         }
 
                         write!(out, " As{}()", variant.export_name);

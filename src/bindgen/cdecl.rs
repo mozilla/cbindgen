@@ -22,9 +22,7 @@ enum CDeclarator {
 impl CDeclarator {
     fn is_ptr(&self) -> bool {
         match self {
-            &CDeclarator::Ptr(..) => true,
-            &CDeclarator::Ref => true,
-            &CDeclarator::Func(..) => true,
+            CDeclarator::Ptr(..) | CDeclarator::Ref | CDeclarator::Func(..) => true,
             _ => false,
         }
     }
@@ -73,10 +71,10 @@ impl CDecl {
 
     fn build_type(&mut self, t: &Type, is_const: bool) {
         match t {
-            &Type::Path(ref generic) => {
+            Type::Path(ref generic) => {
                 if is_const {
                     assert!(
-                        self.type_qualifers.len() == 0,
+                        self.type_qualifers.is_empty(),
                         "error generating cdecl for {:?}",
                         t
                     );
@@ -84,23 +82,23 @@ impl CDecl {
                 }
 
                 assert!(
-                    self.type_name.len() == 0,
+                    self.type_name.is_empty(),
                     "error generating cdecl for {:?}",
                     t
                 );
                 self.type_name = generic.export_name().to_owned();
                 assert!(
-                    self.type_generic_args.len() == 0,
+                    self.type_generic_args.is_empty(),
                     "error generating cdecl for {:?}",
                     t
                 );
                 self.type_generic_args = generic.generics().to_owned();
                 self.type_ctype = generic.ctype().cloned();
             }
-            &Type::Primitive(ref p) => {
+            Type::Primitive(ref p) => {
                 if is_const {
                     assert!(
-                        self.type_qualifers.len() == 0,
+                        self.type_qualifers.is_empty(),
                         "error generating cdecl for {:?}",
                         t
                     );
@@ -108,35 +106,35 @@ impl CDecl {
                 }
 
                 assert!(
-                    self.type_name.len() == 0,
+                    self.type_name.is_empty(),
                     "error generating cdecl for {:?}",
                     t
                 );
                 self.type_name = p.to_string();
             }
 
-            &Type::ConstPtr(ref t) => {
+            Type::ConstPtr(ref t) => {
                 self.declarators.push(CDeclarator::Ptr(is_const));
                 self.build_type(t, true);
             }
-            &Type::Ptr(ref t) => {
+            Type::Ptr(ref t) => {
                 self.declarators.push(CDeclarator::Ptr(is_const));
                 self.build_type(t, false);
             }
-            &Type::Ref(ref t) => {
+            Type::Ref(ref t) => {
                 self.declarators.push(CDeclarator::Ref);
                 self.build_type(t, true);
             }
-            &Type::MutRef(ref t) => {
+            Type::MutRef(ref t) => {
                 self.declarators.push(CDeclarator::Ref);
                 self.build_type(t, false);
             }
-            &Type::Array(ref t, ref constant) => {
+            Type::Array(ref t, ref constant) => {
                 let len = constant.as_str().to_owned();
                 self.declarators.push(CDeclarator::Array(len));
                 self.build_type(t, is_const);
             }
-            &Type::FuncPtr(ref ret, ref args) => {
+            Type::FuncPtr(ref ret, ref args) => {
                 let args = args
                     .iter()
                     .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty)))
@@ -155,7 +153,7 @@ impl CDecl {
         void_prototype: bool,
     ) {
         // Write the type-specifier and type-qualifier first
-        if self.type_qualifers.len() != 0 {
+        if !self.type_qualifers.is_empty() {
             write!(out, "{} ", self.type_qualifers);
         }
 
@@ -179,26 +177,27 @@ impl CDecl {
         // Write the left part of declarators before the identifier
         let mut iter_rev = self.declarators.iter().rev().peekable();
 
+        #[allow(clippy::while_let_on_iterator)]
         while let Some(declarator) = iter_rev.next() {
             let next_is_pointer = iter_rev.peek().map_or(false, |x| x.is_ptr());
 
-            match declarator {
-                &CDeclarator::Ptr(ref is_const) => {
+            match *declarator {
+                CDeclarator::Ptr(ref is_const) => {
                     if *is_const {
                         out.write("*const ");
                     } else {
                         out.write("*");
                     }
                 }
-                &CDeclarator::Ref => {
+                CDeclarator::Ref => {
                     out.write("&");
                 }
-                &CDeclarator::Array(..) => {
+                CDeclarator::Array(..) => {
                     if next_is_pointer {
                         out.write("(");
                     }
                 }
-                &CDeclarator::Func(..) => {
+                CDeclarator::Func(..) => {
                     if next_is_pointer {
                         out.write("(");
                     }
@@ -215,15 +214,16 @@ impl CDecl {
         let mut iter = self.declarators.iter();
         let mut last_was_pointer = false;
 
+        #[allow(clippy::while_let_on_iterator)]
         while let Some(declarator) = iter.next() {
-            match declarator {
-                &CDeclarator::Ptr(..) => {
+            match *declarator {
+                CDeclarator::Ptr(..) => {
                     last_was_pointer = true;
                 }
-                &CDeclarator::Ref => {
+                CDeclarator::Ref => {
                     last_was_pointer = true;
                 }
-                &CDeclarator::Array(ref constant) => {
+                CDeclarator::Array(ref constant) => {
                     if last_was_pointer {
                         out.write(")");
                     }
@@ -231,7 +231,7 @@ impl CDecl {
 
                     last_was_pointer = false;
                 }
-                &CDeclarator::Func(ref args, layout_vertical) => {
+                CDeclarator::Func(ref args, layout_vertical) => {
                     if last_was_pointer {
                         out.write(")");
                     }
@@ -282,13 +282,13 @@ pub fn write_func<F: Write>(
     layout_vertical: bool,
     void_prototype: bool,
 ) {
-    &CDecl::from_func(f, layout_vertical).write(out, Some(f.path().name()), void_prototype);
+    CDecl::from_func(f, layout_vertical).write(out, Some(f.path().name()), void_prototype);
 }
 
 pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
-    &CDecl::from_type(t).write(out, Some(ident), false);
+    CDecl::from_type(t).write(out, Some(ident), false);
 }
 
 pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type) {
-    &CDecl::from_type(t).write(out, None, false);
+    CDecl::from_type(t).write(out, None, false);
 }

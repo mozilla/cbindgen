@@ -119,7 +119,7 @@ pub fn expand(
     let src = from_utf8(&output.stdout)?.to_owned();
     let error = from_utf8(&output.stderr)?.to_owned();
 
-    if src.len() == 0 {
+    if src.is_empty() {
         Err(Error::Compile(error))
     } else {
         Ok(src)

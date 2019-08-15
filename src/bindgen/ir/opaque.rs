@@ -39,7 +39,7 @@ impl OpaqueItem {
             path,
             GenericParams::new(generics),
             Cfg::append(mod_cfg, Cfg::load(attrs)),
-            AnnotationSet::load(attrs).unwrap_or(AnnotationSet::new()),
+            AnnotationSet::load(attrs).unwrap_or_else(|_| AnnotationSet::new()),
             Documentation::load(attrs),
         ))
     }

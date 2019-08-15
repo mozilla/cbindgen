@@ -55,14 +55,14 @@ pub enum ItemContainer {
 
 impl ItemContainer {
     pub fn deref(&self) -> &dyn Item {
-        match self {
-            &ItemContainer::Constant(ref x) => x,
-            &ItemContainer::Static(ref x) => x,
-            &ItemContainer::OpaqueItem(ref x) => x,
-            &ItemContainer::Struct(ref x) => x,
-            &ItemContainer::Union(ref x) => x,
-            &ItemContainer::Enum(ref x) => x,
-            &ItemContainer::Typedef(ref x) => x,
+        match *self {
+            ItemContainer::Constant(ref x) => x,
+            ItemContainer::Static(ref x) => x,
+            ItemContainer::OpaqueItem(ref x) => x,
+            ItemContainer::Struct(ref x) => x,
+            ItemContainer::Union(ref x) => x,
+            ItemContainer::Enum(ref x) => x,
+            ItemContainer::Typedef(ref x) => x,
         }
     }
 }
@@ -129,9 +129,9 @@ impl<T: Item + Clone> ItemMap<T> {
     pub fn to_vec(&self) -> Vec<T> {
         let mut result = Vec::with_capacity(self.data.len());
         for container in self.data.values() {
-            match container {
-                &ItemValue::Cfg(ref items) => result.extend_from_slice(items),
-                &ItemValue::Single(ref item) => {
+            match *container {
+                ItemValue::Cfg(ref items) => result.extend_from_slice(items),
+                ItemValue::Single(ref item) => {
                     result.push(item.clone());
                 }
             }
@@ -161,7 +161,7 @@ impl<T: Item + Clone> ItemMap<T> {
                             new_items.push(item);
                         }
                     }
-                    if new_items.len() > 0 {
+                    if !new_items.is_empty() {
                         self.data.insert(name, ItemValue::Cfg(new_items));
                     }
                 }
@@ -179,13 +179,13 @@ impl<T: Item + Clone> ItemMap<T> {
         F: FnMut(&T),
     {
         for container in self.data.values() {
-            match container {
-                &ItemValue::Cfg(ref items) => {
+            match *container {
+                ItemValue::Cfg(ref items) => {
                     for item in items {
                         callback(item);
                     }
                 }
-                &ItemValue::Single(ref item) => callback(item),
+                ItemValue::Single(ref item) => callback(item),
             }
         }
     }
@@ -195,13 +195,13 @@ impl<T: Item + Clone> ItemMap<T> {
         F: FnMut(&mut T),
     {
         for container in self.data.values_mut() {
-            match container {
-                &mut ItemValue::Cfg(ref mut items) => {
+            match *container {
+                ItemValue::Cfg(ref mut items) => {
                     for item in items {
                         callback(item);
                     }
                 }
-                &mut ItemValue::Single(ref mut item) => callback(item),
+                ItemValue::Single(ref mut item) => callback(item),
             }
         }
     }
