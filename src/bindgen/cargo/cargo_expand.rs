@@ -110,10 +110,12 @@ pub fn expand(
     }
     cmd.arg("-p");
     cmd.arg(&format!("{}:{}", crate_name, version));
+    cmd.arg("--verbose");
     cmd.arg("--");
     cmd.arg("-Z");
     cmd.arg("unstable-options");
     cmd.arg("--pretty=expanded");
+    info!("Command: {:?}", cmd);
     let output = cmd.output()?;
 
     let src = from_utf8(&output.stdout)?.to_owned();
