@@ -217,6 +217,14 @@ impl Bindings {
             }
 
             if self.config.language == Language::Cxx || self.config.cpp_compat {
+                if let Some(ref using) = self.config.using {
+                    for namespace in using {
+                        out.new_line();
+                        write!(out, "using namespace {};", namespace);
+                    }
+                    out.new_line();
+                }
+
                 out.new_line();
                 out.write("extern \"C\" {");
                 out.new_line();
