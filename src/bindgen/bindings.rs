@@ -216,7 +216,7 @@ impl Bindings {
                 out.write("#ifdef __cplusplus");
             }
 
-            if self.config.language == Language::Cxx || self.config.cpp_compat {
+            if self.config.language == Language::Cxx {
                 if let Some(ref using_namespaces) = self.config.using_namespaces {
                     for namespace in using_namespaces {
                         out.new_line();
@@ -224,7 +224,9 @@ impl Bindings {
                     }
                     out.new_line();
                 }
+            }
 
+            if self.config.language == Language::Cxx || self.config.cpp_compat {
                 out.new_line();
                 out.write("extern \"C\" {");
                 out.new_line();

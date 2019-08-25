@@ -4,8 +4,6 @@
 #include <stdlib.h>
 
 #ifdef __cplusplus
-using namespace std;
-
 extern "C" {
 #endif // __cplusplus
 
