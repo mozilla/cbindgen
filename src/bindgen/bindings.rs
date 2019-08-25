@@ -217,8 +217,8 @@ impl Bindings {
             }
 
             if self.config.language == Language::Cxx || self.config.cpp_compat {
-                if let Some(ref using) = self.config.using {
-                    for namespace in using {
+                if let Some(ref using_namespaces) = self.config.using_namespaces {
+                    for namespace in using_namespaces {
                         out.new_line();
                         write!(out, "using namespace {};", namespace);
                     }
