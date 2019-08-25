@@ -1,3 +1,11 @@
+## 0.9.1
+
+     * Various improvements to comment output. https://github.com/eqrion/cbindgen/pull/370 / https://github.com/eqrion/cbindgen/pull/375.
+     * Fixed expand when ran from build.rs. https://github.com/eqrion/cbindgen/pull/371
+     * More debugging output for expansion. https://github.com/eqrion/cbindgen/pull/383
+     * New option to add a default private constructor in C++ tagged enums. https://github.com/eqrion/cbindgen/pull/377
+     * Syn and related dependencies updated to 1.0. https://github.com/eqrion/cbindgen/pull/379
+
 ## 0.9.0
 
      * Support to generate C headers with C++ compatibility. https://github.com/eqrion/cbindgen/pull/349
