@@ -609,8 +609,8 @@ pub struct Config {
     pub namespace: Option<String>,
     /// An optional list of namespaces. Only applicable when language="C++"
     pub namespaces: Option<Vec<String>>,
-    /// An optional list of namespaces to ddeclare as using. Only applicable when language="C++"
-    pub using: Option<Vec<String>>,
+    /// An optional list of namespaces to declare as using. Only applicable when language="C++"
+    pub using_namespaces: Option<Vec<String>>,
     /// The style to use for braces
     pub braces: Braces,
     /// The preferred length of a line, used for auto breaking function arguments
@@ -662,7 +662,7 @@ impl Default for Config {
             no_includes: false,
             namespace: None,
             namespaces: None,
-            using: None,
+            using_namespaces: None,
             braces: Braces::SameLine,
             line_length: 100,
             tab_width: 2,

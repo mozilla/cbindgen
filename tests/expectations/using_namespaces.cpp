@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <new>
 
+namespace root {
+
 using namespace std;
 
 extern "C" {
@@ -10,3 +12,5 @@ extern "C" {
 void root();
 
 } // extern "C"
+
+} // namespace root
