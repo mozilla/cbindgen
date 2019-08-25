@@ -344,6 +344,10 @@ namespace = "ffi"
 # default: []
 namespaces = ["mozilla", "wr"]
 
+# An optional list of namespaces to declare as using with "using namespace"
+# default: []
+using_namespaces = ["mozilla", "wr"]
+
 # A list of sys headers to #include (with angle brackets)
 # default: []
 sys_includes = ["stdio", "string"]

@@ -19,6 +19,7 @@ language = "C++"
 include_version = false
 # namespace = "my_namespace"
 namespaces = []
+using_namespaces = []
 sys_includes = []
 includes = []
 no_includes = false
