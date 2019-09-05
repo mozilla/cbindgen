@@ -137,22 +137,22 @@ impl<'a> Parser<'a> {
 
         // Check if we should use cargo expand for this crate
         if self.parse_config.expand.crates.contains(&pkg.name) {
-            return self.parse_expand_crate(pkg);
-        }
+            self.parse_expand_crate(pkg)?;
+        } else {
+            // Parse the crate before the dependencies otherwise the same-named idents we
+            // want to generate bindings for would be replaced by the ones provided
+            // by the first dependency containing it.
+            let crate_src = self.lib.as_ref().unwrap().find_crate_src(pkg);
 
-        // Parse the crate before the dependencies otherwise the same-named idents we
-        // want to generate bindings for would be replaced by the ones provided
-        // by the first dependency containing it.
-        let crate_src = self.lib.as_ref().unwrap().find_crate_src(pkg);
-
-        match crate_src {
-            Some(crate_src) => self.parse_mod(pkg, crate_src.as_path())?,
-            None => {
-                // This should be an error, but is common enough to just elicit a warning
-                warn!(
-                    "Parsing crate `{}`: can't find lib.rs with `cargo metadata`.",
-                    pkg.name
-                );
+            match crate_src {
+                Some(crate_src) => self.parse_mod(pkg, crate_src.as_path())?,
+                None => {
+                    // This should be an error, but is common enough to just elicit a warning
+                    warn!(
+                        "Parsing crate `{}`: can't find lib.rs with `cargo metadata`.",
+                        pkg.name
+                    );
+                }
             }
         }
 
