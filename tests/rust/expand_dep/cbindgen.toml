@@ -1,0 +1,6 @@
+[parse]
+parse_deps = true
+include = ["dep"]
+
+[parse.expand]
+crates = ["expand-dep"]
