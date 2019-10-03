@@ -80,7 +80,13 @@ impl Cargo {
     }
 
     pub(crate) fn binding_crate_ref(&self) -> PackageRef {
-        self.find_pkg_ref(&self.binding_crate_name).unwrap()
+        match self.find_pkg_ref(&self.binding_crate_name) {
+            Some(pkg_ref) => pkg_ref,
+            None => panic!(
+                "Unable to find {} for {:?}",
+                self.binding_crate_name, self.manifest_path
+            ),
+        }
     }
 
     pub(crate) fn dependencies(&self, package: &PackageRef) -> Vec<(PackageRef, Option<Cfg>)> {
