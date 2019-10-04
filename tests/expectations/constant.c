@@ -5,6 +5,8 @@
 
 #define DELIMITER ':'
 
+#define EQUID L'\u10083'
+
 #define FOO 10
 
 #define HEART L'\u2764'
