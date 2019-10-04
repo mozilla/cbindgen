@@ -6,6 +6,7 @@ pub const QUOTE: char = '\'';
 pub const TAB: char = '\t';
 pub const NEWLINE: char = '\n';
 pub const HEART: char = '❤';
+pub const EQUID: char = '𐂃';
 pub const ZOM: f32 = 3.14;
 
 pub(crate) const DONT_EXPORT_CRATE: i32 = 20;
