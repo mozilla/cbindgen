@@ -210,6 +210,13 @@ fn main() {
                     projects that use workspaces.")
                 .required(false),
         )
+        .arg(
+            Arg::with_name("quiet")
+                .short("q")
+                .long("quiet")
+                .help("Report errors only.")
+                .required(false),
+        )
         .get_matches();
 
     if !matches.is_present("out") && matches.is_present("verify") {
@@ -220,10 +227,14 @@ fn main() {
     }
 
     // Initialize logging
-    match matches.occurrences_of("v") {
-        0 => logging::WarnLogger::init().unwrap(),
-        1 => logging::InfoLogger::init().unwrap(),
-        _ => logging::TraceLogger::init().unwrap(),
+    if matches.is_present("quiet") {
+        logging::ErrorLogger::init().unwrap();
+    } else {
+        match matches.occurrences_of("v") {
+            0 => logging::WarnLogger::init().unwrap(),
+            1 => logging::InfoLogger::init().unwrap(),
+            _ => logging::TraceLogger::init().unwrap(),
+        }
     }
 
     // Find the input directory
