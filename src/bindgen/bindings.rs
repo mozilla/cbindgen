@@ -57,6 +57,27 @@ impl Bindings {
         any
     }
 
+    pub fn struct_field_names(&self, path: &BindgenPath) -> Option<Vec<String>> {
+        let item_container = self.struct_map.get_items(path)?;
+        let mut fields = Vec::<String>::new();
+        for container in item_container {
+            let mut pos: usize = 0;
+            if let ItemContainer::Struct(ref st) = container {
+                for field in &st.fields {
+                    if let Some(found_pos) = fields.iter().position(|v| *v == field.0) {
+                        pos = found_pos + 1;
+                    } else {
+                        fields.insert(pos, field.0.clone());
+                        pos += 1;
+                    }
+                }
+            } else {
+                unreachable!()
+            }
+        }
+        Some(fields)
+    }
+
     pub fn write_to_file<P: AsRef<path::Path>>(&self, path: P) -> bool {
         // Don't compare files if we've never written this file before
         if !path.as_ref().is_file() {
