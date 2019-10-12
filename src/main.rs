@@ -214,7 +214,7 @@ fn main() {
             Arg::with_name("quiet")
                 .short("q")
                 .long("quiet")
-                .help("Report errors only.")
+                .help("Report errors only (overrides verbosity options).")
                 .required(false),
         )
         .get_matches();
