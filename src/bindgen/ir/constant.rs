@@ -215,11 +215,7 @@ impl Literal {
                 write!(out, "{{ ");
                 let mut is_first_field = true;
                 // In C++, same order as defined is required.
-                let ordered_fields = out
-                    .bindings()
-                    .struct_field_names(path)
-                    .expect("Failed to find struct")
-                    .clone();
+                let ordered_fields = out.bindings().struct_field_names(path);
                 for ordered_key in ordered_fields.iter() {
                     if let Some(ref lit) = fields.get(ordered_key) {
                         if !is_first_field {
