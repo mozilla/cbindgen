@@ -167,7 +167,7 @@ impl Bindings {
 
         self.write_headers(&mut out);
 
-        if self.config.language == Language::Cxx {
+        if self.config.language == Language::Cxx || self.config.cpp_compat {
             self.open_namespaces(&mut out);
         }
 
@@ -266,7 +266,7 @@ impl Bindings {
             }
         }
 
-        if self.config.language == Language::Cxx {
+        if self.config.language == Language::Cxx || self.config.cpp_compat {
             self.close_namespaces(&mut out);
         }
 
@@ -286,16 +286,29 @@ impl Bindings {
         }
     }
 
+    //pub(crate) fn open_cpp_compat
+
     pub(crate) fn open_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
         let mut wrote_namespace: bool = false;
         if let Some(ref namespace) = self.config.namespace {
             wrote_namespace = true;
 
+            if self.config.language == Language::C && self.config.cpp_compat {
+                out.new_line_if_not_start();
+                out.write("#ifdef __cplusplus");
+            }
+
             out.new_line();
             write!(out, "namespace {} {{", namespace);
         }
         if let Some(ref namespaces) = self.config.namespaces {
+            if !wrote_namespace && self.config.language == Language::C && self.config.cpp_compat {
+                out.new_line_if_not_start();
+                out.write("#ifdef __cplusplus");
+            }
+
             wrote_namespace = true;
+
             for namespace in namespaces {
                 out.new_line();
                 write!(out, "namespace {} {{", namespace);
@@ -303,6 +316,10 @@ impl Bindings {
         }
         if wrote_namespace {
             out.new_line();
+            if self.config.language == Language::C && self.config.cpp_compat {
+                out.write("#endif // __cplusplus");
+                out.new_line();
+            }
         }
     }
 
@@ -311,12 +328,22 @@ impl Bindings {
         if let Some(ref namespaces) = self.config.namespaces {
             wrote_namespace = true;
 
+            if self.config.language == Language::C && self.config.cpp_compat {
+                out.new_line_if_not_start();
+                out.write("#ifdef __cplusplus");
+            }
+
             for namespace in namespaces.iter().rev() {
                 out.new_line_if_not_start();
                 write!(out, "}} // namespace {}", namespace);
             }
         }
         if let Some(ref namespace) = self.config.namespace {
+            if !wrote_namespace && self.config.language == Language::C && self.config.cpp_compat {
+                out.new_line_if_not_start();
+                out.write("#ifdef __cplusplus");
+            }
+
             wrote_namespace = true;
 
             out.new_line_if_not_start();
@@ -324,6 +351,10 @@ impl Bindings {
         }
         if wrote_namespace {
             out.new_line();
+            if self.config.language == Language::C && self.config.cpp_compat {
+                out.write("#endif // __cplusplus");
+                out.new_line();
+            }
         }
     }
 }
