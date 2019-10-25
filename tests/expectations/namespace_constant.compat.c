@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+namespace constants {
+#endif // __cplusplus
+
 #define FOO 10
 
 #define ZOM 3.14
@@ -19,4 +23,8 @@ void root(Foo x);
 
 #ifdef __cplusplus
 } // extern "C"
+#endif // __cplusplus
+
+#ifdef __cplusplus
+} // namespace constants
 #endif // __cplusplus
