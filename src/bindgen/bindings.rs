@@ -286,8 +286,6 @@ impl Bindings {
         }
     }
 
-    //pub(crate) fn open_cpp_compat
-
     pub(crate) fn open_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
         let mut wrote_namespace: bool = false;
         if let Some(ref namespace) = self.config.namespace {
