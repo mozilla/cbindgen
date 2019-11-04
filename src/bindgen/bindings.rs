@@ -25,6 +25,12 @@ pub struct Bindings {
     functions: Vec<Function>,
 }
 
+#[derive(PartialEq)]
+enum NamespaceOperation {
+    Open,
+    Close,
+}
+
 impl Bindings {
     pub(crate) fn new(
         config: Config,
@@ -167,9 +173,7 @@ impl Bindings {
 
         self.write_headers(&mut out);
 
-        if self.config.language == Language::Cxx || self.config.cpp_compat {
-            self.open_namespaces(&mut out);
-        }
+        self.open_namespaces(&mut out);
 
         for constant in &self.constants {
             if constant.ty.is_primitive_or_ptr_primitive() {
@@ -266,9 +270,7 @@ impl Bindings {
             }
         }
 
-        if self.config.language == Language::Cxx || self.config.cpp_compat {
-            self.close_namespaces(&mut out);
-        }
+        self.close_namespaces(&mut out);
 
         if let Some(ref f) = self.config.include_guard {
             out.new_line_if_not_start();
@@ -286,73 +288,58 @@ impl Bindings {
         }
     }
 
-    pub(crate) fn open_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
-        let mut wrote_namespace: bool = false;
+    fn all_namespaces(&self) -> Vec<&str> {
+        if self.config.language != Language::Cxx && !self.config.cpp_compat {
+            return vec![];
+        }
+        let mut ret = vec![];
         if let Some(ref namespace) = self.config.namespace {
-            wrote_namespace = true;
-
-            if self.config.language == Language::C && self.config.cpp_compat {
-                out.new_line_if_not_start();
-                out.write("#ifdef __cplusplus");
-            }
-
-            out.new_line();
-            write!(out, "namespace {} {{", namespace);
+            ret.push(&**namespace);
         }
         if let Some(ref namespaces) = self.config.namespaces {
-            if !wrote_namespace && self.config.language == Language::C && self.config.cpp_compat {
-                out.new_line_if_not_start();
-                out.write("#ifdef __cplusplus");
-            }
-
-            wrote_namespace = true;
-
             for namespace in namespaces {
-                out.new_line();
-                write!(out, "namespace {} {{", namespace);
+                ret.push(&**namespace);
             }
         }
-        if wrote_namespace {
+        ret
+    }
+
+    fn open_close_namespaces<F: Write>(&self, op: NamespaceOperation, out: &mut SourceWriter<F>) {
+        let mut namespaces = self.all_namespaces();
+        if namespaces.is_empty() {
+            return;
+        }
+
+        if op == NamespaceOperation::Close {
+            namespaces.reverse();
+        }
+
+        let write_ifdefs = self.config.cpp_compat && self.config.language == Language::C;
+        if write_ifdefs {
+            out.new_line_if_not_start();
+            out.write("#ifdef __cplusplus");
+        }
+
+        for namespace in namespaces {
             out.new_line();
-            if self.config.language == Language::C && self.config.cpp_compat {
-                out.write("#endif // __cplusplus");
-                out.new_line();
+            match op {
+                NamespaceOperation::Open => write!(out, "namespace {} {{", namespace),
+                NamespaceOperation::Close => write!(out, "}} // namespace {}", namespace),
             }
+        }
+
+        out.new_line();
+        if write_ifdefs {
+            out.write("#endif // __cplusplus");
+            out.new_line();
         }
     }
 
+    pub(crate) fn open_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
+        self.open_close_namespaces(NamespaceOperation::Open, out);
+    }
+
     pub(crate) fn close_namespaces<F: Write>(&self, out: &mut SourceWriter<F>) {
-        let mut wrote_namespace: bool = false;
-        if let Some(ref namespaces) = self.config.namespaces {
-            wrote_namespace = true;
-
-            if self.config.language == Language::C && self.config.cpp_compat {
-                out.new_line_if_not_start();
-                out.write("#ifdef __cplusplus");
-            }
-
-            for namespace in namespaces.iter().rev() {
-                out.new_line_if_not_start();
-                write!(out, "}} // namespace {}", namespace);
-            }
-        }
-        if let Some(ref namespace) = self.config.namespace {
-            if !wrote_namespace && self.config.language == Language::C && self.config.cpp_compat {
-                out.new_line_if_not_start();
-                out.write("#ifdef __cplusplus");
-            }
-
-            wrote_namespace = true;
-
-            out.new_line_if_not_start();
-            write!(out, "}} // namespace {}", namespace);
-        }
-        if wrote_namespace {
-            out.new_line();
-            if self.config.language == Language::C && self.config.cpp_compat {
-                out.write("#endif // __cplusplus");
-                out.new_line();
-            }
-        }
+        self.open_close_namespaces(NamespaceOperation::Close, out);
     }
 }
