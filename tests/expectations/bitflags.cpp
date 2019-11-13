@@ -27,11 +27,11 @@ struct AlignFlags {
     return *this;
   }
 };
-static const AlignFlags AlignFlags_AUTO = { /* .bits = */ 0 };
-static const AlignFlags AlignFlags_NORMAL = { /* .bits = */ 1 };
-static const AlignFlags AlignFlags_START = { /* .bits = */ 1 << 1 };
-static const AlignFlags AlignFlags_END = { /* .bits = */ 1 << 2 };
-static const AlignFlags AlignFlags_FLEX_START = { /* .bits = */ 1 << 3 };
+static const AlignFlags AlignFlags_AUTO = AlignFlags{ /* .bits = */ 0 };
+static const AlignFlags AlignFlags_NORMAL = AlignFlags{ /* .bits = */ 1 };
+static const AlignFlags AlignFlags_START = AlignFlags{ /* .bits = */ 1 << 1 };
+static const AlignFlags AlignFlags_END = AlignFlags{ /* .bits = */ 1 << 2 };
+static const AlignFlags AlignFlags_FLEX_START = AlignFlags{ /* .bits = */ 1 << 3 };
 
 extern "C" {
 

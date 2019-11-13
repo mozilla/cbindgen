@@ -210,6 +210,8 @@ impl Literal {
             } => {
                 if config.language == Language::C {
                     write!(out, "({})", export_name);
+                } else {
+                    write!(out, "{}", export_name);
                 }
 
                 write!(out, "{{ ");
