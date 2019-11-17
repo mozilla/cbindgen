@@ -58,13 +58,13 @@ impl RenameRule {
         }
 
         match self {
-            RenameRule::None => String::from(text),
-            RenameRule::GeckoCase => context.to_str().to_owned() + text,
-            RenameRule::LowerCase => text.to_lowercase(),
-            RenameRule::UpperCase => text.to_uppercase(),
-            RenameRule::PascalCase => text.to_owned(),
-            RenameRule::CamelCase => text[..1].to_lowercase() + &text[1..],
-            RenameRule::SnakeCase => {
+            Self::None => String::from(text),
+            Self::GeckoCase => context.to_str().to_owned() + text,
+            Self::LowerCase => text.to_lowercase(),
+            Self::UpperCase => text.to_uppercase(),
+            Self::PascalCase => text.to_owned(),
+            Self::CamelCase => text[..1].to_lowercase() + &text[1..],
+            Self::SnakeCase => {
                 // Do not add additional `_` if the string already contains `_` e.g. `__Field`
                 // Do not split consecutive capital letters
                 let mut result = String::new();
@@ -91,7 +91,7 @@ impl RenameRule {
                 }
                 result
             }
-            RenameRule::ScreamingSnakeCase => {
+            Self::ScreamingSnakeCase => {
                 // Same as SnakeCase code above, but uses to_uppercase
                 let mut result = String::new();
                 let mut add_separator = true;
@@ -117,7 +117,7 @@ impl RenameRule {
                 }
                 result
             }
-            RenameRule::QualifiedScreamingSnakeCase => {
+            Self::QualifiedScreamingSnakeCase => {
                 let mut result = String::new();
 
                 if let IdentifierType::EnumVariant(e) = context {
@@ -144,8 +144,8 @@ impl RenameRule {
         }
 
         match self {
-            RenameRule::None => String::from(text),
-            RenameRule::GeckoCase => {
+            Self::None => String::from(text),
+            Self::GeckoCase => {
                 if &text[..1] == "_" {
                     text = &text[1..];
                 }
@@ -153,9 +153,9 @@ impl RenameRule {
                 context.to_str().to_owned()
                     + &RenameRule::PascalCase.apply_to_snake_case(text, context)
             }
-            RenameRule::LowerCase => text.to_lowercase(),
-            RenameRule::UpperCase => text.to_uppercase(),
-            RenameRule::PascalCase => {
+            Self::LowerCase => text.to_lowercase(),
+            Self::UpperCase => text.to_uppercase(),
+            Self::PascalCase => {
                 let mut result = String::new();
                 let mut is_uppercase = true;
                 for c in text.chars() {
@@ -175,7 +175,7 @@ impl RenameRule {
                 }
                 result
             }
-            RenameRule::CamelCase => {
+            Self::CamelCase => {
                 // Same as PascalCase code above, but is_uppercase = false to start
                 let mut result = String::new();
                 let mut is_uppercase = false;
@@ -196,15 +196,15 @@ impl RenameRule {
                 }
                 result
             }
-            RenameRule::SnakeCase => text.to_owned(),
-            RenameRule::ScreamingSnakeCase => text.to_owned().to_uppercase(),
-            RenameRule::QualifiedScreamingSnakeCase => {
+            Self::SnakeCase => text.to_owned(),
+            Self::ScreamingSnakeCase => text.to_owned().to_uppercase(),
+            Self::QualifiedScreamingSnakeCase => {
                 let mut result = String::new();
 
                 if let IdentifierType::EnumVariant(e) = context {
-                    if let RenameRule::QualifiedScreamingSnakeCase = self {
+                    if let Self::QualifiedScreamingSnakeCase = self {
                         result.push_str(
-                            &RenameRule::ScreamingSnakeCase
+                            &Self::ScreamingSnakeCase
                                 .apply_to_snake_case(e.path().name(), IdentifierType::Enum),
                         );
                         result.push_str("_");
@@ -212,7 +212,7 @@ impl RenameRule {
                 }
 
                 result
-                    .push_str(&RenameRule::ScreamingSnakeCase.apply_to_snake_case(&text, context));
+                    .push_str(&Self::ScreamingSnakeCase.apply_to_snake_case(&text, context));
                 result
             }
         }
@@ -228,40 +228,40 @@ impl Default for RenameRule {
 impl FromStr for RenameRule {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<RenameRule, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "none" => Ok(RenameRule::None),
-            "None" => Ok(RenameRule::None),
+            "none" => Ok(Self::None),
+            "None" => Ok(Self::None),
 
-            "mGeckoCase" => Ok(RenameRule::GeckoCase),
-            "GeckoCase" => Ok(RenameRule::GeckoCase),
-            "gecko_case" => Ok(RenameRule::GeckoCase),
+            "mGeckoCase" => Ok(Self::GeckoCase),
+            "GeckoCase" => Ok(Self::GeckoCase),
+            "gecko_case" => Ok(Self::GeckoCase),
 
-            "lowercase" => Ok(RenameRule::LowerCase),
-            "LowerCase" => Ok(RenameRule::LowerCase),
-            "lower_case" => Ok(RenameRule::LowerCase),
+            "lowercase" => Ok(Self::LowerCase),
+            "LowerCase" => Ok(Self::LowerCase),
+            "lower_case" => Ok(Self::LowerCase),
 
-            "UPPERCASE" => Ok(RenameRule::UpperCase),
-            "UpperCase" => Ok(RenameRule::UpperCase),
-            "upper_case" => Ok(RenameRule::UpperCase),
+            "UPPERCASE" => Ok(Self::UpperCase),
+            "UpperCase" => Ok(Self::UpperCase),
+            "upper_case" => Ok(Self::UpperCase),
 
-            "PascalCase" => Ok(RenameRule::PascalCase),
-            "pascal_case" => Ok(RenameRule::PascalCase),
+            "PascalCase" => Ok(Self::PascalCase),
+            "pascal_case" => Ok(Self::PascalCase),
 
-            "camelCase" => Ok(RenameRule::CamelCase),
-            "CamelCase" => Ok(RenameRule::CamelCase),
-            "camel_case" => Ok(RenameRule::CamelCase),
+            "camelCase" => Ok(Self::CamelCase),
+            "CamelCase" => Ok(Self::CamelCase),
+            "camel_case" => Ok(Self::CamelCase),
 
-            "snake_case" => Ok(RenameRule::SnakeCase),
-            "SnakeCase" => Ok(RenameRule::SnakeCase),
+            "snake_case" => Ok(Self::SnakeCase),
+            "SnakeCase" => Ok(Self::SnakeCase),
 
-            "SCREAMING_SNAKE_CASE" => Ok(RenameRule::ScreamingSnakeCase),
-            "ScreamingSnakeCase" => Ok(RenameRule::ScreamingSnakeCase),
-            "screaming_snake_case" => Ok(RenameRule::ScreamingSnakeCase),
+            "SCREAMING_SNAKE_CASE" => Ok(Self::ScreamingSnakeCase),
+            "ScreamingSnakeCase" => Ok(Self::ScreamingSnakeCase),
+            "screaming_snake_case" => Ok(Self::ScreamingSnakeCase),
 
-            "QUALIFIED_SCREAMING_SNAKE_CASE" => Ok(RenameRule::QualifiedScreamingSnakeCase),
-            "QualifiedScreamingSnakeCase" => Ok(RenameRule::QualifiedScreamingSnakeCase),
-            "qualified_screaming_snake_case" => Ok(RenameRule::QualifiedScreamingSnakeCase),
+            "QUALIFIED_SCREAMING_SNAKE_CASE" => Ok(Self::QualifiedScreamingSnakeCase),
+            "QualifiedScreamingSnakeCase" => Ok(Self::QualifiedScreamingSnakeCase),
+            "qualified_screaming_snake_case" => Ok(Self::QualifiedScreamingSnakeCase),
 
             _ => Err(format!("Unrecognized RenameRule: '{}'.", s)),
         }

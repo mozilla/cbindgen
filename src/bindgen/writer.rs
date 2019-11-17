@@ -69,7 +69,7 @@ pub type MeasureWriter<'a> = SourceWriter<'a, NullFile>;
 
 impl<'a, F: Write> SourceWriter<'a, F> {
     pub fn new(out: F, bindings: &'a Bindings) -> Self {
-        SourceWriter {
+        Self {
             out,
             bindings,
             spaces: vec![0],
