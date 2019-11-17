@@ -22,9 +22,9 @@ pub enum DeclarationType {
 impl DeclarationType {
     pub fn to_str(self) -> &'static str {
         match self {
-            DeclarationType::Struct => "struct",
-            DeclarationType::Enum => "enum",
-            DeclarationType::Union => "union",
+            Self::Struct => "struct",
+            Self::Enum => "enum",
+            Self::Union => "union",
         }
     }
 }

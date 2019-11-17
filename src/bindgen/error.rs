@@ -77,11 +77,11 @@ impl fmt::Display for Error {
 impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
-            Error::CargoMetadata(_, ref error) => Some(error),
-            Error::CargoToml(_, ref error) => Some(error),
-            Error::CargoExpand(_, ref error) => Some(error),
-            Error::ParseSyntaxError { ref error, .. } => Some(error),
-            Error::ParseCannotOpenFile { .. } => None,
+            Self::CargoMetadata(_, ref error) => Some(error),
+            Self::CargoToml(_, ref error) => Some(error),
+            Self::CargoExpand(_, ref error) => Some(error),
+            Self::ParseSyntaxError { ref error, .. } => Some(error),
+            Self::ParseCannotOpenFile { .. } => None,
         }
     }
 }
