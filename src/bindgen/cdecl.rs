@@ -37,8 +37,8 @@ struct CDecl {
 }
 
 impl CDecl {
-    fn new() -> CDecl {
-        CDecl {
+    fn new() -> Self {
+        Self {
             type_qualifers: String::new(),
             type_name: String::new(),
             type_generic_args: Vec::new(),
@@ -47,12 +47,12 @@ impl CDecl {
         }
     }
 
-    fn from_type(t: &Type) -> CDecl {
+    fn from_type(t: &Type) -> Self {
         let mut cdecl = CDecl::new();
         cdecl.build_type(t, false);
         cdecl
     }
-    fn from_func(f: &Function, layout_vertical: bool) -> CDecl {
+    fn from_func(f: &Function, layout_vertical: bool) -> Self {
         let mut cdecl = CDecl::new();
         cdecl.build_func(f, layout_vertical);
         cdecl
