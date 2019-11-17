@@ -2,10 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path;
+use std::rc::Rc;
 
 use bindgen::config::{Config, Language};
 use bindgen::ir::{
@@ -19,6 +22,7 @@ pub struct Bindings {
     /// The map from path to struct, used to lookup whether a given type is a
     /// transparent struct. This is needed to generate code for constants.
     struct_map: ItemMap<Struct>,
+    struct_fileds_memo: RefCell<HashMap<BindgenPath, Rc<Vec<String>>>>,
     globals: Vec<Static>,
     constants: Vec<Constant>,
     items: Vec<ItemContainer>,
@@ -43,6 +47,7 @@ impl Bindings {
         Bindings {
             config,
             struct_map,
+            struct_fileds_memo: Default::default(),
             globals,
             constants,
             items,
@@ -61,6 +66,30 @@ impl Bindings {
         let mut any = false;
         self.struct_map.for_items(path, |_| any = true);
         any
+    }
+
+    pub fn struct_field_names(&self, path: &BindgenPath) -> Rc<Vec<String>> {
+        let mut memos = self.struct_fileds_memo.borrow_mut();
+        if let Some(memo) = memos.get(path) {
+            return memo.clone();
+        }
+
+        let mut fields = Vec::<String>::new();
+        self.struct_map.for_items(path, |st| {
+            let mut pos: usize = 0;
+            for field in &st.fields {
+                if let Some(found_pos) = fields.iter().position(|v| *v == field.0) {
+                    pos = found_pos + 1;
+                } else {
+                    fields.insert(pos, field.0.clone());
+                    pos += 1;
+                }
+            }
+        });
+
+        let fields = Rc::new(fields);
+        memos.insert(path.clone(), fields.clone());
+        fields
     }
 
     pub fn write_to_file<P: AsRef<path::Path>>(&self, path: P) -> bool {

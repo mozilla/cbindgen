@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::borrow::Cow;
-use std::fmt;
+use std::collections::HashMap;
 use std::io::Write;
 
 use syn;
@@ -23,6 +23,10 @@ use syn::UnOp;
 #[derive(Debug, Clone)]
 pub enum Literal {
     Expr(String),
+    PostfixUnaryOp {
+        op: &'static str,
+        value: Box<Literal>,
+    },
     BinOp {
         left: Box<Literal>,
         op: &'static str,
@@ -31,14 +35,14 @@ pub enum Literal {
     Struct {
         path: Path,
         export_name: String,
-        fields: Vec<(String, Literal)>,
+        fields: HashMap<String, Literal>,
     },
 }
 
 impl Literal {
     fn replace_self_with(&mut self, self_ty: &Path) {
         match *self {
-            Literal::BinOp { .. } | Literal::Expr(..) => {}
+            Literal::PostfixUnaryOp { .. } | Literal::BinOp { .. } | Literal::Expr(..) => {}
             Literal::Struct {
                 ref mut path,
                 ref mut export_name,
@@ -47,7 +51,7 @@ impl Literal {
                 if path.replace_self_with(self_ty) {
                     *export_name = self_ty.name().to_owned();
                 }
-                for &mut (ref _name, ref mut expr) in fields {
+                for (ref _name, ref mut expr) in fields {
                     expr.replace_self_with(self_ty);
                 }
             }
@@ -57,39 +61,13 @@ impl Literal {
     fn is_valid(&self, bindings: &Bindings) -> bool {
         match *self {
             Literal::Expr(..) => true,
+            Literal::PostfixUnaryOp { ref value, .. } => value.is_valid(bindings),
             Literal::BinOp {
                 ref left,
                 ref right,
                 ..
             } => left.is_valid(bindings) && right.is_valid(bindings),
             Literal::Struct { ref path, .. } => bindings.struct_exists(path),
-        }
-    }
-}
-
-impl fmt::Display for Literal {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Literal::Expr(v) => write!(f, "{}", v),
-            Literal::BinOp {
-                ref left,
-                op,
-                ref right,
-            } => write!(f, "{} {} {}", left, op, right),
-            Literal::Struct {
-                export_name,
-                fields,
-                ..
-            } => write!(
-                f,
-                "({}){{ {} }}",
-                export_name,
-                fields
-                    .iter()
-                    .map(|(key, lit)| format!(".{} = {}", key, lit))
-                    .collect::<Vec<String>>()
-                    .join(", "),
-            ),
         }
     }
 }
@@ -106,6 +84,9 @@ impl Literal {
                 for (_, lit) in fields {
                     lit.rename_for_config(config);
                 }
+            }
+            Literal::PostfixUnaryOp { ref mut value, .. } => {
+                value.rename_for_config(config);
             }
             Literal::BinOp {
                 ref mut left,
@@ -174,7 +155,7 @@ impl Literal {
                 ..
             }) => {
                 let struct_name = path.segments[0].ident.to_string();
-                let mut field_pairs: Vec<(String, Literal)> = Vec::new();
+                let mut field_map = HashMap::<String, Literal>::default();
                 for field in fields {
                     let ident = match field.member {
                         syn::Member::Named(ref name) => name.to_string(),
@@ -182,12 +163,12 @@ impl Literal {
                     };
                     let key = ident.to_string();
                     let value = Literal::load(&field.expr)?;
-                    field_pairs.push((key, value));
+                    field_map.insert(key, value);
                 }
                 Ok(Literal::Struct {
                     path: Path::new(struct_name.clone()),
                     export_name: struct_name,
-                    fields: field_pairs,
+                    fields: field_map,
                 })
             }
             syn::Expr::Unary(syn::ExprUnary {
@@ -195,11 +176,65 @@ impl Literal {
             }) => match *op {
                 UnOp::Neg(_) => {
                     let val = Self::load(expr)?;
-                    Ok(Literal::Expr(format!("-{}", val)))
+                    Ok(Literal::PostfixUnaryOp {
+                        op: "-",
+                        value: Box::new(val),
+                    })
                 }
                 _ => Err(format!("Unsupported Unary expression. {:?}", *op)),
             },
             _ => Err(format!("Unsupported literal expression. {:?}", *expr)),
+        }
+    }
+
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        match self {
+            Literal::Expr(v) => write!(out, "{}", v),
+            Literal::PostfixUnaryOp { op, ref value } => {
+                write!(out, "{}", op);
+                value.write(config, out);
+            }
+            Literal::BinOp {
+                ref left,
+                op,
+                ref right,
+            } => {
+                left.write(config, out);
+                write!(out, " {} ", op);
+                right.write(config, out);
+            }
+            Literal::Struct {
+                export_name,
+                fields,
+                path,
+            } => {
+                if config.language == Language::C {
+                    write!(out, "({})", export_name);
+                } else {
+                    write!(out, "{}", export_name);
+                }
+
+                write!(out, "{{ ");
+                let mut is_first_field = true;
+                // In C++, same order as defined is required.
+                let ordered_fields = out.bindings().struct_field_names(path);
+                for ordered_key in ordered_fields.iter() {
+                    if let Some(ref lit) = fields.get(ordered_key) {
+                        if !is_first_field {
+                            write!(out, ", ");
+                        } else {
+                            is_first_field = false;
+                        }
+                        if config.language == Language::Cxx {
+                            write!(out, "/* .{} = */ ", ordered_key);
+                        } else {
+                            write!(out, ".{} = ", ordered_key);
+                        }
+                        lit.write(config, out);
+                    }
+                }
+                write!(out, " }}");
+            }
         }
     }
 }
@@ -405,7 +440,7 @@ impl Constant {
                 ref fields,
                 ref path,
                 ..
-            } if out.bindings().struct_is_transparent(path) => &fields[0].1,
+            } if out.bindings().struct_is_transparent(path) => &fields.iter().next().unwrap().1,
             _ => &self.value,
         };
 
@@ -417,9 +452,12 @@ impl Constant {
                 out.write("const ");
             }
             self.ty.write(config, out);
-            write!(out, " {} = {};", name, value)
+            write!(out, " {} = ", name);
+            value.write(config, out);
+            write!(out, ";");
         } else {
-            write!(out, "#define {} {}", name, value)
+            write!(out, "#define {} ", name);
+            value.write(config, out);
         }
         condition.write_after(config, out);
     }
