@@ -34,7 +34,7 @@ pub struct Union {
 }
 
 impl Union {
-    pub fn load(item: &syn::ItemUnion, mod_cfg: Option<&Cfg>) -> Result<Union, String> {
+    pub fn load(item: &syn::ItemUnion, mod_cfg: Option<&Cfg>) -> Result<Self, String> {
         if Repr::load(&item.attrs)? != Repr::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
         }

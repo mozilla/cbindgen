@@ -50,7 +50,7 @@ impl OpaqueItem {
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
-    ) -> OpaqueItem {
+    ) -> Self {
         let export_name = path.name().to_owned();
         Self {
             path,

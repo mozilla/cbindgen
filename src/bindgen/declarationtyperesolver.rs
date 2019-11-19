@@ -30,8 +30,8 @@ impl DeclarationType {
 }
 
 impl DeclarationTypeResolver {
-    pub fn new() -> DeclarationTypeResolver {
-        DeclarationTypeResolver {
+    pub fn new() -> Self {
+        Self {
             structs: HashSet::new(),
             enums: HashSet::new(),
             unions: HashSet::new(),

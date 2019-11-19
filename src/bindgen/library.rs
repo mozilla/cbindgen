@@ -39,8 +39,8 @@ impl Library {
         opaque_items: ItemMap<OpaqueItem>,
         typedefs: ItemMap<Typedef>,
         functions: Vec<Function>,
-    ) -> Library {
-        Library {
+    ) -> Self {
+        Self {
             config,
             constants,
             globals,

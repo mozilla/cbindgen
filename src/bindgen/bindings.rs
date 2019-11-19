@@ -43,8 +43,8 @@ impl Bindings {
         globals: Vec<Static>,
         items: Vec<ItemContainer>,
         functions: Vec<Function>,
-    ) -> Bindings {
-        Bindings {
+    ) -> Self {
+        Self {
             config,
             struct_map,
             struct_fileds_memo: Default::default(),

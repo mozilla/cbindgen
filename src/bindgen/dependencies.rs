@@ -14,8 +14,8 @@ pub struct Dependencies {
 }
 
 impl Dependencies {
-    pub fn new() -> Dependencies {
-        Dependencies {
+    pub fn new() -> Self {
+        Self {
             order: Vec::new(),
             items: HashSet::new(),
         }
