@@ -1,3 +1,13 @@
+## 0.10.0
+
+     * Initialize struct literal with list-initializer for C++11 standard. https://github.com/eqrion/cbindgen/pull/401
+     * Surround namespace with __cplusplus ifdef in cpp_compat mode. https://github.com/eqrion/cbindgen/pull/407
+     * Add support for --quiet flag. https://github.com/eqrion/cbindgen/pull/400
+     * Map char to char32_t. https://github.com/eqrion/cbindgen/pull/396
+     * Improve binding_crate_ref() error message. https://github.com/eqrion/cbindgen/pull/395
+     * avoid prematurely returning during expansion. https://github.com/eqrion/cbindgen/pull/389
+     * Add support for adding "using namespace" statements. https://github.com/eqrion/cbindgen/pull/387
+
 ## 0.9.1
 
      * Various improvements to comment output. https://github.com/eqrion/cbindgen/pull/370 / https://github.com/eqrion/cbindgen/pull/375.
