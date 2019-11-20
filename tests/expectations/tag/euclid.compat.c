@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <uchar.h>
 
 struct TypedLength_f32__UnknownUnit {
   float _0;

@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <uchar.h>
 
 #if defined(NOT_DEFINED)
 #define DEFAULT_X 8

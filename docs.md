@@ -360,7 +360,7 @@ includes = ["my_great_lib.h"]
 # imports are included by default because our generated headers tend to require
 # them (e.g. for uint32_t). Currently, the generated imports are:
 #
-# * for C: <stdarg.h>, <stdbool.h>, <stdint.h>, <stdlib.h>
+# * for C: <stdarg.h>, <stdbool.h>, <stdint.h>, <stdlib.h>, <uchar.h>
 #
 # * for C++: <cstdarg>, <cstdint>, <cstdlib>, <new>, <cassert> (depending on config)
 #
