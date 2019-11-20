@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <uchar.h>
 
 struct PREFIXFoo {
   int32_t a;

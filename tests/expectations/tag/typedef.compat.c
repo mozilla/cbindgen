@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <uchar.h>
 
 struct Foo_i32__i32 {
   int32_t x;

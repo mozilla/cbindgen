@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <uchar.h>
 
 struct Normal {
   int32_t x;

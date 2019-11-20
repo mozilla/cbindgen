@@ -167,6 +167,8 @@ impl Bindings {
                 out.new_line();
                 out.write("#include <stdlib.h>");
                 out.new_line();
+                out.write("#include <uchar.h>");
+                out.new_line();
             } else {
                 out.write("#include <cstdarg>");
                 out.new_line();
