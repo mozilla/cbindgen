@@ -87,6 +87,7 @@ pub fn expand(
     // cbindgen
     cmd.env("_CBINDGEN_IS_RUNNING", "1");
 
+    cmd.arg("+nightly");
     cmd.arg("rustc");
     cmd.arg("--lib");
     cmd.arg("--manifest-path");
