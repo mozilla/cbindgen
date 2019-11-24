@@ -61,6 +61,12 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_after_include<S: AsRef<str>>(mut self, line: S) -> Builder {
+        self.config.after_includes = Some(String::from(line.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_trailer<S: AsRef<str>>(mut self, trailer: S) -> Builder {
         self.config.trailer = Some(String::from(trailer.as_ref()));
         self

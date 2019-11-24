@@ -156,6 +156,7 @@ impl Bindings {
         if self.config.no_includes
             && self.config.sys_includes.is_empty()
             && self.config.includes.is_empty()
+            && self.config.after_includes.is_none()
         {
             return;
         }
@@ -198,6 +199,11 @@ impl Bindings {
 
         for include in &self.config.includes {
             write!(out, "#include \"{}\"", include);
+            out.new_line();
+        }
+
+        if let Some(ref line) = self.config.after_includes {
+            write!(out, "{}", line);
             out.new_line();
         }
     }

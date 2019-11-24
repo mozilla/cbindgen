@@ -701,6 +701,8 @@ pub struct Config {
     pub includes: Vec<String>,
     /// A list of additional system includes to put at the beginning of the generated header
     pub sys_includes: Vec<String>,
+    /// Optional verbatim code added after the include blocks
+    pub after_includes: Option<String>,
     /// Optional text to output at the end of the file
     pub trailer: Option<String>,
     /// Optional name to use for an include guard
@@ -768,6 +770,7 @@ impl Default for Config {
             header: None,
             includes: Vec::new(),
             sys_includes: Vec::new(),
+            after_includes: None,
             trailer: None,
             include_guard: None,
             pragma_once: false,
