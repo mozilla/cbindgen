@@ -13,6 +13,7 @@ pub enum IdentifierType<'a> {
     EnumVariant(&'a Enum),
     FunctionArg,
     Enum,
+    Item,
 }
 
 impl<'a> IdentifierType<'a> {
@@ -22,6 +23,7 @@ impl<'a> IdentifierType<'a> {
             IdentifierType::EnumVariant(..) => "",
             IdentifierType::FunctionArg => "a",
             IdentifierType::Enum => "",
+            IdentifierType::Item => "",
         }
     }
 }
