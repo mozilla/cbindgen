@@ -228,41 +228,17 @@ impl Default for RenameRule {
 impl FromStr for RenameRule {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<RenameRule, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "none" => Ok(RenameRule::None),
-            "None" => Ok(RenameRule::None),
-
-            "mGeckoCase" => Ok(RenameRule::GeckoCase),
-            "GeckoCase" => Ok(RenameRule::GeckoCase),
-            "gecko_case" => Ok(RenameRule::GeckoCase),
-
-            "lowercase" => Ok(RenameRule::LowerCase),
-            "LowerCase" => Ok(RenameRule::LowerCase),
-            "lower_case" => Ok(RenameRule::LowerCase),
-
-            "UPPERCASE" => Ok(RenameRule::UpperCase),
-            "UpperCase" => Ok(RenameRule::UpperCase),
-            "upper_case" => Ok(RenameRule::UpperCase),
-
-            "PascalCase" => Ok(RenameRule::PascalCase),
-            "pascal_case" => Ok(RenameRule::PascalCase),
-
-            "camelCase" => Ok(RenameRule::CamelCase),
-            "CamelCase" => Ok(RenameRule::CamelCase),
-            "camel_case" => Ok(RenameRule::CamelCase),
-
-            "snake_case" => Ok(RenameRule::SnakeCase),
-            "SnakeCase" => Ok(RenameRule::SnakeCase),
-
-            "SCREAMING_SNAKE_CASE" => Ok(RenameRule::ScreamingSnakeCase),
-            "ScreamingSnakeCase" => Ok(RenameRule::ScreamingSnakeCase),
-            "screaming_snake_case" => Ok(RenameRule::ScreamingSnakeCase),
-
-            "QUALIFIED_SCREAMING_SNAKE_CASE" => Ok(RenameRule::QualifiedScreamingSnakeCase),
-            "QualifiedScreamingSnakeCase" => Ok(RenameRule::QualifiedScreamingSnakeCase),
-            "qualified_screaming_snake_case" => Ok(RenameRule::QualifiedScreamingSnakeCase),
-
+            "none" | "None" => Ok(RenameRule::None),
+            "mGeckoCase" | "GeckoCase" | "gecko_case" => Ok(RenameRule::GeckoCase),
+            "lowercase" | "LowerCase" | "lower_case" => Ok(RenameRule::LowerCase),
+            "UPPERCASE" | "UpperCase" | "upper_case" => Ok(RenameRule::UpperCase),
+            "PascalCase" | "pascal_case" => Ok(RenameRule::PascalCase),
+            "camelCase" | "CamelCase" | "camel_case" => Ok(RenameRule::CamelCase),
+            "snake_case" | "SnakeCase" => Ok(RenameRule::SnakeCase),
+            "SCREAMING_SNAKE_CASE" | "ScreamingSnakeCase" | "screaming_snake_case" => Ok(RenameRule::ScreamingSnakeCase),
+            "QUALIFIED_SCREAMING_SNAKE_CASE" | "QualifiedScreamingSnakeCase" | "qualified_screaming_snake_case" => Ok(RenameRule::QualifiedScreamingSnakeCase),
             _ => Err(format!("Unrecognized RenameRule: '{}'.", s)),
         }
     }

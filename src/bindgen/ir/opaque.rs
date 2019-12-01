@@ -34,7 +34,7 @@ impl OpaqueItem {
         generics: &syn::Generics,
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
-    ) -> Result<OpaqueItem, String> {
+    ) -> Result<Self, String> {
         Ok(Self::new(
             path,
             GenericParams::new(generics),

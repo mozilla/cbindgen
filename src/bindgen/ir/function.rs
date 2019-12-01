@@ -38,7 +38,7 @@ impl Function {
         extern_decl: bool,
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
-    ) -> Result<Function, String> {
+    ) -> Result<Self, String> {
         let args = sig.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
         let ret = match sig.output {
             syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
@@ -51,7 +51,7 @@ impl Function {
             }
         };
 
-        Ok(Function {
+        Ok(Self {
             path,
             ret,
             args,

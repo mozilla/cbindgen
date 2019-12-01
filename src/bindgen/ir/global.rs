@@ -25,14 +25,14 @@ pub struct Static {
 }
 
 impl Static {
-    pub fn load(item: &syn::ItemStatic, mod_cfg: Option<&Cfg>) -> Result<Static, String> {
+    pub fn load(item: &syn::ItemStatic, mod_cfg: Option<&Cfg>) -> Result<Self, String> {
         let ty = Type::load(&item.ty)?;
 
         if ty.is_none() {
             return Err("Cannot have a zero sized static definition.".to_owned());
         }
 
-        Ok(Static::new(
+        Ok(Self::new(
             Path::new(item.ident.to_string()),
             ty.unwrap(),
             item.mutability.is_some(),

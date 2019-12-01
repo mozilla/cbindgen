@@ -248,7 +248,7 @@ impl Enum {
         }
     }
 
-    pub fn load(item: &syn::ItemEnum, mod_cfg: Option<&Cfg>) -> Result<Enum, String> {
+    pub fn load(item: &syn::ItemEnum, mod_cfg: Option<&Cfg>) -> Result<Self, String> {
         let repr = Repr::load(&item.attrs)?;
         if repr == Repr::RUST {
             return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
@@ -284,7 +284,7 @@ impl Enum {
         } else {
             None
         };
-        Ok(Enum::new(
+        Ok(Self::new(
             path,
             generic_params,
             repr,

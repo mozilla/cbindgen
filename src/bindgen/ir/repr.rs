@@ -51,7 +51,7 @@ impl Repr {
         ty: None,
     };
 
-    pub fn load(attrs: &[syn::Attribute]) -> Result<Repr, String> {
+    pub fn load(attrs: &[syn::Attribute]) -> Result<Self, String> {
         let ids = attrs
             .iter()
             .filter_map(|attr| {
@@ -72,7 +72,7 @@ impl Repr {
                 _ => None,
             });
 
-        let mut repr = Repr::default();
+        let mut repr = Self::default();
         for id in ids {
             let new_ty = match id.as_ref() {
                 "u8" => ReprType::U8,

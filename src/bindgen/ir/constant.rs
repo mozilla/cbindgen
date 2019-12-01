@@ -269,7 +269,7 @@ impl Constant {
         expr: &syn::Expr,
         attrs: &[syn::Attribute],
         associated_to: Option<Path>,
-    ) -> Result<Constant, String> {
+    ) -> Result<Self, String> {
         let ty = Type::load(ty)?;
         let mut ty = match ty {
             Some(ty) => ty,
@@ -289,7 +289,7 @@ impl Constant {
             lit.replace_self_with(associated_to);
         }
 
-        Ok(Constant::new(
+        Ok(Self::new(
             path,
             ty,
             lit,
