@@ -12,7 +12,7 @@ pub struct Rect { x: f32, y: f32, w: f32, h: f32 }
 pub struct Color { r: u8, g: u8, b: u8, a: u8 }
 
 #[no_mangle]
-pub extern "C" fn push_item(item: DisplayItem) -> bool { 
+pub extern "C" fn push_item(item: DisplayItem) -> bool {
     ::std::mem::drop(item);
     true
 }

@@ -38,8 +38,8 @@ pub struct AnnotationSet {
 }
 
 impl AnnotationSet {
-    pub fn new() -> AnnotationSet {
-        AnnotationSet {
+    pub fn new() -> Self {
+        Self {
             annotations: HashMap::new(),
             must_use: false,
         }
@@ -49,7 +49,7 @@ impl AnnotationSet {
         self.annotations.is_empty() && !self.must_use
     }
 
-    pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
+    pub fn load(attrs: &[syn::Attribute]) -> Result<Self, String> {
         let lines = attrs.get_comment_lines();
         let lines: Vec<&str> = lines
             .iter()
@@ -111,7 +111,7 @@ impl AnnotationSet {
             );
         }
 
-        Ok(AnnotationSet {
+        Ok(Self {
             annotations,
             must_use,
         })
