@@ -34,16 +34,10 @@ impl FromStr for Language {
 
     fn from_str(s: &str) -> Result<Language, Self::Err> {
         match s {
-            "cxx" => Ok(Language::Cxx),
-            "Cxx" => Ok(Language::Cxx),
-            "CXX" => Ok(Language::Cxx),
-            "cpp" => Ok(Language::Cxx),
-            "Cpp" => Ok(Language::Cxx),
-            "CPP" => Ok(Language::Cxx),
-            "c++" => Ok(Language::Cxx),
-            "C++" => Ok(Language::Cxx),
-            "c" => Ok(Language::C),
-            "C" => Ok(Language::C),
+            "cxx" | "Cxx" | "CXX" |
+            "cpp" | "Cpp" | "CPP" |
+            "c++" | "C++" => Ok(Language::Cxx),
+            "c" | "C" => Ok(Language::C),
             _ => Err(format!("Unrecognized Language: '{}'.", s)),
         }
     }
@@ -63,10 +57,8 @@ impl FromStr for Braces {
 
     fn from_str(s: &str) -> Result<Braces, Self::Err> {
         match s {
-            "SameLine" => Ok(Braces::SameLine),
-            "same_line" => Ok(Braces::SameLine),
-            "NextLine" => Ok(Braces::NextLine),
-            "next_line" => Ok(Braces::NextLine),
+            "SameLine" | "same_line" => Ok(Braces::SameLine),
+            "NextLine" | "next_line" => Ok(Braces::NextLine),
             _ => Err(format!("Unrecognized Braces: '{}'.", s)),
         }
     }
@@ -87,12 +79,9 @@ impl FromStr for Layout {
 
     fn from_str(s: &str) -> Result<Layout, Self::Err> {
         match s {
-            "Horizontal" => Ok(Layout::Horizontal),
-            "horizontal" => Ok(Layout::Horizontal),
-            "Vertical" => Ok(Layout::Vertical),
-            "vertical" => Ok(Layout::Vertical),
-            "Auto" => Ok(Layout::Auto),
-            "auto" => Ok(Layout::Auto),
+            "Horizontal" | "horizontal" => Ok(Layout::Horizontal),
+            "Vertical" | "vertical" => Ok(Layout::Vertical),
+            "Auto" | "auto" => Ok(Layout::Auto),
             _ => Err(format!("Unrecognized Layout: '{}'.", s)),
         }
     }
@@ -157,12 +146,9 @@ impl FromStr for Style {
 
     fn from_str(s: &str) -> Result<Style, Self::Err> {
         match s {
-            "Both" => Ok(Style::Both),
-            "both" => Ok(Style::Both),
-            "Tag" => Ok(Style::Tag),
-            "tag" => Ok(Style::Tag),
-            "Type" => Ok(Style::Type),
-            "type" => Ok(Style::Type),
+            "Both" | "both" => Ok(Style::Both),
+            "Tag" | "tag" => Ok(Style::Tag),
+            "Type" | "type" => Ok(Style::Type),
             _ => Err(format!("Unrecognized Style: '{}'.", s)),
         }
     }
@@ -464,8 +450,8 @@ pub struct ConstantConfig {
 }
 
 impl Default for ConstantConfig {
-    fn default() -> ConstantConfig {
-        ConstantConfig {
+    fn default() -> Self {
+        Self {
             allow_static_const: true,
         }
     }
@@ -499,8 +485,8 @@ pub struct ParseExpandConfig {
 }
 
 impl Default for ParseExpandConfig {
-    fn default() -> ParseExpandConfig {
-        ParseExpandConfig {
+    fn default() -> Self {
+        Self {
             crates: Vec::new(),
             all_features: false,
             default_features: true,
@@ -662,8 +648,8 @@ pub struct Config {
 }
 
 impl Default for Config {
-    fn default() -> Config {
-        Config {
+    fn default() -> Self {
+        Self {
             header: None,
             includes: Vec::new(),
             sys_includes: Vec::new(),

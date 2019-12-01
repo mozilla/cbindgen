@@ -126,7 +126,7 @@ impl EnumVariant {
             }
         };
 
-        Ok(EnumVariant::new(
+        Ok(Self::new(
             variant.ident.to_string(),
             discriminant,
             body.map(|body| {
