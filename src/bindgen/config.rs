@@ -32,7 +32,7 @@ pub enum Language {
 impl FromStr for Language {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<Language, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_ref() {
             "cxx" | "cpp" | "c++" => Ok(Language::Cxx),
             "c" => Ok(Language::C),
@@ -53,7 +53,7 @@ pub enum Braces {
 impl FromStr for Braces {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<Braces, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "SameLine" | "same_line" => Ok(Braces::SameLine),
             "NextLine" | "next_line" => Ok(Braces::NextLine),
@@ -75,7 +75,7 @@ pub enum Layout {
 impl FromStr for Layout {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<Layout, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "Horizontal" | "horizontal" => Ok(Layout::Horizontal),
             "Vertical" | "vertical" => Ok(Layout::Vertical),
@@ -100,12 +100,11 @@ pub enum DocumentationStyle {
 impl FromStr for DocumentationStyle {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<DocumentationStyle, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_ref() {
             "c" => Ok(DocumentationStyle::C),
             "c99" => Ok(DocumentationStyle::C99),
-            "cxx" => Ok(DocumentationStyle::Cxx),
-            "c++" => Ok(DocumentationStyle::Cxx),
+            "cxx" | "c++" => Ok(DocumentationStyle::Cxx),
             "doxy" => Ok(DocumentationStyle::Doxy),
             "auto" => Ok(DocumentationStyle::Auto),
             _ => Err(format!("Unrecognized documentation style: '{}'.", s)),
@@ -680,7 +679,7 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {
+    pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Self, String> {
         fn read(file_name: &StdPath) -> io::Result<String> {
             let file = File::open(file_name)?;
             let mut reader = BufReader::new(&file);
@@ -691,19 +690,19 @@ impl Config {
 
         let config_text = read(file_name.as_ref()).unwrap();
 
-        match toml::from_str::<Config>(&config_text) {
+        match toml::from_str::<Self>(&config_text) {
             Ok(x) => Ok(x),
             Err(e) => Err(format!("Couldn't parse config file: {}.", e)),
         }
     }
 
-    pub fn from_root_or_default<P: AsRef<StdPath>>(root: P) -> Config {
+    pub fn from_root_or_default<P: AsRef<StdPath>>(root: P) -> Self {
         let c = root.as_ref().join("cbindgen.toml");
 
         if c.exists() {
-            Config::from_file(c).unwrap()
+            Self::from_file(c).unwrap()
         } else {
-            Config::default()
+            Self::default()
         }
     }
 }

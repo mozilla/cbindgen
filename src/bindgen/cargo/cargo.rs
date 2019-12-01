@@ -39,7 +39,7 @@ impl Cargo {
         binding_crate_name: Option<&str>,
         use_cargo_lock: bool,
         clean: bool,
-    ) -> Result<Cargo, Error> {
+    ) -> Result<Self, Error> {
         let toml_path = crate_dir.join("Cargo.toml");
         let metadata = cargo_metadata::metadata(&toml_path)
             .map_err(|x| Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x))?;
@@ -66,7 +66,7 @@ impl Cargo {
         let binding_crate_name =
             binding_crate_name.map_or(manifest.package.name.clone(), |x| x.to_owned());
 
-        Ok(Cargo {
+        Ok(Self {
             manifest_path: toml_path,
             binding_crate_name,
             lock,

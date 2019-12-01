@@ -100,7 +100,7 @@ impl Literal {
         }
     }
 
-    pub fn load(expr: &syn::Expr) -> Result<Literal, String> {
+    pub fn load(expr: &syn::Expr) -> Result<Self, String> {
         match *expr {
             syn::Expr::Binary(ref bin_expr) => {
                 let l = Self::load(&bin_expr.left)?;
@@ -155,7 +155,7 @@ impl Literal {
                 ..
             }) => {
                 let struct_name = path.segments[0].ident.to_string();
-                let mut field_map = HashMap::<String, Literal>::default();
+                let mut field_map = HashMap::<String, Self>::default();
                 for field in fields {
                     let ident = match field.member {
                         syn::Member::Named(ref name) => name.to_string(),
