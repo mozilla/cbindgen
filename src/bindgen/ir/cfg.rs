@@ -86,7 +86,7 @@ impl fmt::Display for Cfg {
 }
 
 impl Cfg {
-    pub fn join(cfgs: &[Cfg]) -> Option<Cfg> {
+    pub fn join(cfgs: &[Self]) -> Option<Self> {
         if cfgs.is_empty() {
             None
         } else {
@@ -94,7 +94,7 @@ impl Cfg {
         }
     }
 
-    pub fn append(parent: Option<&Cfg>, child: Option<Cfg>) -> Option<Cfg> {
+    pub fn append(parent: Option<&Self>, child: Option<Self>) -> Option<Self> {
         match (parent, child) {
             (None, None) => None,
             (None, Some(child)) => Some(child),
@@ -103,7 +103,7 @@ impl Cfg {
         }
     }
 
-    pub fn load(attrs: &[syn::Attribute]) -> Option<Cfg> {
+    pub fn load(attrs: &[syn::Attribute]) -> Option<Self> {
         let mut configs = Vec::new();
 
         for attr in attrs {
@@ -125,7 +125,7 @@ impl Cfg {
         }
     }
 
-    pub fn load_metadata(dependency: &Dependency) -> Option<Cfg> {
+    pub fn load_metadata(dependency: &Dependency) -> Option<Self> {
         dependency
             .target
             .as_ref()
@@ -145,7 +145,7 @@ impl Cfg {
             })
     }
 
-    fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {
+    fn load_single(item: &syn::NestedMeta) -> Option<Self> {
         match *item {
             syn::NestedMeta::Meta(syn::Meta::Path(ref path)) => Some(Cfg::Boolean(format!(
                 "{}",
@@ -197,7 +197,7 @@ impl Cfg {
         }
     }
 
-    fn load_list<'a, I: Iterator<Item = &'a syn::NestedMeta>>(attrs: I) -> Option<Vec<Cfg>> {
+    fn load_list<'a, I: Iterator<Item = &'a syn::NestedMeta>>(attrs: I) -> Option<Vec<Self>> {
         let mut configs = Vec::new();
 
         for attr in attrs {
