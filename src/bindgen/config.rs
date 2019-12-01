@@ -33,11 +33,9 @@ impl FromStr for Language {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Language, Self::Err> {
-        match s {
-            "cxx" | "Cxx" | "CXX" |
-            "cpp" | "Cpp" | "CPP" |
-            "c++" | "C++" => Ok(Language::Cxx),
-            "c" | "C" => Ok(Language::C),
+        match s.to_lowercase().as_ref() {
+            "cxx" | "cpp" | "c++" => Ok(Language::Cxx),
+            "c" => Ok(Language::C),
             _ => Err(format!("Unrecognized Language: '{}'.", s)),
         }
     }
@@ -254,8 +252,8 @@ pub struct FunctionConfig {
 }
 
 impl Default for FunctionConfig {
-    fn default() -> FunctionConfig {
-        FunctionConfig {
+    fn default() -> Self {
+        Self {
             prefix: None,
             postfix: None,
             must_use: None,
