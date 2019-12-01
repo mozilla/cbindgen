@@ -118,7 +118,7 @@ impl Item for OpaqueItem {
         );
 
         let mangled_path = mangle::mangle_path(&self.path, generic_values);
-        let monomorph = OpaqueItem::new(
+        let monomorph = Self::new(
             mangled_path,
             GenericParams::default(),
             self.cfg.clone(),

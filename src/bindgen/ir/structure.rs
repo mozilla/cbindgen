@@ -84,7 +84,7 @@ impl Struct {
         let is_tagged = false;
         let is_enum_variant_body = false;
 
-        Ok(Struct::new(
+        Ok(Self::new(
             Path::new(item.ident.to_string()),
             GenericParams::new(&item.generics),
             fields,

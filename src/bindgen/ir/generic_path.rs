@@ -14,7 +14,7 @@ pub struct GenericParams(pub Vec<Path>);
 
 impl GenericParams {
     pub fn new(generics: &syn::Generics) -> Self {
-        GenericParams(
+        Self(
             generics
                 .params
                 .iter()
