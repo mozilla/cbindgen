@@ -37,8 +37,8 @@ struct CDecl {
 }
 
 impl CDecl {
-    fn new() -> CDecl {
-        CDecl {
+    fn new() -> Self {
+        Self {
             type_qualifers: String::new(),
             type_name: String::new(),
             type_generic_args: Vec::new(),
@@ -47,13 +47,13 @@ impl CDecl {
         }
     }
 
-    fn from_type(t: &Type) -> CDecl {
-        let mut cdecl = CDecl::new();
+    fn from_type(t: &Type) -> Self {
+        let mut cdecl = Self::new();
         cdecl.build_type(t, false);
         cdecl
     }
-    fn from_func(f: &Function, layout_vertical: bool) -> CDecl {
-        let mut cdecl = CDecl::new();
+    fn from_func(f: &Function, layout_vertical: bool) -> Self {
+        let mut cdecl = Self::new();
         cdecl.build_func(f, layout_vertical);
         cdecl
     }
@@ -62,7 +62,7 @@ impl CDecl {
         let args = f
             .args
             .iter()
-            .map(|&(ref arg_name, ref arg_ty)| (Some(arg_name.clone()), CDecl::from_type(arg_ty)))
+            .map(|&(ref arg_name, ref arg_ty)| (Some(arg_name.clone()), Self::from_type(arg_ty)))
             .collect();
         self.declarators
             .push(CDeclarator::Func(args, layout_vertical));
@@ -137,7 +137,7 @@ impl CDecl {
             Type::FuncPtr(ref ret, ref args) => {
                 let args = args
                     .iter()
-                    .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty)))
+                    .map(|(ref name, ref ty)| (name.clone(), Self::from_type(ty)))
                     .collect();
                 self.declarators.push(CDeclarator::Ptr(false));
                 self.declarators.push(CDeclarator::Func(args, false));

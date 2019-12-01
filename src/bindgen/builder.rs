@@ -23,8 +23,8 @@ pub struct Builder {
 }
 
 impl Builder {
-    pub fn new() -> Builder {
-        Builder {
+    pub fn new() -> Self {
+        Self {
             config: Config::default(),
             srcs: Vec::new(),
             lib: None,
@@ -35,25 +35,25 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_header<S: AsRef<str>>(mut self, header: S) -> Builder {
+    pub fn with_header<S: AsRef<str>>(mut self, header: S) -> Self {
         self.config.header = Some(String::from(header.as_ref()));
         self
     }
 
     #[allow(unused)]
-    pub fn with_no_includes(mut self) -> Builder {
+    pub fn with_no_includes(mut self) -> Self {
         self.config.no_includes = true;
         self
     }
 
     #[allow(unused)]
-    pub fn with_include<S: AsRef<str>>(mut self, include: S) -> Builder {
+    pub fn with_include<S: AsRef<str>>(mut self, include: S) -> Self {
         self.config.includes.push(String::from(include.as_ref()));
         self
     }
 
     #[allow(unused)]
-    pub fn with_sys_include<S: AsRef<str>>(mut self, include: S) -> Builder {
+    pub fn with_sys_include<S: AsRef<str>>(mut self, include: S) -> Self {
         self.config
             .sys_includes
             .push(String::from(include.as_ref()));
@@ -61,37 +61,37 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_trailer<S: AsRef<str>>(mut self, trailer: S) -> Builder {
+    pub fn with_trailer<S: AsRef<str>>(mut self, trailer: S) -> Self {
         self.config.trailer = Some(String::from(trailer.as_ref()));
         self
     }
 
     #[allow(unused)]
-    pub fn with_include_guard<S: AsRef<str>>(mut self, include_guard: S) -> Builder {
+    pub fn with_include_guard<S: AsRef<str>>(mut self, include_guard: S) -> Self {
         self.config.include_guard = Some(String::from(include_guard.as_ref()));
         self
     }
 
     #[allow(unused)]
-    pub fn with_autogen_warning<S: AsRef<str>>(mut self, autogen_warning: S) -> Builder {
+    pub fn with_autogen_warning<S: AsRef<str>>(mut self, autogen_warning: S) -> Self {
         self.config.autogen_warning = Some(String::from(autogen_warning.as_ref()));
         self
     }
 
     #[allow(unused)]
-    pub fn with_include_version(mut self, include_version: bool) -> Builder {
+    pub fn with_include_version(mut self, include_version: bool) -> Self {
         self.config.include_version = include_version;
         self
     }
 
     #[allow(unused)]
-    pub fn with_namespace<S: AsRef<str>>(mut self, namespace: S) -> Builder {
+    pub fn with_namespace<S: AsRef<str>>(mut self, namespace: S) -> Self {
         self.config.namespace = Some(String::from(namespace.as_ref()));
         self
     }
 
     #[allow(unused)]
-    pub fn with_namespaces<S: AsRef<str>>(mut self, namespaces: &[S]) -> Builder {
+    pub fn with_namespaces<S: AsRef<str>>(mut self, namespaces: &[S]) -> Self {
         self.config.namespaces = Some(
             namespaces
                 .iter()
@@ -102,31 +102,31 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_braces(mut self, braces: Braces) -> Builder {
+    pub fn with_braces(mut self, braces: Braces) -> Self {
         self.config.braces = braces;
         self
     }
 
     #[allow(unused)]
-    pub fn with_line_length(mut self, line_length: usize) -> Builder {
+    pub fn with_line_length(mut self, line_length: usize) -> Self {
         self.config.line_length = line_length;
         self
     }
 
     #[allow(unused)]
-    pub fn with_tab_width(mut self, tab_width: usize) -> Builder {
+    pub fn with_tab_width(mut self, tab_width: usize) -> Self {
         self.config.tab_width = tab_width;
         self
     }
 
     #[allow(unused)]
-    pub fn with_language(mut self, language: Language) -> Builder {
+    pub fn with_language(mut self, language: Language) -> Self {
         self.config.language = language;
         self
     }
 
     #[allow(unused)]
-    pub fn include_item<S: AsRef<str>>(mut self, item_name: S) -> Builder {
+    pub fn include_item<S: AsRef<str>>(mut self, item_name: S) -> Self {
         self.config
             .export
             .include
@@ -135,7 +135,7 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn exclude_item<S: AsRef<str>>(mut self, item_name: S) -> Builder {
+    pub fn exclude_item<S: AsRef<str>>(mut self, item_name: S) -> Self {
         self.config
             .export
             .exclude
@@ -144,7 +144,7 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn rename_item<S: AsRef<str>>(mut self, from: S, to: S) -> Builder {
+    pub fn rename_item<S: AsRef<str>>(mut self, from: S, to: S) -> Self {
         self.config
             .export
             .rename
@@ -153,50 +153,50 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_item_prefix<S: AsRef<str>>(mut self, prefix: S) -> Builder {
+    pub fn with_item_prefix<S: AsRef<str>>(mut self, prefix: S) -> Self {
         self.config.export.prefix = Some(String::from(prefix.as_ref()));
         self
     }
 
     #[allow(unused)]
-    pub fn with_parse_deps(mut self, parse_deps: bool) -> Builder {
+    pub fn with_parse_deps(mut self, parse_deps: bool) -> Self {
         self.config.parse.parse_deps = parse_deps;
         self
     }
 
     #[allow(unused)]
-    pub fn with_parse_include<S: AsRef<str>>(mut self, include: &[S]) -> Builder {
+    pub fn with_parse_include<S: AsRef<str>>(mut self, include: &[S]) -> Self {
         self.config.parse.include =
             Some(include.iter().map(|x| String::from(x.as_ref())).collect());
         self
     }
 
     #[allow(unused)]
-    pub fn with_parse_exclude<S: AsRef<str>>(mut self, exclude: &[S]) -> Builder {
+    pub fn with_parse_exclude<S: AsRef<str>>(mut self, exclude: &[S]) -> Self {
         self.config.parse.exclude = exclude.iter().map(|x| String::from(x.as_ref())).collect();
         self
     }
 
     #[allow(unused)]
-    pub fn with_parse_expand<S: AsRef<str>>(mut self, expand: &[S]) -> Builder {
+    pub fn with_parse_expand<S: AsRef<str>>(mut self, expand: &[S]) -> Self {
         self.config.parse.expand.crates = expand.iter().map(|x| String::from(x.as_ref())).collect();
         self
     }
 
     #[allow(unused)]
-    pub fn with_parse_expand_all_features(mut self, expand_all_features: bool) -> Builder {
+    pub fn with_parse_expand_all_features(mut self, expand_all_features: bool) -> Self {
         self.config.parse.expand.all_features = expand_all_features;
         self
     }
 
     #[allow(unused)]
-    pub fn with_parse_expand_default_features(mut self, expand_default_features: bool) -> Builder {
+    pub fn with_parse_expand_default_features(mut self, expand_default_features: bool) -> Self {
         self.config.parse.expand.default_features = expand_default_features;
         self
     }
 
     #[allow(unused)]
-    pub fn with_parse_expand_features<S: AsRef<str>>(mut self, expand_features: &[S]) -> Builder {
+    pub fn with_parse_expand_features<S: AsRef<str>>(mut self, expand_features: &[S]) -> Self {
         self.config.parse.expand.features = Some(
             expand_features
                 .iter()
@@ -207,13 +207,13 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_documentation(mut self, documentation: bool) -> Builder {
+    pub fn with_documentation(mut self, documentation: bool) -> Self {
         self.config.documentation = documentation;
         self
     }
 
     #[allow(unused)]
-    pub fn with_target_os_define(mut self, platform: &str, preprocessor_define: &str) -> Builder {
+    pub fn with_target_os_define(mut self, platform: &str, preprocessor_define: &str) -> Self {
         self.config.defines.insert(
             format!("target_os = {}", platform),
             preprocessor_define.to_owned(),
@@ -222,7 +222,7 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_define(mut self, key: &str, value: &str, preprocessor_define: &str) -> Builder {
+    pub fn with_define(mut self, key: &str, value: &str, preprocessor_define: &str) -> Self {
         self.config.defines.insert(
             format!("{} = {}", key, value),
             preprocessor_define.to_owned(),
@@ -231,25 +231,25 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_config(mut self, config: Config) -> Builder {
+    pub fn with_config(mut self, config: Config) -> Self {
         self.config = config;
         self
     }
 
     #[allow(unused)]
-    pub fn with_std_types(mut self, std_types: bool) -> Builder {
+    pub fn with_std_types(mut self, std_types: bool) -> Self {
         self.std_types = std_types;
         self
     }
 
     #[allow(unused)]
-    pub fn with_src<P: AsRef<path::Path>>(mut self, src: P) -> Builder {
+    pub fn with_src<P: AsRef<path::Path>>(mut self, src: P) -> Self {
         self.srcs.push(src.as_ref().to_owned());
         self
     }
 
     #[allow(unused)]
-    pub fn with_crate<P: AsRef<path::Path>>(mut self, lib_dir: P) -> Builder {
+    pub fn with_crate<P: AsRef<path::Path>>(mut self, lib_dir: P) -> Self {
         debug_assert!(self.lib.is_none());
         debug_assert!(self.lib_cargo.is_none());
         self.lib = Some((path::PathBuf::from(lib_dir.as_ref()), None));
@@ -261,7 +261,7 @@ impl Builder {
         mut self,
         lib_dir: P,
         binding_lib_name: S,
-    ) -> Builder {
+    ) -> Self {
         debug_assert!(self.lib.is_none());
         debug_assert!(self.lib_cargo.is_none());
         self.lib = Some((
@@ -272,7 +272,7 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub(crate) fn with_cargo(mut self, lib: Cargo) -> Builder {
+    pub(crate) fn with_cargo(mut self, lib: Cargo) -> Self {
         debug_assert!(self.lib.is_none());
         debug_assert!(self.lib_cargo.is_none());
         self.lib_cargo = Some(lib);
@@ -280,7 +280,7 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_lockfile<P: AsRef<path::Path>>(mut self, lockfile: P) -> Builder {
+    pub fn with_lockfile<P: AsRef<path::Path>>(mut self, lockfile: P) -> Self {
         debug_assert!(self.lockfile.is_none());
         debug_assert!(self.lib_cargo.is_none());
         self.lockfile = Some(path::PathBuf::from(lockfile.as_ref()));
