@@ -4,12 +4,8 @@
 
 use std::collections::HashMap;
 use std::default::Default;
-use std::fmt;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::{self, BufReader};
-use std::path::Path as StdPath;
 use std::str::FromStr;
+use std::{fmt, fs, path::Path as StdPath};
 
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
 use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
@@ -697,15 +693,12 @@ impl Default for Config {
 
 impl Config {
     pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {
-        fn read(file_name: &StdPath) -> io::Result<String> {
-            let file = File::open(file_name)?;
-            let mut reader = BufReader::new(&file);
-            let mut contents = String::new();
-            reader.read_to_string(&mut contents)?;
-            Ok(contents)
-        }
-
-        let config_text = read(file_name.as_ref()).unwrap();
+        let config_text = fs::read_to_string(file_name.as_ref()).or_else(|_| {
+            Err(format!(
+                "Couldn't open config file: {}.",
+                file_name.as_ref().display()
+            ))
+        })?;
 
         match toml::from_str::<Config>(&config_text) {
             Ok(x) => Ok(x),
