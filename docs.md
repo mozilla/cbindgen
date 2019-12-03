@@ -140,7 +140,7 @@ cbindgen contains the following hardcoded mappings (again completely ignoring na
 ## std types
 
 * bool => bool
-* char => char32_t
+* char => uint32_t
 * u8 => uint8_t
 * u16 => uint16_t
 * u32 => uint32_t
