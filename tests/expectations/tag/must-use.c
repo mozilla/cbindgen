@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <uchar.h>
 
 enum MaybeOwnedPtr_i32_Tag {
   Owned_i32,

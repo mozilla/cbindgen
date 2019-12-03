@@ -132,7 +132,15 @@ impl PrimitiveType {
             PrimitiveType::Char => "char",
             PrimitiveType::SChar => "signed char",
             PrimitiveType::UChar => "unsigned char",
-            PrimitiveType::Char32 => "char32_t",
+            // NOTE: It'd be nice to use a char32_t, but:
+            //
+            //  * uchar.h is not present on mac (see #423).
+            //
+            //  * char32_t isn't required to be compatible with Rust's char, as
+            //    the C++ spec only requires it to be the same size as
+            //    uint_least32_t, which is _not_ guaranteed to be 4-bytes.
+            //
+            PrimitiveType::Char32 => "uint32_t",
             PrimitiveType::Short => "short",
             PrimitiveType::Int => "int",
             PrimitiveType::Long => "long",

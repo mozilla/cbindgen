@@ -2,10 +2,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <uchar.h>
 
 struct Foo {
-  char32_t a;
+  uint32_t a;
 };
 
 #ifdef __cplusplus

@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <uchar.h>
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
 enum BarType
