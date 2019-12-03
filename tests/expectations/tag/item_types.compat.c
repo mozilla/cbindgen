@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <uchar.h>
 
 enum OnlyThisShouldBeGenerated
 #ifdef __cplusplus

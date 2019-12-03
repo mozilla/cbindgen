@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <uchar.h>
 
 typedef struct Option_i32 Option_i32;
 

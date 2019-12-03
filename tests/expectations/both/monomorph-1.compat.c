@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <uchar.h>
 
 typedef struct Bar_Bar_f32 Bar_Bar_f32;
 

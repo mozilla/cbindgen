@@ -4,7 +4,7 @@
 #include <new>
 
 struct Foo {
-  char32_t a;
+  uint32_t a;
 };
 
 extern "C" {
