@@ -12,3 +12,9 @@ pub enum AbsoluteFontWeight {
 
 #[no_mangle]
 pub extern "C" fn root(x: NamedLenArray, y: ValuedLenArray, z: AbsoluteFontWeight) { }
+
+#[no_mangle]
+pub const X: i64 = 42 << 42;
+
+#[no_mangle]
+pub const Y: i64 = X + X;

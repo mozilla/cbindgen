@@ -5,6 +5,10 @@
 
 #define PREFIX_LEN 42
 
+#define PREFIX_X (42 << 42)
+
+#define PREFIX_Y (PREFIX_X + PREFIX_X)
+
 typedef int32_t PREFIX_NamedLenArray[PREFIX_LEN];
 
 typedef int32_t PREFIX_ValuedLenArray[42];

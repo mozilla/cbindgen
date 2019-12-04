@@ -15,6 +15,12 @@ const DONT_EXPORT_PRIV: i32 = 30;
 pub const POS_ONE: i8 = 1;
 pub const NEG_ONE: i8 = -1;
 
+// Some doc for shifting //
+pub const SHIFT: i64 = 3;
+pub const XBOOL: i64 = 1;
+pub const XFALSE: i64 = (0 << SHIFT) | XBOOL;
+pub const XTRUE: i64 = 1 << (SHIFT | XBOOL);
+
 #[repr(C)]
 struct Foo {
     x: [i32; FOO],
