@@ -223,6 +223,8 @@ impl Literal {
                 }
             }
 
+            syn::Expr::Paren(syn::ExprParen { ref expr, .. }) => Self::load(expr),
+
             _ => Err(format!("Unsupported expression. {:?}", *expr)),
         }
     }
@@ -240,9 +242,11 @@ impl Literal {
                 op,
                 ref right,
             } => {
+                write!(out, "(");
                 left.write(config, out);
                 write!(out, " {} ", op);
                 right.write(config, out);
+                write!(out, ")");
             }
             Literal::Struct {
                 export_name,
