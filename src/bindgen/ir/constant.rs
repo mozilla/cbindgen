@@ -22,6 +22,7 @@ use bindgen::Bindings;
 #[derive(Debug, Clone)]
 pub enum Literal {
     Expr(String),
+    Path(String),
     PostfixUnaryOp {
         op: &'static str,
         value: Box<Literal>,
@@ -41,7 +42,10 @@ pub enum Literal {
 impl Literal {
     fn replace_self_with(&mut self, self_ty: &Path) {
         match *self {
-            Literal::PostfixUnaryOp { .. } | Literal::BinOp { .. } | Literal::Expr(..) => {}
+            Literal::PostfixUnaryOp { .. }
+            | Literal::BinOp { .. }
+            | Literal::Expr(..)
+            | Literal::Path(..) => {}
             Literal::Struct {
                 ref mut path,
                 ref mut export_name,
@@ -60,6 +64,7 @@ impl Literal {
     fn is_valid(&self, bindings: &Bindings) -> bool {
         match *self {
             Literal::Expr(..) => true,
+            Literal::Path(..) => true,
             Literal::PostfixUnaryOp { ref value, .. } => value.is_valid(bindings),
             Literal::BinOp {
                 ref left,
@@ -83,6 +88,9 @@ impl Literal {
                 for (_, lit) in fields {
                     lit.rename_for_config(config);
                 }
+            }
+            Literal::Path(ref mut name) => {
+                config.export.rename(name);
             }
             Literal::PostfixUnaryOp { ref mut value, .. } => {
                 value.rename_for_config(config);
@@ -202,6 +210,19 @@ impl Literal {
                 _ => Err(format!("Unsupported Unary expression. {:?}", *op)),
             },
 
+            // Match identifiers, like `5 << SHIFT`
+            syn::Expr::Path(syn::ExprPath {
+                path: syn::Path { ref segments, .. },
+                ..
+            }) => {
+                // Handle only the simplest identifiers and error for anything else.
+                if segments.len() == 1 {
+                    Ok(Literal::Path(format!("{}", segments.last().unwrap().ident)))
+                } else {
+                    Err(format!("Unsupported path expression. {:?}", *segments))
+                }
+            }
+
             _ => Err(format!("Unsupported expression. {:?}", *expr)),
         }
     }
@@ -209,6 +230,7 @@ impl Literal {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         match self {
             Literal::Expr(v) => write!(out, "{}", v),
+            Literal::Path(v) => write!(out, "{}", v),
             Literal::PostfixUnaryOp { op, ref value } => {
                 write!(out, "{}", op);
                 value.write(config, out);
