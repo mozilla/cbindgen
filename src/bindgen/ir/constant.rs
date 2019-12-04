@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::io::Write;
 
-use syn;
+use syn::{self, UnOp};
 
 use bindgen::config::{Config, Language};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
@@ -18,7 +18,6 @@ use bindgen::ir::{
 use bindgen::library::Library;
 use bindgen::writer::{Source, SourceWriter};
 use bindgen::Bindings;
-use syn::UnOp;
 
 #[derive(Debug, Clone)]
 pub enum Literal {
@@ -100,8 +99,10 @@ impl Literal {
         }
     }
 
+    // Translate from full blown `syn::Expr` into a simpler `Literal` type
     pub fn load(expr: &syn::Expr) -> Result<Literal, String> {
         match *expr {
+            // Match binary expressions of the form `a * b`
             syn::Expr::Binary(ref bin_expr) => {
                 let l = Self::load(&bin_expr.left)?;
                 let r = Self::load(&bin_expr.right)?;
@@ -121,33 +122,29 @@ impl Literal {
                     right: Box::new(r),
                 })
             }
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Str(ref value),
-                ..
-            }) => Ok(Literal::Expr(format!("u8\"{}\"", value.value()))),
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Byte(ref value),
-                ..
-            }) => Ok(Literal::Expr(format!("{}", value.value()))),
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Char(ref value),
-                ..
-            }) => Ok(Literal::Expr(match value.value() as u32 {
-                0..=255 => format!("'{}'", value.value().escape_default()),
-                other_code => format!(r"L'\u{:X}'", other_code),
-            })),
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Int(ref value),
-                ..
-            }) => Ok(Literal::Expr(value.base10_digits().to_string())),
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Float(ref value),
-                ..
-            }) => Ok(Literal::Expr(value.base10_digits().to_string())),
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Bool(ref value),
-                ..
-            }) => Ok(Literal::Expr(format!("{}", value.value))),
+
+            // Match literals like "one", 'a', 32 etc
+            syn::Expr::Lit(syn::ExprLit { ref lit, .. }) => {
+                match lit {
+                    syn::Lit::Str(ref value) => {
+                        Ok(Literal::Expr(format!("u8\"{}\"", value.value())))
+                    }
+                    syn::Lit::Byte(ref value) => Ok(Literal::Expr(format!("{}", value.value()))),
+                    syn::Lit::Char(ref value) => Ok(Literal::Expr(match value.value() as u32 {
+                        0..=255 => format!("'{}'", value.value().escape_default()),
+                        other_code => format!(r"L'\u{:X}'", other_code),
+                    })),
+                    syn::Lit::Int(ref value) => {
+                        Ok(Literal::Expr(value.base10_digits().to_string()))
+                    }
+                    syn::Lit::Float(ref value) => {
+                        Ok(Literal::Expr(value.base10_digits().to_string()))
+                    }
+                    syn::Lit::Bool(ref value) => Ok(Literal::Expr(format!("{}", value.value))),
+                    // TODO: Add support for byte string and Verbatim
+                    _ => Err(format!("Unsupported literal expression. {:?}", *lit)),
+                }
+            }
 
             syn::Expr::Struct(syn::ExprStruct {
                 ref path,
@@ -171,6 +168,7 @@ impl Literal {
                     fields: field_map,
                 })
             }
+
             syn::Expr::Unary(syn::ExprUnary {
                 ref op, ref expr, ..
             }) => match *op {
@@ -183,7 +181,8 @@ impl Literal {
                 }
                 _ => Err(format!("Unsupported Unary expression. {:?}", *op)),
             },
-            _ => Err(format!("Unsupported literal expression. {:?}", *expr)),
+
+            _ => Err(format!("Unsupported expression. {:?}", *expr)),
         }
     }
 
