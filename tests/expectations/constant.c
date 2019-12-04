@@ -21,7 +21,15 @@
 
 #define QUOTE '\''
 
+#define SHIFT 3
+
 #define TAB '\t'
+
+#define XBOOL 1
+
+#define XFALSE ((0 << SHIFT) | XBOOL)
+
+#define XTRUE (1 << (SHIFT | XBOOL))
 
 #define ZOM 3.14
 

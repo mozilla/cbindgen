@@ -21,7 +21,15 @@ static const int8_t POS_ONE = 1;
 
 static const uint32_t QUOTE = '\'';
 
+static const int64_t SHIFT = 3;
+
 static const uint32_t TAB = '\t';
+
+static const int64_t XBOOL = 1;
+
+static const int64_t XFALSE = ((0 << SHIFT) | XBOOL);
+
+static const int64_t XTRUE = (1 << (SHIFT | XBOOL));
 
 static const float ZOM = 3.14;
 
