@@ -12,6 +12,9 @@ struct AlignFlags {
   explicit operator bool() const {
     return !!bits;
   }
+  AlignFlags operator~() const {
+    return {static_cast<decltype(bits)>(~bits)};
+  }
   AlignFlags operator|(const AlignFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits | other.bits)};
   }
@@ -24,6 +27,13 @@ struct AlignFlags {
   }
   AlignFlags& operator&=(const AlignFlags& other) {
     *this = (*this & other);
+    return *this;
+  }
+  AlignFlags operator^(const AlignFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
+  }
+  AlignFlags& operator^=(const AlignFlags& other) {
+    *this = (*this ^ other);
     return *this;
   }
 };
