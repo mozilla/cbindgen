@@ -173,6 +173,45 @@ impl Struct {
             self.documentation.clone(),
         )
     }
+
+    fn emit_bitflags_binop<F: Write>(
+        &self,
+        operator: char,
+        other: &str,
+        out: &mut SourceWriter<F>,
+    ) {
+        out.new_line();
+        write!(
+            out,
+            "{} operator{}(const {}& {}) const",
+            self.export_name(),
+            operator,
+            self.export_name(),
+            other
+        );
+        out.open_brace();
+        write!(
+            out,
+            "return {{static_cast<decltype(bits)>(this->bits {} {}.bits)}};",
+            operator, other
+        );
+        out.close_brace(false);
+
+        out.new_line();
+        write!(
+            out,
+            "{}& operator{}=(const {}& {})",
+            self.export_name(),
+            operator,
+            self.export_name(),
+            other
+        );
+        out.open_brace();
+        write!(out, "*this = (*this {} {});", operator, other);
+        out.new_line();
+        write!(out, "return *this;");
+        out.close_brace(false);
+    }
 }
 
 impl Item for Struct {
@@ -459,64 +498,14 @@ impl Source for Struct {
                 out.close_brace(false);
 
                 out.new_line();
-                write!(
-                    out,
-                    "{} operator|(const {}& {}) const",
-                    self.export_name(),
-                    self.export_name(),
-                    other
-                );
+                write!(out, "{} operator~() const", self.export_name());
                 out.open_brace();
-                write!(
-                    out,
-                    "return {{static_cast<decltype(bits)>(this->bits | {}.bits)}};",
-                    other
-                );
+                write!(out, "return {{static_cast<decltype(bits)>(~bits)}};");
                 out.close_brace(false);
 
-                out.new_line();
-                write!(
-                    out,
-                    "{}& operator|=(const {}& {})",
-                    self.export_name(),
-                    self.export_name(),
-                    other
-                );
-                out.open_brace();
-                write!(out, "*this = (*this | {});", other);
-                out.new_line();
-                write!(out, "return *this;");
-                out.close_brace(false);
-
-                out.new_line();
-                write!(
-                    out,
-                    "{} operator&(const {}& {}) const",
-                    self.export_name(),
-                    self.export_name(),
-                    other
-                );
-                out.open_brace();
-                write!(
-                    out,
-                    "return {{static_cast<decltype(bits)>(this->bits & {}.bits)}};",
-                    other
-                );
-                out.close_brace(false);
-
-                out.new_line();
-                write!(
-                    out,
-                    "{}& operator&=(const {}& {})",
-                    self.export_name(),
-                    self.export_name(),
-                    other
-                );
-                out.open_brace();
-                write!(out, "*this = (*this & {});", other);
-                out.new_line();
-                write!(out, "return *this;");
-                out.close_brace(false);
+                self.emit_bitflags_binop('|', &other, out);
+                self.emit_bitflags_binop('&', &other, out);
+                self.emit_bitflags_binop('^', &other, out);
             }
 
             let skip_fields = if self.is_tagged { 1 } else { 0 };
