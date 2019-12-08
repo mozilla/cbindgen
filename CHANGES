@@ -1,3 +1,8 @@
+## 0.11.1
+
+     * More binary operators and expressions are supported. https://github.com/eqrion/cbindgen/pull/425
+     * More built-in bitflags operators. https://github.com/eqrion/cbindgen/pull/426
+
 ## 0.11.0
 
      * Made rust char map to uint32_t. https://github.com/eqrion/cbindgen/pull/424
