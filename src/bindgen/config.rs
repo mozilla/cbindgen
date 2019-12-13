@@ -245,6 +245,19 @@ impl ExportConfig {
     }
 }
 
+/// Settings to apply to generated types with layout modifiers.
+#[derive(Debug, Default, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct LayoutConfig {
+    /// The way to annotate C types as #[repr(packed)].
+    pub packed: Option<String>,
+    /// The way to annotate C types as #[repr(align(...))]. This is assumed to be a functional
+    /// macro which takes a single argument (the alignment).
+    pub aligned_n: Option<String>,
+}
+
 /// Settings to apply to generated functions.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -317,7 +330,7 @@ pub struct StructConfig {
     /// Whether associated constants should be in the body. Only applicable to
     /// non-transparent structs, and in C++-only.
     pub associated_constants_in_body: bool,
-    /// The way to annotation this struct as #[must_use].
+    /// The way to annotate this struct as #[must_use].
     pub must_use: Option<String>,
 }
 
@@ -637,6 +650,8 @@ pub struct Config {
     pub export: ExportConfig,
     /// The configuration options for macros.
     pub macro_expansion: MacroExpansionConfig,
+    /// The configuration options for type layouts.
+    pub layout: LayoutConfig,
     /// The configuration options for functions
     #[serde(rename = "fn")]
     pub function: FunctionConfig,
@@ -680,6 +695,7 @@ impl Default for Config {
             macro_expansion: Default::default(),
             parse: ParseConfig::default(),
             export: ExportConfig::default(),
+            layout: LayoutConfig::default(),
             function: FunctionConfig::default(),
             structure: StructConfig::default(),
             enumeration: EnumConfig::default(),
