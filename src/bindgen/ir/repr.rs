@@ -36,21 +36,6 @@ pub struct Repr {
 }
 
 impl Repr {
-    pub const C: Self = Repr {
-        style: ReprStyle::C,
-        ty: None,
-    };
-
-    pub const TRANSPARENT: Self = Repr {
-        style: ReprStyle::Transparent,
-        ty: None,
-    };
-
-    pub const RUST: Self = Repr {
-        style: ReprStyle::Rust,
-        ty: None,
-    };
-
     pub fn load(attrs: &[syn::Attribute]) -> Result<Repr, String> {
         let ids = attrs
             .iter()

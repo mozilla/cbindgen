@@ -11,7 +11,7 @@ use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, GenericParams, Item,
-    ItemContainer, Path, Repr, ToCondition, Type, Typedef,
+    ItemContainer, Path, Repr, ReprStyle, ToCondition, Type, Typedef,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -51,9 +51,10 @@ impl Struct {
     }
 
     pub fn load(item: &syn::ItemStruct, mod_cfg: Option<&Cfg>) -> Result<Self, String> {
-        let is_transparent = match Repr::load(&item.attrs)? {
-            Repr::C => false,
-            Repr::TRANSPARENT => true,
+        let repr = Repr::load(&item.attrs)?;
+        let is_transparent = match repr.style {
+            ReprStyle::C => false,
+            ReprStyle::Transparent => true,
             _ => {
                 return Err("Struct is not marked #[repr(C)] or #[repr(transparent)].".to_owned());
             }

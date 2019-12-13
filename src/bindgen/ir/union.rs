@@ -12,7 +12,7 @@ use bindgen::dependencies::Dependencies;
 use bindgen::ir::SynFieldHelpers;
 use bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Repr, ToCondition, Type,
+    Repr, ReprStyle, ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -35,7 +35,8 @@ pub struct Union {
 
 impl Union {
     pub fn load(item: &syn::ItemUnion, mod_cfg: Option<&Cfg>) -> Result<Union, String> {
-        if Repr::load(&item.attrs)? != Repr::C {
+        let repr = Repr::load(&item.attrs)?;
+        if repr.style != ReprStyle::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
         }
 
