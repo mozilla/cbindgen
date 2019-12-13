@@ -250,8 +250,8 @@ impl Enum {
 
     pub fn load(item: &syn::ItemEnum, mod_cfg: Option<&Cfg>) -> Result<Enum, String> {
         let repr = Repr::load(&item.attrs)?;
-        if repr == Repr::RUST {
-            return Err("Enum not marked with a valid repr(prim) or repr(C).".to_owned());
+        if repr.style == ReprStyle::Rust && repr.ty.is_none() {
+            return Err("Enum is not marked with a valid #[repr(prim)] or #[repr(C)].".to_owned());
         }
 
         let generic_params = GenericParams::new(&item.generics);
