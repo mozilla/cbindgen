@@ -11,7 +11,7 @@ use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprStyle, ToCondition, Type, Typedef,
+    ItemContainer, Path, Repr, ReprAlign, ReprStyle, ToCondition, Type, Typedef,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -32,6 +32,7 @@ pub struct Struct {
     pub is_tagged: bool,
     /// Whether this is an enum variant body.
     pub is_enum_variant_body: bool,
+    pub alignment: Option<ReprAlign>,
     pub is_transparent: bool,
     pub tuple_struct: bool,
     pub cfg: Option<Cfg>,
@@ -59,10 +60,6 @@ impl Struct {
                 return Err("Struct is not marked #[repr(C)] or #[repr(transparent)].".to_owned());
             }
         };
-        // TODO: Implement struct alignment.
-        if repr.align.is_some() {
-            return Err("Struct is marked with #[repr(align(...))] or #[repr(packed)].".to_owned());
-        }
 
         let (fields, tuple_struct) = match item.fields {
             syn::Fields::Unit => (Vec::new(), false),
@@ -95,6 +92,7 @@ impl Struct {
             fields,
             is_tagged,
             is_enum_variant_body,
+            repr.align,
             is_transparent,
             tuple_struct,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
@@ -109,6 +107,7 @@ impl Struct {
         fields: Vec<(String, Type, Documentation)>,
         is_tagged: bool,
         is_enum_variant_body: bool,
+        alignment: Option<ReprAlign>,
         is_transparent: bool,
         tuple_struct: bool,
         cfg: Option<Cfg>,
@@ -123,6 +122,7 @@ impl Struct {
             fields,
             is_tagged,
             is_enum_variant_body,
+            alignment,
             is_transparent,
             tuple_struct,
             cfg,
@@ -171,6 +171,7 @@ impl Struct {
                 .collect(),
             self.is_tagged,
             self.is_enum_variant_body,
+            self.alignment,
             self.is_transparent,
             self.tuple_struct,
             self.cfg.clone(),
@@ -415,9 +416,24 @@ impl Source for Struct {
 
         out.write("struct");
 
+        if let Some(align) = self.alignment {
+            match align {
+                ReprAlign::Packed => {
+                    if let Some(ref anno) = config.layout.packed {
+                        write!(out, " {}", anno);
+                    }
+                }
+                ReprAlign::Align(n) => {
+                    if let Some(ref anno) = config.layout.aligned_n {
+                        write!(out, " {}({})", anno, n);
+                    }
+                }
+            }
+        }
+
         if self.annotations.must_use {
             if let Some(ref anno) = config.structure.must_use {
-                write!(out, " {}", anno)
+                write!(out, " {}", anno);
             }
         }
 
