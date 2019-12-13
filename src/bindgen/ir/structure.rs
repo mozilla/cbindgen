@@ -59,6 +59,10 @@ impl Struct {
                 return Err("Struct is not marked #[repr(C)] or #[repr(transparent)].".to_owned());
             }
         };
+        // TODO: Implement struct alignment.
+        if repr.align.is_some() {
+            return Err("Struct is marked with #[repr(align(...))] or #[repr(packed)].".to_owned());
+        }
 
         let (fields, tuple_struct) = match item.fields {
             syn::Fields::Unit => (Vec::new(), false),

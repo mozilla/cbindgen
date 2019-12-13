@@ -253,6 +253,10 @@ impl Enum {
         if repr.style == ReprStyle::Rust && repr.ty.is_none() {
             return Err("Enum is not marked with a valid #[repr(prim)] or #[repr(C)].".to_owned());
         }
+        // TODO: Implement translation of aligned enums.
+        if repr.align.is_some() {
+            return Err("Enum is marked with #[repr(align(...))] or #[repr(packed)].".to_owned());
+        }
 
         let generic_params = GenericParams::new(&item.generics);
 
