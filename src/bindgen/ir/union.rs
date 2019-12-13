@@ -39,6 +39,9 @@ impl Union {
         if repr.style != ReprStyle::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
         }
+        if repr.align.is_some() {
+            return Err("Union is marked with #[repr(align(...))] or #[repr(packed)].".to_owned());
+        }
 
         let (fields, tuple_union) = {
             let out = item
