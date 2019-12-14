@@ -12,7 +12,7 @@ use bindgen::dependencies::Dependencies;
 use bindgen::ir::SynFieldHelpers;
 use bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Repr, ReprStyle, ToCondition, Type,
+    Repr, ReprAlign, ReprStyle, ToCondition, Type,
 };
 use bindgen::library::Library;
 use bindgen::mangle;
@@ -28,6 +28,7 @@ pub struct Union {
     pub generic_params: GenericParams,
     pub fields: Vec<(String, Type, Documentation)>,
     pub tuple_union: bool,
+    pub alignment: Option<ReprAlign>,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
@@ -38,9 +39,6 @@ impl Union {
         let repr = Repr::load(&item.attrs)?;
         if repr.style != ReprStyle::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
-        }
-        if repr.align.is_some() {
-            return Err("Union is marked with #[repr(align(...))] or #[repr(packed)].".to_owned());
         }
 
         let (fields, tuple_union) = {
@@ -56,6 +54,7 @@ impl Union {
             Path::new(item.ident.to_string()),
             GenericParams::new(&item.generics),
             fields,
+            repr.align,
             tuple_union,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,
@@ -67,6 +66,7 @@ impl Union {
         path: Path,
         generic_params: GenericParams,
         fields: Vec<(String, Type, Documentation)>,
+        alignment: Option<ReprAlign>,
         tuple_union: bool,
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
@@ -78,6 +78,7 @@ impl Union {
             export_name,
             generic_params,
             fields,
+            alignment,
             tuple_union,
             cfg,
             annotations,
@@ -232,6 +233,7 @@ impl Item for Union {
                 .iter()
                 .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
                 .collect(),
+            self.alignment,
             self.tuple_union,
             self.cfg.clone(),
             self.annotations.clone(),
@@ -266,6 +268,21 @@ impl Source for Union {
         }
 
         out.write("union");
+
+        if let Some(align) = self.alignment {
+            match align {
+                ReprAlign::Packed => {
+                    if let Some(ref anno) = config.layout.packed {
+                        write!(out, " {}", anno);
+                    }
+                }
+                ReprAlign::Align(n) => {
+                    if let Some(ref anno) = config.layout.aligned_n {
+                        write!(out, " {}({})", anno, n);
+                    }
+                }
+            }
+        }
 
         if config.language == Language::Cxx || config.style.generate_tag() {
             write!(out, " {}", self.export_name);
