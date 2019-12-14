@@ -107,9 +107,9 @@ You can learn about all of the different repr attributes [by reading Rust's refe
 * `#[repr(u8, u16, ... etc)]`: give this enum the same layout and ABI as the given integer type
 * `#[repr(transparent)]`: give this single-field struct the same ABI as its field (useful for newtyping integers but keeping the integer ABI)
 
-cbindgen does not currently support the align or packed reprs.
+cbindgen supports the `#[repr(align(N))]` and `#[repr(packed)]` attributes, but currently does not support `#[repr(packed(N))]`.
 
-However it *does* support using `repr(C)`/`repr(u8)` on non-C-like enums (enums with fields). This gives a C-compatible tagged union layout, as [defined by this RFC 2195][really-tagged-unions]. `repr(C)` will give a simpler layout that is perhaps more intuitive, while `repr(u8)` will produce a more compact layout.
+cbindgen also supports using `repr(C)`/`repr(u8)` on non-C-like enums (enums with fields). This gives a C-compatible tagged union layout, as [defined by this RFC 2195][really-tagged-unions]. `repr(C)` will give a simpler layout that is perhaps more intuitive, while `repr(u8)` will produce a more compact layout.
 
 If you ensure everything has a guaranteed repr, then cbindgen will generate definitions for:
 
@@ -494,8 +494,27 @@ renaming_overrides_prefixing = true
   void cppMethod() const;
 """
 
+[layout]
+# A string that should come before the name of any type which has been marked
+# as `#[repr(packed)]`. For instance, "__attribute__((packed))" would be a
+# reasonable value if targeting gcc/clang. A more portable solution would
+# involve emitting the name of a macro which you define in a platform-specific
+# way. e.g. "PACKED"
+#
+# default: `#[repr(packed)]` types will be treated as opaque, since it would
+# be unsafe for C callers to use a incorrectly laid-out union.
+packed = "PACKED"
 
-
+# A string that should come before the name of any type which has been marked
+# as `#[repr(align(n))]`. This string must be a function-like macro which takes
+# a single argument (the requested alignment, `n`). For instance, a macro
+# `#define`d as `ALIGNED(n)` in `header` which translates to
+# `__attribute__((aligned(n)))` would be a reasonable value if targeting
+# gcc/clang.
+#
+# default: `#[repr(align(n))]` types will be treated as opaque, since it
+# could be unsafe for C callers to use a incorrectly-aligned union.
+aligned_n = "ALIGNED"
 
 
 [fn]
@@ -544,9 +563,6 @@ must_use = "MUST_USE_FUNC"
 #
 # default: "None"
 rename_args = "PascalCase"
-
-
-
 
 
 [struct]
