@@ -11,7 +11,7 @@ use syn;
 
 use bindgen::bitflags;
 use bindgen::cargo::{Cargo, PackageRef};
-use bindgen::config::{MacroExpansionConfig, ParseConfig};
+use bindgen::config::{Config, ParseConfig};
 use bindgen::error::Error;
 use bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
@@ -31,20 +31,17 @@ const STD_CRATES: &[&str] = &[
 type ParseResult = Result<Parse, Error>;
 
 /// Parses a single rust source file, not following `mod` or `extern crate`.
-pub fn parse_src(
-    src_file: &FilePath,
-    macro_expansion_config: &MacroExpansionConfig,
-) -> ParseResult {
+pub fn parse_src(src_file: &FilePath, config: &Config) -> ParseResult {
     let mod_name = src_file.file_stem().unwrap().to_str().unwrap();
-    let parse_config = ParseConfig {
+    let mut config = config.clone();
+    config.parse = ParseConfig {
         parse_deps: true,
         ..ParseConfig::default()
     };
 
     let mut context = Parser {
         binding_crate_name: mod_name.to_owned(),
-        macro_expansion_config,
-        parse_config: &parse_config,
+        config: &config,
         lib: None,
         parsed_crates: HashSet::new(),
         cache_src: HashMap::new(),
@@ -67,15 +64,10 @@ pub fn parse_src(
 /// Inside a crate, `mod` and `extern crate` declarations are followed
 /// and parsed. To find an external crate, the parser uses the `cargo metadata`
 /// command to find the location of dependencies.
-pub(crate) fn parse_lib(
-    lib: Cargo,
-    macro_expansion_config: &MacroExpansionConfig,
-    parse_config: &ParseConfig,
-) -> ParseResult {
+pub(crate) fn parse_lib(lib: Cargo, config: &Config) -> ParseResult {
     let mut context = Parser {
         binding_crate_name: lib.binding_crate_name().to_owned(),
-        macro_expansion_config,
-        parse_config,
+        config,
         lib: Some(lib),
         parsed_crates: HashSet::new(),
         cache_src: HashMap::new(),
@@ -93,8 +85,7 @@ pub(crate) fn parse_lib(
 struct Parser<'a> {
     binding_crate_name: String,
     lib: Option<Cargo>,
-    macro_expansion_config: &'a MacroExpansionConfig,
-    parse_config: &'a ParseConfig,
+    config: &'a Config,
 
     parsed_crates: HashSet<String>,
     cache_src: HashMap<FilePathBuf, Vec<syn::Item>>,
@@ -111,24 +102,24 @@ impl<'a> Parser<'a> {
             return false;
         }
 
-        if !self.parse_config.parse_deps {
+        if !self.config.parse.parse_deps {
             return false;
         }
 
         // Skip any whitelist or blacklist for expand
-        if self.parse_config.expand.crates.contains(&pkg_name) {
+        if self.config.parse.expand.crates.contains(&pkg_name) {
             return true;
         }
 
         // If we have a whitelist, check it
-        if let Some(ref include) = self.parse_config.include {
+        if let Some(ref include) = self.config.parse.include {
             if !include.contains(&pkg_name) {
                 return false;
             }
         }
 
         // Check the blacklist
-        !STD_CRATES.contains(&pkg_name.as_ref()) && !self.parse_config.exclude.contains(&pkg_name)
+        !STD_CRATES.contains(&pkg_name.as_ref()) && !self.config.parse.exclude.contains(&pkg_name)
     }
 
     fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
@@ -136,7 +127,7 @@ impl<'a> Parser<'a> {
         self.parsed_crates.insert(pkg.name.clone());
 
         // Check if we should use cargo expand for this crate
-        if self.parse_config.expand.crates.contains(&pkg.name) {
+        if self.config.parse.expand.crates.contains(&pkg.name) {
             self.parse_expand_crate(pkg)?;
         } else {
             // Parse the crate before the dependencies otherwise the same-named idents we
@@ -193,9 +184,9 @@ impl<'a> Parser<'a> {
                     .unwrap()
                     .expand_crate(
                         pkg,
-                        self.parse_config.expand.all_features,
-                        self.parse_config.expand.default_features,
-                        &self.parse_config.expand.features,
+                        self.config.parse.expand.all_features,
+                        self.config.parse.expand.default_features,
+                        &self.config.parse.expand.features,
                     )
                     .map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
@@ -214,8 +205,7 @@ impl<'a> Parser<'a> {
 
     fn process_expanded_mod(&mut self, pkg: &PackageRef, items: &[syn::Item]) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
-            &self.macro_expansion_config,
-            &self.parse_config,
+            &self.config,
             &self.binding_crate_name,
             &pkg.name,
             Cfg::join(&self.cfg_stack).as_ref(),
@@ -287,8 +277,7 @@ impl<'a> Parser<'a> {
         items: &[syn::Item],
     ) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
-            &self.macro_expansion_config,
-            &self.parse_config,
+            &self.config,
             &self.binding_crate_name,
             &pkg.name,
             Cfg::join(&self.cfg_stack).as_ref(),
@@ -425,8 +414,7 @@ impl Parse {
 
     pub fn load_syn_crate_mod(
         &mut self,
-        macro_expansion_config: &MacroExpansionConfig,
-        parse_config: &ParseConfig,
+        config: &Config,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
@@ -441,7 +429,7 @@ impl Parse {
             match item {
                 syn::Item::ForeignMod(ref item) => {
                     self.load_syn_foreign_mod(
-                        parse_config,
+                        config,
                         binding_crate_name,
                         crate_name,
                         mod_cfg,
@@ -449,31 +437,19 @@ impl Parse {
                     );
                 }
                 syn::Item::Fn(ref item) => {
-                    self.load_syn_fn(parse_config, binding_crate_name, crate_name, mod_cfg, item);
+                    self.load_syn_fn(config, binding_crate_name, crate_name, mod_cfg, item);
                 }
                 syn::Item::Const(ref item) => {
-                    self.load_syn_const(
-                        parse_config,
-                        binding_crate_name,
-                        crate_name,
-                        mod_cfg,
-                        item,
-                    );
+                    self.load_syn_const(config, binding_crate_name, crate_name, mod_cfg, item);
                 }
                 syn::Item::Static(ref item) => {
-                    self.load_syn_static(
-                        parse_config,
-                        binding_crate_name,
-                        crate_name,
-                        mod_cfg,
-                        item,
-                    );
+                    self.load_syn_static(config, binding_crate_name, crate_name, mod_cfg, item);
                 }
                 syn::Item::Struct(ref item) => {
-                    self.load_syn_struct(crate_name, mod_cfg, item);
+                    self.load_syn_struct(config, crate_name, mod_cfg, item);
                 }
                 syn::Item::Union(ref item) => {
-                    self.load_syn_union(crate_name, mod_cfg, item);
+                    self.load_syn_union(config, crate_name, mod_cfg, item);
                 }
                 syn::Item::Enum(ref item) => {
                     self.load_syn_enum(crate_name, mod_cfg, item);
@@ -491,7 +467,7 @@ impl Parse {
                     }
                 }
                 syn::Item::Macro(ref item) => {
-                    self.load_builtin_macro(macro_expansion_config, crate_name, mod_cfg, item)
+                    self.load_builtin_macro(config, crate_name, mod_cfg, item)
                 }
                 _ => {}
             }
@@ -523,7 +499,7 @@ impl Parse {
     /// Enters a `extern "C" { }` declaration and loads function declarations.
     fn load_syn_foreign_mod(
         &mut self,
-        parse_config: &ParseConfig,
+        config: &Config,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
@@ -536,7 +512,10 @@ impl Parse {
 
         for foreign_item in &item.items {
             if let syn::ForeignItem::Fn(ref function) = *foreign_item {
-                if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
+                if !config
+                    .parse
+                    .should_generate_top_level_item(crate_name, binding_crate_name)
+                {
                     info!(
                         "Skip {}::{} - (fn's outside of the binding crate are not used).",
                         crate_name, &function.sig.ident
@@ -564,13 +543,16 @@ impl Parse {
     /// Loads a `fn` declaration
     fn load_syn_fn(
         &mut self,
-        parse_config: &ParseConfig,
+        config: &Config,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemFn,
     ) {
-        if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
+        if !config
+            .parse
+            .should_generate_top_level_item(crate_name, binding_crate_name)
+        {
             info!(
                 "Skip {}::{} - (fn's outside of the binding crate are not used).",
                 crate_name, &item.sig.ident
@@ -682,13 +664,16 @@ impl Parse {
     /// Loads a `const` declaration
     fn load_syn_const(
         &mut self,
-        parse_config: &ParseConfig,
+        config: &Config,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemConst,
     ) {
-        if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
+        if !config
+            .parse
+            .should_generate_top_level_item(crate_name, binding_crate_name)
+        {
             info!(
                 "Skip {}::{} - (const's outside of the binding crate are not used).",
                 crate_name, &item.ident
@@ -721,13 +706,16 @@ impl Parse {
     /// Loads a `static` declaration
     fn load_syn_static(
         &mut self,
-        parse_config: &ParseConfig,
+        config: &Config,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemStatic,
     ) {
-        if !parse_config.should_generate_top_level_item(crate_name, binding_crate_name) {
+        if !config
+            .parse
+            .should_generate_top_level_item(crate_name, binding_crate_name)
+        {
             info!(
                 "Skip {}::{} - (static's outside of the binding crate are not used).",
                 crate_name, &item.ident
@@ -761,8 +749,14 @@ impl Parse {
     }
 
     /// Loads a `struct` declaration
-    fn load_syn_struct(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemStruct) {
-        match Struct::load(item, mod_cfg) {
+    fn load_syn_struct(
+        &mut self,
+        config: &Config,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        item: &syn::ItemStruct,
+    ) {
+        match Struct::load(&config.layout, item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
                 self.structs.try_insert(st);
@@ -778,8 +772,14 @@ impl Parse {
     }
 
     /// Loads a `union` declaration
-    fn load_syn_union(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemUnion) {
-        match Union::load(item, mod_cfg) {
+    fn load_syn_union(
+        &mut self,
+        config: &Config,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        item: &syn::ItemUnion,
+    ) {
+        match Union::load(&config.layout, item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
 
@@ -840,7 +840,7 @@ impl Parse {
 
     fn load_builtin_macro(
         &mut self,
-        macro_expansion_config: &MacroExpansionConfig,
+        config: &Config,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemMacro,
@@ -850,7 +850,7 @@ impl Parse {
             None => return,
         };
 
-        if name != "bitflags" || !macro_expansion_config.bitflags {
+        if name != "bitflags" || !config.macro_expansion.bitflags {
             return;
         }
 
@@ -863,7 +863,7 @@ impl Parse {
         };
 
         let (struct_, impl_) = bitflags.expand();
-        self.load_syn_struct(crate_name, mod_cfg, &struct_);
+        self.load_syn_struct(config, crate_name, mod_cfg, &struct_);
         // We know that the expansion will only reference `struct_`, so it's
         // fine to just do it here instead of deferring it like we do with the
         // other calls to this function.

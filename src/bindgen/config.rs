@@ -14,6 +14,7 @@ use toml;
 
 use bindgen::ir::annotation::AnnotationSet;
 use bindgen::ir::path::Path;
+use bindgen::ir::repr::ReprAlign;
 pub use bindgen::rename::RenameRule;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -256,6 +257,16 @@ pub struct LayoutConfig {
     /// The way to annotate C types as #[repr(align(...))]. This is assumed to be a functional
     /// macro which takes a single argument (the alignment).
     pub aligned_n: Option<String>,
+}
+
+impl LayoutConfig {
+    pub(crate) fn ensure_safe_to_represent(&self, align: &ReprAlign) -> Result<(), String> {
+        match (align, &self.packed, &self.aligned_n) {
+            (ReprAlign::Packed, None, _) => Err("Cannot safely represent #[repr(packed)] type without configured 'packed' annotation.".to_string()),
+            (ReprAlign::Align(_), _, None) => Err("Cannot safely represent #[repr(aligned(...))] type without configured 'aligned_n' annotation.".to_string()),
+            _ => Ok(()),
+        }
+    }
 }
 
 /// Settings to apply to generated functions.
