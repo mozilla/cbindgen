@@ -6,7 +6,7 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::config::{Config, Language};
+use bindgen::config::{Config, Language, LayoutConfig};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::{
@@ -51,7 +51,11 @@ impl Struct {
         self.associated_constants.push(c);
     }
 
-    pub fn load(item: &syn::ItemStruct, mod_cfg: Option<&Cfg>) -> Result<Self, String> {
+    pub fn load(
+        layout_config: &LayoutConfig,
+        item: &syn::ItemStruct,
+        mod_cfg: Option<&Cfg>,
+    ) -> Result<Self, String> {
         let repr = Repr::load(&item.attrs)?;
         let is_transparent = match repr.style {
             ReprStyle::C => false,
@@ -60,6 +64,11 @@ impl Struct {
                 return Err("Struct is not marked #[repr(C)] or #[repr(transparent)].".to_owned());
             }
         };
+
+        // Ensure we can safely represent the struct given the configuration.
+        if let Some(align) = repr.align {
+            layout_config.ensure_safe_to_represent(&align)?;
+        }
 
         let (fields, tuple_struct) = match item.fields {
             syn::Fields::Unit => (Vec::new(), false),

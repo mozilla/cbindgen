@@ -6,7 +6,7 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::config::{Config, Language};
+use bindgen::config::{Config, Language, LayoutConfig};
 use bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use bindgen::dependencies::Dependencies;
 use bindgen::ir::SynFieldHelpers;
@@ -35,10 +35,19 @@ pub struct Union {
 }
 
 impl Union {
-    pub fn load(item: &syn::ItemUnion, mod_cfg: Option<&Cfg>) -> Result<Union, String> {
+    pub fn load(
+        layout_config: &LayoutConfig,
+        item: &syn::ItemUnion,
+        mod_cfg: Option<&Cfg>,
+    ) -> Result<Union, String> {
         let repr = Repr::load(&item.attrs)?;
         if repr.style != ReprStyle::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
+        }
+
+        // Ensure we can safely represent the union given the configuration.
+        if let Some(align) = repr.align {
+            layout_config.ensure_safe_to_represent(&align)?;
         }
 
         let (fields, tuple_union) = {
