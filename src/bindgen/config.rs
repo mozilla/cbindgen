@@ -420,6 +420,11 @@ pub struct EnumConfig {
     pub derive_tagged_enum_destructor: bool,
     /// Whether to generate copy-constructors of tagged enums.
     pub derive_tagged_enum_copy_constructor: bool,
+    /// Whether to generate copy-assignment operators of tagged enums.
+    ///
+    /// This is only generated if a copy constructor for the same tagged enum is
+    /// generated as well.
+    pub derive_tagged_enum_copy_assignment: bool,
     /// Whether to generate empty, private default-constructors for tagged
     /// enums.
     pub private_default_tagged_enum_constructor: bool,
@@ -461,6 +466,12 @@ impl EnumConfig {
             return x;
         }
         self.derive_tagged_enum_copy_constructor
+    }
+    pub(crate) fn derive_tagged_enum_copy_assignment(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-tagged-enum-copy-assignment") {
+            return x;
+        }
+        self.derive_tagged_enum_copy_assignment
     }
     pub(crate) fn private_default_tagged_enum_constructor(
         &self,
