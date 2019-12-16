@@ -163,6 +163,13 @@ struct Foo {
       default: break;
     }
   }
+  Foo& operator=(const Foo& other) {
+    if (this != &other) {
+      this->~Foo();
+      new (this) Foo(other);
+    }
+    return *this;
+  }
 };
 
 template<typename T>
@@ -310,6 +317,13 @@ union Baz {
       default: break;
     }
   }
+  Baz& operator=(const Baz& other) {
+    if (this != &other) {
+      this->~Baz();
+      new (this) Baz(other);
+    }
+    return *this;
+  }
 };
 
 union Taz {
@@ -389,6 +403,13 @@ union Taz {
       case Tag::Taz3: ::new (&taz3) (Taz3_Body)(other.taz3); break;
       default: break;
     }
+  }
+  Taz& operator=(const Taz& other) {
+    if (this != &other) {
+      this->~Taz();
+      new (this) Taz(other);
+    }
+    return *this;
   }
 };
 

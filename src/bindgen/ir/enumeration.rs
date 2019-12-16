@@ -977,6 +977,29 @@ impl Source for Enum {
                 write!(out, "default: break;");
                 out.close_brace(false);
                 out.close_brace(false);
+
+                if config.language == Language::Cxx
+                    && config
+                        .enumeration
+                        .derive_tagged_enum_copy_assignment(&self.annotations)
+                {
+                    out.new_line();
+                    write!(
+                        out,
+                        "{}& operator=(const {}& {})",
+                        self.export_name, self.export_name, other
+                    );
+                    out.open_brace();
+                    write!(out, "if (this != &{})", other);
+                    out.open_brace();
+                    write!(out, "this->~{}();", self.export_name);
+                    out.new_line();
+                    write!(out, "new (this) {}({});", self.export_name, other);
+                    out.close_brace(false);
+                    out.new_line();
+                    write!(out, "return *this;");
+                    out.close_brace(false);
+                }
             }
 
             if let Some(body) = config.export.extra_body(&self.path) {

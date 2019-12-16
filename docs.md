@@ -723,6 +723,13 @@ derive_tagged_enum_destructor = false
 #
 # default: false
 derive_tagged_enum_copy_constructor = false
+# Whether enums with fields should generate copy-assignment operators.
+#
+# This depends on also deriving copy-constructors, and it is highly encouraged
+# for this to be set to true.
+#
+# default: false
+derive_tagged_enum_copy_assignment = false
 
 # Whether enums with fields should generate an empty, private destructor.
 # This allows the auto-generated constructor functions to compile, if there are
