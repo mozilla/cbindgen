@@ -52,7 +52,7 @@ pub fn parse_src(src_file: &FilePath, config: &Config) -> ParseResult {
 
     let pkg_ref = PackageRef {
         name: mod_name.to_owned(),
-        version: "0.0.0".to_owned(),
+        version: None,
     };
 
     context.parse_mod(&pkg_ref, src_file)?;
