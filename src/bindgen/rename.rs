@@ -4,7 +4,7 @@
 
 use std::str::FromStr;
 
-use bindgen::ir::{Enum, Item};
+use crate::bindgen::ir::{Enum, Item};
 
 /// The type of identifier to be renamed.
 #[derive(Debug, Clone, Copy)]

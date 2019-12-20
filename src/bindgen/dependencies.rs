@@ -5,7 +5,7 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use bindgen::ir::{ItemContainer, Path};
+use crate::bindgen::ir::{ItemContainer, Path};
 
 /// A dependency list is used for gathering what order to output the types.
 pub struct Dependencies {

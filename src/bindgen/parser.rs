@@ -9,15 +9,15 @@ use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
 use syn;
 
-use bindgen::bitflags;
-use bindgen::cargo::{Cargo, PackageRef};
-use bindgen::config::{Config, ParseConfig};
-use bindgen::error::Error;
-use bindgen::ir::{
+use crate::bindgen::bitflags;
+use crate::bindgen::cargo::{Cargo, PackageRef};
+use crate::bindgen::config::{Config, ParseConfig};
+use crate::bindgen::error::Error;
+use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
     OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
-use bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
+use crate::bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
 
 const STD_CRATES: &[&str] = &[
     "std",

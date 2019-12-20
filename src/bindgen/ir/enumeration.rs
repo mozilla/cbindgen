@@ -6,19 +6,19 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::config::{Config, Language};
-use bindgen::declarationtyperesolver::DeclarationTypeResolver;
-use bindgen::dependencies::Dependencies;
-use bindgen::ir::{
+use crate::bindgen::config::{Config, Language};
+use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use crate::bindgen::dependencies::Dependencies;
+use crate::bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath, Item,
     ItemContainer, Path, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
 };
-use bindgen::library::Library;
-use bindgen::mangle;
-use bindgen::monomorph::Monomorphs;
-use bindgen::rename::{IdentifierType, RenameRule};
-use bindgen::utilities::find_first_some;
-use bindgen::writer::{ListType, Source, SourceWriter};
+use crate::bindgen::library::Library;
+use crate::bindgen::mangle;
+use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::rename::{IdentifierType, RenameRule};
+use crate::bindgen::utilities::find_first_some;
+use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct EnumVariant {

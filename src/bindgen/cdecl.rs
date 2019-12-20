@@ -4,9 +4,9 @@
 
 use std::io::Write;
 
-use bindgen::declarationtyperesolver::DeclarationType;
-use bindgen::ir::{Function, Type};
-use bindgen::writer::{ListType, SourceWriter};
+use crate::bindgen::declarationtyperesolver::DeclarationType;
+use crate::bindgen::ir::{Function, Type};
+use crate::bindgen::writer::{ListType, SourceWriter};
 
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.

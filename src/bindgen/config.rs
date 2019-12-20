@@ -12,10 +12,10 @@ use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
 use toml;
 
-use bindgen::ir::annotation::AnnotationSet;
-use bindgen::ir::path::Path;
-use bindgen::ir::repr::ReprAlign;
-pub use bindgen::rename::RenameRule;
+use crate::bindgen::ir::annotation::AnnotationSet;
+use crate::bindgen::ir::path::Path;
+use crate::bindgen::ir::repr::ReprAlign;
+pub use crate::bindgen::rename::RenameRule;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 

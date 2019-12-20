@@ -7,15 +7,15 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::cdecl;
-use bindgen::config::Config;
-use bindgen::declarationtyperesolver::DeclarationTypeResolver;
-use bindgen::dependencies::Dependencies;
-use bindgen::ir::{Documentation, GenericParams, GenericPath, Path};
-use bindgen::library::Library;
-use bindgen::monomorph::Monomorphs;
-use bindgen::utilities::IterHelpers;
-use bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::cdecl;
+use crate::bindgen::config::Config;
+use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use crate::bindgen::dependencies::Dependencies;
+use crate::bindgen::ir::{Documentation, GenericParams, GenericPath, Path};
+use crate::bindgen::library::Library;
+use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::utilities::IterHelpers;
+use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrimitiveType {

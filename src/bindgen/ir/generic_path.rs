@@ -3,11 +3,11 @@ use std::ops::Deref;
 
 use syn;
 
-use bindgen::config::{Config, Language};
-use bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
-use bindgen::ir::{Path, Type};
-use bindgen::utilities::IterHelpers;
-use bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::config::{Config, Language};
+use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
+use crate::bindgen::ir::{Path, Type};
+use crate::bindgen::utilities::IterHelpers;
+use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Default, Debug, Clone)]
 pub struct GenericParams(pub Vec<Path>);

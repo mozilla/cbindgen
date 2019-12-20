@@ -10,11 +10,11 @@ use std::io::{Read, Write};
 use std::path;
 use std::rc::Rc;
 
-use bindgen::config::{Config, Language};
-use bindgen::ir::{
+use crate::bindgen::config::{Config, Language};
+use crate::bindgen::ir::{
     Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct,
 };
-use bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::writer::{Source, SourceWriter};
 
 /// A bindings header that can be written.
 pub struct Bindings {
@@ -138,7 +138,7 @@ impl Bindings {
             write!(
                 out,
                 "/* Generated with cbindgen:{} */",
-                ::bindgen::config::VERSION
+                crate::bindgen::config::VERSION
             );
             out.new_line();
         }

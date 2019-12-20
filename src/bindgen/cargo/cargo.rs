@@ -4,13 +4,13 @@
 
 use std::path::{Path, PathBuf};
 
-use bindgen::cargo::cargo_expand;
-use bindgen::cargo::cargo_lock::{self, Lock};
-pub(crate) use bindgen::cargo::cargo_metadata::PackageRef;
-use bindgen::cargo::cargo_metadata::{self, Metadata};
-use bindgen::cargo::cargo_toml;
-use bindgen::error::Error;
-use bindgen::ir::Cfg;
+use crate::bindgen::cargo::cargo_expand;
+use crate::bindgen::cargo::cargo_lock::{self, Lock};
+pub(crate) use crate::bindgen::cargo::cargo_metadata::PackageRef;
+use crate::bindgen::cargo::cargo_metadata::{self, Metadata};
+use crate::bindgen::cargo::cargo_toml;
+use crate::bindgen::error::Error;
+use crate::bindgen::ir::Cfg;
 
 /// Parse a dependency string used in Cargo.lock
 fn parse_dep_string(dep_string: &str) -> (&str, &str) {

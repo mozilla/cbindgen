@@ -4,12 +4,12 @@
 
 use std::path;
 
-use bindgen::bindings::Bindings;
-use bindgen::cargo::Cargo;
-use bindgen::config::{Braces, Config, Language};
-use bindgen::error::Error;
-use bindgen::library::Library;
-use bindgen::parser::{self, Parse};
+use crate::bindgen::bindings::Bindings;
+use crate::bindgen::cargo::Cargo;
+use crate::bindgen::config::{Braces, Config, Language};
+use crate::bindgen::error::Error;
+use crate::bindgen::library::Library;
+use crate::bindgen::parser::{self, Parse};
 
 /// A builder for generating a bindings header.
 #[derive(Debug, Clone)]

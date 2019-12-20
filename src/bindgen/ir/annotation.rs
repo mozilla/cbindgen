@@ -7,7 +7,7 @@ use std::str::FromStr;
 
 use syn;
 
-use bindgen::utilities::SynAttributeHelpers;
+use crate::bindgen::utilities::SynAttributeHelpers;
 
 // A system for specifying properties on items. Annotations are
 // given through document comments and parsed by this code.

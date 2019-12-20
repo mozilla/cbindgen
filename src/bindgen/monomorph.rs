@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::mem;
 
-use bindgen::ir::{Enum, GenericPath, OpaqueItem, Path, Struct, Type, Typedef, Union};
+use crate::bindgen::ir::{Enum, GenericPath, OpaqueItem, Path, Struct, Type, Typedef, Union};
 
 #[derive(Default, Clone, Debug)]
 pub struct Monomorphs {

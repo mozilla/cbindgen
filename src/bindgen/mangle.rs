@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use bindgen::ir::{Path, Type};
+use crate::bindgen::ir::{Path, Type};
 
 pub fn mangle_path(path: &Path, generic_values: &[Type]) -> Path {
     internal_mangle_path(path, generic_values, true)
@@ -64,7 +64,7 @@ fn internal_mangle_name(name: &str, generic_values: &[Type], last_in_parent: boo
 
 #[test]
 fn generics() {
-    use bindgen::ir::{GenericPath, PrimitiveType};
+    use crate::bindgen::ir::{GenericPath, PrimitiveType};
 
     fn float() -> Type {
         Type::Primitive(PrimitiveType::Float)

@@ -5,9 +5,9 @@
 use std::error;
 use std::fmt;
 
-pub use bindgen::cargo::cargo_expand::Error as CargoExpandError;
-pub use bindgen::cargo::cargo_metadata::Error as CargoMetadataError;
-pub use bindgen::cargo::cargo_toml::Error as CargoTomlError;
+pub use crate::bindgen::cargo::cargo_expand::Error as CargoExpandError;
+pub use crate::bindgen::cargo::cargo_metadata::Error as CargoMetadataError;
+pub use crate::bindgen::cargo::cargo_toml::Error as CargoTomlError;
 pub use syn::parse::Error as ParseError;
 
 #[derive(Debug)]

@@ -5,15 +5,15 @@
 use std::collections::HashMap;
 use std::mem;
 
-use bindgen::bindings::Bindings;
-use bindgen::config::{Config, Language};
-use bindgen::declarationtyperesolver::DeclarationTypeResolver;
-use bindgen::dependencies::Dependencies;
-use bindgen::error::Error;
-use bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
-use bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
-use bindgen::monomorph::Monomorphs;
-use bindgen::ItemType;
+use crate::bindgen::bindings::Bindings;
+use crate::bindgen::config::{Config, Language};
+use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use crate::bindgen::dependencies::Dependencies;
+use crate::bindgen::error::Error;
+use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
+use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
+use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::ItemType;
 
 #[derive(Debug, Clone)]
 pub struct Library {

@@ -7,17 +7,17 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::config::{Config, Language};
-use bindgen::declarationtyperesolver::DeclarationTypeResolver;
-use bindgen::dependencies::Dependencies;
-use bindgen::ir::{
+use crate::bindgen::config::{Config, Language};
+use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use crate::bindgen::dependencies::Dependencies;
+use crate::bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
     ToCondition, Type,
 };
-use bindgen::library::Library;
-use bindgen::mangle;
-use bindgen::monomorph::Monomorphs;
-use bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::library::Library;
+use crate::bindgen::mangle;
+use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::writer::{Source, SourceWriter};
 
 /// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]

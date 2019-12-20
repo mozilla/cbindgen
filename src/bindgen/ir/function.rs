@@ -6,19 +6,19 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::cdecl;
-use bindgen::config::{Config, Language, Layout};
-use bindgen::declarationtyperesolver::DeclarationTypeResolver;
-use bindgen::dependencies::Dependencies;
-use bindgen::ir::{
+use crate::bindgen::cdecl;
+use crate::bindgen::config::{Config, Language, Layout};
+use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use crate::bindgen::dependencies::Dependencies;
+use crate::bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, Path, PrimitiveType, ToCondition, Type,
 };
-use bindgen::library::Library;
-use bindgen::monomorph::Monomorphs;
-use bindgen::rename::{IdentifierType, RenameRule};
-use bindgen::reserved;
-use bindgen::utilities::{find_first_some, IterHelpers};
-use bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::library::Library;
+use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::rename::{IdentifierType, RenameRule};
+use crate::bindgen::reserved;
+use crate::bindgen::utilities::{find_first_some, IterHelpers};
+use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Function {
