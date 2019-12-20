@@ -60,7 +60,7 @@ impl error::Error for Error {
 pub fn expand(
     manifest_path: &Path,
     crate_name: &str,
-    version: &str,
+    version: Option<&str>,
     use_tempdir: bool,
     expand_all_features: bool,
     expand_default_features: bool,
@@ -109,7 +109,12 @@ pub fn expand(
         cmd.arg("--no-default-features");
     }
     cmd.arg("-p");
-    cmd.arg(&format!("{}:{}", crate_name, version));
+    let mut package = crate_name.to_owned();
+    if let Some(version) = version {
+        package.push_str(":");
+        package.push_str(version);
+    }
+    cmd.arg(&package);
     cmd.arg("--verbose");
     cmd.arg("--");
     cmd.arg("-Z");

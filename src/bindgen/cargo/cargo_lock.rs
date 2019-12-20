@@ -39,7 +39,7 @@ pub struct Lock {
 pub struct Package {
     pub name: String,
     pub version: String,
-    /// A list of dependencies formatted like "NAME VERSION REGISTRY-OPT"
+    /// A list of dependencies formatted like "NAME VERSION-OPT REGISTRY-OPT"
     pub dependencies: Option<Vec<String>>,
 }
 

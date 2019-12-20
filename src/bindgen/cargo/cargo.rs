@@ -13,10 +13,10 @@ use crate::bindgen::error::Error;
 use crate::bindgen::ir::Cfg;
 
 /// Parse a dependency string used in Cargo.lock
-fn parse_dep_string(dep_string: &str) -> (&str, &str) {
+fn parse_dep_string(dep_string: &str) -> (&str, Option<&str>) {
     let split: Vec<&str> = dep_string.split_whitespace().collect();
 
-    (split[0], split[1])
+    (split[0], split.get(1).cloned())
 }
 
 /// A collection of metadata for a library from cargo.
@@ -99,14 +99,25 @@ impl Cargo {
 
         // Find the dependencies listing in the lockfile
         if let Some(ref root) = lock.root {
-            if root.name == package.name && root.version == package.version {
+            // If the version is not on the lockfile then it shouldn't be
+            // ambiguous.
+            if root.name == package.name
+                && package
+                    .version
+                    .as_ref()
+                    .map_or(true, |v| *v == root.version)
+            {
                 dependencies = root.dependencies.as_ref();
             }
         }
         if dependencies.is_none() {
             if let Some(ref lock_packages) = lock.package {
                 for lock_package in lock_packages {
-                    if lock_package.name == package.name && lock_package.version == package.version
+                    if lock_package.name == package.name
+                        && package
+                            .version
+                            .as_ref()
+                            .map_or(true, |v| *v == lock_package.version)
                     {
                         dependencies = lock_package.dependencies.as_ref();
                         break;
@@ -134,7 +145,7 @@ impl Cargo {
 
                 let package_ref = PackageRef {
                     name: dep_name.to_owned(),
-                    version: dep_version.to_owned(),
+                    version: dep_version.map(|v| v.to_owned()),
                 };
 
                 (package_ref, cfg)
@@ -202,7 +213,7 @@ impl Cargo {
         cargo_expand::expand(
             &self.manifest_path,
             &package.name,
-            &package.version,
+            package.version.as_ref().map(|v| &**v),
             self.clean,
             expand_all_features,
             expand_default_features,

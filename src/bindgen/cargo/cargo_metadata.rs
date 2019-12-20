@@ -36,7 +36,7 @@ pub struct Metadata {
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PackageRef {
     pub name: String,
-    pub version: String,
+    pub version: Option<String>,
 }
 
 #[derive(Clone, Deserialize, Debug)]
