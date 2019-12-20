@@ -16,7 +16,7 @@ extern crate toml;
 
 mod bindgen;
 
-pub use bindgen::*;
+pub use crate::bindgen::*;
 
 use std::path::Path;
 

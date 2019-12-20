@@ -4,7 +4,7 @@
 
 use std::collections::HashSet;
 
-use bindgen::ir::Path;
+use crate::bindgen::ir::Path;
 
 pub struct DeclarationTypeResolver {
     structs: HashSet<Path>,

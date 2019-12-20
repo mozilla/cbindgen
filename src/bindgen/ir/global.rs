@@ -6,12 +6,12 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::config::Config;
-use bindgen::declarationtyperesolver::DeclarationTypeResolver;
-use bindgen::dependencies::Dependencies;
-use bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Path, Type};
-use bindgen::library::Library;
-use bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::config::Config;
+use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use crate::bindgen::dependencies::Dependencies;
+use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Path, Type};
+use crate::bindgen::library::Library;
+use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Static {

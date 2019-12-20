@@ -5,14 +5,14 @@
 use std::collections::BTreeMap;
 use std::mem;
 
-use bindgen::config::Config;
-use bindgen::declarationtyperesolver::DeclarationTypeResolver;
-use bindgen::dependencies::Dependencies;
-use bindgen::ir::{
+use crate::bindgen::config::Config;
+use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
+use crate::bindgen::dependencies::Dependencies;
+use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
-use bindgen::library::Library;
-use bindgen::monomorph::Monomorphs;
+use crate::bindgen::library::Library;
+use crate::bindgen::monomorph::Monomorphs;
 
 /// An item is any type of rust item besides a function
 pub trait Item {

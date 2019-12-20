@@ -6,9 +6,9 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::config::{Config, DocumentationStyle, Language};
-use bindgen::utilities::SynAttributeHelpers;
-use bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::config::{Config, DocumentationStyle, Language};
+use crate::bindgen::utilities::SynAttributeHelpers;
+use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Documentation {

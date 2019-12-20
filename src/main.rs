@@ -24,7 +24,7 @@ use clap::{App, Arg, ArgMatches};
 mod bindgen;
 mod logging;
 
-use bindgen::{Bindings, Builder, Cargo, Config, Error, Language, Style};
+use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Language, Style};
 
 fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // We allow specifying a language to override the config default. This is

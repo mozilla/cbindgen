@@ -7,9 +7,9 @@ use std::io::Write;
 
 use syn;
 
-use bindgen::cargo::cargo_metadata::Dependency;
-use bindgen::config::Config;
-use bindgen::writer::SourceWriter;
+use crate::bindgen::cargo::cargo_metadata::Dependency;
+use crate::bindgen::config::Config;
+use crate::bindgen::writer::SourceWriter;
 
 #[derive(PartialEq, Eq)]
 enum DefineKey<'a> {

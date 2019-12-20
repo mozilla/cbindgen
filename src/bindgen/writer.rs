@@ -6,8 +6,8 @@ use std::cmp;
 use std::io;
 use std::io::Write;
 
-use bindgen::config::{Braces, Config};
-use bindgen::Bindings;
+use crate::bindgen::config::{Braces, Config};
+use crate::bindgen::Bindings;
 
 /// A type of way to format a list.
 pub enum ListType<'a> {
@@ -236,5 +236,5 @@ impl<'a, F: Write> SourceWriter<'a, F> {
 }
 
 pub trait Source {
-    fn write<F: Write>(&self, config: &Config, &mut SourceWriter<F>);
+    fn write<F: Write>(&self, config: &Config, _: &mut SourceWriter<F>);
 }
