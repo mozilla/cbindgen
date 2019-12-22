@@ -3,61 +3,68 @@
 #include <cstdlib>
 #include <new>
 
-enum class A : uint32_t {
+enum class A : uint64_t {
   a1 = 0,
   a2 = 2,
   a3,
   a4 = 5,
 };
 
-enum class B : uint16_t {
+enum class B : uint32_t {
   b1 = 0,
   b2 = 2,
   b3,
   b4 = 5,
 };
 
-enum class C : uint8_t {
+enum class C : uint16_t {
   c1 = 0,
   c2 = 2,
   c3,
   c4 = 5,
 };
 
-enum class D : uintptr_t {
+enum class D : uint8_t {
   d1 = 0,
   d2 = 2,
   d3,
   d4 = 5,
 };
 
-enum class E : intptr_t {
+enum class E : uintptr_t {
   e1 = 0,
   e2 = 2,
   e3,
   e4 = 5,
 };
 
-enum class K {
-  k1,
-  k2,
-  k3,
-  k4,
+enum class F : intptr_t {
+  f1 = 0,
+  f2 = 2,
+  f3,
+  f4 = 5,
 };
 
-enum class L : int8_t {
-  l1 = -1,
-  l2 = 0,
-  l3 = 1,
+enum class L {
+  l1,
+  l2,
+  l3,
+  l4,
 };
 
-struct I;
+enum class M : int8_t {
+  m1 = -1,
+  m2 = 0,
+  m3 = 1,
+};
 
 struct J;
 
+struct K;
+
 struct Opaque;
 
-union F {
+union G {
   enum class Tag : uint8_t {
     Foo,
     Bar,
@@ -82,31 +89,8 @@ union F {
   Bar_Body bar;
 };
 
-struct G {
-  enum class Tag {
-    G_Foo,
-    G_Bar,
-    G_Baz,
-  };
-
-  struct G_Foo_Body {
-    int16_t _0;
-  };
-
-  struct G_Bar_Body {
-    uint8_t x;
-    int16_t y;
-  };
-
-  Tag tag;
-  union {
-    G_Foo_Body foo;
-    G_Bar_Body bar;
-  };
-};
-
 struct H {
-  enum class Tag : uint8_t {
+  enum class Tag {
     H_Foo,
     H_Bar,
     H_Baz,
@@ -128,8 +112,31 @@ struct H {
   };
 };
 
+struct I {
+  enum class Tag : uint8_t {
+    I_Foo,
+    I_Bar,
+    I_Baz,
+  };
+
+  struct I_Foo_Body {
+    int16_t _0;
+  };
+
+  struct I_Bar_Body {
+    uint8_t x;
+    int16_t y;
+  };
+
+  Tag tag;
+  union {
+    I_Foo_Body foo;
+    I_Bar_Body bar;
+  };
+};
+
 extern "C" {
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m);
 
 } // extern "C"

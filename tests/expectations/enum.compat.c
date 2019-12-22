@@ -5,7 +5,7 @@
 
 enum A
 #ifdef __cplusplus
-  : uint32_t
+  : uint64_t
 #endif // __cplusplus
  {
   a1 = 0,
@@ -14,12 +14,12 @@ enum A
   a4 = 5,
 };
 #ifndef __cplusplus
-typedef uint32_t A;
+typedef uint64_t A;
 #endif // __cplusplus
 
 enum B
 #ifdef __cplusplus
-  : uint16_t
+  : uint32_t
 #endif // __cplusplus
  {
   b1 = 0,
@@ -28,12 +28,12 @@ enum B
   b4 = 5,
 };
 #ifndef __cplusplus
-typedef uint16_t B;
+typedef uint32_t B;
 #endif // __cplusplus
 
 enum C
 #ifdef __cplusplus
-  : uint8_t
+  : uint16_t
 #endif // __cplusplus
  {
   c1 = 0,
@@ -42,12 +42,12 @@ enum C
   c4 = 5,
 };
 #ifndef __cplusplus
-typedef uint8_t C;
+typedef uint16_t C;
 #endif // __cplusplus
 
 enum D
 #ifdef __cplusplus
-  : uintptr_t
+  : uint8_t
 #endif // __cplusplus
  {
   d1 = 0,
@@ -56,12 +56,12 @@ enum D
   d4 = 5,
 };
 #ifndef __cplusplus
-typedef uintptr_t D;
+typedef uint8_t D;
 #endif // __cplusplus
 
 enum E
 #ifdef __cplusplus
-  : intptr_t
+  : uintptr_t
 #endif // __cplusplus
  {
   e1 = 0,
@@ -70,36 +70,50 @@ enum E
   e4 = 5,
 };
 #ifndef __cplusplus
-typedef intptr_t E;
+typedef uintptr_t E;
+#endif // __cplusplus
+
+enum F
+#ifdef __cplusplus
+  : intptr_t
+#endif // __cplusplus
+ {
+  f1 = 0,
+  f2 = 2,
+  f3,
+  f4 = 5,
+};
+#ifndef __cplusplus
+typedef intptr_t F;
 #endif // __cplusplus
 
 typedef enum {
-  k1,
-  k2,
-  k3,
-  k4,
-} K;
+  l1,
+  l2,
+  l3,
+  l4,
+} L;
 
-enum L
+enum M
 #ifdef __cplusplus
   : int8_t
 #endif // __cplusplus
  {
-  l1 = -1,
-  l2 = 0,
-  l3 = 1,
+  m1 = -1,
+  m2 = 0,
+  m3 = 1,
 };
 #ifndef __cplusplus
-typedef int8_t L;
+typedef int8_t M;
 #endif // __cplusplus
-
-typedef struct I I;
 
 typedef struct J J;
 
+typedef struct K K;
+
 typedef struct Opaque Opaque;
 
-enum F_Tag
+enum G_Tag
 #ifdef __cplusplus
   : uint8_t
 #endif // __cplusplus
@@ -109,61 +123,31 @@ enum F_Tag
   Baz,
 };
 #ifndef __cplusplus
-typedef uint8_t F_Tag;
+typedef uint8_t G_Tag;
 #endif // __cplusplus
 
 typedef struct {
-  F_Tag tag;
+  G_Tag tag;
   int16_t _0;
 } Foo_Body;
 
 typedef struct {
-  F_Tag tag;
+  G_Tag tag;
   uint8_t x;
   int16_t y;
 } Bar_Body;
 
 typedef union {
-  F_Tag tag;
+  G_Tag tag;
   Foo_Body foo;
   Bar_Body bar;
-} F;
-
-typedef enum {
-  G_Foo,
-  G_Bar,
-  G_Baz,
-} G_Tag;
-
-typedef struct {
-  int16_t _0;
-} G_Foo_Body;
-
-typedef struct {
-  uint8_t x;
-  int16_t y;
-} G_Bar_Body;
-
-typedef struct {
-  G_Tag tag;
-  union {
-    G_Foo_Body foo;
-    G_Bar_Body bar;
-  };
 } G;
 
-enum H_Tag
-#ifdef __cplusplus
-  : uint8_t
-#endif // __cplusplus
- {
+typedef enum {
   H_Foo,
   H_Bar,
   H_Baz,
-};
-#ifndef __cplusplus
-typedef uint8_t H_Tag;
-#endif // __cplusplus
+} H_Tag;
 
 typedef struct {
   int16_t _0;
@@ -182,11 +166,41 @@ typedef struct {
   };
 } H;
 
+enum I_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  I_Foo,
+  I_Bar,
+  I_Baz,
+};
+#ifndef __cplusplus
+typedef uint8_t I_Tag;
+#endif // __cplusplus
+
+typedef struct {
+  int16_t _0;
+} I_Foo_Body;
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} I_Bar_Body;
+
+typedef struct {
+  I_Tag tag;
+  union {
+    I_Foo_Body foo;
+    I_Bar_Body bar;
+  };
+} I;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l);
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m);
 
 #ifdef __cplusplus
 } // extern "C"
