@@ -9,7 +9,7 @@ enum A {
   a3,
   a4 = 5,
 };
-typedef uint32_t A;
+typedef uint64_t A;
 
 enum B {
   b1 = 0,
@@ -17,7 +17,7 @@ enum B {
   b3,
   b4 = 5,
 };
-typedef uint16_t B;
+typedef uint32_t B;
 
 enum C {
   c1 = 0,
@@ -25,7 +25,7 @@ enum C {
   c3,
   c4 = 5,
 };
-typedef uint8_t C;
+typedef uint16_t C;
 
 enum D {
   d1 = 0,
@@ -33,7 +33,7 @@ enum D {
   d3,
   d4 = 5,
 };
-typedef uintptr_t D;
+typedef uint8_t D;
 
 enum E {
   e1 = 0,
@@ -41,81 +41,65 @@ enum E {
   e3,
   e4 = 5,
 };
-typedef intptr_t E;
+typedef uintptr_t E;
+
+enum F {
+  f1 = 0,
+  f2 = 2,
+  f3,
+  f4 = 5,
+};
+typedef intptr_t F;
 
 typedef enum {
-  k1,
-  k2,
-  k3,
-  k4,
-} K;
+  l1,
+  l2,
+  l3,
+  l4,
+} L;
 
-enum L {
-  l1 = -1,
-  l2 = 0,
-  l3 = 1,
+enum M {
+  m1 = -1,
+  m2 = 0,
+  m3 = 1,
 };
-typedef int8_t L;
-
-typedef struct I I;
+typedef int8_t M;
 
 typedef struct J J;
 
+typedef struct K K;
+
 typedef struct Opaque Opaque;
 
-enum F_Tag {
+enum G_Tag {
   Foo,
   Bar,
   Baz,
 };
-typedef uint8_t F_Tag;
+typedef uint8_t G_Tag;
 
 typedef struct {
-  F_Tag tag;
+  G_Tag tag;
   int16_t _0;
 } Foo_Body;
 
 typedef struct {
-  F_Tag tag;
+  G_Tag tag;
   uint8_t x;
   int16_t y;
 } Bar_Body;
 
 typedef union {
-  F_Tag tag;
+  G_Tag tag;
   Foo_Body foo;
   Bar_Body bar;
-} F;
-
-typedef enum {
-  G_Foo,
-  G_Bar,
-  G_Baz,
-} G_Tag;
-
-typedef struct {
-  int16_t _0;
-} G_Foo_Body;
-
-typedef struct {
-  uint8_t x;
-  int16_t y;
-} G_Bar_Body;
-
-typedef struct {
-  G_Tag tag;
-  union {
-    G_Foo_Body foo;
-    G_Bar_Body bar;
-  };
 } G;
 
-enum H_Tag {
+typedef enum {
   H_Foo,
   H_Bar,
   H_Baz,
-};
-typedef uint8_t H_Tag;
+} H_Tag;
 
 typedef struct {
   int16_t _0;
@@ -134,4 +118,28 @@ typedef struct {
   };
 } H;
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l);
+enum I_Tag {
+  I_Foo,
+  I_Bar,
+  I_Baz,
+};
+typedef uint8_t I_Tag;
+
+typedef struct {
+  int16_t _0;
+} I_Foo_Body;
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} I_Bar_Body;
+
+typedef struct {
+  I_Tag tag;
+  union {
+    I_Foo_Body foo;
+    I_Bar_Body bar;
+  };
+} I;
+
+void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m);

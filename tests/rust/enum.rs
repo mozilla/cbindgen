@@ -1,9 +1,9 @@
 enum Opaque {
     Foo(i32),
-    Bar
+    Bar,
 }
 
-#[repr(u32)]
+#[repr(u64)]
 enum A {
     a1 = 0,
     a2 = 2,
@@ -11,7 +11,7 @@ enum A {
     a4 = 5,
 }
 
-#[repr(u16)]
+#[repr(u32)]
 enum B {
     b1 = 0,
     b2 = 2,
@@ -19,7 +19,7 @@ enum B {
     b4 = 5,
 }
 
-#[repr(u8)]
+#[repr(u16)]
 enum C {
     c1 = 0,
     c2 = 2,
@@ -27,7 +27,7 @@ enum C {
     c4 = 5,
 }
 
-#[repr(usize)]
+#[repr(u8)]
 enum D {
     d1 = 0,
     d2 = 2,
@@ -35,7 +35,7 @@ enum D {
     d4 = 5,
 }
 
-#[repr(isize)]
+#[repr(usize)]
 enum E {
     e1 = 0,
     e2 = 2,
@@ -43,56 +43,64 @@ enum E {
     e4 = 5,
 }
 
-#[repr(u8)]
+#[repr(isize)]
 enum F {
+    f1 = 0,
+    f2 = 2,
+    f3,
+    f4 = 5,
+}
+
+#[repr(u8)]
+enum G {
     Foo(i16),
     Bar { x: u8, y: i16 },
-    Baz
+    Baz,
 }
 
 /// cbindgen:prefix-with-name
 #[repr(C)]
-enum G {
+enum H {
     Foo(i16),
     Bar { x: u8, y: i16 },
-    Baz
+    Baz,
 }
 
 /// cbindgen:prefix-with-name
 #[repr(C, u8)]
-enum H {
-    Foo(i16),
-    Bar { x: u8, y: i16 },
-    Baz
-}
-
-#[repr(C, u8, u16)]
 enum I {
     Foo(i16),
     Bar { x: u8, y: i16 },
-    Baz
+    Baz,
 }
 
-#[repr(C, u8, unknown_hint)]
+#[repr(C, u8, u16)]
 enum J {
     Foo(i16),
     Bar { x: u8, y: i16 },
-    Baz
+    Baz,
+}
+
+#[repr(C, u8, unknown_hint)]
+enum K {
+    Foo(i16),
+    Bar { x: u8, y: i16 },
+    Baz,
 }
 
 #[repr(C)]
-enum K {
-    k1,
-    k2,
-    k3,
-    k4,
+enum L {
+    l1,
+    l2,
+    l3,
+    l4,
 }
 
 #[repr(i8)]
-enum L {
-    l1 = -1,
-    l2 = 0,
-    l3 = 1,
+enum M {
+    m1 = -1,
+    m2 = 0,
+    m3 = 1,
 }
 
 #[no_mangle]
@@ -110,4 +118,6 @@ pub extern "C" fn root(
     j: J,
     k: K,
     l: L,
-) { }
+    m: M,
+) {
+}
