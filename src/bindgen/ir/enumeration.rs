@@ -494,10 +494,12 @@ impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         let size = self.repr.ty.map(|ty| match ty {
             ReprType::USize => "uintptr_t",
+            ReprType::U64 => "uint64_t",
             ReprType::U32 => "uint32_t",
             ReprType::U16 => "uint16_t",
             ReprType::U8 => "uint8_t",
             ReprType::ISize => "intptr_t",
+            ReprType::I64 => "int64_t",
             ReprType::I32 => "int32_t",
             ReprType::I16 => "int16_t",
             ReprType::I8 => "int8_t",

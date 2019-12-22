@@ -22,10 +22,12 @@ pub enum ReprType {
     U8,
     U16,
     U32,
+    U64,
     USize,
     I8,
     I16,
     I32,
+    I64,
     ISize,
 }
 
@@ -88,10 +90,12 @@ impl Repr {
                 ("u8", None) => ReprType::U8,
                 ("u16", None) => ReprType::U16,
                 ("u32", None) => ReprType::U32,
+                ("u64", None) => ReprType::U64,
                 ("usize", None) => ReprType::USize,
                 ("i8", None) => ReprType::I8,
                 ("i16", None) => ReprType::I16,
                 ("i32", None) => ReprType::I32,
+                ("i64", None) => ReprType::I64,
                 ("isize", None) => ReprType::ISize,
                 ("C", None) => {
                     repr.style = ReprStyle::C;
