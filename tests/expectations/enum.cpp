@@ -58,6 +58,20 @@ enum class M : int8_t {
   m3 = 1,
 };
 
+enum N {
+  n1,
+  n2,
+  n3,
+  n4,
+};
+
+enum O : int8_t {
+  o1,
+  o2,
+  o3,
+  o4,
+};
+
 struct J;
 
 struct K;
@@ -137,6 +151,21 @@ struct I {
 
 extern "C" {
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m);
+void root(Opaque *opaque,
+          A a,
+          B b,
+          C c,
+          D d,
+          E e,
+          F f,
+          G g,
+          H h,
+          I i,
+          J j,
+          K k,
+          L l,
+          M m,
+          N n,
+          O o);
 
 } // extern "C"
