@@ -107,6 +107,27 @@ enum M
 typedef int8_t M;
 #endif // __cplusplus
 
+enum N {
+  n1,
+  n2,
+  n3,
+  n4,
+};
+
+enum O
+#ifdef __cplusplus
+  : int8_t
+#endif // __cplusplus
+ {
+  o1,
+  o2,
+  o3,
+  o4,
+};
+#ifndef __cplusplus
+typedef int8_t O;
+#endif // __cplusplus
+
 struct J;
 
 struct K;
@@ -200,7 +221,7 @@ struct I {
 extern "C" {
 #endif // __cplusplus
 
-void root(struct Opaque *o,
+void root(struct Opaque *opaque,
           A a,
           B b,
           C c,
@@ -213,7 +234,9 @@ void root(struct Opaque *o,
           struct J j,
           struct K k,
           enum L l,
-          M m);
+          M m,
+          enum N n,
+          O o);
 
 #ifdef __cplusplus
 } // extern "C"

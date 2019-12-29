@@ -269,6 +269,7 @@ The rest are just local overrides for the same options found in the cbindgen.tom
 * derive-mut-casts
 * derive-tagged-enum-destructor
 * derive-tagged-enum-copy-constructor
+* enum-class
 * prefix-with-name
 * private-default-tagged-enum-constructor
 
@@ -671,6 +672,10 @@ add_sentinel = false
 # Whether enum variant names should be prefixed with the name of the enum.
 # default: false
 prefix_with_name = false
+
+# Whether to emit enums using "enum class" when targeting C++.
+# default: true
+enum_class = true
 
 # Whether to generate static `::MyVariant(..)` constructors and `bool IsMyVariant()`
 # methods for enums with fields.

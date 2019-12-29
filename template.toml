@@ -103,6 +103,7 @@ derive_mut_casts = false
 # cast_assert_name = "ASSERT"
 derive_tagged_enum_destructor = false
 derive_tagged_enum_copy_constructor = false
+enum_class = true
 private_default_tagged_enum_constructor = false
 
 

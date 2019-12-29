@@ -559,7 +559,11 @@ impl Source for Enum {
                 }
             }
         } else {
-            out.write("enum class");
+            if config.enumeration.enum_class(&self.annotations) {
+                out.write("enum class");
+            } else {
+                out.write("enum");
+            }
 
             if self.annotations.must_use {
                 if let Some(ref anno) = config.enumeration.must_use {

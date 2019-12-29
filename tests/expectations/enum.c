@@ -65,6 +65,21 @@ enum M {
 };
 typedef int8_t M;
 
+typedef enum {
+  n1,
+  n2,
+  n3,
+  n4,
+} N;
+
+enum O {
+  o1,
+  o2,
+  o3,
+  o4,
+};
+typedef int8_t O;
+
 typedef struct J J;
 
 typedef struct K K;
@@ -142,4 +157,19 @@ typedef struct {
   };
 } I;
 
-void root(Opaque *o, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m);
+void root(Opaque *opaque,
+          A a,
+          B b,
+          C c,
+          D d,
+          E e,
+          F f,
+          G g,
+          H h,
+          I i,
+          J j,
+          K k,
+          L l,
+          M m,
+          N n,
+          O o);

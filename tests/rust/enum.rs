@@ -103,9 +103,27 @@ enum M {
     m3 = 1,
 }
 
+/// cbindgen:enum-class=false
+#[repr(C)]
+enum N {
+    n1,
+    n2,
+    n3,
+    n4,
+}
+
+/// cbindgen:enum-class=false
+#[repr(i8)]
+enum O {
+    o1,
+    o2,
+    o3,
+    o4,
+}
+
 #[no_mangle]
 pub extern "C" fn root(
-    o: *mut Opaque,
+    opaque: *mut Opaque,
     a: A,
     b: B,
     c: C,
@@ -119,5 +137,7 @@ pub extern "C" fn root(
     k: K,
     l: L,
     m: M,
+    n: N,
+    o: O,
 ) {
 }

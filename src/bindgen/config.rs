@@ -391,7 +391,7 @@ impl StructConfig {
 }
 
 /// Settings to apply to generated enums.
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
@@ -425,9 +425,32 @@ pub struct EnumConfig {
     /// This is only generated if a copy constructor for the same tagged enum is
     /// generated as well.
     pub derive_tagged_enum_copy_assignment: bool,
+    /// Declare the enum as an enum class.
+    /// Only relevant when targeting C++.
+    pub enum_class: bool,
     /// Whether to generate empty, private default-constructors for tagged
     /// enums.
     pub private_default_tagged_enum_constructor: bool,
+}
+
+impl Default for EnumConfig {
+    fn default() -> EnumConfig {
+        EnumConfig {
+            rename_variants: None,
+            add_sentinel: false,
+            prefix_with_name: false,
+            derive_helper_methods: false,
+            derive_const_casts: false,
+            derive_mut_casts: false,
+            cast_assert_name: None,
+            must_use: None,
+            derive_tagged_enum_destructor: false,
+            derive_tagged_enum_copy_constructor: false,
+            derive_tagged_enum_copy_assignment: false,
+            enum_class: true,
+            private_default_tagged_enum_constructor: false,
+        }
+    }
 }
 
 impl EnumConfig {
@@ -472,6 +495,12 @@ impl EnumConfig {
             return x;
         }
         self.derive_tagged_enum_copy_assignment
+    }
+    pub(crate) fn enum_class(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("enum-class") {
+            return x;
+        }
+        self.enum_class
     }
     pub(crate) fn private_default_tagged_enum_constructor(
         &self,
