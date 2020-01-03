@@ -135,6 +135,26 @@ impl Cargo {
             .map(|dep| {
                 let (dep_name, dep_version) = parse_dep_string(dep);
 
+                // If a version was not specified find the only package with the name of the dependency
+                let dep_version = dep_version.or_else(|| {
+                    let mut versions = self.metadata.packages.iter().filter_map(|package| {
+                        if package.name_and_version.name != dep_name {
+                            return None;
+                        }
+                        package.name_and_version.version.as_ref().map(|v| v.as_str())
+                    });
+
+                    // If the iterator contains more items, meaning multiple versions of the same
+                    // package are present, warn! amd abort.
+                    let version = versions.next();
+                    if versions.next().is_none() {
+                        version
+                    } else {
+                        warn!("when looking for a version for package {}, multiple versions where found", dep_name);
+                        None
+                    }
+                });
+
                 // Try to find the cfgs in the Cargo.toml
                 let cfg = self
                     .metadata
