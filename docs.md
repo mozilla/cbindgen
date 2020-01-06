@@ -293,7 +293,15 @@ All function attributes are just local overrides for the same options found in t
 * prefix
 * postfix
 
+## Generating Swift Bindings
 
+In addition to parsing function names in C/C++ header files, the Swift compiler can make use of the `swift_name` attribute on functions to generate more idiomatic names for imported functions and methods.
+
+This attribute is commonly used in Objective-C/C/C++ via the `NS_SWIFT_NAME` and `CF_SWIFT_NAME` macros.
+
+Given configuration in the cbindgen.toml, `cbindgen` can generate these attributes for you by guessing an appropriate method signature based on the existing function name (and type, if it is a method in an `impl` block).
+
+This is controlled by the `swift_name_macro` option in the cbindgen.toml.
 
 
 ## cbindgen.toml
@@ -544,6 +552,13 @@ args = "horizontal"
 # platform-specific way. e.g. "MUST_USE_FUNC"
 # default: nothing is emitted for must_use functions
 must_use = "MUST_USE_FUNC"
+
+# An optional string that, if present, will be used to generate Swift function
+# and method signatures for generated functions, for example "CF_SWIFT_NAME".
+# If no such macro is available in your toolchain, you can define one using the
+# `header` option in cbindgen.toml
+# default: no swift_name function attributes are generated 
+swift_name_macro = "CF_SWIFT_NAME"
 
 # A rule to use to rename function argument names. The renaming assumes the input
 # is the Rust standard snake_case, however it accepts all the different rename_args

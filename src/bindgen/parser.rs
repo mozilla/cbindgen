@@ -465,6 +465,24 @@ impl Parse {
                     if has_assoc_const {
                         impls_with_assoc_consts.push(item_impl);
                     }
+
+                    if let syn::Type::Path(ref path) = *item_impl.self_ty {
+                        if let Some(type_name) = path.path.get_ident() {
+                            for method in item_impl.items.iter().filter_map(|item| match item {
+                                syn::ImplItem::Method(method) => Some(method),
+                                _ => None,
+                            }) {
+                                self.load_syn_method(
+                                    config,
+                                    binding_crate_name,
+                                    crate_name,
+                                    mod_cfg,
+                                    Path::new(type_name.to_string()),
+                                    method,
+                                )
+                            }
+                        }
+                    }
                 }
                 syn::Item::Macro(ref item) => {
                     self.load_builtin_macro(config, crate_name, mod_cfg, item)
@@ -523,7 +541,7 @@ impl Parse {
                     return;
                 }
                 let path = Path::new(function.sig.ident.to_string());
-                match Function::load(path, &function.sig, true, &function.attrs, mod_cfg) {
+                match Function::load(path, None, &function.sig, true, &function.attrs, mod_cfg) {
                     Ok(func) => {
                         info!("Take {}::{}.", crate_name, &function.sig.ident);
 
@@ -540,6 +558,29 @@ impl Parse {
         }
     }
 
+    /// Loads a `fn` declaration inside an `impl` block, if the type is a simple identifier
+    fn load_syn_method(
+        &mut self,
+        config: &Config,
+        binding_crate_name: &str,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        self_type: Path,
+        item: &syn::ImplItemMethod,
+    ) {
+        self.load_fn_declaration(
+            config,
+            binding_crate_name,
+            crate_name,
+            mod_cfg,
+            item,
+            Some(self_type),
+            &item.sig,
+            &item.vis,
+            &item.attrs,
+        )
+    }
+
     /// Loads a `fn` declaration
     fn load_syn_fn(
         &mut self,
@@ -549,64 +590,69 @@ impl Parse {
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemFn,
     ) {
+        self.load_fn_declaration(
+            config,
+            binding_crate_name,
+            crate_name,
+            mod_cfg,
+            item,
+            None,
+            &item.sig,
+            &item.vis,
+            &item.attrs,
+        );
+    }
+
+    fn load_fn_declaration(
+        &mut self,
+        config: &Config,
+        binding_crate_name: &str,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        named_symbol: &dyn SynItemFnHelpers,
+        self_type: Option<Path>,
+        sig: &syn::Signature,
+        vis: &syn::Visibility,
+        attrs: &[syn::Attribute],
+    ) {
         if !config
             .parse
             .should_generate_top_level_item(crate_name, binding_crate_name)
         {
             info!(
                 "Skip {}::{} - (fn's outside of the binding crate are not used).",
-                crate_name, &item.sig.ident
+                crate_name, &sig.ident
             );
             return;
         }
 
-        if let syn::Visibility::Public(_) = item.vis {
-            if item.sig.abi.is_omitted() || item.sig.abi.is_c() {
-                if let Some(exported_name) = item.exported_name() {
+        if let syn::Visibility::Public(_) = vis {
+            if sig.abi.is_omitted() || sig.abi.is_c() {
+                if let Some(exported_name) = named_symbol.exported_name() {
                     let path = Path::new(exported_name);
-                    match Function::load(path, &item.sig, false, &item.attrs, mod_cfg) {
+                    match Function::load(path, self_type, &sig, false, &attrs, mod_cfg) {
                         Ok(func) => {
-                            info!("Take {}::{}.", crate_name, &item.sig.ident);
-
+                            info!("Take {}::{}.", crate_name, &sig.ident);
                             self.functions.push(func);
                         }
                         Err(msg) => {
-                            error!(
-                                "Cannot use fn {}::{} ({}).",
-                                crate_name, &item.sig.ident, msg
-                            );
+                            error!("Cannot use fn {}::{} ({}).", crate_name, &sig.ident, msg);
                         }
                     }
-                    return;
+                } else {
+                    warn!(
+                        "Skipping {}::{} - (not `no_mangle`, and has no `export_name` attribute)",
+                        crate_name, &sig.ident
+                    );
                 }
+            } else {
+                warn!(
+                    "Skipping {}::{} - (not `extern \"C\"`",
+                    crate_name, &sig.ident
+                );
             }
-        }
-
-        // TODO
-        if let syn::Visibility::Public(_) = item.vis {
         } else {
-            warn!("Skip {}::{} - (not `pub`).", crate_name, &item.sig.ident);
-        }
-
-        if !(item.sig.abi.is_omitted() || item.sig.abi.is_c()) {
-            warn!(
-                "Skip {}::{} - (wrong ABI - not `extern` or `extern \"C\"`).",
-                crate_name, &item.sig.ident
-            );
-        }
-
-        if item.exported_name().is_none() {
-            warn!(
-                "Skip {}::{} - (not `no_mangle`, and has no `export_name` attribute)",
-                crate_name, &item.sig.ident
-            );
-        }
-
-        if item.sig.abi.is_some() && !(item.sig.abi.is_omitted() || item.sig.abi.is_c()) {
-            warn!(
-                "Skip {}::{} - (non `extern \"C\"`).",
-                crate_name, &item.sig.ident
-            );
+            warn!("Skipping {}::{} - (not `pub`)", crate_name, &sig.ident);
         }
     }
 

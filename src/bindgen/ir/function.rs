@@ -23,17 +23,20 @@ use crate::bindgen::writer::{Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct Function {
     pub path: Path,
+    pub self_type_path: Option<Path>,
     pub ret: Type,
     pub args: Vec<(String, Type)>,
     pub extern_decl: bool,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
+    pub attributes: Vec<String>,
 }
 
 impl Function {
     pub fn load(
         path: Path,
+        self_type_path: Option<Path>,
         sig: &syn::Signature,
         extern_decl: bool,
         attrs: &[syn::Attribute],
@@ -53,13 +56,50 @@ impl Function {
 
         Ok(Function {
             path,
+            self_type_path,
             ret,
             args,
             extern_decl,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
             documentation: Documentation::load(attrs),
+            attributes: Vec::new(),
         })
+    }
+
+    pub fn swift_name(&self) -> String {
+        // If the symbol name starts with the type name, separate the two components with '.'
+        // so that Swift recognises the association between the method and the type
+        let (ref type_prefix, ref type_name) = if let Some(type_name) = &self.self_type_path {
+            let type_name = type_name.to_string();
+            if !self.path.name().starts_with(&type_name) {
+                return self.path.to_string();
+            }
+            (format!("{}.", type_name), type_name)
+        } else {
+            ("".to_string(), "".to_string())
+        };
+
+        let item_name = self.path
+            .name()
+            .trim_start_matches(type_name)
+            .trim_start_matches('_');
+
+        let item_args = {
+            let mut items = vec![];
+            for (arg, _) in self.args.iter() {
+                match arg.as_str() {
+                    "self" => {
+                        items.push("self:".to_string());
+                    }
+                    other => {
+                        items.push(format!("{}:", other));
+                    }
+                }
+            }
+            items.join("")
+        };
+        format!("{}{}({})", type_prefix, item_name, item_args)
     }
 
     pub fn path(&self) -> &Path {
@@ -160,12 +200,22 @@ impl Source for Function {
                 }
             }
             cdecl::write_func(out, &func, false, void_prototype);
+
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.write(" ");
                     write!(out, "{}", postfix);
                 }
             }
+
+            if let Some(ref swift_name_macro) = config.function.swift_name_macro {
+                let swift_name = func.swift_name();
+                if !swift_name.is_empty() {
+                    out.write(" ");
+                    write!(out, "{}({})", swift_name_macro, func.swift_name());
+                }
+            }
+
             out.write(";");
 
             condition.write_after(config, out);
@@ -203,6 +253,15 @@ impl Source for Function {
                     write!(out, "{}", postfix);
                 }
             }
+
+            if let Some(ref swift_name_macro) = config.function.swift_name_macro {
+                let swift_name = func.swift_name();
+                if !swift_name.is_empty() {
+                    out.write(" ");
+                    write!(out, "{}({})", swift_name_macro, func.swift_name());
+                }
+            }
+
             out.write(";");
 
             condition.write_after(config, out);
