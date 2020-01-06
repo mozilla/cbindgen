@@ -17,7 +17,7 @@ use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
     OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
-use crate::bindgen::utilities::{SynAbiHelpers, SynItemHelpers};
+use crate::bindgen::utilities::{SynAbiHelpers, SynItemFnHelpers, SynItemHelpers};
 
 const STD_CRATES: &[&str] = &[
     "std",
@@ -561,22 +561,24 @@ impl Parse {
         }
 
         if let syn::Visibility::Public(_) = item.vis {
-            if item.is_no_mangle() && (item.sig.abi.is_omitted() || item.sig.abi.is_c()) {
-                let path = Path::new(item.sig.ident.to_string());
-                match Function::load(path, &item.sig, false, &item.attrs, mod_cfg) {
-                    Ok(func) => {
-                        info!("Take {}::{}.", crate_name, &item.sig.ident);
+            if item.sig.abi.is_omitted() || item.sig.abi.is_c() {
+                if let Some(exported_name) = item.exported_name() {
+                    let path = Path::new(exported_name);
+                    match Function::load(path, &item.sig, false, &item.attrs, mod_cfg) {
+                        Ok(func) => {
+                            info!("Take {}::{}.", crate_name, &item.sig.ident);
 
-                        self.functions.push(func);
+                            self.functions.push(func);
+                        }
+                        Err(msg) => {
+                            error!(
+                                "Cannot use fn {}::{} ({}).",
+                                crate_name, &item.sig.ident, msg
+                            );
+                        }
                     }
-                    Err(msg) => {
-                        error!(
-                            "Cannot use fn {}::{} ({}).",
-                            crate_name, &item.sig.ident, msg
-                        );
-                    }
+                    return;
                 }
-                return;
             }
         }
 
@@ -585,12 +587,21 @@ impl Parse {
         } else {
             warn!("Skip {}::{} - (not `pub`).", crate_name, &item.sig.ident);
         }
-        if (item.sig.abi.is_omitted() || item.sig.abi.is_c()) && !item.is_no_mangle() {
+
+        if !(item.sig.abi.is_omitted() || item.sig.abi.is_c()) {
             warn!(
-                "Skip {}::{} - (`extern` but not `no_mangle`).",
+                "Skip {}::{} - (wrong ABI - not `extern` or `extern \"C\"`).",
                 crate_name, &item.sig.ident
             );
         }
+
+        if item.exported_name().is_none() {
+            warn!(
+                "Skip {}::{} - (not `no_mangle`, and has no `export_name` attribute)",
+                crate_name, &item.sig.ident
+            );
+        }
+
         if item.sig.abi.is_some() && !(item.sig.abi.is_omitted() || item.sig.abi.is_c()) {
             warn!(
                 "Skip {}::{} - (non `extern \"C\"`).",

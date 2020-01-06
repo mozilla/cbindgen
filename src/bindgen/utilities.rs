@@ -39,6 +39,24 @@ pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
     None
 }
 
+pub trait SynItemFnHelpers: SynItemHelpers {
+    fn exported_name(&self) -> Option<String>;
+}
+
+impl SynItemFnHelpers for syn::ItemFn {
+    fn exported_name(&self) -> Option<String> {
+        self.attrs
+            .attr_name_value_lookup("export_name")
+            .or_else(|| {
+                if self.is_no_mangle() {
+                    Some(self.sig.ident.to_string())
+                } else {
+                    None
+                }
+            })
+    }
+}
+
 pub trait SynItemHelpers {
     /// Searches for attributes like `#[test]`.
     /// Example:
@@ -190,6 +208,7 @@ pub trait SynAttributeHelpers {
     fn has_attr_word(&self, name: &str) -> bool;
     fn has_attr_list(&self, name: &str, args: &[&str]) -> bool;
     fn has_attr_name_value(&self, name: &str, value: &str) -> bool;
+    fn attr_name_value_lookup(&self, name: &str) -> Option<String>;
 }
 
 impl SynAttributeHelpers for [syn::Attribute] {
@@ -225,17 +244,28 @@ impl SynAttributeHelpers for [syn::Attribute] {
     }
 
     fn has_attr_name_value(&self, name: &str, value: &str) -> bool {
-        self.iter().filter_map(|x| x.parse_meta().ok()).any(|attr| {
-            if let syn::Meta::NameValue(syn::MetaNameValue { path, lit, .. }) = attr {
-                if let syn::Lit::Str(lit) = lit {
-                    path.is_ident(name) && (&lit.value() == value)
-                } else {
-                    false
+        self.attr_name_value_lookup(name)
+            .filter(|actual_value| actual_value == value)
+            .is_some()
+    }
+
+    fn attr_name_value_lookup(&self, name: &str) -> Option<String> {
+        self.iter()
+            .filter_map(|x| x.parse_meta().ok())
+            .filter_map(|attr| {
+                if let syn::Meta::NameValue(syn::MetaNameValue {
+                    path,
+                    lit: syn::Lit::Str(lit),
+                    ..
+                }) = attr
+                {
+                    if path.is_ident(name) {
+                        return Some(lit.value());
+                    }
                 }
-            } else {
-                false
-            }
-        })
+                None
+            })
+            .next()
     }
 
     fn get_comment_lines(&self) -> Vec<String> {
