@@ -57,6 +57,20 @@ impl SynItemFnHelpers for syn::ItemFn {
     }
 }
 
+impl SynItemFnHelpers for syn::ImplItemMethod {
+    fn exported_name(&self) -> Option<String> {
+        self.attrs
+            .attr_name_value_lookup("export_name")
+            .or_else(|| {
+                if self.is_no_mangle() {
+                    Some(self.sig.ident.to_string())
+                } else {
+                    None
+                }
+            })
+    }
+}
+
 pub trait SynItemHelpers {
     /// Searches for attributes like `#[test]`.
     /// Example:
@@ -138,6 +152,7 @@ impl_syn_item_helper!(syn::ItemUse);
 impl_syn_item_helper!(syn::ItemStatic);
 impl_syn_item_helper!(syn::ItemConst);
 impl_syn_item_helper!(syn::ItemFn);
+impl_syn_item_helper!(syn::ImplItemMethod);
 impl_syn_item_helper!(syn::ItemMod);
 impl_syn_item_helper!(syn::ItemForeignMod);
 impl_syn_item_helper!(syn::ItemType);

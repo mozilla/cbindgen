@@ -279,12 +279,14 @@ pub struct FunctionConfig {
     pub prefix: Option<String>,
     /// Optional text to output after each function declaration
     pub postfix: Option<String>,
-    /// The way to annotation this function as #[must_use].
+    /// The way to annotation this function as #[must_use]
     pub must_use: Option<String>,
     /// The style to layout the args
     pub args: Layout,
     /// The rename rule to apply to function args
     pub rename_args: Option<RenameRule>,
+    /// An optional macro to use when generating Swift function name attributes
+    pub swift_name_macro: Option<String>,
 }
 
 impl Default for FunctionConfig {
@@ -295,6 +297,7 @@ impl Default for FunctionConfig {
             must_use: None,
             args: Layout::Auto,
             rename_args: None,
+            swift_name_macro: None,
         }
     }
 }
