@@ -68,11 +68,6 @@ pub trait SynItemHelpers {
     /// - `item.has_attr_list("cfg", &["test"])` => `#[cfg(test)]`
     fn has_attr_list(&self, name: &str, args: &[&str]) -> bool;
 
-    /// Searches for attributes like `#[feature = "std"]`.
-    /// Example:
-    /// - `item.has_attr_name_value("feature", "std")` => `#[feature = "std"]`
-    fn has_attr_name_value(&self, name: &str, value: &str) -> bool;
-
     fn is_no_mangle(&self) -> bool {
         self.has_attr_word("no_mangle")
     }
@@ -122,13 +117,6 @@ impl SynItemHelpers for syn::Item {
             otherwise: || { false }
         )
     }
-
-    fn has_attr_name_value(&self, name: &str, value: &str) -> bool {
-        syn_item_match_helper!(self =>
-            has_attrs: |item| { item.has_attr_name_value(name, value) },
-            otherwise: || { false }
-        )
-    }
 }
 
 macro_rules! impl_syn_item_helper {
@@ -140,10 +128,6 @@ macro_rules! impl_syn_item_helper {
 
             fn has_attr_list(&self, name: &str, args: &[&str]) -> bool {
                 self.attrs.has_attr_list(name, args)
-            }
-
-            fn has_attr_name_value(&self, name: &str, value: &str) -> bool {
-                self.attrs.has_attr_name_value(name, value)
             }
         }
     };
@@ -207,7 +191,6 @@ pub trait SynAttributeHelpers {
     fn get_comment_lines(&self) -> Vec<String>;
     fn has_attr_word(&self, name: &str) -> bool;
     fn has_attr_list(&self, name: &str, args: &[&str]) -> bool;
-    fn has_attr_name_value(&self, name: &str, value: &str) -> bool;
     fn attr_name_value_lookup(&self, name: &str) -> Option<String>;
 }
 
@@ -243,16 +226,10 @@ impl SynAttributeHelpers for [syn::Attribute] {
         })
     }
 
-    fn has_attr_name_value(&self, name: &str, value: &str) -> bool {
-        self.attr_name_value_lookup(name)
-            .filter(|actual_value| actual_value == value)
-            .is_some()
-    }
-
     fn attr_name_value_lookup(&self, name: &str) -> Option<String> {
         self.iter()
-            .filter_map(|x| x.parse_meta().ok())
             .filter_map(|attr| {
+                let attr = attr.parse_meta().ok()?;
                 if let syn::Meta::NameValue(syn::MetaNameValue {
                     path,
                     lit: syn::Lit::Str(lit),
