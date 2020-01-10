@@ -626,33 +626,40 @@ impl Parse {
             return;
         }
 
+        let loggable_item_name = {
+            let mut items = vec![];
+            items.push(crate_name.to_owned());
+            if let Some(ref self_type) = self_type {
+                items.push(self_type.to_string());
+            }
+            items.push(sig.ident.to_string());
+            items.join("::")
+        };
+
         if let syn::Visibility::Public(_) = vis {
             if sig.abi.is_omitted() || sig.abi.is_c() {
                 if let Some(exported_name) = named_symbol.exported_name() {
                     let path = Path::new(exported_name);
                     match Function::load(path, self_type, &sig, false, &attrs, mod_cfg) {
                         Ok(func) => {
-                            info!("Take {}::{}.", crate_name, &sig.ident);
+                            info!("Take {}.", loggable_item_name);
                             self.functions.push(func);
                         }
                         Err(msg) => {
-                            error!("Cannot use fn {}::{} ({}).", crate_name, &sig.ident, msg);
+                            error!("Cannot use fn {} ({}).", loggable_item_name, msg);
                         }
                     }
                 } else {
                     warn!(
-                        "Skipping {}::{} - (not `no_mangle`, and has no `export_name` attribute)",
-                        crate_name, &sig.ident
+                        "Skipping {} - (not `no_mangle`, and has no `export_name` attribute)",
+                        loggable_item_name
                     );
                 }
             } else {
-                warn!(
-                    "Skipping {}::{} - (not `extern \"C\"`",
-                    crate_name, &sig.ident
-                );
+                warn!("Skipping {} - (not `extern \"C\"`", loggable_item_name);
             }
         } else {
-            warn!("Skipping {}::{} - (not `pub`)", crate_name, &sig.ident);
+            warn!("Skipping {} - (not `pub`)", loggable_item_name);
         }
     }
 

@@ -5,18 +5,49 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-struct Foo;
+struct Box_SelfTypeTestStruct;
 
-struct FooRef {
-  struct Foo *ptr;
+struct Opaque;
+
+struct PointerToOpaque {
+  struct Opaque *ptr;
 };
 
-struct FooRef FooRef_create(void) CF_SWIFT_NAME(FooRef.create());
+struct SelfTypeTestStruct {
+  uint8_t times;
+};
 
-int32_t FooRef_doThing(struct FooRef self) /*a comment!*/ CF_SWIFT_NAME(FooRef.doThing(self:));
+struct PointerToOpaque PointerToOpaque_create(uint8_t times) CF_SWIFT_NAME(PointerToOpaque.create(times:));
 
-int32_t FooRef_getBar(struct FooRef self) CF_SWIFT_NAME(FooRef.getBar(self:));
+void PointerToOpaque_sayHello(struct PointerToOpaque self)
+/*a comment!*/ CF_SWIFT_NAME(PointerToOpaque.sayHello(self:));
 
-void FooRef_setBar(struct FooRef self, int32_t bar) CF_SWIFT_NAME(FooRef.setBar(self:bar:));
+void SelfTypeTestStruct_should_exist_annotated_by_name(struct SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_annotated_by_name(self:));
 
-void do_the_thing(void) CF_SWIFT_NAME(do_the_thing());
+void SelfTypeTestStruct_should_exist_annotated_mut_by_name(struct SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_annotated_mut_by_name(self:));
+
+void SelfTypeTestStruct_should_exist_annotated_mut_self(struct SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_annotated_mut_self(self:));
+
+void SelfTypeTestStruct_should_exist_annotated_self(struct SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_annotated_self(self:));
+
+void SelfTypeTestStruct_should_exist_mut_unannotated(struct SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_mut_unannotated(self:));
+
+void SelfTypeTestStruct_should_exist_ref(const struct SelfTypeTestStruct *self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_ref(self:));
+
+void SelfTypeTestStruct_should_exist_ref_mut(struct SelfTypeTestStruct *self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_ref_mut(self:));
+
+void SelfTypeTestStruct_should_exist_unannotated(struct SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_unannotated(self:));
+
+void SelfTypeTestStruct_should_not_exist_box(struct Box_SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_not_exist_box(self:));
+
+void free_function_should_exist_annotated_by_name(struct SelfTypeTestStruct test_struct) CF_SWIFT_NAME(free_function_should_exist_annotated_by_name(test_struct:));
+
+void free_function_should_exist_annotated_mut_by_name(struct SelfTypeTestStruct test_struct) CF_SWIFT_NAME(free_function_should_exist_annotated_mut_by_name(test_struct:));
+
+void free_function_should_exist_ref(const struct SelfTypeTestStruct *test_struct) CF_SWIFT_NAME(free_function_should_exist_ref(test_struct:));
+
+void free_function_should_exist_ref_mut(struct SelfTypeTestStruct *test_struct) CF_SWIFT_NAME(free_function_should_exist_ref_mut(test_struct:));
+
+void free_function_should_not_exist_box(struct Box_SelfTypeTestStruct boxed) CF_SWIFT_NAME(free_function_should_not_exist_box(boxed:));
+
+void rust_print_hello_world(void) CF_SWIFT_NAME(rust_print_hello_world());

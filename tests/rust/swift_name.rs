@@ -1,46 +1,123 @@
-use std::sync::Arc;
-
-struct Foo {
-  bar: i32,
+#[export_name="rust_print_hello_world"]
+pub extern fn say_hello() {
+  println!("Hello, World!");
 }
 
 #[repr(C)]
-struct FooRef {
-  ptr: *mut Foo
+pub struct SelfTypeTestStruct {
+  times: u8,
 }
 
-impl FooRef {
-  #[export_name="FooRef_create"]
-  pub extern fn create() -> FooRef {
-    Box::into_raw(Box::new(Foo {
-      bar: 0
-    }))
+impl SelfTypeTestStruct {
+  #[export_name="SelfTypeTestStruct_should_exist_ref"]
+  #[no_mangle]
+  pub extern fn should_exist_ref(&self) {
+    println!("should_exist_ref");
   }
 
-  #[export_name="FooRef_setBar"]
-  pub extern fn set_bar(self: FooRef, bar: i32) {
-    if let Some(nonnull) = std::ptr::NonNull::new(self.ptr) {
-      nonnull.as_mut().bar = bar;
-    }
+  #[export_name="SelfTypeTestStruct_should_exist_ref_mut"]
+  #[no_mangle]
+  pub extern fn should_exist_ref_mut(&mut self) {
+    println!("should_exist_ref_mut");
   }
 
-  #[export_name="FooRef_getBar"]
-  pub extern fn get_bar(self: FooRef) -> i32 {
-    if let Some(nonnull) = std::ptr::NonNull::new(self.ptr) {
-      nonnull.as_ref().bar
-    }
+  #[export_name="SelfTypeTestStruct_should_not_exist_box"]
+  #[no_mangle]
+  pub extern fn should_not_exist_box(self: Box<SelfTypeTestStruct>) {
+    println!("should_not_exist_box");
   }
 
-  /// cbindgen:postfix=/*a comment!*/
-  #[export_name="FooRef_doThing"]
-  pub extern fn do_thing(self: FooRef) -> i32 {
-    if let Some(nonnull) = std::ptr::NonNull::new(self.ptr) {
-      nonnull.as_ref().bar
-    }
+  #[export_name="SelfTypeTestStruct_should_exist_annotated_self"]
+  #[no_mangle]
+  pub extern fn should_exist_annotated_self(self: Self) {
+    println!("should_exist_annotated_self");
+  }
+
+  #[export_name="SelfTypeTestStruct_should_exist_annotated_mut_self"]
+  #[no_mangle]
+  #[allow(unused_mut)]
+  pub extern fn should_exist_annotated_mut_self(mut self: Self) {
+    println!("should_exist_annotated_mut_self");
+  }
+
+  #[export_name="SelfTypeTestStruct_should_exist_annotated_by_name"]
+  #[no_mangle]
+  pub extern fn should_exist_annotated_by_name(self: SelfTypeTestStruct) {
+    println!("should_exist_annotated_by_name");
+  }
+
+  #[export_name="SelfTypeTestStruct_should_exist_annotated_mut_by_name"]
+  #[no_mangle]
+  #[allow(unused_mut)]
+  pub extern fn should_exist_annotated_mut_by_name(mut self: SelfTypeTestStruct) {
+    println!("should_exist_annotated_mut_by_name");
+  }
+
+  #[export_name="SelfTypeTestStruct_should_exist_unannotated"]
+  #[no_mangle]
+  pub extern fn should_exist_unannotated(self) {
+    println!("should_exist_unannotated");
+  }
+
+  #[export_name="SelfTypeTestStruct_should_exist_mut_unannotated"]
+  #[no_mangle]
+  #[allow(unused_mut)]
+  pub extern fn should_exist_mut_unannotated(mut self) {
+    println!("should_exist_mut_unannotated");
   }
 }
 
 #[no_mangle]
-pub extern fn do_the_thing() {
+#[allow(unused_variables)]
+pub extern fn free_function_should_exist_ref(test_struct: &SelfTypeTestStruct) {
+  println!("free_function_should_exist_ref");
+}
 
+#[no_mangle]
+#[allow(unused_variables)]
+pub extern fn free_function_should_exist_ref_mut(test_struct: &mut SelfTypeTestStruct) {
+  println!("free_function_should_exist_ref_mut");
+}
+
+#[no_mangle]
+#[allow(unused_variables)]
+pub extern fn free_function_should_not_exist_box(boxed: Box<SelfTypeTestStruct>) {
+  println!("free_function_should_not_exist_box");
+}
+
+#[no_mangle]
+#[allow(unused_variables)]
+pub extern fn free_function_should_exist_annotated_by_name(test_struct: SelfTypeTestStruct) {
+  println!("free_function_should_exist_annotated_by_name");
+}
+
+#[no_mangle]
+#[allow(unused_mut)]
+#[allow(unused_variables)]
+pub extern fn free_function_should_exist_annotated_mut_by_name(mut test_struct: SelfTypeTestStruct) {
+  println!("free_function_should_exist_annotated_mut_by_name");
+}
+
+struct Opaque {
+  times: u8
+}
+
+#[repr(C)]
+pub struct PointerToOpaque { ptr: *mut Opaque }
+
+impl PointerToOpaque {
+  #[export_name="PointerToOpaque_create"]
+  pub extern fn create(times: u8) -> PointerToOpaque {
+    PointerToOpaque { ptr: Box::into_raw(Box::new(Opaque { times })) }
+  }
+
+  /// cbindgen:postfix=/*a comment!*/
+  #[export_name="PointerToOpaque_sayHello"]
+  pub extern fn say_hello(self: PointerToOpaque) {
+    if let Some(nonnull) = std::ptr::NonNull::new(self.ptr) {
+      for _ in 0 .. unsafe { nonnull.as_ref().times } {
+        println!("Hello!")
+      }
+    }
+  }
 }

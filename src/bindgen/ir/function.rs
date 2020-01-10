@@ -23,6 +23,8 @@ use crate::bindgen::writer::{Source, SourceWriter};
 #[derive(Debug, Clone)]
 pub struct Function {
     pub path: Path,
+    /// Path to the self-type of the function
+    /// If the function is a method, this will contain the path of the type in the impl block
     pub self_type_path: Option<Path>,
     pub ret: Type,
     pub args: Vec<(String, Type)>,
@@ -30,7 +32,6 @@ pub struct Function {
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
-    pub attributes: Vec<String>,
 }
 
 impl Function {
@@ -42,7 +43,10 @@ impl Function {
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
-        let args = sig.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
+        let args = sig
+            .inputs
+            .iter()
+            .try_skip_map(|x| x.as_ident_and_type(self_type_path.as_ref()))?;
         let ret = match sig.output {
             syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
             syn::ReturnType::Type(_, ref ty) => {
@@ -63,7 +67,6 @@ impl Function {
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
             documentation: Documentation::load(attrs),
-            attributes: Vec::new(),
         })
     }
 
@@ -80,7 +83,8 @@ impl Function {
             ("".to_string(), "".to_string())
         };
 
-        let item_name = self.path
+        let item_name = self
+            .path
             .name()
             .trim_start_matches(type_name)
             .trim_start_matches('_');
@@ -88,14 +92,7 @@ impl Function {
         let item_args = {
             let mut items = vec![];
             for (arg, _) in self.args.iter() {
-                match arg.as_str() {
-                    "self" => {
-                        items.push("self:".to_string());
-                    }
-                    other => {
-                        items.push(format!("{}:", other));
-                    }
-                }
+                items.push(format!("{}:", arg.as_str()));
             }
             items.join("")
         };
@@ -203,17 +200,12 @@ impl Source for Function {
 
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
-                    out.write(" ");
-                    write!(out, "{}", postfix);
+                    write!(out, " {}", postfix);
                 }
             }
 
             if let Some(ref swift_name_macro) = config.function.swift_name_macro {
-                let swift_name = func.swift_name();
-                if !swift_name.is_empty() {
-                    out.write(" ");
-                    write!(out, "{}({})", swift_name_macro, func.swift_name());
-                }
+                write!(out, " {}({})", swift_name_macro, func.swift_name());
             }
 
             out.write(";");
@@ -255,11 +247,7 @@ impl Source for Function {
             }
 
             if let Some(ref swift_name_macro) = config.function.swift_name_macro {
-                let swift_name = func.swift_name();
-                if !swift_name.is_empty() {
-                    out.write(" ");
-                    write!(out, "{}({})", swift_name_macro, func.swift_name());
-                }
+                write!(out, " {}({})", swift_name_macro, func.swift_name());
             }
 
             out.write(";");
@@ -280,17 +268,46 @@ impl Source for Function {
 }
 
 pub trait SynFnArgHelpers {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String>;
+    fn as_ident_and_type(
+        &self,
+        self_type_path: Option<&Path>,
+    ) -> Result<Option<(String, Type)>, String>;
+}
+
+fn gen_self_type(self_type_path: &Path, receiver: &syn::Receiver) -> Result<Option<Type>, String> {
+    fn _gen_self_type(
+        self_type_path: &Path,
+        receiver: &syn::Receiver,
+    ) -> Result<syn::Type, syn::Error> {
+        Ok(match receiver.reference {
+            Some(_) => syn::Type::Reference(match receiver.mutability {
+                Some(_) => syn::parse_str(&format!("&mut {}", self_type_path))?,
+                None => syn::parse_str(&format!("&{}", self_type_path))?,
+            }),
+            None => syn::Type::Path(syn::parse_str(self_type_path.name())?),
+        })
+    }
+
+    Type::load(&Box::new(
+        _gen_self_type(self_type_path, receiver)
+            .map_err(|e| format!("Failed to generate self type: {}", e))?,
+    ))
 }
 
 impl SynFnArgHelpers for syn::FnArg {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
+    fn as_ident_and_type(
+        &self,
+        self_type_path: Option<&Path>,
+    ) -> Result<Option<(String, Type)>, String> {
         match self {
             &syn::FnArg::Typed(syn::PatType {
                 ref pat, ref ty, ..
             }) => match **pat {
                 syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
-                    if let Some(x) = Type::load(ty)? {
+                    if let Some(mut x) = Type::load(ty)? {
+                        if let Some(self_type_path) = self_type_path {
+                            x.replace_self_with(self_type_path)
+                        }
                         Ok(Some((ident.to_string(), x)))
                     } else {
                         Ok(None)
@@ -298,7 +315,20 @@ impl SynFnArgHelpers for syn::FnArg {
                 }
                 _ => Err("Parameter has an unsupported type.".to_owned()),
             },
-            _ => Err("Parameter has an unsupported type.".to_owned()),
+            &syn::FnArg::Receiver(ref receiver) => {
+                if let Some(self_type_path) = self_type_path {
+                    if let Some(x) = gen_self_type(self_type_path, receiver)? {
+                        Ok(Some(("self".to_string(), x)))
+                    } else {
+                        Ok(None)
+                    }
+                } else {
+                    Err(
+                        "Parameter has an unsupported type (Self type found in free function)"
+                            .to_owned(),
+                    )
+                }
+            }
         }
     }
 }
