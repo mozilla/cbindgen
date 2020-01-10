@@ -1,3 +1,8 @@
+## 0.12.2
+
+     * Fixed version detection with lockfile v2. https://github.com/eqrion/cbindgen/pull/446
+     * Added support for export_name on functions. https://github.com/eqrion/cbindgen/pull/447
+
 ## 0.12.1
 
      * Added support for #[repr*64)] on enums. https://github.com/eqrion/cbindgen/pull/441
