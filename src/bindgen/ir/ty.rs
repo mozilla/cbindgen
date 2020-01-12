@@ -389,6 +389,7 @@ impl Type {
         generic.simplify_standard_types();
 
         match path.name() {
+            "Box" => Some(Type::Ptr(Box::new(generic))),
             // FIXME(#223): This is not quite correct.
             "Option" if generic.is_repr_ptr() => Some(generic),
             "NonNull" => Some(Type::Ptr(Box::new(generic))),
