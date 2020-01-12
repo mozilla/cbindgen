@@ -19,7 +19,7 @@
   int32_t extra_member; // yolo
 """
 
-[export.body_prepend]
+[export.pre_body]
 "MyFancyStruct_Prepended" = """
 #ifdef __cplusplus
   inline void prepended_wohoo();

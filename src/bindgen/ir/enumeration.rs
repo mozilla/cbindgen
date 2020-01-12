@@ -645,7 +645,7 @@ impl Source for Enum {
             }
 
             // Emit the body_prepend section, if relevant
-            if let Some(body) = config.export.body_prepend(&self.path) {
+            if let Some(body) = config.export.pre_body(&self.path) {
                 out.write_raw_block(body);
                 out.new_line();
             }
@@ -1015,7 +1015,7 @@ impl Source for Enum {
             }
 
             // Emit the body_append section, if relevant
-            if let Some(body) = config.export.body_append(&self.path) {
+            if let Some(body) = config.export.post_body(&self.path) {
                 out.new_line();
                 out.write_raw_block(body);
             }

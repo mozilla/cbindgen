@@ -491,7 +491,7 @@ renaming_overrides_prefixing = true
 # Table of things to prepend to the body of any struct, union, or enum that has the
 # given name. This can be used to add things like methods which don't change ABI,
 # mark fields private, etc
-[export.body_prepend]
+[export.pre_body]
 "MyType" = """
   MyType() = delete;
 private:

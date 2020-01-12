@@ -452,8 +452,8 @@ impl Source for Struct {
 
         out.open_brace();
 
-        // Emit the body_prepend section, if relevant
-        if let Some(body) = config.export.body_prepend(&self.path) {
+        // Emit the pre_body section, if relevant
+        if let Some(body) = config.export.pre_body(&self.path) {
             out.write_raw_block(body);
             out.new_line();
         }
@@ -607,7 +607,7 @@ impl Source for Struct {
         }
 
         // Emit the body_append section, if relevant
-        if let Some(body) = config.export.body_append(&self.path) {
+        if let Some(body) = config.export.post_body(&self.path) {
             out.new_line();
             out.write_raw_block(body);
         }
