@@ -232,9 +232,7 @@ impl ExportConfig {
     }
 
     pub(crate) fn pre_body(&self, path: &Path) -> Option<&str> {
-        self.pre_body
-            .get(path.name())
-            .map(|s| s.trim_matches('\n'))
+        self.pre_body.get(path.name()).map(|s| s.trim_matches('\n'))
     }
 
     pub(crate) fn post_body(&self, path: &Path) -> Option<&str> {
