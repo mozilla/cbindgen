@@ -577,8 +577,6 @@ impl Source for Enum {
             }
         }
         out.open_brace();
-
-        // Emit variants
         for (i, variant) in self.variants.iter().enumerate() {
             if i != 0 {
                 out.new_line()
