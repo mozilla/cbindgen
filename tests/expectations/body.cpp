@@ -61,6 +61,9 @@ struct MyFancyStruct_Prepended {
 };
 
 struct MyFancyEnum_Prepended {
+  #ifdef __cplusplus
+    inline void wohoo();
+  #endif
   enum class Tag {
     Foo_Prepended,
     Bar_Prepended,
@@ -75,9 +78,6 @@ struct MyFancyEnum_Prepended {
     int32_t _0;
   };
 
-  #ifdef __cplusplus
-    inline void wohoo();
-  #endif
   Tag tag;
   union {
     Bar_Prepended_Body bar_prepended;
