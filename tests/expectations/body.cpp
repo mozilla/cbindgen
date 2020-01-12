@@ -76,7 +76,9 @@ struct MyFancyEnum_Prepended {
     int32_t _0;
   };
 
-  // important information about this enum
+  #ifdef __cplusplus
+    inline void wohoo();
+  #endif
   Tag tag;
   union {
     Bar_Prepended_Body bar_prepended;

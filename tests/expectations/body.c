@@ -76,7 +76,9 @@ typedef struct {
 } Baz_Prepended_Body;
 
 typedef struct {
-  // important information about this enum
+  #ifdef __cplusplus
+    inline void wohoo();
+  #endif
   MyFancyEnum_Prepended_Tag tag;
   union {
     Bar_Prepended_Body bar_prepended;
