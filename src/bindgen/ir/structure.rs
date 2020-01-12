@@ -606,7 +606,7 @@ impl Source for Struct {
             }
         }
 
-        // Emit the body_append section, if relevant
+        // Emit the post_body section, if relevant
         if let Some(body) = config.export.post_body(&self.path) {
             out.new_line();
             out.write_raw_block(body);
