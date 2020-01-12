@@ -55,8 +55,7 @@ typedef union MyUnion {
 
 typedef struct MyFancyStruct_Prepended {
 #ifdef __cplusplus
-  MyFancyStruct_Prepended() = delete;
-private:
+  inline void prepended_wohoo();
 #endif
   int32_t i;
 } MyFancyStruct_Prepended;
