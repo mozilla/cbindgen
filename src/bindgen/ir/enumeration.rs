@@ -577,6 +577,8 @@ impl Source for Enum {
             }
         }
         out.open_brace();
+
+        // Emit variants
         for (i, variant) in self.variants.iter().enumerate() {
             if i != 0 {
                 out.new_line()
@@ -642,6 +644,12 @@ impl Source for Enum {
                 }
 
                 out.open_brace();
+            }
+
+            // Emit the body_prepend section, if relevant
+            if let Some(body) = config.export.body_prepend(&self.path) {
+                out.write_raw_block(body);
+                out.new_line();
             }
 
             // C++ allows accessing only common initial sequence of union
@@ -1008,7 +1016,9 @@ impl Source for Enum {
                 }
             }
 
-            if let Some(body) = config.export.extra_body(&self.path) {
+            // Emit the body_append section, if relevant
+            if let Some(body) = config.export.body_append(&self.path) {
+                out.new_line();
                 out.write_raw_block(body);
             }
 

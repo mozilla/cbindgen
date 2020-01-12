@@ -214,6 +214,8 @@ pub struct ExportConfig {
     pub exclude: Vec<String>,
     /// Table of name conversions to apply to item names
     pub rename: HashMap<String, String>,
+    /// Table of raw strings to prepend to the body of items.
+    pub body_prepend: HashMap<String, String>,
     /// Table of raw strings to append to the body of items.
     pub body: HashMap<String, String>,
     /// A prefix to add before the name of every item
@@ -229,7 +231,13 @@ impl ExportConfig {
         self.item_types.is_empty() || self.item_types.contains(&item_type)
     }
 
-    pub(crate) fn extra_body(&self, path: &Path) -> Option<&str> {
+    pub(crate) fn body_prepend(&self, path: &Path) -> Option<&str> {
+        self.body_prepend
+            .get(path.name())
+            .map(|s| s.trim_matches('\n'))
+    }
+
+    pub(crate) fn body_append(&self, path: &Path) -> Option<&str> {
         self.body.get(path.name()).map(|s| s.trim_matches('\n'))
     }
 

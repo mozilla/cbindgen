@@ -9,6 +9,12 @@ typedef enum {
   Baz1,
 } MyCLikeEnum;
 
+typedef enum {
+  Foo1_Prepended,
+  Bar1_Prepended,
+  Baz1_Prepended,
+} MyCLikeEnum_Prepended;
+
 typedef struct {
   int32_t i;
 #ifdef __cplusplus
@@ -47,11 +53,55 @@ typedef union {
   int32_t extra_member; // yolo
 } MyUnion;
 
+typedef struct {
+#ifdef __cplusplus
+  MyFancyStruct_Prepended() = delete;
+private:
+#endif
+  int32_t i;
+} MyFancyStruct_Prepended;
+
+typedef enum {
+  Foo_Prepended,
+  Bar_Prepended,
+  Baz_Prepended,
+} MyFancyEnum_Prepended_Tag;
+
+typedef struct {
+  int32_t _0;
+} Bar_Prepended_Body;
+
+typedef struct {
+  int32_t _0;
+} Baz_Prepended_Body;
+
+typedef struct {
+  // important information about this enum
+  MyFancyEnum_Prepended_Tag tag;
+  union {
+    Bar_Prepended_Body bar_prepended;
+    Baz_Prepended_Body baz_prepended;
+  };
+} MyFancyEnum_Prepended;
+
+typedef union {
+  int32_t extra_member; // yolo
+  float f;
+  uint32_t u;
+} MyUnion_Prepended;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(MyFancyStruct s, MyFancyEnum e, MyCLikeEnum c, MyUnion u);
+void root(MyFancyStruct s,
+          MyFancyEnum e,
+          MyCLikeEnum c,
+          MyUnion u,
+          MyFancyStruct_Prepended sp,
+          MyFancyEnum_Prepended ep,
+          MyCLikeEnum_Prepended cp,
+          MyUnion_Prepended up);
 
 #ifdef __cplusplus
 } // extern "C"
