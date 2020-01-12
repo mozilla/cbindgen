@@ -477,7 +477,7 @@ impl Parse {
                                     binding_crate_name,
                                     crate_name,
                                     mod_cfg,
-                                    Path::new(type_name.to_string()),
+                                    &Path::new(type_name.to_string()),
                                     method,
                                 )
                             }
@@ -565,7 +565,7 @@ impl Parse {
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
-        self_type: Path,
+        self_type: &Path,
         item: &syn::ImplItemMethod,
     ) {
         self.load_fn_declaration(
@@ -610,7 +610,7 @@ impl Parse {
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         named_symbol: &dyn SynItemFnHelpers,
-        self_type: Option<Path>,
+        self_type: Option<&Path>,
         sig: &syn::Signature,
         vis: &syn::Visibility,
         attrs: &[syn::Attribute],
@@ -626,7 +626,7 @@ impl Parse {
             return;
         }
 
-        let loggable_item_name = {
+        let loggable_item_name = || {
             let mut items = vec![];
             items.push(crate_name.to_owned());
             if let Some(ref self_type) = self_type {
@@ -642,24 +642,24 @@ impl Parse {
                     let path = Path::new(exported_name);
                     match Function::load(path, self_type, &sig, false, &attrs, mod_cfg) {
                         Ok(func) => {
-                            info!("Take {}.", loggable_item_name);
+                            info!("Take {}.", loggable_item_name());
                             self.functions.push(func);
                         }
                         Err(msg) => {
-                            error!("Cannot use fn {} ({}).", loggable_item_name, msg);
+                            error!("Cannot use fn {} ({}).", loggable_item_name(), msg);
                         }
                     }
                 } else {
                     warn!(
                         "Skipping {} - (not `no_mangle`, and has no `export_name` attribute)",
-                        loggable_item_name
+                        loggable_item_name()
                     );
                 }
             } else {
-                warn!("Skipping {} - (not `extern \"C\"`", loggable_item_name);
+                warn!("Skipping {} - (not `extern \"C\"`", loggable_item_name());
             }
         } else {
-            warn!("Skipping {} - (not `pub`)", loggable_item_name);
+            warn!("Skipping {} - (not `pub`)", loggable_item_name());
         }
     }
 

@@ -38,7 +38,7 @@ pub struct Function {
 impl Function {
     pub fn load(
         path: Path,
-        self_type_path: Option<Path>,
+        self_type_path: Option<&Path>,
         sig: &syn::Signature,
         extern_decl: bool,
         attrs: &[syn::Attribute],
@@ -53,7 +53,7 @@ impl Function {
             }
         };
 
-        if let Some(ref self_path) = self_type_path {
+        if let Some(self_path) = self_type_path {
             for (_, ref mut ty) in &mut args {
                 ty.replace_self_with(self_path);
             }
@@ -62,7 +62,7 @@ impl Function {
 
         Ok(Function {
             path,
-            self_type_path,
+            self_type_path: self_type_path.cloned(),
             ret,
             args,
             extern_decl,
