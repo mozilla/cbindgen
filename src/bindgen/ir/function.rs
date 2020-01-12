@@ -11,7 +11,8 @@ use crate::bindgen::config::{Config, Language, Layout};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, Path, PrimitiveType, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericPath, Path, PrimitiveType,
+    ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
@@ -43,20 +44,21 @@ impl Function {
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
-        let args = sig
-            .inputs
-            .iter()
-            .try_skip_map(|x| x.as_ident_and_type(self_type_path.as_ref()))?;
-        let ret = match sig.output {
+        let mut args = sig.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
+
+        let mut ret = match sig.output {
             syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
             syn::ReturnType::Type(_, ref ty) => {
-                if let Some(x) = Type::load(ty)? {
-                    x
-                } else {
-                    Type::Primitive(PrimitiveType::Void)
-                }
+                Type::load(ty)?.unwrap_or_else(|| Type::Primitive(PrimitiveType::Void))
             }
         };
+
+        if let Some(ref self_path) = self_type_path {
+            for (_, ref mut ty) in &mut args {
+                ty.replace_self_with(self_path);
+            }
+            ret.replace_self_with(self_path);
+        }
 
         Ok(Function {
             path,
@@ -73,14 +75,15 @@ impl Function {
     pub fn swift_name(&self) -> String {
         // If the symbol name starts with the type name, separate the two components with '.'
         // so that Swift recognises the association between the method and the type
-        let (ref type_prefix, ref type_name) = if let Some(type_name) = &self.self_type_path {
-            let type_name = type_name.to_string();
-            if !self.path.name().starts_with(&type_name) {
-                return self.path.to_string();
+        let (ref type_prefix, ref type_name) = match self.self_type_path {
+            Some(ref type_name) => {
+                let type_name = type_name.to_string();
+                if !self.path.name().starts_with(&type_name) {
+                    return self.path.to_string();
+                }
+                (format!("{}.", type_name), type_name)
             }
-            (format!("{}.", type_name), type_name)
-        } else {
-            ("".to_string(), "".to_string())
+            None => ("".to_string(), "".to_string()),
         };
 
         let item_name = self
@@ -268,66 +271,37 @@ impl Source for Function {
 }
 
 pub trait SynFnArgHelpers {
-    fn as_ident_and_type(
-        &self,
-        self_type_path: Option<&Path>,
-    ) -> Result<Option<(String, Type)>, String>;
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String>;
 }
 
-fn gen_self_type(self_type_path: &Path, receiver: &syn::Receiver) -> Result<Option<Type>, String> {
-    fn _gen_self_type(
-        self_type_path: &Path,
-        receiver: &syn::Receiver,
-    ) -> Result<syn::Type, syn::Error> {
-        Ok(match receiver.reference {
-            Some(_) => syn::Type::Reference(match receiver.mutability {
-                Some(_) => syn::parse_str(&format!("&mut {}", self_type_path))?,
-                None => syn::parse_str(&format!("&{}", self_type_path))?,
-            }),
-            None => syn::Type::Path(syn::parse_str(self_type_path.name())?),
-        })
+fn gen_self_type(receiver: &syn::Receiver) -> Type {
+    let self_ty = Type::Path(GenericPath::self_path());
+    match receiver.reference {
+        Some(_) => match receiver.mutability {
+            Some(_) => Type::Ptr(Box::new(self_ty)),
+            None => Type::ConstPtr(Box::new(self_ty)),
+        },
+        None => self_ty,
     }
-
-    Type::load(&Box::new(
-        _gen_self_type(self_type_path, receiver)
-            .map_err(|e| format!("Failed to generate self type: {}", e))?,
-    ))
 }
 
 impl SynFnArgHelpers for syn::FnArg {
-    fn as_ident_and_type(
-        &self,
-        self_type_path: Option<&Path>,
-    ) -> Result<Option<(String, Type)>, String> {
-        match self {
-            &syn::FnArg::Typed(syn::PatType {
+    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
+        match *self {
+            syn::FnArg::Typed(syn::PatType {
                 ref pat, ref ty, ..
             }) => match **pat {
                 syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
-                    if let Some(mut x) = Type::load(ty)? {
-                        if let Some(self_type_path) = self_type_path {
-                            x.replace_self_with(self_type_path)
-                        }
-                        Ok(Some((ident.to_string(), x)))
-                    } else {
-                        Ok(None)
-                    }
+                    let ty = match Type::load(ty)? {
+                        Some(x) => x,
+                        None => return Ok(None),
+                    };
+                    Ok(Some((ident.to_string(), ty)))
                 }
                 _ => Err("Parameter has an unsupported type.".to_owned()),
             },
-            &syn::FnArg::Receiver(ref receiver) => {
-                if let Some(self_type_path) = self_type_path {
-                    if let Some(x) = gen_self_type(self_type_path, receiver)? {
-                        Ok(Some(("self".to_string(), x)))
-                    } else {
-                        Ok(None)
-                    }
-                } else {
-                    Err(
-                        "Parameter has an unsupported type (Self type found in free function)"
-                            .to_owned(),
-                    )
-                }
+            syn::FnArg::Receiver(ref receiver) => {
+                Ok(Some(("self".to_string(), gen_self_type(receiver))))
             }
         }
     }

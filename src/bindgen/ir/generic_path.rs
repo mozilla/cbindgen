@@ -72,6 +72,10 @@ impl GenericPath {
         }
     }
 
+    pub fn self_path() -> Self {
+        Self::new(Path::new("Self"), vec![])
+    }
+
     pub fn replace_self_with(&mut self, self_ty: &Path) {
         if self.path.replace_self_with(self_ty) {
             self.export_name = self_ty.name().to_owned();

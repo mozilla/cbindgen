@@ -40,6 +40,8 @@ void SelfTypeTestStruct_should_exist_unannotated(struct SelfTypeTestStruct self)
 
 void SelfTypeTestStruct_should_not_exist_box(struct Box_SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_not_exist_box(self:));
 
+struct Box_SelfTypeTestStruct SelfTypeTestStruct_should_not_exist_return_box(void) CF_SWIFT_NAME(SelfTypeTestStruct.should_not_exist_return_box());
+
 void free_function_should_exist_annotated_by_name(struct SelfTypeTestStruct test_struct) CF_SWIFT_NAME(free_function_should_exist_annotated_by_name(test_struct:));
 
 void free_function_should_exist_annotated_mut_by_name(struct SelfTypeTestStruct test_struct) CF_SWIFT_NAME(free_function_should_exist_annotated_mut_by_name(test_struct:));

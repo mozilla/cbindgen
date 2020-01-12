@@ -27,6 +27,12 @@ impl SelfTypeTestStruct {
     println!("should_not_exist_box");
   }
 
+  #[export_name="SelfTypeTestStruct_should_not_exist_return_box"]
+  #[no_mangle]
+  pub extern fn should_not_exist_box() -> Box<Self> {
+    println!("should_not_exist_box");
+  }
+
   #[export_name="SelfTypeTestStruct_should_exist_annotated_self"]
   #[no_mangle]
   pub extern fn should_exist_annotated_self(self: Self) {
