@@ -496,7 +496,16 @@ renaming_overrides_prefixing = true
 "MyType" = "my_cool_type"
 "my_function" = "BetterFunctionName"
 
-# Table of things to add to the body of any struct, union, or enum that has the
+# Table of things to prepend to the body of any struct, union, or enum that has the
+# given name. This can be used to add things like methods which don't change ABI,
+# mark fields private, etc
+[export.pre_body]
+"MyType" = """
+  MyType() = delete;
+private:
+"""
+
+# Table of things to append to the body of any struct, union, or enum that has the
 # given name. This can be used to add things like methods which don't change ABI.
 [export.body]
 "MyType" = """

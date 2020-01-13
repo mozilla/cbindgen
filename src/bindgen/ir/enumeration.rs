@@ -527,6 +527,14 @@ impl Source for Enum {
 
             write!(out, " {}", self.export_name());
             out.open_brace();
+
+            // Emit the pre_body section, if relevant
+            // Only do this here if we're writing C++, since the struct that wraps everything is starting here.
+            // If we're writing C, we aren't wrapping the enum and variant structs definitions, so the actual enum struct willstart down below
+            if let Some(body) = config.export.pre_body(&self.path) {
+                out.write_raw_block(body);
+                out.new_line();
+            }
         }
 
         let enum_name = if let Some(ref tag) = self.tag {
@@ -642,6 +650,14 @@ impl Source for Enum {
                 }
 
                 out.open_brace();
+
+                // Emit the pre_body section, if relevant
+                // Only do this if we're writing C, since the struct is starting right here.
+                // For C++, the struct wraps all of the above variant structs too, and we write the pre_body section at the begining of that
+                if let Some(body) = config.export.pre_body(&self.path) {
+                    out.write_raw_block(body);
+                    out.new_line();
+                }
             }
 
             // C++ allows accessing only common initial sequence of union
@@ -1008,7 +1024,9 @@ impl Source for Enum {
                 }
             }
 
-            if let Some(body) = config.export.extra_body(&self.path) {
+            // Emit the post_body section, if relevant
+            if let Some(body) = config.export.post_body(&self.path) {
+                out.new_line();
                 out.write_raw_block(body);
             }
 

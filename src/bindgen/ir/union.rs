@@ -299,6 +299,12 @@ impl Source for Union {
 
         out.open_brace();
 
+        // Emit the pre_body section, if relevant
+        if let Some(body) = config.export.pre_body(&self.path) {
+            out.write_raw_block(body);
+            out.new_line();
+        }
+
         if config.documentation {
             out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
         } else {
@@ -310,7 +316,9 @@ impl Source for Union {
             out.write_vertical_source_list(&vec[..], ListType::Cap(";"));
         }
 
-        if let Some(body) = config.export.extra_body(&self.path) {
+        // Emit the post_body section, if relevant
+        if let Some(body) = config.export.post_body(&self.path) {
+            out.new_line();
             out.write_raw_block(body);
         }
 
