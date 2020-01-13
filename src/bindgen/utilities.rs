@@ -272,8 +272,7 @@ impl SynAttributeHelpers for [syn::Attribute] {
                 })) = attr.parse_meta()
                 {
                     if path.is_ident("doc") {
-                        let text = content.value().trim_end().to_owned();
-                        comment.push(text);
+                        comment.extend(split_doc_attr(&content.value()));
                     }
                 }
             }
@@ -281,4 +280,16 @@ impl SynAttributeHelpers for [syn::Attribute] {
 
         comment
     }
+}
+
+fn split_doc_attr(input: &str) -> Vec<String> {
+    input
+        // Convert two newline (indicate "new paragraph") into two line break.
+        .replace("\n\n", "  \n  \n")
+        // Convert newline after two spaces (indicate "line break") into line break.
+        .split("  \n")
+        // Convert single newline (indicate hard-wrapped) into space.
+        .map(|s| s.replace('\n', " "))
+        .map(|s| s.trim_end().to_string())
+        .collect()
 }
