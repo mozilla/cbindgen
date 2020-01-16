@@ -48,11 +48,12 @@ fn value_from_expr(val: &syn::Expr) -> Option<i64> {
 }
 
 impl EnumVariant {
-    pub fn load(
+    fn load(
         is_tagged: bool,
         variant: &syn::Variant,
         generic_params: GenericParams,
         mod_cfg: Option<&Cfg>,
+        self_path: &Path,
     ) -> Result<Self, String> {
         let discriminant = match variant.discriminant {
             Some((_, ref expr)) => match value_from_expr(expr) {
@@ -65,6 +66,7 @@ impl EnumVariant {
         fn parse_fields(
             is_tagged: bool,
             fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
+            self_path: &Path,
         ) -> Result<Vec<(String, Type, Documentation)>, String> {
             let mut res = Vec::new();
 
@@ -77,7 +79,8 @@ impl EnumVariant {
             }
 
             for (i, field) in fields.iter().enumerate() {
-                if let Some(ty) = Type::load(&field.ty)? {
+                if let Some(mut ty) = Type::load(&field.ty)? {
+                    ty.replace_self_with(self_path);
                     res.push((
                         match field.ident {
                             Some(ref ident) => ident.to_string(),
@@ -99,7 +102,7 @@ impl EnumVariant {
                 Some(Struct::new(
                     path,
                     generic_params,
-                    parse_fields(is_tagged, &fields.named)?,
+                    parse_fields(is_tagged, &fields.named, self_path)?,
                     is_tagged,
                     true,
                     None,
@@ -115,7 +118,7 @@ impl EnumVariant {
                 Some(Struct::new(
                     path,
                     generic_params,
-                    parse_fields(is_tagged, &fields.unnamed)?,
+                    parse_fields(is_tagged, &fields.unnamed, self_path)?,
                     is_tagged,
                     true,
                     None,
@@ -260,6 +263,7 @@ impl Enum {
             return Err("Enum is marked with #[repr(align(...))] or #[repr(packed)].".to_owned());
         }
 
+        let path = Path::new(item.ident.to_string());
         let generic_params = GenericParams::new(&item.generics);
 
         let mut variants = Vec::new();
@@ -271,6 +275,7 @@ impl Enum {
                 variant,
                 generic_params.clone(),
                 mod_cfg,
+                &path,
             )?;
             is_tagged = is_tagged || variant.body.is_some();
             variants.push(variant);
@@ -284,12 +289,12 @@ impl Enum {
             }
         }
 
-        let path = Path::new(item.ident.to_string());
         let tag = if is_tagged {
             Some("Tag".to_string())
         } else {
             None
         };
+
         Ok(Enum::new(
             path,
             generic_params,
