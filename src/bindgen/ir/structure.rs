@@ -65,6 +65,8 @@ impl Struct {
             }
         };
 
+        let path = Path::new(item.ident.to_string());
+
         // Ensure we can safely represent the struct given the configuration.
         if let Some(align) = repr.align {
             layout_config.ensure_safe_to_represent(&align)?;
@@ -76,14 +78,15 @@ impl Struct {
                 let out = fields
                     .named
                     .iter()
-                    .try_skip_map(|x| x.as_ident_and_type())?;
+                    .try_skip_map(|x| x.as_ident_and_type(&path))?;
                 (out, false)
             }
             syn::Fields::Unnamed(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields.unnamed.iter() {
-                    if let Some(x) = Type::load(&field.ty)? {
+                    if let Some(mut x) = Type::load(&field.ty)? {
+                        x.replace_self_with(&path);
                         out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
                         current += 1;
                     }
@@ -96,7 +99,7 @@ impl Struct {
         let is_enum_variant_body = false;
 
         Ok(Struct::new(
-            Path::new(item.ident.to_string()),
+            path,
             GenericParams::new(&item.generics),
             fields,
             is_tagged,
@@ -639,11 +642,17 @@ impl Source for Struct {
 }
 
 pub trait SynFieldHelpers {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type, Documentation)>, String>;
+    fn as_ident_and_type(
+        &self,
+        self_path: &Path,
+    ) -> Result<Option<(String, Type, Documentation)>, String>;
 }
 
 impl SynFieldHelpers for syn::Field {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type, Documentation)>, String> {
+    fn as_ident_and_type(
+        &self,
+        self_path: &Path,
+    ) -> Result<Option<(String, Type, Documentation)>, String> {
         let ident = self
             .ident
             .as_ref()
@@ -651,7 +660,8 @@ impl SynFieldHelpers for syn::Field {
             .clone();
         let converted_ty = Type::load(&self.ty)?;
 
-        if let Some(x) = converted_ty {
+        if let Some(mut x) = converted_ty {
+            x.replace_self_with(self_path);
             Ok(Some((
                 ident.to_string(),
                 x,
