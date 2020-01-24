@@ -5,11 +5,11 @@
 
 #define DELIMITER ':'
 
-#define EQUID L'\u10083'
+#define EQUID L'\U00010083'
 
 #define FOO 10
 
-#define HEART L'\u2764'
+#define HEART L'\U00002764'
 
 #define LEFTCURLY '{'
 

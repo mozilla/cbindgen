@@ -3,15 +3,15 @@
 #include <cstdlib>
 #include <new>
 
-static const int32_t PREFIX_LEN = 42;
+static const int32_t PREFIX_LEN = 22;
 
-static const int64_t PREFIX_X = (42 << 42);
+static const int64_t PREFIX_X = (22 << 22);
 
 static const int64_t PREFIX_Y = (PREFIX_X + PREFIX_X);
 
 using PREFIX_NamedLenArray = int32_t[PREFIX_LEN];
 
-using PREFIX_ValuedLenArray = int32_t[42];
+using PREFIX_ValuedLenArray = int32_t[22];
 
 union PREFIX_AbsoluteFontWeight {
   enum class Tag : uint8_t {
