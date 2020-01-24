@@ -253,7 +253,11 @@ impl Enum {
         }
     }
 
-    pub fn load(item: &syn::ItemEnum, mod_cfg: Option<&Cfg>) -> Result<Enum, String> {
+    pub fn load(
+        item: &syn::ItemEnum,
+        mod_cfg: Option<&Cfg>,
+        config: &Config,
+    ) -> Result<Enum, String> {
         let repr = Repr::load(&item.attrs)?;
         if repr.style == ReprStyle::Rust && repr.ty.is_none() {
             return Err("Enum is not marked with a valid #[repr(prim)] or #[repr(C)].".to_owned());
@@ -287,6 +291,15 @@ impl Enum {
             for name in names {
                 variants.push(EnumVariant::new(name, None, None, Documentation::none()));
             }
+        }
+
+        if config.enumeration.add_sentinel(&annotations) {
+            variants.push(EnumVariant::new(
+                "Sentinel".to_owned(),
+                None,
+                None,
+                Documentation::simple(" Must be last for serialization purposes"),
+            ));
         }
 
         let tag = if is_tagged {
@@ -595,11 +608,6 @@ impl Source for Enum {
                 out.new_line()
             }
             variant.write(config, out);
-        }
-        if config.enumeration.add_sentinel(&self.annotations) {
-            out.new_line();
-            out.new_line();
-            out.write("Sentinel /* this must be last for serialization purposes. */");
         }
 
         if config.language == Language::C && size.is_none() && config.style.generate_typedef() {
