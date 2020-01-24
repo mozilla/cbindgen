@@ -72,6 +72,10 @@ fn compile(cbindgen_output: &Path, language: Language) {
     command.arg("-D").arg("DEFINED");
     command.arg("-c").arg(cbindgen_output);
     command.arg("-o").arg(&object);
+    command.arg("-Wall");
+    command.arg("-Werror");
+    // `swift_name` is not recognzied by gcc.
+    command.arg("-Wno-attributes");
     if let Language::Cxx = language {
         // enum class is a c++11 extension which makes g++ on macos 10.14 error out
         // inline variables are are a c++17 extension
