@@ -80,9 +80,7 @@ impl Library {
         for name in &self.config.export.include {
             let path = Path::new(name.clone());
             if let Some(items) = self.get_items(&path) {
-                if !dependencies.items.contains(&path) {
-                    dependencies.items.insert(path);
-
+                if dependencies.items.insert(path) {
                     for item in &items {
                         item.deref().add_dependencies(&self, &mut dependencies);
                     }
