@@ -452,7 +452,7 @@ impl Parse {
                     self.load_syn_union(config, crate_name, mod_cfg, item);
                 }
                 syn::Item::Enum(ref item) => {
-                    self.load_syn_enum(crate_name, mod_cfg, item);
+                    self.load_syn_enum(config, crate_name, mod_cfg, item);
                 }
                 syn::Item::Type(ref item) => {
                     self.load_syn_ty(crate_name, mod_cfg, item);
@@ -860,7 +860,13 @@ impl Parse {
     }
 
     /// Loads a `enum` declaration
-    fn load_syn_enum(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemEnum) {
+    fn load_syn_enum(
+        &mut self,
+        config: &Config,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        item: &syn::ItemEnum,
+    ) {
         if item.generics.lifetimes().count() > 0 {
             info!(
                 "Skip {}::{} - (has generics or lifetimes or where bounds).",
@@ -869,7 +875,7 @@ impl Parse {
             return;
         }
 
-        match Enum::load(item, mod_cfg) {
+        match Enum::load(item, mod_cfg, config) {
             Ok(en) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
                 self.enums.try_insert(en);

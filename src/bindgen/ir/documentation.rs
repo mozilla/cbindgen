@@ -26,6 +26,12 @@ impl Documentation {
         Documentation { doc_comment: doc }
     }
 
+    pub fn simple(line: &str) -> Self {
+        Documentation {
+            doc_comment: vec![line.to_owned()],
+        }
+    }
+
     pub fn none() -> Self {
         Documentation {
             doc_comment: Vec::new(),
