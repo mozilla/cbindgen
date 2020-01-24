@@ -5,11 +5,11 @@
 
 static const uint32_t DELIMITER = ':';
 
-static const uint32_t EQUID = L'\u10083';
+static const uint32_t EQUID = L'\U00010083';
 
 static const int32_t FOO = 10;
 
-static const uint32_t HEART = L'\u2764';
+static const uint32_t HEART = L'\U00002764';
 
 static const uint32_t LEFTCURLY = '{';
 
