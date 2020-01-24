@@ -160,7 +160,7 @@ impl Literal {
                     syn::Lit::Byte(ref value) => Ok(Literal::Expr(format!("{}", value.value()))),
                     syn::Lit::Char(ref value) => Ok(Literal::Expr(match value.value() as u32 {
                         0..=255 => format!("'{}'", value.value().escape_default()),
-                        other_code => format!(r"L'\u{:X}'", other_code),
+                        other_code => format!(r"L'\U{:08X}'", other_code),
                     })),
                     syn::Lit::Int(ref value) => {
                         Ok(Literal::Expr(value.base10_digits().to_string()))
