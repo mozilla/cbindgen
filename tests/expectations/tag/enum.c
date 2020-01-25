@@ -105,7 +105,7 @@ struct Bar_Body {
 };
 
 union G {
-  enum G_Tag tag;
+  G_Tag tag;
   struct Foo_Body foo;
   struct Bar_Body bar;
 };
@@ -150,10 +150,34 @@ struct I_Bar_Body {
 };
 
 struct I {
-  enum I_Tag tag;
+  I_Tag tag;
   union {
     struct I_Foo_Body foo;
     struct I_Bar_Body bar;
+  };
+};
+
+enum P_Tag {
+  P0,
+  P1,
+};
+typedef uint8_t P_Tag;
+
+struct P0_Body {
+  uint8_t _0;
+};
+
+struct P1_Body {
+  uint8_t _0;
+  uint8_t _1;
+  uint8_t _2;
+};
+
+struct P {
+  P_Tag tag;
+  union {
+    struct P0_Body p0;
+    struct P1_Body p1;
   };
 };
 
@@ -172,4 +196,12 @@ void root(struct Opaque *opaque,
           enum L l,
           M m,
           enum N n,
-          O o);
+          O o,
+          struct P p);
+
+#include <stddef.h>
+#include "testing-helpers.h"
+static_assert(offsetof(CBINDGEN_STRUCT(P), tag) == 0, "unexpected offset for tag");
+static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p0");
+static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p1");
+static_assert(sizeof(CBINDGEN_STRUCT(P)) == 4, "unexpected size for P");

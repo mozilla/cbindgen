@@ -77,7 +77,7 @@ struct Slice4_Body_u32 {
 };
 
 struct Foo_u32 {
-  enum Foo_u32_Tag tag;
+  Foo_u32_Tag tag;
   union {
     struct Polygon1_Body_u32 polygon1;
     struct Slice1_Body_u32 slice1;
@@ -136,7 +136,7 @@ struct Slice24_Body_i32 {
 };
 
 union Baz_i32 {
-  enum Baz_i32_Tag tag;
+  Baz_i32_Tag tag;
   struct Polygon21_Body_i32 polygon21;
   struct Slice21_Body_i32 slice21;
   struct Slice22_Body_i32 slice22;
@@ -168,7 +168,7 @@ struct Taz3_Body {
 };
 
 union Taz {
-  enum Taz_Tag tag;
+  Taz_Tag tag;
   struct Taz1_Body taz1;
   struct Taz3_Body taz3;
 };
@@ -191,7 +191,7 @@ struct Taz2_Body {
 };
 
 union Tazz {
-  enum Tazz_Tag tag;
+  Tazz_Tag tag;
   struct Taz2_Body taz2;
 };
 

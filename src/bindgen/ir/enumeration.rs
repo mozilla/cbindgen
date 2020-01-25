@@ -682,7 +682,8 @@ impl Source for Enum {
                 out.open_brace();
             }
 
-            if config.language == Language::C && !config.style.generate_typedef() {
+            if config.language == Language::C && !size.is_some() && !config.style.generate_typedef()
+            {
                 out.write("enum ");
             }
 

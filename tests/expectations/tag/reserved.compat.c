@@ -30,7 +30,7 @@ struct D_Body {
 };
 
 struct C {
-  enum C_Tag tag;
+  C_Tag tag;
   union {
     struct D_Body d;
   };

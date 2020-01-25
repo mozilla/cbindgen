@@ -25,7 +25,7 @@ struct H_Bar_Body {
 };
 
 struct H {
-  enum H_Tag tag;
+  H_Tag tag;
   union {
     struct H_Foo_Body foo;
     struct H_Bar_Body bar;
@@ -49,7 +49,7 @@ struct J_Bar_Body {
 };
 
 struct J {
-  enum J_Tag tag;
+  J_Tag tag;
   union {
     struct J_Foo_Body foo;
     struct J_Bar_Body bar;
@@ -75,7 +75,7 @@ struct K_Bar_Body {
 };
 
 union K {
-  enum K_Tag tag;
+  K_Tag tag;
   struct K_Foo_Body foo;
   struct K_Bar_Body bar;
 };

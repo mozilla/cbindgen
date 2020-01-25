@@ -25,7 +25,7 @@ struct Max_Body {
 };
 
 union Bar {
-  enum Bar_Tag tag;
+  Bar_Tag tag;
   struct Min_Body min;
   struct Max_Body max;
 };

@@ -34,7 +34,7 @@ struct FooParen_Body {
 };
 
 union Bar {
-  enum Bar_Tag tag;
+  Bar_Tag tag;
   struct Bazz_Body bazz;
   struct FooNamed_Body foo_named;
   struct FooParen_Body foo_paren;

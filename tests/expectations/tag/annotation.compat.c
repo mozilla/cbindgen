@@ -49,7 +49,7 @@ struct Bar_Body {
 };
 
 union F {
-  enum F_Tag tag;
+  F_Tag tag;
   struct Foo_Body foo;
   struct Bar_Body bar;
 };
@@ -77,7 +77,7 @@ struct There_Body {
 };
 
 struct H {
-  enum H_Tag tag;
+  H_Tag tag;
   union {
     struct Hello_Body hello;
     struct There_Body there;

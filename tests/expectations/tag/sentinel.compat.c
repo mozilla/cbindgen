@@ -65,7 +65,7 @@ struct C_C2_Body {
 };
 
 union C {
-  enum C_Tag tag;
+  C_Tag tag;
   struct C_C1_Body c1;
   struct C_C2_Body c2;
 };

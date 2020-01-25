@@ -39,7 +39,7 @@ struct StyleBaz_Body_i32 {
 };
 
 union StyleFoo_i32 {
-  enum StyleFoo_i32_Tag tag;
+  StyleFoo_i32_Tag tag;
   struct StyleFoo_Body_i32 foo;
   struct StyleBar_Body_i32 bar;
   struct StyleBaz_Body_i32 baz;
@@ -130,7 +130,7 @@ struct StyleBaz2_Body {
 };
 
 union StyleBaz {
-  enum StyleBaz_Tag tag;
+  StyleBaz_Tag tag;
   struct StyleBaz1_Body baz1;
   struct StyleBaz2_Body baz2;
 };
@@ -151,7 +151,7 @@ struct StyleTaz2_Body {
 };
 
 struct StyleTaz {
-  enum StyleTaz_Tag tag;
+  StyleTaz_Tag tag;
   union {
     struct StyleTaz1_Body taz1;
     struct StyleTaz2_Body taz2;

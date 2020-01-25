@@ -43,7 +43,7 @@ struct Image_Body {
 };
 
 union DisplayItem {
-  enum DisplayItem_Tag tag;
+  DisplayItem_Tag tag;
   struct Fill_Body fill;
   struct Image_Body image;
 };
