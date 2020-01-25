@@ -32,7 +32,7 @@ struct PREFIX_Weight_Body {
 };
 
 union PREFIX_AbsoluteFontWeight {
-  enum PREFIX_AbsoluteFontWeight_Tag tag;
+  PREFIX_AbsoluteFontWeight_Tag tag;
   struct PREFIX_Weight_Body weight;
 };
 

@@ -159,7 +159,7 @@ struct Bar_Body {
 };
 
 union G {
-  enum G_Tag tag;
+  G_Tag tag;
   struct Foo_Body foo;
   struct Bar_Body bar;
 };
@@ -210,7 +210,7 @@ struct I_Bar_Body {
 };
 
 struct I {
-  enum I_Tag tag;
+  I_Tag tag;
   union {
     struct I_Foo_Body foo;
     struct I_Bar_Body bar;
@@ -240,7 +240,7 @@ struct P1_Body {
 };
 
 struct P {
-  enum P_Tag tag;
+  P_Tag tag;
   union {
     struct P0_Body p0;
     struct P1_Body p1;
