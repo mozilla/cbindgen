@@ -5,6 +5,14 @@ use std::path::Path;
 use std::process::Command;
 use std::{env, fs, str};
 
+fn style_str(style: Style) -> &'static str {
+    match style {
+        Style::Both => "both",
+        Style::Tag => "tag",
+        Style::Type => "type",
+    }
+}
+
 fn run_cbindgen(
     cbindgen_path: &'static str,
     path: &Path,
@@ -27,12 +35,7 @@ fn run_cbindgen(
     }
 
     if let Some(style) = style {
-        command.arg("--style");
-        command.arg(match style {
-            Style::Both => "both",
-            Style::Tag => "tag",
-            Style::Type => "type",
-        });
+        command.arg("--style").arg(style_str(style));
     }
 
     command.arg("-o").arg(output);
@@ -59,7 +62,7 @@ fn run_cbindgen(
     );
 }
 
-fn compile(cbindgen_output: &Path, language: Language) {
+fn compile(cbindgen_output: &Path, language: Language, style: Option<Style>) {
     let cc = match language {
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
@@ -80,6 +83,14 @@ fn compile(cbindgen_output: &Path, language: Language) {
         // enum class is a c++11 extension which makes g++ on macos 10.14 error out
         // inline variables are are a c++17 extension
         command.arg("-std=c++17");
+    }
+
+    if let Some(style) = style {
+        command.arg("-D");
+        command.arg(format!(
+            "CBINDGEN_STYLE_{}",
+            style_str(style).to_uppercase()
+        ));
     }
 
     println!("Running: {:?}", command);
@@ -127,10 +138,10 @@ fn run_compile_test(
     output.push(format!("{}.{}", name, ext));
 
     run_cbindgen(cbindgen_path, path, &output, language, cpp_compat, style);
-    compile(&output, language);
+    compile(&output, language, style);
 
     if language == Language::C && cpp_compat {
-        compile(&output, Language::Cxx)
+        compile(&output, Language::Cxx, style)
     }
 }
 
