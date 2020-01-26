@@ -201,6 +201,28 @@ impl FromStr for ItemType {
 
 deserialize_enum_str!(ItemType);
 
+/// Type which specifies the sort order of functions
+#[derive(Debug, Clone, PartialEq)]
+pub enum SortKey {
+    Name,
+    None,
+}
+
+impl FromStr for SortKey {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use self::SortKey::*;
+        Ok(match &*s.to_lowercase() {
+            "name" => Name,
+            "none" => None,
+            _ => return Err(format!("Unrecognized sort option: '{}'.", s)),
+        })
+    }
+}
+
+deserialize_enum_str!(SortKey);
+
 /// Settings to apply when exporting items.
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
@@ -293,6 +315,8 @@ pub struct FunctionConfig {
     pub rename_args: Option<RenameRule>,
     /// An optional macro to use when generating Swift function name attributes
     pub swift_name_macro: Option<String>,
+    /// Sort key for function names
+    pub sort_by: SortKey,
 }
 
 impl Default for FunctionConfig {
@@ -304,6 +328,7 @@ impl Default for FunctionConfig {
             args: Layout::Auto,
             rename_args: None,
             swift_name_macro: None,
+            sort_by: SortKey::Name,
         }
     }
 }

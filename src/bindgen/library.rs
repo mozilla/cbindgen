@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::mem;
 
 use crate::bindgen::bindings::Bindings;
-use crate::bindgen::config::{Config, Language};
+use crate::bindgen::config::{Config, Language, SortKey};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
@@ -55,9 +55,15 @@ impl Library {
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
         self.remove_excluded();
-        self.functions.sort_by(|x, y| x.path.cmp(&y.path));
         self.transfer_annotations();
         self.simplify_standard_types();
+
+        match self.config.function.sort_by {
+            SortKey::Name => {
+                self.functions.sort_by(|x, y| x.path.cmp(&y.path));
+            }
+            SortKey::None => { /* keep input order */ }
+        }
 
         if self.config.language == Language::C {
             self.instantiate_monomorphs();
