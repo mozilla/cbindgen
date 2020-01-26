@@ -157,6 +157,30 @@ typedef struct {
   };
 } I;
 
+enum P_Tag {
+  P0,
+  P1,
+};
+typedef uint8_t P_Tag;
+
+typedef struct {
+  uint8_t _0;
+} P0_Body;
+
+typedef struct {
+  uint8_t _0;
+  uint8_t _1;
+  uint8_t _2;
+} P1_Body;
+
+typedef struct {
+  P_Tag tag;
+  union {
+    P0_Body p0;
+    P1_Body p1;
+  };
+} P;
+
 void root(Opaque *opaque,
           A a,
           B b,
@@ -172,4 +196,12 @@ void root(Opaque *opaque,
           L l,
           M m,
           N n,
-          O o);
+          O o,
+          P p);
+
+#include <stddef.h>
+#include "testing-helpers.h"
+static_assert(offsetof(CBINDGEN_STRUCT(P), tag) == 0, "unexpected offset for tag");
+static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p0");
+static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p1");
+static_assert(sizeof(CBINDGEN_STRUCT(P)) == 4, "unexpected size for P");

@@ -217,6 +217,36 @@ struct I {
   };
 };
 
+enum P_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  P0,
+  P1,
+};
+#ifndef __cplusplus
+typedef uint8_t P_Tag;
+#endif // __cplusplus
+
+struct P0_Body {
+  uint8_t _0;
+};
+
+struct P1_Body {
+  uint8_t _0;
+  uint8_t _1;
+  uint8_t _2;
+};
+
+struct P {
+  enum P_Tag tag;
+  union {
+    struct P0_Body p0;
+    struct P1_Body p1;
+  };
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -236,8 +266,16 @@ void root(struct Opaque *opaque,
           enum L l,
           M m,
           enum N n,
-          O o);
+          O o,
+          struct P p);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif // __cplusplus
+
+#include <stddef.h>
+#include "testing-helpers.h"
+static_assert(offsetof(CBINDGEN_STRUCT(P), tag) == 0, "unexpected offset for tag");
+static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p0");
+static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p1");
+static_assert(sizeof(CBINDGEN_STRUCT(P)) == 4, "unexpected size for P");
