@@ -589,6 +589,13 @@ swift_name_macro = "CF_SWIFT_NAME"
 # default: "None"
 rename_args = "PascalCase"
 
+# This rule specifies if the order of functions will be sorted in some way.
+#
+# "Name": sort by the name of the function
+# "None": keep order in which the functions have been parsed
+#
+# default: "Name"
+sort_by = "None"
 
 [struct]
 # A rule to use to rename struct field names. The renaming assumes the input is
