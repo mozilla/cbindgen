@@ -121,6 +121,12 @@ enum O {
     o4,
 }
 
+#[repr(C, u8)]
+enum P {
+    P0(u8),
+    P1(u8, u8, u8),
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     opaque: *mut Opaque,
@@ -139,5 +145,6 @@ pub extern "C" fn root(
     m: M,
     n: N,
     o: O,
+    p: P,
 ) {
 }
