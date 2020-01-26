@@ -74,6 +74,7 @@ rename_args = "None"
 # prefix = "START_FUNC"
 # postfix = "END_FUNC"
 args = "auto"
+sort_by = "Name"
 
 
 
