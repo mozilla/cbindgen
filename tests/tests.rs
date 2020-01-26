@@ -62,7 +62,7 @@ fn run_cbindgen(
     );
 }
 
-fn compile(cbindgen_output: &Path, language: Language, style: Option<Style>) {
+fn compile(cbindgen_output: &Path, tests_path: &Path, language: Language, style: Option<Style>) {
     let cc = match language {
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
@@ -75,6 +75,7 @@ fn compile(cbindgen_output: &Path, language: Language, style: Option<Style>) {
     command.arg("-D").arg("DEFINED");
     command.arg("-c").arg(cbindgen_output);
     command.arg("-o").arg(&object);
+    command.arg("-I").arg(tests_path);
     command.arg("-Wall");
     command.arg("-Werror");
     // `swift_name` is not recognzied by gcc.
@@ -111,7 +112,8 @@ fn run_compile_test(
     style: Option<Style>,
 ) {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let mut output = Path::new(&crate_dir).join("tests").join("expectations");
+    let tests_path = Path::new(&crate_dir).join("tests");
+    let mut output = tests_path.join("expectations");
     if let Some(style) = style {
         match style {
             Style::Both => {
@@ -138,10 +140,10 @@ fn run_compile_test(
     output.push(format!("{}.{}", name, ext));
 
     run_cbindgen(cbindgen_path, path, &output, language, cpp_compat, style);
-    compile(&output, language, style);
+    compile(&output, &tests_path, language, style);
 
     if language == Language::C && cpp_compat {
-        compile(&output, Language::Cxx, style)
+        compile(&output, &tests_path, Language::Cxx, style)
     }
 }
 
