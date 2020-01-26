@@ -313,7 +313,9 @@ impl Bindings {
         if let Some(ref f) = self.config.trailer {
             out.new_line_if_not_start();
             write!(out, "{}", f);
-            out.new_line();
+            if !f.ends_with('\n') {
+                out.new_line();
+            }
         }
     }
 

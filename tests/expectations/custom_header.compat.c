@@ -9,3 +9,5 @@ void root(void);
 #ifdef __cplusplus
 } // extern "C"
 #endif // __cplusplus
+
+/* This is a simple test to ensure that trailers don't cause extra newlines in files */

@@ -5,3 +5,5 @@ extern "C" {
 void root();
 
 } // extern "C"
+
+/* This is a simple test to ensure that trailers don't cause extra newlines in files */
