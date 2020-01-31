@@ -1,3 +1,13 @@
+## 0.13.0
+
+     * Support 'swift_name' attributes on generated functions (#449)
+     * Add [export.pre_body] to config (#452)
+     * Handle new line in doc attribute (#454)
+     * Add support for `Self` in tagged enums, structs and unions (#455, #455, #456)
+     * Make sentinel variant respect regular config (#459)
+     * Fix layout of tagged enums with size under some configurations (#463)
+     * Add an option to allow configuring the order of function names in generated headers (#466)
+
 ## 0.12.2
 
      * Fixed version detection with lockfile v2. https://github.com/eqrion/cbindgen/pull/446
