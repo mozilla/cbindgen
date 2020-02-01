@@ -182,7 +182,7 @@ impl Source for Function {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
-            let condition = (&func.cfg).to_condition(config);
+            let condition = func.cfg.to_condition(config);
             condition.write_before(config, out);
 
             func.documentation.write(config, out);
@@ -221,7 +221,7 @@ impl Source for Function {
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
-            let condition = (&func.cfg).to_condition(config);
+            let condition = func.cfg.to_condition(config);
 
             condition.write_before(config, out);
 

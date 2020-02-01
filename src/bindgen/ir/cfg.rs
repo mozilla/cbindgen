@@ -217,41 +217,19 @@ impl Cfg {
 }
 
 pub trait ToCondition: Sized {
-    type Output;
-
-    fn to_condition(self, config: &Config) -> Option<Self::Output>;
+    fn to_condition(&self, config: &Config) -> Option<Condition>;
 }
 
-impl<'a> ToCondition for &'a Option<Cfg> {
-    type Output = Condition;
-
-    fn to_condition(self, config: &Config) -> Option<Self::Output> {
-        self.clone().and_then(|cfg| cfg.to_condition(config))
+impl<'a> ToCondition for Option<Cfg> {
+    fn to_condition(&self, config: &Config) -> Option<Condition> {
+        self.as_ref()?.to_condition(config)
     }
 }
 
-impl ToCondition for Option<Cfg> {
-    type Output = Condition;
-
-    fn to_condition(self, config: &Config) -> Option<Self::Output> {
-        self.and_then(|cfg| cfg.to_condition(config))
-    }
-}
-
-impl<'a> ToCondition for &'a Cfg {
-    type Output = Condition;
-
-    fn to_condition(self, config: &Config) -> Option<Self::Output> {
-        self.clone().to_condition(config)
-    }
-}
-
-impl ToCondition for Cfg {
-    type Output = Condition;
-
-    fn to_condition(self, config: &Config) -> Option<Self::Output> {
-        match self {
-            Cfg::Boolean(cfg_name) => {
+impl<'a> ToCondition for Cfg {
+    fn to_condition(&self, config: &Config) -> Option<Condition> {
+        match *self {
+            Cfg::Boolean(ref cfg_name) => {
                 let define = config
                     .defines
                     .iter()
@@ -261,12 +239,12 @@ impl ToCondition for Cfg {
                 } else {
                     warn!(
                         "Missing `[defines]` entry for `{}` in cbindgen config.",
-                        Cfg::Boolean(cfg_name)
+                        self,
                     );
                     None
                 }
             }
-            Cfg::Named(cfg_name, cfg_value) => {
+            Cfg::Named(ref cfg_name, ref cfg_value) => {
                 let define = config.defines.iter().find(|(key, ..)| {
                     DefineKey::Named(&cfg_name, &cfg_value) == DefineKey::load(key)
                 });
@@ -275,14 +253,14 @@ impl ToCondition for Cfg {
                 } else {
                     warn!(
                         "Missing `[defines]` entry for `{}` in cbindgen config.",
-                        Cfg::Named(cfg_name, cfg_value)
+                        self,
                     );
                     None
                 }
             }
-            Cfg::Any(children) => {
+            Cfg::Any(ref children) => {
                 let conditions: Vec<_> = children
-                    .into_iter()
+                    .iter()
                     .filter_map(|x| x.to_condition(config))
                     .collect();
                 match conditions.len() {
@@ -291,9 +269,9 @@ impl ToCondition for Cfg {
                     _ => Some(Condition::Any(conditions)),
                 }
             }
-            Cfg::All(children) => {
+            Cfg::All(ref children) => {
                 let cfgs: Vec<_> = children
-                    .into_iter()
+                    .iter()
                     .filter_map(|x| x.to_condition(config))
                     .collect();
                 match cfgs.len() {
@@ -302,7 +280,7 @@ impl ToCondition for Cfg {
                     _ => Some(Condition::All(cfgs)),
                 }
             }
-            Cfg::Not(child) => child
+            Cfg::Not(ref child) => child
                 .to_condition(config)
                 .map(|cfg| Condition::Not(Box::new(cfg))),
         }

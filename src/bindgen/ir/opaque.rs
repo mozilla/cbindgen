@@ -132,7 +132,7 @@ impl Item for OpaqueItem {
 
 impl Source for OpaqueItem {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        let condition = (&self.cfg).to_condition(config);
+        let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);
 
         self.documentation.write(config, out);

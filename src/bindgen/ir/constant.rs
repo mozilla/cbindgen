@@ -456,7 +456,7 @@ impl Constant {
             && config.constant.allow_static_const
             && !associated_to_transparent;
 
-        let condition = (&self.cfg).to_condition(config);
+        let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);
 
         let name = if in_body {

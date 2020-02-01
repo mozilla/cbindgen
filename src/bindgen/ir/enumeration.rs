@@ -207,7 +207,7 @@ impl EnumVariant {
 
 impl Source for EnumVariant {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        let condition = (&self.cfg).to_condition(config);
+        let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);
         self.documentation.write(config, out);
         write!(out, "{}", self.export_name);
@@ -540,7 +540,7 @@ impl Source for Enum {
             ReprType::I8 => "int8_t",
         });
 
-        let condition = (&self.cfg).to_condition(config);
+        let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);
 
         self.documentation.write(config, out);
@@ -658,7 +658,7 @@ impl Source for Enum {
                 if let Some((_, ref body)) = variant.body {
                     out.new_line();
                     out.new_line();
-                    let condition = (&variant.cfg).to_condition(config);
+                    let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
                     body.write(config, out);
                     condition.write_after(config, out);
@@ -730,7 +730,7 @@ impl Source for Enum {
                         out.new_line();
                     }
                     first = false;
-                    let condition = (&variant.cfg).to_condition(config);
+                    let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
                     if config.style.generate_typedef() {
                         write!(out, "{} {};", body.export_name(), field_name);
@@ -754,7 +754,7 @@ impl Source for Enum {
                     out.new_line();
                     out.new_line();
 
-                    let condition = (&variant.cfg).to_condition(config);
+                    let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
 
                     let arg_renamer = |name: &str| {
@@ -861,7 +861,7 @@ impl Source for Enum {
                         continue;
                     }
 
-                    let condition = (&variant.cfg).to_condition(config);
+                    let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
 
                     let dig = field_count == 1 && body.tuple_struct;
@@ -938,7 +938,7 @@ impl Source for Enum {
                 out.open_brace();
                 for variant in &self.variants {
                     if let Some((ref variant_name, _)) = variant.body {
-                        let condition = (&variant.cfg).to_condition(config);
+                        let condition = variant.cfg.to_condition(config);
                         condition.write_before(config, out);
                         write!(
                             out,
@@ -1001,7 +1001,7 @@ impl Source for Enum {
                 out.open_brace();
                 for variant in &self.variants {
                     if let Some((ref variant_name, ref item)) = variant.body {
-                        let condition = (&variant.cfg).to_condition(config);
+                        let condition = variant.cfg.to_condition(config);
                         condition.write_before(config, out);
                         write!(
                             out,
@@ -1039,7 +1039,7 @@ impl Source for Enum {
                 out.open_brace();
                 for variant in &self.variants {
                     if let Some((ref variant_name, ref item)) = variant.body {
-                        let condition = (&variant.cfg).to_condition(config);
+                        let condition = variant.cfg.to_condition(config);
                         condition.write_before(config, out);
                         write!(
                             out,
