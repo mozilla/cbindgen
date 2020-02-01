@@ -37,6 +37,10 @@ struct H {
     return result;
   }
 
+  bool IsH_Foo() const {
+    return tag == Tag::H_Foo;
+  }
+
   static H H_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     H result;
@@ -46,18 +50,14 @@ struct H {
     return result;
   }
 
+  bool IsH_Bar() const {
+    return tag == Tag::H_Bar;
+  }
+
   static H H_Baz() {
     H result;
     result.tag = Tag::H_Baz;
     return result;
-  }
-
-  bool IsH_Foo() const {
-    return tag == Tag::H_Foo;
-  }
-
-  bool IsH_Bar() const {
-    return tag == Tag::H_Bar;
   }
 
   bool IsH_Baz() const {
@@ -114,6 +114,10 @@ struct J {
     return result;
   }
 
+  bool IsJ_Foo() const {
+    return tag == Tag::J_Foo;
+  }
+
   static J J_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     J result;
@@ -123,18 +127,14 @@ struct J {
     return result;
   }
 
+  bool IsJ_Bar() const {
+    return tag == Tag::J_Bar;
+  }
+
   static J J_Baz() {
     J result;
     result.tag = Tag::J_Baz;
     return result;
-  }
-
-  bool IsJ_Foo() const {
-    return tag == Tag::J_Foo;
-  }
-
-  bool IsJ_Bar() const {
-    return tag == Tag::J_Bar;
   }
 
   bool IsJ_Baz() const {
@@ -193,6 +193,10 @@ union K {
     return result;
   }
 
+  bool IsK_Foo() const {
+    return tag == Tag::K_Foo;
+  }
+
   static K K_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     K result;
@@ -202,18 +206,14 @@ union K {
     return result;
   }
 
+  bool IsK_Bar() const {
+    return tag == Tag::K_Bar;
+  }
+
   static K K_Baz() {
     K result;
     result.tag = Tag::K_Baz;
     return result;
-  }
-
-  bool IsK_Foo() const {
-    return tag == Tag::K_Foo;
-  }
-
-  bool IsK_Bar() const {
-    return tag == Tag::K_Bar;
   }
 
   bool IsK_Baz() const {

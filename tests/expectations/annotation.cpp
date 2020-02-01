@@ -59,6 +59,10 @@ union F {
     return result;
   }
 
+  bool IsFoo() const {
+    return tag == Tag::Foo;
+  }
+
   static F Bar(const uint8_t &aX,
                const int16_t &aY) {
     F result;
@@ -68,18 +72,14 @@ union F {
     return result;
   }
 
+  bool IsBar() const {
+    return tag == Tag::Bar;
+  }
+
   static F Baz() {
     F result;
     result.tag = Tag::Baz;
     return result;
-  }
-
-  bool IsFoo() const {
-    return tag == Tag::Foo;
-  }
-
-  bool IsBar() const {
-    return tag == Tag::Bar;
   }
 
   bool IsBaz() const {
@@ -116,6 +116,10 @@ struct H {
     return result;
   }
 
+  bool IsHello() const {
+    return tag == Tag::Hello;
+  }
+
   static H There(const uint8_t &aX,
                  const int16_t &aY) {
     H result;
@@ -125,18 +129,14 @@ struct H {
     return result;
   }
 
+  bool IsThere() const {
+    return tag == Tag::There;
+  }
+
   static H Everyone() {
     H result;
     result.tag = Tag::Everyone;
     return result;
-  }
-
-  bool IsHello() const {
-    return tag == Tag::Hello;
-  }
-
-  bool IsThere() const {
-    return tag == Tag::There;
   }
 
   bool IsEveryone() const {

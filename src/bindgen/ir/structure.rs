@@ -406,7 +406,7 @@ impl Source for Struct {
             return;
         }
 
-        let condition = (&self.cfg).to_condition(config);
+        let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);
 
         self.documentation.write(config, out);

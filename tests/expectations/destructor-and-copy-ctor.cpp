@@ -71,11 +71,19 @@ struct Foo {
     return result;
   }
 
+  bool IsBar() const {
+    return tag == Tag::Bar;
+  }
+
   static Foo Polygon1(const Polygon<T> &a0) {
     Foo result;
     ::new (&result.polygon1._0) (Polygon<T>)(a0);
     result.tag = Tag::Polygon1;
     return result;
+  }
+
+  bool IsPolygon1() const {
+    return tag == Tag::Polygon1;
   }
 
   static Foo Slice1(const OwnedSlice<T> &a0) {
@@ -85,11 +93,19 @@ struct Foo {
     return result;
   }
 
+  bool IsSlice1() const {
+    return tag == Tag::Slice1;
+  }
+
   static Foo Slice2(const OwnedSlice<int32_t> &a0) {
     Foo result;
     ::new (&result.slice2._0) (OwnedSlice<int32_t>)(a0);
     result.tag = Tag::Slice2;
     return result;
+  }
+
+  bool IsSlice2() const {
+    return tag == Tag::Slice2;
   }
 
   static Foo Slice3(const FillRule &aFill,
@@ -101,6 +117,10 @@ struct Foo {
     return result;
   }
 
+  bool IsSlice3() const {
+    return tag == Tag::Slice3;
+  }
+
   static Foo Slice4(const FillRule &aFill,
                     const OwnedSlice<int32_t> &aCoords) {
     Foo result;
@@ -108,26 +128,6 @@ struct Foo {
     ::new (&result.slice4.coords) (OwnedSlice<int32_t>)(aCoords);
     result.tag = Tag::Slice4;
     return result;
-  }
-
-  bool IsBar() const {
-    return tag == Tag::Bar;
-  }
-
-  bool IsPolygon1() const {
-    return tag == Tag::Polygon1;
-  }
-
-  bool IsSlice1() const {
-    return tag == Tag::Slice1;
-  }
-
-  bool IsSlice2() const {
-    return tag == Tag::Slice2;
-  }
-
-  bool IsSlice3() const {
-    return tag == Tag::Slice3;
   }
 
   bool IsSlice4() const {
@@ -225,11 +225,19 @@ union Baz {
     return result;
   }
 
+  bool IsBar2() const {
+    return tag == Tag::Bar2;
+  }
+
   static Baz Polygon21(const Polygon<T> &a0) {
     Baz result;
     ::new (&result.polygon21._0) (Polygon<T>)(a0);
     result.tag = Tag::Polygon21;
     return result;
+  }
+
+  bool IsPolygon21() const {
+    return tag == Tag::Polygon21;
   }
 
   static Baz Slice21(const OwnedSlice<T> &a0) {
@@ -239,11 +247,19 @@ union Baz {
     return result;
   }
 
+  bool IsSlice21() const {
+    return tag == Tag::Slice21;
+  }
+
   static Baz Slice22(const OwnedSlice<int32_t> &a0) {
     Baz result;
     ::new (&result.slice22._0) (OwnedSlice<int32_t>)(a0);
     result.tag = Tag::Slice22;
     return result;
+  }
+
+  bool IsSlice22() const {
+    return tag == Tag::Slice22;
   }
 
   static Baz Slice23(const FillRule &aFill,
@@ -255,6 +271,10 @@ union Baz {
     return result;
   }
 
+  bool IsSlice23() const {
+    return tag == Tag::Slice23;
+  }
+
   static Baz Slice24(const FillRule &aFill,
                      const OwnedSlice<int32_t> &aCoords) {
     Baz result;
@@ -262,26 +282,6 @@ union Baz {
     ::new (&result.slice24.coords) (OwnedSlice<int32_t>)(aCoords);
     result.tag = Tag::Slice24;
     return result;
-  }
-
-  bool IsBar2() const {
-    return tag == Tag::Bar2;
-  }
-
-  bool IsPolygon21() const {
-    return tag == Tag::Polygon21;
-  }
-
-  bool IsSlice21() const {
-    return tag == Tag::Slice21;
-  }
-
-  bool IsSlice22() const {
-    return tag == Tag::Slice22;
-  }
-
-  bool IsSlice23() const {
-    return tag == Tag::Slice23;
   }
 
   bool IsSlice24() const {
@@ -355,6 +355,10 @@ union Taz {
     return result;
   }
 
+  bool IsBar3() const {
+    return tag == Tag::Bar3;
+  }
+
   static Taz Taz1(const int32_t &a0) {
     Taz result;
     ::new (&result.taz1._0) (int32_t)(a0);
@@ -362,19 +366,15 @@ union Taz {
     return result;
   }
 
+  bool IsTaz1() const {
+    return tag == Tag::Taz1;
+  }
+
   static Taz Taz3(const OwnedSlice<int32_t> &a0) {
     Taz result;
     ::new (&result.taz3._0) (OwnedSlice<int32_t>)(a0);
     result.tag = Tag::Taz3;
     return result;
-  }
-
-  bool IsBar3() const {
-    return tag == Tag::Bar3;
-  }
-
-  bool IsTaz1() const {
-    return tag == Tag::Taz1;
   }
 
   bool IsTaz3() const {
@@ -435,15 +435,15 @@ union Tazz {
     return result;
   }
 
+  bool IsBar4() const {
+    return tag == Tag::Bar4;
+  }
+
   static Tazz Taz2(const int32_t &a0) {
     Tazz result;
     ::new (&result.taz2._0) (int32_t)(a0);
     result.tag = Tag::Taz2;
     return result;
-  }
-
-  bool IsBar4() const {
-    return tag == Tag::Bar4;
   }
 
   bool IsTaz2() const {
