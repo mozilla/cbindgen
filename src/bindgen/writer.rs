@@ -113,6 +113,10 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         self.spaces.push(spaces);
     }
 
+    pub fn pop_set_spaces(&mut self) {
+        self.pop_tab()
+    }
+
     pub fn line_length_for_align(&self) -> usize {
         if self.line_started {
             self.line_length

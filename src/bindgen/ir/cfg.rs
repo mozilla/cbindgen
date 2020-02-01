@@ -339,8 +339,10 @@ pub trait ConditionWrite {
 impl ConditionWrite for Option<Condition> {
     fn write_before<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if let Some(ref cfg) = *self {
+            out.push_set_spaces(0);
             out.write("#if ");
             cfg.write(config, out);
+            out.pop_set_spaces();
             out.new_line();
         }
     }
@@ -348,7 +350,9 @@ impl ConditionWrite for Option<Condition> {
     fn write_after<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
         if self.is_some() {
             out.new_line();
+            out.push_set_spaces(0);
             out.write("#endif");
+            out.pop_set_spaces();
         }
     }
 }

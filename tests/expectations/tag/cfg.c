@@ -32,12 +32,12 @@ struct FooHandle {
 enum C_Tag {
   C1,
   C2,
-  #if defined(PLATFORM_WIN)
+#if defined(PLATFORM_WIN)
   C3,
-  #endif
-  #if defined(PLATFORM_UNIX)
+#endif
+#if defined(PLATFORM_UNIX)
   C5,
-  #endif
+#endif
 };
 typedef uint8_t C_Tag;
 
@@ -50,9 +50,9 @@ struct C5_Body {
 
 union C {
   C_Tag tag;
-  #if defined(PLATFORM_UNIX)
+#if defined(PLATFORM_UNIX)
   struct C5_Body c5;
-  #endif
+#endif
 };
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
