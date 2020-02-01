@@ -58,6 +58,16 @@ union StyleFoo {
     return tag == Tag::Foo;
   }
 
+  const Foo_Body& AsFoo() const {
+    assert(IsFoo());
+    return foo;
+  }
+
+  Foo_Body& AsFoo() {
+    assert(IsFoo());
+    return foo;
+  }
+
   static StyleFoo Bar(const T &a0) {
     StyleFoo result;
     ::new (&result.bar._0) (T)(a0);
@@ -67,6 +77,16 @@ union StyleFoo {
 
   bool IsBar() const {
     return tag == Tag::Bar;
+  }
+
+  const T& AsBar() const {
+    assert(IsBar());
+    return bar._0;
+  }
+
+  T& AsBar() {
+    assert(IsBar());
+    return bar._0;
   }
 
   static StyleFoo Baz(const StylePoint<T> &a0) {
@@ -80,36 +100,6 @@ union StyleFoo {
     return tag == Tag::Baz;
   }
 
-  static StyleFoo Bazz() {
-    StyleFoo result;
-    result.tag = Tag::Bazz;
-    return result;
-  }
-
-  bool IsBazz() const {
-    return tag == Tag::Bazz;
-  }
-
-  const Foo_Body& AsFoo() const {
-    assert(IsFoo());
-    return foo;
-  }
-
-  Foo_Body& AsFoo() {
-    assert(IsFoo());
-    return foo;
-  }
-
-  const T& AsBar() const {
-    assert(IsBar());
-    return bar._0;
-  }
-
-  T& AsBar() {
-    assert(IsBar());
-    return bar._0;
-  }
-
   const StylePoint<T>& AsBaz() const {
     assert(IsBaz());
     return baz._0;
@@ -118,6 +108,16 @@ union StyleFoo {
   StylePoint<T>& AsBaz() {
     assert(IsBaz());
     return baz._0;
+  }
+
+  static StyleFoo Bazz() {
+    StyleFoo result;
+    result.tag = Tag::Bazz;
+    return result;
+  }
+
+  bool IsBazz() const {
+    return tag == Tag::Bazz;
   }
 };
 
@@ -169,6 +169,16 @@ struct StyleBar {
     return tag == Tag::Bar1;
   }
 
+  const StyleBar1_Body& AsBar1() const {
+    assert(IsBar1());
+    return bar1;
+  }
+
+  StyleBar1_Body& AsBar1() {
+    assert(IsBar1());
+    return bar1;
+  }
+
   static StyleBar Bar2(const T &a0) {
     StyleBar result;
     ::new (&result.bar2._0) (T)(a0);
@@ -178,6 +188,16 @@ struct StyleBar {
 
   bool IsBar2() const {
     return tag == Tag::Bar2;
+  }
+
+  const T& AsBar2() const {
+    assert(IsBar2());
+    return bar2._0;
+  }
+
+  T& AsBar2() {
+    assert(IsBar2());
+    return bar2._0;
   }
 
   static StyleBar Bar3(const StylePoint<T> &a0) {
@@ -191,36 +211,6 @@ struct StyleBar {
     return tag == Tag::Bar3;
   }
 
-  static StyleBar Bar4() {
-    StyleBar result;
-    result.tag = Tag::Bar4;
-    return result;
-  }
-
-  bool IsBar4() const {
-    return tag == Tag::Bar4;
-  }
-
-  const StyleBar1_Body& AsBar1() const {
-    assert(IsBar1());
-    return bar1;
-  }
-
-  StyleBar1_Body& AsBar1() {
-    assert(IsBar1());
-    return bar1;
-  }
-
-  const T& AsBar2() const {
-    assert(IsBar2());
-    return bar2._0;
-  }
-
-  T& AsBar2() {
-    assert(IsBar2());
-    return bar2._0;
-  }
-
   const StylePoint<T>& AsBar3() const {
     assert(IsBar3());
     return bar3._0;
@@ -229,6 +219,16 @@ struct StyleBar {
   StylePoint<T>& AsBar3() {
     assert(IsBar3());
     return bar3._0;
+  }
+
+  static StyleBar Bar4() {
+    StyleBar result;
+    result.tag = Tag::Bar4;
+    return result;
+  }
+
+  bool IsBar4() const {
+    return tag == Tag::Bar4;
   }
 };
 
@@ -266,6 +266,16 @@ union StyleBaz {
     return tag == Tag::Baz1;
   }
 
+  const StyleBar<uint32_t>& AsBaz1() const {
+    assert(IsBaz1());
+    return baz1._0;
+  }
+
+  StyleBar<uint32_t>& AsBaz1() {
+    assert(IsBaz1());
+    return baz1._0;
+  }
+
   static StyleBaz Baz2(const StylePoint<int32_t> &a0) {
     StyleBaz result;
     ::new (&result.baz2._0) (StylePoint<int32_t>)(a0);
@@ -277,26 +287,6 @@ union StyleBaz {
     return tag == Tag::Baz2;
   }
 
-  static StyleBaz Baz3() {
-    StyleBaz result;
-    result.tag = Tag::Baz3;
-    return result;
-  }
-
-  bool IsBaz3() const {
-    return tag == Tag::Baz3;
-  }
-
-  const StyleBar<uint32_t>& AsBaz1() const {
-    assert(IsBaz1());
-    return baz1._0;
-  }
-
-  StyleBar<uint32_t>& AsBaz1() {
-    assert(IsBaz1());
-    return baz1._0;
-  }
-
   const StylePoint<int32_t>& AsBaz2() const {
     assert(IsBaz2());
     return baz2._0;
@@ -305,6 +295,16 @@ union StyleBaz {
   StylePoint<int32_t>& AsBaz2() {
     assert(IsBaz2());
     return baz2._0;
+  }
+
+  static StyleBaz Baz3() {
+    StyleBaz result;
+    result.tag = Tag::Baz3;
+    return result;
+  }
+
+  bool IsBaz3() const {
+    return tag == Tag::Baz3;
   }
 };
 
@@ -340,6 +340,16 @@ struct StyleTaz {
     return tag == Tag::Taz1;
   }
 
+  const StyleBar<uint32_t>& AsTaz1() const {
+    assert(IsTaz1());
+    return taz1._0;
+  }
+
+  StyleBar<uint32_t>& AsTaz1() {
+    assert(IsTaz1());
+    return taz1._0;
+  }
+
   static StyleTaz Taz2(const StyleBaz &a0) {
     StyleTaz result;
     ::new (&result.taz2._0) (StyleBaz)(a0);
@@ -351,26 +361,6 @@ struct StyleTaz {
     return tag == Tag::Taz2;
   }
 
-  static StyleTaz Taz3() {
-    StyleTaz result;
-    result.tag = Tag::Taz3;
-    return result;
-  }
-
-  bool IsTaz3() const {
-    return tag == Tag::Taz3;
-  }
-
-  const StyleBar<uint32_t>& AsTaz1() const {
-    assert(IsTaz1());
-    return taz1._0;
-  }
-
-  StyleBar<uint32_t>& AsTaz1() {
-    assert(IsTaz1());
-    return taz1._0;
-  }
-
   const StyleBaz& AsTaz2() const {
     assert(IsTaz2());
     return taz2._0;
@@ -379,6 +369,16 @@ struct StyleTaz {
   StyleBaz& AsTaz2() {
     assert(IsTaz2());
     return taz2._0;
+  }
+
+  static StyleTaz Taz3() {
+    StyleTaz result;
+    result.tag = Tag::Taz3;
+    return result;
+  }
+
+  bool IsTaz3() const {
+    return tag == Tag::Taz3;
   }
 };
 
