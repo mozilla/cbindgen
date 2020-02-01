@@ -41,6 +41,38 @@ typedef struct FooHandle {
 } FooHandle;
 #endif
 
+enum C_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  C1,
+  C2,
+  #if defined(PLATFORM_WIN)
+  C3,
+  #endif
+  #if defined(PLATFORM_UNIX)
+  C5,
+  #endif
+};
+#ifndef __cplusplus
+typedef uint8_t C_Tag;
+#endif // __cplusplus
+
+#if defined(PLATFORM_UNIX)
+typedef struct C5_Body {
+  C_Tag tag;
+  int32_t int_;
+} C5_Body;
+#endif
+
+typedef union C {
+  C_Tag tag;
+  #if defined(PLATFORM_UNIX)
+  C5_Body c5;
+  #endif
+} C;
+
 #if (defined(PLATFORM_WIN) || defined(M_32))
 typedef struct BarHandle {
   BarType ty;
@@ -54,11 +86,11 @@ extern "C" {
 #endif // __cplusplus
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
-void root(FooHandle a);
+void root(FooHandle a, C c);
 #endif
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
-void root(BarHandle a);
+void root(BarHandle a, C c);
 #endif
 
 #ifdef __cplusplus

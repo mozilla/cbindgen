@@ -22,6 +22,16 @@ enum BarType {
   C,
 }
 
+#[repr(u8)]
+pub enum C {
+    C1,
+    C2,
+    #[cfg(windows)]
+    C3,
+    #[cfg(unix)]
+    C5 { int: i32 },
+}
+
 #[cfg(any(windows, target_pointer_width="32"))]
 #[repr(C)]
 struct BarHandle {
@@ -32,10 +42,10 @@ struct BarHandle {
 
 #[cfg(all(unix, x11))]
 #[no_mangle]
-pub extern "C" fn root(a: FooHandle)
+pub extern "C" fn root(a: FooHandle, c: C)
 { }
 
 #[cfg(any(windows, target_pointer_width="32"))]
 #[no_mangle]
-pub extern "C" fn root(a: BarHandle)
+pub extern "C" fn root(a: BarHandle, c: C)
 { }
