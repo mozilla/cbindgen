@@ -26,6 +26,7 @@ pub struct EnumVariant {
     pub export_name: String,
     pub discriminant: Option<i64>,
     pub body: Option<(String, Struct)>,
+    pub cfg: Option<Cfg>,
     pub documentation: Documentation,
 }
 
@@ -95,6 +96,7 @@ impl EnumVariant {
             Ok(res)
         }
 
+        let variant_cfg = Cfg::append(mod_cfg, Cfg::load(&variant.attrs));
         let body = match variant.fields {
             syn::Fields::Unit => None,
             syn::Fields::Named(ref fields) => {
@@ -108,7 +110,7 @@ impl EnumVariant {
                     None,
                     false,
                     false,
-                    Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
+                    None,
                     AnnotationSet::load(&variant.attrs)?,
                     Documentation::none(),
                 ))
@@ -124,7 +126,7 @@ impl EnumVariant {
                     None,
                     false,
                     true,
-                    Cfg::append(mod_cfg, Cfg::load(&variant.attrs)),
+                    None,
                     AnnotationSet::load(&variant.attrs)?,
                     Documentation::none(),
                 ))
@@ -143,6 +145,7 @@ impl EnumVariant {
                     body,
                 )
             }),
+            variant_cfg,
             Documentation::load(&variant.attrs),
         ))
     }
@@ -151,6 +154,7 @@ impl EnumVariant {
         name: String,
         discriminant: Option<i64>,
         body: Option<(String, Struct)>,
+        cfg: Option<Cfg>,
         documentation: Documentation,
     ) -> Self {
         let export_name = name.clone();
@@ -159,6 +163,7 @@ impl EnumVariant {
             export_name,
             discriminant,
             body,
+            cfg,
             documentation,
         }
     }
@@ -182,6 +187,7 @@ impl EnumVariant {
             self.body
                 .as_ref()
                 .map(|&(ref name, ref ty)| (name.clone(), ty.specialize(generic_values, mappings))),
+            self.cfg.clone(),
             self.documentation.clone(),
         )
     }
@@ -201,12 +207,15 @@ impl EnumVariant {
 
 impl Source for EnumVariant {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        let condition = (&self.cfg).to_condition(config);
+        condition.write_before(config, out);
         self.documentation.write(config, out);
         write!(out, "{}", self.export_name);
         if let Some(discriminant) = self.discriminant {
             write!(out, " = {}", discriminant);
         }
         out.write(",");
+        condition.write_after(config, out);
     }
 }
 
@@ -289,13 +298,20 @@ impl Enum {
 
         if let Some(names) = annotations.list("enum-trailing-values") {
             for name in names {
-                variants.push(EnumVariant::new(name, None, None, Documentation::none()));
+                variants.push(EnumVariant::new(
+                    name,
+                    None,
+                    None,
+                    None,
+                    Documentation::none(),
+                ));
             }
         }
 
         if config.enumeration.add_sentinel(&annotations) {
             variants.push(EnumVariant::new(
                 "Sentinel".to_owned(),
+                None,
                 None,
                 None,
                 Documentation::simple(" Must be last for serialization purposes"),
@@ -443,6 +459,7 @@ impl Item for Enum {
                                 body.1.clone(),
                             )
                         }),
+                        variant.cfg.clone(),
                         variant.documentation.clone(),
                     )
                 })
@@ -524,7 +541,6 @@ impl Source for Enum {
         });
 
         let condition = (&self.cfg).to_condition(config);
-
         condition.write_before(config, out);
 
         self.documentation.write(config, out);
@@ -642,8 +658,10 @@ impl Source for Enum {
                 if let Some((_, ref body)) = variant.body {
                     out.new_line();
                     out.new_line();
-
+                    let condition = (&variant.cfg).to_condition(config);
+                    condition.write_before(config, out);
                     body.write(config, out);
+                    condition.write_after(config, out);
                 }
             }
 
@@ -700,19 +718,26 @@ impl Source for Enum {
                 out.open_brace();
             }
 
-            for (i, &(ref field_name, ref body)) in self
-                .variants
-                .iter()
-                .filter_map(|variant| variant.body.as_ref())
-                .enumerate()
             {
-                if i != 0 {
-                    out.new_line();
-                }
-                if config.style.generate_typedef() {
-                    write!(out, "{} {};", body.export_name(), field_name);
-                } else {
-                    write!(out, "struct {} {};", body.export_name(), field_name);
+                let mut first = true;
+                for variant in &self.variants {
+                    let (field_name, body) = match variant.body {
+                        Some((ref field_name, ref body)) => (field_name, body),
+                        None => continue,
+                    };
+
+                    if !first {
+                        out.new_line();
+                    }
+                    first = false;
+                    let condition = (&variant.cfg).to_condition(config);
+                    condition.write_before(config, out);
+                    if config.style.generate_typedef() {
+                        write!(out, "{} {};", body.export_name(), field_name);
+                    } else {
+                        write!(out, "struct {} {};", body.export_name(), field_name);
+                    }
+                    condition.write_after(config, out);
                 }
             }
 
@@ -728,6 +753,9 @@ impl Source for Enum {
                 for variant in &self.variants {
                     out.new_line();
                     out.new_line();
+
+                    let condition = (&variant.cfg).to_condition(config);
+                    condition.write_before(config, out);
 
                     let arg_renamer = |name: &str| {
                         config
@@ -794,9 +822,7 @@ impl Source for Enum {
                     out.new_line();
                     write!(out, "return result;");
                     out.close_brace(false);
-                }
 
-                for variant in &self.variants {
                     out.new_line();
                     out.new_line();
 
@@ -805,6 +831,7 @@ impl Source for Enum {
                     out.open_brace();
                     write!(out, "return tag == {}::{};", enum_name, variant.export_name);
                     out.close_brace(false);
+                    condition.write_after(config, out);
                 }
             }
 
@@ -829,6 +856,13 @@ impl Source for Enum {
                     if field_count == 0 {
                         continue;
                     }
+
+                    if !derive_const_casts && !derive_mut_casts {
+                        continue;
+                    }
+
+                    let condition = (&variant.cfg).to_condition(config);
+                    condition.write_before(config, out);
 
                     let dig = field_count == 1 && body.tuple_struct;
                     let mut derive_casts = |const_casts: bool| {
@@ -872,6 +906,8 @@ impl Source for Enum {
                     if derive_mut_casts {
                         derive_casts(false)
                     }
+
+                    condition.write_after(config, out);
                 }
             }
 
@@ -902,6 +938,8 @@ impl Source for Enum {
                 out.open_brace();
                 for variant in &self.variants {
                     if let Some((ref variant_name, _)) = variant.body {
+                        let condition = (&variant.cfg).to_condition(config);
+                        condition.write_before(config, out);
                         write!(
                             out,
                             "case {}::{}: return {} == {}.{};",
@@ -912,6 +950,7 @@ impl Source for Enum {
                             variant_name
                         );
                         out.new_line();
+                        condition.write_after(config, out);
                     }
                 }
                 write!(out, "default: return true;");
@@ -962,6 +1001,8 @@ impl Source for Enum {
                 out.open_brace();
                 for variant in &self.variants {
                     if let Some((ref variant_name, ref item)) = variant.body {
+                        let condition = (&variant.cfg).to_condition(config);
+                        condition.write_before(config, out);
                         write!(
                             out,
                             "case {}::{}: {}.~{}(); break;",
@@ -971,6 +1012,7 @@ impl Source for Enum {
                             item.export_name(),
                         );
                         out.new_line();
+                        condition.write_after(config, out);
                     }
                 }
                 write!(out, "default: break;");
@@ -997,6 +1039,8 @@ impl Source for Enum {
                 out.open_brace();
                 for variant in &self.variants {
                     if let Some((ref variant_name, ref item)) = variant.body {
+                        let condition = (&variant.cfg).to_condition(config);
+                        condition.write_before(config, out);
                         write!(
                             out,
                             "case {}::{}: ::new (&{}) ({})({}.{}); break;",
@@ -1008,6 +1052,7 @@ impl Source for Enum {
                             variant_name,
                         );
                         out.new_line();
+                        condition.write_after(config, out);
                     }
                 }
                 write!(out, "default: break;");
@@ -1051,7 +1096,6 @@ impl Source for Enum {
                 out.close_brace(true);
             }
         }
-
         condition.write_after(config, out);
     }
 }
