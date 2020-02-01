@@ -31,27 +31,27 @@ union C {
   enum class Tag : uint8_t {
     C1,
     C2,
-    #if defined(PLATFORM_WIN)
+#if defined(PLATFORM_WIN)
     C3,
-    #endif
-    #if defined(PLATFORM_UNIX)
+#endif
+#if defined(PLATFORM_UNIX)
     C5,
-    #endif
+#endif
   };
 
-  #if defined(PLATFORM_UNIX)
+#if defined(PLATFORM_UNIX)
   struct C5_Body {
     Tag tag;
     int32_t int_;
   };
-  #endif
+#endif
 
   struct {
     Tag tag;
   };
-  #if defined(PLATFORM_UNIX)
+#if defined(PLATFORM_UNIX)
   C5_Body c5;
-  #endif
+#endif
 };
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
