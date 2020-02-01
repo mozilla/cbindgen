@@ -749,6 +749,8 @@ impl Source for Enum {
 
             // Emit convenience methods
             let derive_helper_methods = config.enumeration.derive_helper_methods(&self.annotations);
+            let derive_const_casts = config.enumeration.derive_const_casts(&self.annotations);
+            let derive_mut_casts = config.enumeration.derive_mut_casts(&self.annotations);
             if config.language == Language::Cxx && derive_helper_methods {
                 for variant in &self.variants {
                     out.new_line();
@@ -831,44 +833,27 @@ impl Source for Enum {
                     out.open_brace();
                     write!(out, "return tag == {}::{};", enum_name, variant.export_name);
                     out.close_brace(false);
-                    condition.write_after(config, out);
-                }
-            }
 
-            let derive_const_casts = config.enumeration.derive_const_casts(&self.annotations);
-            let derive_mut_casts = config.enumeration.derive_mut_casts(&self.annotations);
-            if config.language == Language::Cxx
-                && derive_helper_methods
-                && (derive_const_casts || derive_mut_casts)
-            {
-                let assert_name = match config.enumeration.cast_assert_name {
-                    Some(ref n) => &**n,
-                    None => "assert",
-                };
-
-                for variant in &self.variants {
-                    let (member_name, body) = match variant.body {
-                        Some((ref member_name, ref body)) => (member_name, body),
-                        None => continue,
+                    let assert_name = match config.enumeration.cast_assert_name {
+                        Some(ref n) => &**n,
+                        None => "assert",
                     };
 
-                    let field_count = body.fields.len() - skip_fields;
-                    if field_count == 0 {
-                        continue;
-                    }
-
-                    if !derive_const_casts && !derive_mut_casts {
-                        continue;
-                    }
-
-                    let condition = variant.cfg.to_condition(config);
-                    condition.write_before(config, out);
-
-                    let dig = field_count == 1 && body.tuple_struct;
                     let mut derive_casts = |const_casts: bool| {
+                        let (member_name, body) = match variant.body {
+                            Some((ref member_name, ref body)) => (member_name, body),
+                            None => return,
+                        };
+
+                        let field_count = body.fields.len() - skip_fields;
+                        if field_count == 0 {
+                            return;
+                        }
+
                         out.new_line();
                         out.new_line();
 
+                        let dig = field_count == 1 && body.tuple_struct;
                         if dig {
                             let field = body.fields.iter().skip(skip_fields).next().unwrap();
                             let return_type = field.1.clone();

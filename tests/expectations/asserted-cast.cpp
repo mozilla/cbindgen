@@ -41,6 +41,16 @@ struct H {
     return tag == Tag::H_Foo;
   }
 
+  const int16_t& AsH_Foo() const {
+    MY_ASSERT(IsH_Foo());
+    return foo._0;
+  }
+
+  int16_t& AsH_Foo() {
+    MY_ASSERT(IsH_Foo());
+    return foo._0;
+  }
+
   static H H_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     H result;
@@ -54,26 +64,6 @@ struct H {
     return tag == Tag::H_Bar;
   }
 
-  static H H_Baz() {
-    H result;
-    result.tag = Tag::H_Baz;
-    return result;
-  }
-
-  bool IsH_Baz() const {
-    return tag == Tag::H_Baz;
-  }
-
-  const int16_t& AsH_Foo() const {
-    MY_ASSERT(IsH_Foo());
-    return foo._0;
-  }
-
-  int16_t& AsH_Foo() {
-    MY_ASSERT(IsH_Foo());
-    return foo._0;
-  }
-
   const H_Bar_Body& AsH_Bar() const {
     MY_ASSERT(IsH_Bar());
     return bar;
@@ -82,6 +72,16 @@ struct H {
   H_Bar_Body& AsH_Bar() {
     MY_ASSERT(IsH_Bar());
     return bar;
+  }
+
+  static H H_Baz() {
+    H result;
+    result.tag = Tag::H_Baz;
+    return result;
+  }
+
+  bool IsH_Baz() const {
+    return tag == Tag::H_Baz;
   }
 };
 
@@ -118,6 +118,16 @@ struct J {
     return tag == Tag::J_Foo;
   }
 
+  const int16_t& AsJ_Foo() const {
+    MY_ASSERT(IsJ_Foo());
+    return foo._0;
+  }
+
+  int16_t& AsJ_Foo() {
+    MY_ASSERT(IsJ_Foo());
+    return foo._0;
+  }
+
   static J J_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     J result;
@@ -131,26 +141,6 @@ struct J {
     return tag == Tag::J_Bar;
   }
 
-  static J J_Baz() {
-    J result;
-    result.tag = Tag::J_Baz;
-    return result;
-  }
-
-  bool IsJ_Baz() const {
-    return tag == Tag::J_Baz;
-  }
-
-  const int16_t& AsJ_Foo() const {
-    MY_ASSERT(IsJ_Foo());
-    return foo._0;
-  }
-
-  int16_t& AsJ_Foo() {
-    MY_ASSERT(IsJ_Foo());
-    return foo._0;
-  }
-
   const J_Bar_Body& AsJ_Bar() const {
     MY_ASSERT(IsJ_Bar());
     return bar;
@@ -159,6 +149,16 @@ struct J {
   J_Bar_Body& AsJ_Bar() {
     MY_ASSERT(IsJ_Bar());
     return bar;
+  }
+
+  static J J_Baz() {
+    J result;
+    result.tag = Tag::J_Baz;
+    return result;
+  }
+
+  bool IsJ_Baz() const {
+    return tag == Tag::J_Baz;
   }
 };
 
@@ -197,6 +197,16 @@ union K {
     return tag == Tag::K_Foo;
   }
 
+  const int16_t& AsK_Foo() const {
+    MY_ASSERT(IsK_Foo());
+    return foo._0;
+  }
+
+  int16_t& AsK_Foo() {
+    MY_ASSERT(IsK_Foo());
+    return foo._0;
+  }
+
   static K K_Bar(const uint8_t &aX,
                  const int16_t &aY) {
     K result;
@@ -210,26 +220,6 @@ union K {
     return tag == Tag::K_Bar;
   }
 
-  static K K_Baz() {
-    K result;
-    result.tag = Tag::K_Baz;
-    return result;
-  }
-
-  bool IsK_Baz() const {
-    return tag == Tag::K_Baz;
-  }
-
-  const int16_t& AsK_Foo() const {
-    MY_ASSERT(IsK_Foo());
-    return foo._0;
-  }
-
-  int16_t& AsK_Foo() {
-    MY_ASSERT(IsK_Foo());
-    return foo._0;
-  }
-
   const K_Bar_Body& AsK_Bar() const {
     MY_ASSERT(IsK_Bar());
     return bar;
@@ -238,6 +228,16 @@ union K {
   K_Bar_Body& AsK_Bar() {
     MY_ASSERT(IsK_Bar());
     return bar;
+  }
+
+  static K K_Baz() {
+    K result;
+    result.tag = Tag::K_Baz;
+    return result;
+  }
+
+  bool IsK_Baz() const {
+    return tag == Tag::K_Baz;
   }
 };
 
