@@ -20,29 +20,27 @@ enum DefineKey<'a> {
 impl<'a> DefineKey<'a> {
     fn load(key: &str) -> DefineKey {
         // TODO: dirty parser
-        if key.contains('=') {
-            let mut splits = key.trim().split('=');
-
-            let name = if let Some(name) = splits.next() {
-                name.trim()
-            } else {
-                return DefineKey::Boolean(key);
-            };
-
-            let value = if let Some(value) = splits.next() {
-                value.trim()
-            } else {
-                return DefineKey::Boolean(key);
-            };
-
-            if splits.next().is_some() {
-                return DefineKey::Boolean(key);
-            }
-
-            DefineKey::Named(name, value)
-        } else {
-            DefineKey::Boolean(key)
+        if !key.contains('=') {
+            return DefineKey::Boolean(key);
         }
+
+        let mut splits = key.trim().split('=');
+
+        let name = match splits.next() {
+            Some(n) => n.trim(),
+            None => return DefineKey::Boolean(key),
+        };
+
+        let value = match splits.next() {
+            Some(v) => v.trim(),
+            None => return DefineKey::Boolean(key),
+        };
+
+        if splits.next().is_some() {
+            return DefineKey::Boolean(key);
+        }
+
+        DefineKey::Named(name, value)
     }
 }
 
