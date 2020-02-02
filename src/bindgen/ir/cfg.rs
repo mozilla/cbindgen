@@ -144,21 +144,20 @@ impl Cfg {
     }
 
     fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {
-        match *item {
-            syn::NestedMeta::Meta(syn::Meta::Path(ref path)) => Some(Cfg::Boolean(format!(
-                "{}",
-                path.segments.first().unwrap().ident
-            ))),
+        Some(match *item {
+            syn::NestedMeta::Meta(syn::Meta::Path(ref path)) => {
+                Cfg::Boolean(format!("{}", path.segments.first().unwrap().ident))
+            }
             syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
                 ref path,
                 ref lit,
                 ..
-            })) => match lit {
-                &syn::Lit::Str(ref value) => Some(Cfg::Named(
+            })) => match *lit {
+                syn::Lit::Str(ref value) => Cfg::Named(
                     format!("{}", path.segments.first().unwrap().ident),
                     value.value(),
-                )),
-                _ => None,
+                ),
+                _ => return None,
             },
             syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList {
                 ref path,
@@ -166,44 +165,28 @@ impl Cfg {
                 ..
             })) => {
                 if path.is_ident("any") {
-                    if let Some(configs) = Cfg::load_list(nested.iter()) {
-                        Some(Cfg::Any(configs))
-                    } else {
-                        None
-                    }
+                    Cfg::Any(Cfg::load_list(nested.iter())?)
                 } else if path.is_ident("all") {
-                    if let Some(configs) = Cfg::load_list(nested.iter()) {
-                        Some(Cfg::All(configs))
-                    } else {
-                        None
-                    }
+                    Cfg::All(Cfg::load_list(nested.iter())?)
                 } else if path.is_ident("not") {
                     if nested.len() != 1 {
                         return None;
                     }
 
-                    if let Some(config) = Cfg::load_single(&nested[0]) {
-                        Some(Cfg::Not(Box::new(config)))
-                    } else {
-                        None
-                    }
+                    Cfg::Not(Box::new(Cfg::load_single(&nested[0])?))
                 } else {
-                    None
+                    return None;
                 }
             }
-            _ => None,
-        }
+            _ => return None,
+        })
     }
 
     fn load_list<'a, I: Iterator<Item = &'a syn::NestedMeta>>(attrs: I) -> Option<Vec<Cfg>> {
         let mut configs = Vec::new();
 
         for attr in attrs {
-            if let Some(config) = Cfg::load_single(attr) {
-                configs.push(config);
-            } else {
-                return None;
-            }
+            configs.push(Cfg::load_single(attr)?);
         }
 
         if configs.is_empty() {
