@@ -24,6 +24,17 @@ struct FooHandle {
   FooType ty;
   int32_t x;
   float y;
+
+  bool operator==(const FooHandle& other) const {
+    return ty == other.ty &&
+           x == other.x &&
+           y == other.y;
+  }
+  bool operator!=(const FooHandle& other) const {
+    return ty != other.ty ||
+           x != other.x ||
+           y != other.y;
+  }
 };
 #endif
 
@@ -43,6 +54,13 @@ union C {
   struct C5_Body {
     Tag tag;
     int32_t int_;
+
+    bool operator==(const C5_Body& other) const {
+      return int_ == other.int_;
+    }
+    bool operator!=(const C5_Body& other) const {
+      return int_ != other.int_;
+    }
   };
 #endif
 
@@ -52,6 +70,100 @@ union C {
 #if defined(PLATFORM_UNIX)
   C5_Body c5;
 #endif
+
+  static C C1() {
+    C result;
+    result.tag = Tag::C1;
+    return result;
+  }
+
+  bool IsC1() const {
+    return tag == Tag::C1;
+  }
+
+  static C C2() {
+    C result;
+    result.tag = Tag::C2;
+    return result;
+  }
+
+  bool IsC2() const {
+    return tag == Tag::C2;
+  }
+
+#if defined(PLATFORM_WIN)
+  static C C3() {
+    C result;
+    result.tag = Tag::C3;
+    return result;
+  }
+
+  bool IsC3() const {
+    return tag == Tag::C3;
+  }
+#endif
+
+#if defined(PLATFORM_UNIX)
+  static C C5(const int32_t &aInt) {
+    C result;
+    ::new (&result.c5.int_) (int32_t)(aInt);
+    result.tag = Tag::C5;
+    return result;
+  }
+
+  bool IsC5() const {
+    return tag == Tag::C5;
+  }
+#endif
+
+  bool operator==(const C& other) const {
+    if (tag != other.tag) {
+      return false;
+    }
+    switch (tag) {
+#if defined(PLATFORM_UNIX)
+      case Tag::C5: return c5 == other.c5;
+#endif
+      default: return true;
+    }
+  }
+
+  bool operator!=(const C& other) const {
+    return !(*this == other);
+  }
+
+  private:
+  C() {
+
+  }
+  public:
+
+
+  ~C() {
+    switch (tag) {
+#if defined(PLATFORM_UNIX)
+      case Tag::C5: c5.~C5_Body(); break;
+#endif
+      default: break;
+    }
+  }
+
+  C(const C& other)
+   : tag(other.tag) {
+    switch (tag) {
+#if defined(PLATFORM_UNIX)
+      case Tag::C5: ::new (&c5) (C5_Body)(other.c5); break;
+#endif
+      default: break;
+    }
+  }
+  C& operator=(const C& other) {
+    if (this != &other) {
+      this->~C();
+      new (this) C(other);
+    }
+    return *this;
+  }
 };
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
@@ -59,6 +171,17 @@ struct BarHandle {
   BarType ty;
   int32_t x;
   float y;
+
+  bool operator==(const BarHandle& other) const {
+    return ty == other.ty &&
+           x == other.x &&
+           y == other.y;
+  }
+  bool operator!=(const BarHandle& other) const {
+    return ty != other.ty ||
+           x != other.x ||
+           y != other.y;
+  }
 };
 #endif
 

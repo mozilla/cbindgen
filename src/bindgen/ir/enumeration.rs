@@ -934,8 +934,8 @@ impl Source for Enum {
                             other,
                             variant_name
                         );
-                        out.new_line();
                         condition.write_after(config, out);
+                        out.new_line();
                     }
                 }
                 write!(out, "default: return true;");
@@ -996,8 +996,8 @@ impl Source for Enum {
                             variant_name,
                             item.export_name(),
                         );
-                        out.new_line();
                         condition.write_after(config, out);
+                        out.new_line();
                     }
                 }
                 write!(out, "default: break;");
@@ -1036,8 +1036,8 @@ impl Source for Enum {
                             other,
                             variant_name,
                         );
-                        out.new_line();
                         condition.write_after(config, out);
+                        out.new_line();
                     }
                 }
                 write!(out, "default: break;");
