@@ -1,3 +1,7 @@
+## 0.13.1
+
+     * Support `#[cfg]` on individual enum variants. (#469)
+
 ## 0.13.0
 
      * Support 'swift_name' attributes on generated functions (#449)
