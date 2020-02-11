@@ -13,10 +13,15 @@ static const uint32_t HEART = L'\U00002764';
 
 static const uint32_t LEFTCURLY = '{';
 
+/// A
+/// multi-line
+/// doc
+/// comment.
 static const int8_t NEG_ONE = -1;
 
 static const uint32_t NEWLINE = '\n';
 
+/// A single-line doc comment.
 static const int8_t POS_ONE = 1;
 
 static const uint32_t QUOTE = '\'';

@@ -489,6 +489,8 @@ impl Constant {
             _ => &self.value,
         };
 
+        self.documentation.write(config, out);
+
         if config.constant.allow_static_const && config.language == Language::Cxx {
             out.write(if in_body { "inline " } else { "static " });
             if let Type::ConstPtr(..) = self.ty {

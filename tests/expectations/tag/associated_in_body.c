@@ -11,10 +11,25 @@
 struct StyleAlignFlags {
   uint8_t bits;
 };
+/**
+ * 'auto'
+ */
 #define StyleAlignFlags_AUTO (StyleAlignFlags){ .bits = 0 }
+/**
+ * 'normal'
+ */
 #define StyleAlignFlags_NORMAL (StyleAlignFlags){ .bits = 1 }
+/**
+ * 'start'
+ */
 #define StyleAlignFlags_START (StyleAlignFlags){ .bits = (1 << 1) }
+/**
+ * 'end'
+ */
 #define StyleAlignFlags_END (StyleAlignFlags){ .bits = (1 << 2) }
+/**
+ * 'flex-start'
+ */
 #define StyleAlignFlags_FLEX_START (StyleAlignFlags){ .bits = (1 << 3) }
 
 void root(struct StyleAlignFlags flags);

@@ -12,7 +12,12 @@ pub const ZOM: f32 = 3.14;
 pub(crate) const DONT_EXPORT_CRATE: i32 = 20;
 const DONT_EXPORT_PRIV: i32 = 30;
 
+/// A single-line doc comment.
 pub const POS_ONE: i8 = 1;
+/// A
+/// multi-line
+/// doc
+/// comment.
 pub const NEG_ONE: i8 = -1;
 
 // Some doc for shifting //

@@ -13,10 +13,19 @@
 
 #define LEFTCURLY '{'
 
+/**
+ * A
+ * multi-line
+ * doc
+ * comment.
+ */
 #define NEG_ONE -1
 
 #define NEWLINE '\n'
 
+/**
+ * A single-line doc comment.
+ */
 #define POS_ONE 1
 
 #define QUOTE '\''
