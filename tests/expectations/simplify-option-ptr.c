@@ -8,13 +8,13 @@ typedef struct Opaque Opaque;
 typedef struct {
   const Opaque *x;
   Opaque *y;
-  void (*z)();
+  void (*z)(void);
 } Foo;
 
 typedef union {
   const Opaque *x;
   Opaque *y;
-  void (*z)();
+  void (*z)(void);
 } Bar;
 
 void root(const Opaque *a, Opaque *b, Foo c, Bar d);

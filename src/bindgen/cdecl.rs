@@ -286,7 +286,7 @@ pub fn write_func<F: Write>(
 }
 
 pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
-    CDecl::from_type(t).write(out, Some(ident), false);
+    CDecl::from_type(t).write(out, Some(ident), true);
 }
 
 pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type) {

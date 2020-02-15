@@ -3,15 +3,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef void (*A)();
+typedef void (*A)(void);
 
-typedef void (*B)();
+typedef void (*B)(void);
 
 typedef bool (*C)(int32_t, int32_t);
 
 typedef bool (*(*D)(int32_t))(float);
 
-typedef const int32_t (*(*E)())[16];
+typedef const int32_t (*(*E)(void))[16];
 
 typedef const int32_t *F;
 
