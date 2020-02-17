@@ -7,7 +7,7 @@ use std::io::Write;
 use syn;
 
 use crate::bindgen::cdecl;
-use crate::bindgen::config::{Config, Language, Layout};
+use crate::bindgen::config::{Config, Layout};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
@@ -178,7 +178,6 @@ impl Function {
 impl Source for Function {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         fn write_1<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
-            let void_prototype = config.language == Language::C;
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
@@ -199,7 +198,7 @@ impl Source for Function {
                     }
                 }
             }
-            cdecl::write_func(out, &func, false, void_prototype);
+            cdecl::write_func(out, &func, false, config);
 
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
@@ -217,7 +216,6 @@ impl Source for Function {
         }
 
         fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
-            let void_prototype = config.language == Language::C;
             let prefix = config.function.prefix(&func.annotations);
             let postfix = config.function.postfix(&func.annotations);
 
@@ -241,7 +239,7 @@ impl Source for Function {
                     }
                 }
             }
-            cdecl::write_func(out, &func, true, void_prototype);
+            cdecl::write_func(out, &func, true, config);
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.new_line();

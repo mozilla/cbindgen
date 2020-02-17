@@ -7,6 +7,7 @@ use std::io::Write;
 use crate::bindgen::declarationtyperesolver::DeclarationType;
 use crate::bindgen::ir::{Function, Type};
 use crate::bindgen::writer::{ListType, SourceWriter};
+use crate::bindgen::{Config, Language};
 
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.
@@ -146,12 +147,7 @@ impl CDecl {
         }
     }
 
-    fn write<F: Write>(
-        &self,
-        out: &mut SourceWriter<F>,
-        ident: Option<&str>,
-        void_prototype: bool,
-    ) {
+    fn write<F: Write>(&self, out: &mut SourceWriter<F>, ident: Option<&str>, config: &Config) {
         // Write the type-specifier and type-qualifier first
         if !self.type_qualifers.is_empty() {
             write!(out, "{} ", self.type_qualifers);
@@ -237,7 +233,7 @@ impl CDecl {
                     }
 
                     out.write("(");
-                    if args.is_empty() && void_prototype {
+                    if args.is_empty() && config.language == Language::C {
                         out.write("void");
                     }
                     if layout_vertical {
@@ -252,7 +248,7 @@ impl CDecl {
                             // Convert &Option<String> to Option<&str>
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
-                            arg_ty.write(out, arg_ident, void_prototype);
+                            arg_ty.write(out, arg_ident, config);
                         }
                         out.pop_tab();
                     } else {
@@ -264,7 +260,7 @@ impl CDecl {
                             // Convert &Option<String> to Option<&str>
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
-                            arg_ty.write(out, arg_ident, void_prototype);
+                            arg_ty.write(out, arg_ident, config);
                         }
                     }
                     out.write(")");
@@ -280,20 +276,15 @@ pub fn write_func<F: Write>(
     out: &mut SourceWriter<F>,
     f: &Function,
     layout_vertical: bool,
-    void_prototype: bool,
+    config: &Config,
 ) {
-    CDecl::from_func(f, layout_vertical).write(out, Some(f.path().name()), void_prototype);
+    CDecl::from_func(f, layout_vertical).write(out, Some(f.path().name()), config);
 }
 
-pub fn write_field<F: Write>(
-    out: &mut SourceWriter<F>,
-    t: &Type,
-    ident: &str,
-    void_prototype: bool,
-) {
-    CDecl::from_type(t).write(out, Some(ident), void_prototype);
+pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str, config: &Config) {
+    CDecl::from_type(t).write(out, Some(ident), config);
 }
 
-pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type) {
-    CDecl::from_type(t).write(out, None, false);
+pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type, config: &Config) {
+    CDecl::from_type(t).write(out, None, config);
 }
