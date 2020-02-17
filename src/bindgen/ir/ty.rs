@@ -8,7 +8,7 @@ use std::io::Write;
 use syn;
 
 use crate::bindgen::cdecl;
-use crate::bindgen::config::Config;
+use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{Documentation, GenericParams, GenericPath, Path};
@@ -710,14 +710,16 @@ impl Source for Type {
 }
 
 impl Source for (String, Type) {
-    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_field(out, &self.1, &self.0);
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        let void_prototype = config.language == Language::C;
+        cdecl::write_field(out, &self.1, &self.0, void_prototype);
     }
 }
 
 impl Source for (String, Type, Documentation) {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        let void_prototype = config.language == Language::C;
         self.2.write(config, out);
-        cdecl::write_field(out, &self.1, &self.0);
+        cdecl::write_field(out, &self.1, &self.0, void_prototype);
     }
 }

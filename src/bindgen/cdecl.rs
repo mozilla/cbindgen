@@ -285,8 +285,13 @@ pub fn write_func<F: Write>(
     CDecl::from_func(f, layout_vertical).write(out, Some(f.path().name()), void_prototype);
 }
 
-pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str) {
-    CDecl::from_type(t).write(out, Some(ident), false);
+pub fn write_field<F: Write>(
+    out: &mut SourceWriter<F>,
+    t: &Type,
+    ident: &str,
+    void_prototype: bool,
+) {
+    CDecl::from_type(t).write(out, Some(ident), void_prototype);
 }
 
 pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type) {

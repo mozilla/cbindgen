@@ -8,13 +8,13 @@ struct Opaque;
 struct Foo {
   const struct Opaque *x;
   struct Opaque *y;
-  void (*z)();
+  void (*z)(void);
 };
 
 union Bar {
   const struct Opaque *x;
   struct Opaque *y;
-  void (*z)();
+  void (*z)(void);
 };
 
 #ifdef __cplusplus
