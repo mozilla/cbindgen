@@ -8,13 +8,13 @@ struct Opaque;
 struct Foo {
   const Opaque *x;
   Opaque *y;
-  void (*z)(void);
+  void (*z)();
 };
 
 union Bar {
   const Opaque *x;
   Opaque *y;
-  void (*z)(void);
+  void (*z)();
 };
 
 extern "C" {
