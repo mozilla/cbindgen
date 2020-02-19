@@ -637,8 +637,11 @@ impl Parse {
         };
 
         if let syn::Visibility::Public(_) = vis {
-            if sig.abi.is_omitted() || sig.abi.is_c() {
-                if let Some(exported_name) = named_symbol.exported_name() {
+            let is_extern_c = sig.abi.is_omitted() || sig.abi.is_c();
+            let exported_name = named_symbol.exported_name();
+
+            if is_extern_c {
+                if let Some(exported_name) = exported_name {
                     let path = Path::new(exported_name);
                     match Function::load(path, self_type, &sig, false, &attrs, mod_cfg) {
                         Ok(func) => {
