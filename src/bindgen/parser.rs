@@ -640,8 +640,8 @@ impl Parse {
             let is_extern_c = sig.abi.is_omitted() || sig.abi.is_c();
             let exported_name = named_symbol.exported_name();
 
-            if is_extern_c {
-                if let Some(exported_name) = exported_name {
+            match (is_extern_c, exported_name) {
+                (true, Some(exported_name)) => {
                     let path = Path::new(exported_name);
                     match Function::load(path, self_type, &sig, false, &attrs, mod_cfg) {
                         Ok(func) => {
@@ -652,14 +652,16 @@ impl Parse {
                             error!("Cannot use fn {} ({}).", loggable_item_name(), msg);
                         }
                     }
-                } else {
+                }
+                (true, None) => {
                     warn!(
                         "Skipping {} - (not `no_mangle`, and has no `export_name` attribute)",
                         loggable_item_name()
                     );
                 }
-            } else {
-                warn!("Skipping {} - (not `extern \"C\"`", loggable_item_name());
+                (false, _) => {
+                    warn!("Skipping {} - (not `extern \"C\"`", loggable_item_name());
+                }
             }
         } else {
             warn!("Skipping {} - (not `pub`)", loggable_item_name());
