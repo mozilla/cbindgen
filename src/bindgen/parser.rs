@@ -659,9 +659,10 @@ impl Parse {
                         loggable_item_name()
                     );
                 }
-                (false, _) => {
+                (false, Some(_exported_name)) => {
                     warn!("Skipping {} - (not `extern \"C\"`", loggable_item_name());
                 }
+                (false, None) => {}
             }
         } else {
             warn!("Skipping {} - (not `pub`)", loggable_item_name());
