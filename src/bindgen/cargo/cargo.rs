@@ -60,11 +60,14 @@ impl Cargo {
         };
 
         // Use the specified binding crate name or infer it from the manifest
-        let manifest = cargo_toml::manifest(&toml_path)
-            .map_err(|x| Error::CargoToml(toml_path.to_str().unwrap().to_owned(), x))?;
-
-        let binding_crate_name =
-            binding_crate_name.map_or(manifest.package.name.clone(), |x| x.to_owned());
+        let binding_crate_name = match binding_crate_name {
+            Some(s) => s.to_owned(),
+            None => {
+                let manifest = cargo_toml::manifest(&toml_path)
+                    .map_err(|x| Error::CargoToml(toml_path.to_str().unwrap().to_owned(), x))?;
+                manifest.package.name
+            }
+        };
 
         Ok(Cargo {
             manifest_path: toml_path,

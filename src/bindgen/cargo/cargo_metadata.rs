@@ -186,7 +186,7 @@ pub fn metadata(manifest_path: &Path) -> Result<Metadata, Error> {
     cmd.arg("--all-features");
     cmd.arg("--format-version").arg("1");
     cmd.arg("--manifest-path");
-    cmd.arg(manifest_path.to_str().unwrap());
+    cmd.arg(manifest_path);
     let output = cmd.output()?;
     if !output.status.success() {
         return Err(Error::Metadata(output));
