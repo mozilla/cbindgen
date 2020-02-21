@@ -636,10 +636,10 @@ impl Parse {
             items.join("::")
         };
 
-        if let syn::Visibility::Public(_) = vis {
-            let is_extern_c = sig.abi.is_omitted() || sig.abi.is_c();
-            let exported_name = named_symbol.exported_name();
+        let is_extern_c = sig.abi.is_omitted() || sig.abi.is_c();
+        let exported_name = named_symbol.exported_name();
 
+        if let syn::Visibility::Public(_) = vis {
             match (is_extern_c, exported_name) {
                 (true, Some(exported_name)) => {
                     let path = Path::new(exported_name);
@@ -665,7 +665,27 @@ impl Parse {
                 (false, None) => {}
             }
         } else {
-            warn!("Skipping {} - (not `pub`)", loggable_item_name());
+            match (is_extern_c, exported_name) {
+                (true, Some(exported_name)) => {
+                    warn!(
+                        "Skipping {} - (not `pub` but is `extern \"C\"` and `no_mangle`)",
+                        loggable_item_name()
+                    );
+                }
+                (true, None) => {
+                    warn!(
+                        "Skipping {} - (not `pub` but is `extern \"C\"`)",
+                        loggable_item_name()
+                    );
+                }
+                (false, Some(_exported_name)) => {
+                    warn!(
+                        "Skipping {} - (not `pub` but is `no_mangle`)",
+                        loggable_item_name()
+                    );
+                }
+                (false, None) => {}
+            }
         }
     }
 
