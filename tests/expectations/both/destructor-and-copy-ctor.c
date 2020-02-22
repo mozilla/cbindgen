@@ -165,4 +165,47 @@ typedef union Tazz {
   Taz2_Body taz2;
 } Tazz;
 
-void root(const Foo_u32 *a, const Baz_i32 *b, const Taz *c, Tazz d);
+enum Tazzz_Tag {
+  Bar5,
+  Taz5,
+};
+typedef uint8_t Tazzz_Tag;
+
+typedef struct Taz5_Body {
+  Tazzz_Tag tag;
+  int32_t _0;
+} Taz5_Body;
+
+typedef union Tazzz {
+  Tazzz_Tag tag;
+  Taz5_Body taz5;
+} Tazzz;
+
+enum Tazzzz_Tag {
+  Taz6,
+  Taz7,
+};
+typedef uint8_t Tazzzz_Tag;
+
+typedef struct Taz6_Body {
+  Tazzzz_Tag tag;
+  int32_t _0;
+} Taz6_Body;
+
+typedef struct Taz7_Body {
+  Tazzzz_Tag tag;
+  uint32_t _0;
+} Taz7_Body;
+
+typedef union Tazzzz {
+  Tazzzz_Tag tag;
+  Taz6_Body taz6;
+  Taz7_Body taz7;
+} Tazzzz;
+
+void root(const Foo_u32 *a,
+          const Baz_i32 *b,
+          const Taz *c,
+          Tazz d,
+          const Tazzz *e,
+          const Tazzzz *f);

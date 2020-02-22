@@ -66,10 +66,17 @@ pub enum Tazz {
 
 /// cbindgen:derive-tagged-enum-copy-assignment=false
 #[repr(u8)]
-pub enum Tazz {
-    Bar4,
-    Taz2(i32),
+pub enum Tazzz {
+    Bar5,
+    Taz5(i32),
 }
 
+#[repr(u8)]
+pub enum Tazzzz {
+    Taz6(i32),
+    Taz7(u32),
+}
+
+
 #[no_mangle]
-pub extern "C" fn root(a: &Foo<u32>, b: &Baz<i32>, c: &Taz, d: Tazz) {}
+pub extern "C" fn root(a: &Foo<u32>, b: &Baz<i32>, c: &Taz, d: Tazz, e: &Tazzz, f: &Tazzzz) {}

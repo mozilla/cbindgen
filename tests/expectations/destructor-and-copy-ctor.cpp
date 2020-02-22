@@ -458,8 +458,149 @@ union Tazz {
 
 };
 
+union Tazzz {
+  enum class Tag : uint8_t {
+    Bar5,
+    Taz5,
+  };
+
+  struct Taz5_Body {
+    Tag tag;
+    int32_t _0;
+  };
+
+  struct {
+    Tag tag;
+  };
+  Taz5_Body taz5;
+
+  static Tazzz Bar5() {
+    Tazzz result;
+    result.tag = Tag::Bar5;
+    return result;
+  }
+
+  bool IsBar5() const {
+    return tag == Tag::Bar5;
+  }
+
+  static Tazzz Taz5(const int32_t &a0) {
+    Tazzz result;
+    ::new (&result.taz5._0) (int32_t)(a0);
+    result.tag = Tag::Taz5;
+    return result;
+  }
+
+  bool IsTaz5() const {
+    return tag == Tag::Taz5;
+  }
+
+  private:
+  Tazzz() {
+
+  }
+  public:
+
+
+  ~Tazzz() {
+    switch (tag) {
+      case Tag::Taz5: taz5.~Taz5_Body(); break;
+      default: break;
+    }
+  }
+
+  Tazzz(const Tazzz& other)
+   : tag(other.tag) {
+    switch (tag) {
+      case Tag::Taz5: ::new (&taz5) (Taz5_Body)(other.taz5); break;
+      default: break;
+    }
+  }
+};
+
+union Tazzzz {
+  enum class Tag : uint8_t {
+    Taz6,
+    Taz7,
+  };
+
+  struct Taz6_Body {
+    Tag tag;
+    int32_t _0;
+  };
+
+  struct Taz7_Body {
+    Tag tag;
+    uint32_t _0;
+  };
+
+  struct {
+    Tag tag;
+  };
+  Taz6_Body taz6;
+  Taz7_Body taz7;
+
+  static Tazzzz Taz6(const int32_t &a0) {
+    Tazzzz result;
+    ::new (&result.taz6._0) (int32_t)(a0);
+    result.tag = Tag::Taz6;
+    return result;
+  }
+
+  bool IsTaz6() const {
+    return tag == Tag::Taz6;
+  }
+
+  static Tazzzz Taz7(const uint32_t &a0) {
+    Tazzzz result;
+    ::new (&result.taz7._0) (uint32_t)(a0);
+    result.tag = Tag::Taz7;
+    return result;
+  }
+
+  bool IsTaz7() const {
+    return tag == Tag::Taz7;
+  }
+
+  private:
+  Tazzzz() {
+
+  }
+  public:
+
+
+  ~Tazzzz() {
+    switch (tag) {
+      case Tag::Taz6: taz6.~Taz6_Body(); break;
+      case Tag::Taz7: taz7.~Taz7_Body(); break;
+
+    }
+  }
+
+  Tazzzz(const Tazzzz& other)
+   : tag(other.tag) {
+    switch (tag) {
+      case Tag::Taz6: ::new (&taz6) (Taz6_Body)(other.taz6); break;
+      case Tag::Taz7: ::new (&taz7) (Taz7_Body)(other.taz7); break;
+
+    }
+  }
+  Tazzzz& operator=(const Tazzzz& other) {
+    if (this != &other) {
+      this->~Tazzzz();
+      new (this) Tazzzz(other);
+    }
+    return *this;
+  }
+};
+
 extern "C" {
 
-void root(const Foo<uint32_t> *a, const Baz<int32_t> *b, const Taz *c, Tazz d);
+void root(const Foo<uint32_t> *a,
+          const Baz<int32_t> *b,
+          const Taz *c,
+          Tazz d,
+          const Tazzz *e,
+          const Tazzzz *f);
 
 } // extern "C"

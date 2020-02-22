@@ -195,11 +195,66 @@ union Tazz {
   struct Taz2_Body taz2;
 };
 
+enum Tazzz_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  Bar5,
+  Taz5,
+};
+#ifndef __cplusplus
+typedef uint8_t Tazzz_Tag;
+#endif // __cplusplus
+
+struct Taz5_Body {
+  Tazzz_Tag tag;
+  int32_t _0;
+};
+
+union Tazzz {
+  Tazzz_Tag tag;
+  struct Taz5_Body taz5;
+};
+
+enum Tazzzz_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  Taz6,
+  Taz7,
+};
+#ifndef __cplusplus
+typedef uint8_t Tazzzz_Tag;
+#endif // __cplusplus
+
+struct Taz6_Body {
+  Tazzzz_Tag tag;
+  int32_t _0;
+};
+
+struct Taz7_Body {
+  Tazzzz_Tag tag;
+  uint32_t _0;
+};
+
+union Tazzzz {
+  Tazzzz_Tag tag;
+  struct Taz6_Body taz6;
+  struct Taz7_Body taz7;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(const struct Foo_u32 *a, const union Baz_i32 *b, const union Taz *c, union Tazz d);
+void root(const struct Foo_u32 *a,
+          const union Baz_i32 *b,
+          const union Taz *c,
+          union Tazz d,
+          const union Tazzz *e,
+          const union Tazzzz *f);
 
 #ifdef __cplusplus
 } // extern "C"
