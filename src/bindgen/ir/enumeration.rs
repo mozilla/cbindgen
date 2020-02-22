@@ -921,6 +921,7 @@ impl Source for Enum {
                 out.new_line();
                 write!(out, "switch (tag)");
                 out.open_brace();
+                let mut exhaustive = true;
                 for variant in &self.variants {
                     if let Some((ref variant_name, _)) = variant.body {
                         let condition = variant.cfg.to_condition(config);
@@ -936,9 +937,13 @@ impl Source for Enum {
                         );
                         condition.write_after(config, out);
                         out.new_line();
+                    } else {
+                        exhaustive = false;
                     }
                 }
-                write!(out, "default: return true;");
+                if !exhaustive {
+                    write!(out, "default: return true;");
+                }
                 out.close_brace(false);
                 out.close_brace(false);
 
@@ -984,6 +989,7 @@ impl Source for Enum {
                 out.open_brace();
                 write!(out, "switch (tag)");
                 out.open_brace();
+                let mut exhaustive = true;
                 for variant in &self.variants {
                     if let Some((ref variant_name, ref item)) = variant.body {
                         let condition = variant.cfg.to_condition(config);
@@ -998,9 +1004,13 @@ impl Source for Enum {
                         );
                         condition.write_after(config, out);
                         out.new_line();
+                    } else {
+                        exhaustive = false;
                     }
                 }
-                write!(out, "default: break;");
+                if !exhaustive {
+                    write!(out, "default: break;");
+                }
                 out.close_brace(false);
                 out.close_brace(false);
             }
@@ -1022,6 +1032,7 @@ impl Source for Enum {
                 out.open_brace();
                 write!(out, "switch (tag)");
                 out.open_brace();
+                let mut exhaustive = true;
                 for variant in &self.variants {
                     if let Some((ref variant_name, ref item)) = variant.body {
                         let condition = variant.cfg.to_condition(config);
@@ -1038,9 +1049,13 @@ impl Source for Enum {
                         );
                         condition.write_after(config, out);
                         out.new_line();
+                    } else {
+                        exhaustive = false;
                     }
                 }
-                write!(out, "default: break;");
+                if !exhaustive {
+                    write!(out, "default: break;");
+                }
                 out.close_brace(false);
                 out.close_brace(false);
 
