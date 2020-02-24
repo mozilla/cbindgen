@@ -1,0 +1,3 @@
+[const]
+allow_constexpr = true
+allow_static_const = true

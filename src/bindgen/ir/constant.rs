@@ -491,12 +491,22 @@ impl Constant {
 
         self.documentation.write(config, out);
 
-        if config.constant.allow_static_const && config.language == Language::Cxx {
-            out.write(if in_body { "inline " } else { "static " });
-            if let Type::ConstPtr(..) = self.ty {
-                // Nothing.
+        let allow_constexpr = if let Type::Primitive(..) = self.ty {
+            config.constant.allow_constexpr
+        } else {
+            false
+        };
+
+        if (config.constant.allow_static_const || allow_constexpr) && config.language == Language::Cxx {
+            if allow_constexpr {
+                out.write("constexpr ")
             } else {
-                out.write("const ");
+                out.write(if in_body { "inline " } else { "static " });
+                if let Type::ConstPtr(..) = self.ty {
+                    // Nothing.
+                } else {
+                    out.write("const ");
+                }
             }
             self.ty.write(config, out);
             write!(out, " {} = ", name);
