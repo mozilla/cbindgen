@@ -786,6 +786,11 @@ private_default_tagged_enum_constructor = false
 # default: true
 allow_static_const = true
 
+# Whether a generated constant can be constexpr in C++ mode.
+#
+# default: false
+allow_constexpr = false
+
 
 
 

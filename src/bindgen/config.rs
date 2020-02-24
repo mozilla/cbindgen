@@ -555,12 +555,15 @@ impl EnumConfig {
 pub struct ConstantConfig {
     /// Whether a generated constant can be a static const in C++ mode.
     pub allow_static_const: bool,
+    /// Whether a generated constant should be constexpr in C++ mode.
+    pub allow_constexpr: bool,
 }
 
 impl Default for ConstantConfig {
     fn default() -> ConstantConfig {
         ConstantConfig {
             allow_static_const: true,
+            allow_constexpr: false,
         }
     }
 }
