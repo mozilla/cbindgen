@@ -84,6 +84,13 @@ fn compile(cbindgen_output: &Path, tests_path: &Path, language: Language, style:
         // enum class is a c++11 extension which makes g++ on macos 10.14 error out
         // inline variables are are a c++17 extension
         command.arg("-std=c++17");
+        if let Ok(extra_flags) = env::var("CXXFLAGS") {
+            command.args(extra_flags.split_whitespace());
+        }
+    } else {
+        if let Ok(extra_flags) = env::var("CFLAGS") {
+            command.args(extra_flags.split_whitespace());
+        }
     }
 
     if let Some(style) = style {
