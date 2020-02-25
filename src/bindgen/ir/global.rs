@@ -6,6 +6,7 @@ use std::io::Write;
 
 use syn;
 
+use crate::bindgen::cdecl;
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -112,7 +113,7 @@ impl Source for Static {
         } else if !self.mutable {
             out.write("const ");
         }
-        self.ty.write(config, out);
-        write!(out, " {};", self.export_name());
+        cdecl::write_field(out, &self.ty, &self.export_name, config);
+        out.write(";");
     }
 }
