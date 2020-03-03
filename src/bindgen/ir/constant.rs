@@ -502,14 +502,18 @@ impl Constant {
         {
             if allow_constexpr {
                 out.write("constexpr ")
-            } else {
-                out.write(if in_body { "inline " } else { "static " });
-                if let Type::ConstPtr(..) = self.ty {
-                    // Nothing.
-                } else {
-                    out.write("const ");
-                }
             }
+
+            if config.constant.allow_static_const {
+                out.write(if in_body { "inline " } else { "static " });
+            }
+
+            if let Type::ConstPtr(..) = self.ty {
+                // Nothing.
+            } else {
+                out.write("const ");
+            }
+
             self.ty.write(config, out);
             write!(out, " {} = ", name);
             value.write(config, out);

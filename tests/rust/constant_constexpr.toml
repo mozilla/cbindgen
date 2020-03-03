@@ -1,3 +1,5 @@
 [const]
 allow_constexpr = true
-allow_static_const = true
+
+[struct]
+associated_constants_in_body = true

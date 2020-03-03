@@ -8,4 +8,8 @@ struct Foo {
     x: i32,
 }
 
-pub const SomeFoo: Foo = Foo{ x: 99, };
+pub const SomeFoo: Foo = Foo { x: 99, };
+
+impl Foo {
+    pub const CONSTANT_I64_BODY: i64 = 216;
+}

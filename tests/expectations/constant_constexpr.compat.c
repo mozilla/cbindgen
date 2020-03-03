@@ -14,5 +14,6 @@
 typedef struct {
   int32_t x;
 } Foo;
+#define Foo_CONSTANT_I64_BODY 216
 
 #define SomeFoo (Foo){ .x = 99 }
