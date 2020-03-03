@@ -258,6 +258,7 @@ fn main() {
             let changed = bindings.write_to_file(file);
 
             if matches.is_present("verify") && changed {
+                error!("Bindings changed: {}", file);
                 std::process::exit(2);
             }
         }
