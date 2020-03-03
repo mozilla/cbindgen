@@ -1,4 +1,3 @@
-pub const SomeName: &'static str = "hello world";
 pub const CONSTANT_I64: i64 = 216;
 pub const CONSTANT_FLOAT32: f32 = 312.292;
 pub const DELIMITER: char = ':';
