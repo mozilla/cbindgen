@@ -666,7 +666,7 @@ impl Parse {
             }
         } else {
             match (is_extern_c, exported_name) {
-                (true, Some(exported_name)) => {
+                (true, Some(..)) => {
                     warn!(
                         "Skipping {} - (not `pub` but is `extern \"C\"` and `no_mangle`)",
                         loggable_item_name()
@@ -678,7 +678,7 @@ impl Parse {
                         loggable_item_name()
                     );
                 }
-                (false, Some(_exported_name)) => {
+                (false, Some(..)) => {
                     warn!(
                         "Skipping {} - (not `pub` but is `no_mangle`)",
                         loggable_item_name()
