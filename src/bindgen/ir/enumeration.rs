@@ -17,6 +17,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
+use crate::bindgen::reserved;
 use crate::bindgen::utilities::find_first_some;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
@@ -421,8 +422,9 @@ impl Item for Enum {
         }
 
         for variant in &mut self.variants {
-            if let Some((_, ref mut body)) = variant.body {
+            if let Some((ref mut field_name, ref mut body)) = variant.body {
                 body.rename_for_config(config);
+                reserved::escape(field_name);
             }
         }
 

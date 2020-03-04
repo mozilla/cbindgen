@@ -30,4 +30,26 @@ struct C {
   };
 };
 
-void root(struct A a, struct B b, struct C c, int32_t namespace_, float float_);
+enum E_Tag {
+  Double,
+  Float,
+};
+typedef uint8_t E_Tag;
+
+struct Double_Body {
+  double _0;
+};
+
+struct Float_Body {
+  float _0;
+};
+
+struct E {
+  E_Tag tag;
+  union {
+    struct Double_Body double_;
+    struct Float_Body float_;
+  };
+};
+
+void root(struct A a, struct B b, struct C c, struct E e, int32_t namespace_, float float_);

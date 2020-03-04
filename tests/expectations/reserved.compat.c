@@ -36,11 +36,39 @@ typedef struct {
   };
 } C;
 
+enum E_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  Double,
+  Float,
+};
+#ifndef __cplusplus
+typedef uint8_t E_Tag;
+#endif // __cplusplus
+
+typedef struct {
+  double _0;
+} Double_Body;
+
+typedef struct {
+  float _0;
+} Float_Body;
+
+typedef struct {
+  E_Tag tag;
+  union {
+    Double_Body double_;
+    Float_Body float_;
+  };
+} E;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(A a, B b, C c, int32_t namespace_, float float_);
+void root(A a, B b, C c, E e, int32_t namespace_, float float_);
 
 #ifdef __cplusplus
 } // extern "C"
