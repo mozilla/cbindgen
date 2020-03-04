@@ -13,11 +13,18 @@ enum C {
     D { namespace: i32, float: f32 },
 }
 
+#[repr(C, u8)]
+enum E {
+    Double(f64),
+    Float(f32),
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     a: A,
     b: B,
     c: C,
+    e: E,
     namespace: i32,
     float: f32,
 ) { }
