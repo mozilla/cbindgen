@@ -50,8 +50,29 @@ struct E {
   };
 };
 
+struct F {
+  enum class Tag : uint8_t {
+    double_,
+    float_,
+  };
+
+  struct double_Body {
+    double _0;
+  };
+
+  struct float_Body {
+    float _0;
+  };
+
+  Tag tag;
+  union {
+    double_Body double_;
+    float_Body float_;
+  };
+};
+
 extern "C" {
 
-void root(A a, B b, C c, E e, int32_t namespace_, float float_);
+void root(A a, B b, C c, E e, F f, int32_t namespace_, float float_);
 
 } // extern "C"

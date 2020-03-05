@@ -422,6 +422,8 @@ impl Item for Enum {
         }
 
         for variant in &mut self.variants {
+            reserved::escape(&mut variant.export_name);
+
             if let Some((ref mut field_name, ref mut body)) = variant.body {
                 body.rename_for_config(config);
                 reserved::escape(field_name);

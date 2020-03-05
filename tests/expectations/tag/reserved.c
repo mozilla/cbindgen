@@ -52,4 +52,32 @@ struct E {
   };
 };
 
-void root(struct A a, struct B b, struct C c, struct E e, int32_t namespace_, float float_);
+enum F_Tag {
+  double_,
+  float_,
+};
+typedef uint8_t F_Tag;
+
+struct double_Body {
+  double _0;
+};
+
+struct float_Body {
+  float _0;
+};
+
+struct F {
+  F_Tag tag;
+  union {
+    struct double_Body double_;
+    struct float_Body float_;
+  };
+};
+
+void root(struct A a,
+          struct B b,
+          struct C c,
+          struct E e,
+          struct F f,
+          int32_t namespace_,
+          float float_);
