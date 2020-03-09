@@ -392,6 +392,7 @@ impl Type {
             // FIXME(#223): This is not quite correct.
             "Option" if generic.is_repr_ptr() => Some(generic),
             "NonNull" => Some(Type::Ptr(Box::new(generic))),
+            "Cell" => Some(generic),
             _ => None,
         }
     }

@@ -387,6 +387,7 @@ impl Parse {
 
         add_opaque("String", vec![]);
         add_opaque("Box", vec!["T"]);
+        add_opaque("RefCell", vec!["T"]);
         add_opaque("Rc", vec!["T"]);
         add_opaque("Arc", vec!["T"]);
         add_opaque("Result", vec!["T", "E"]);
