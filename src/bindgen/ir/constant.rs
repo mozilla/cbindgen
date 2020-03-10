@@ -163,8 +163,11 @@ impl Literal {
                         other_code => format!(r"L'\U{:08X}'", other_code),
                     })),
                     syn::Lit::Int(ref value) => {
-                        if value.base10_parse::<i64>().is_err() { Ok(Literal::Expr(format!("{}ULL",value.base10_digits()))) }
-                        else { Ok(Literal::Expr(value.base10_digits().to_string())) }
+                        if value.base10_parse::<i64>().is_err() {
+                            Ok(Literal::Expr(format!("{}ULL", value.base10_digits())))
+                        } else {
+                            Ok(Literal::Expr(value.base10_digits().to_string()))
+                        }
                     }
                     syn::Lit::Float(ref value) => {
                         Ok(Literal::Expr(value.base10_digits().to_string()))
