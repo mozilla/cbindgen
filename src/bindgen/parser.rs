@@ -541,7 +541,7 @@ impl Parse {
                     );
                     return;
                 }
-                let path = Path::new(function.sig.ident.to_string());
+                let path = Path::new(escape_raw_identifier(function.sig.ident.to_string()));
                 match Function::load(path, None, &function.sig, true, &function.attrs, mod_cfg) {
                     Ok(func) => {
                         info!("Take {}::{}.", crate_name, &function.sig.ident);
@@ -643,7 +643,7 @@ impl Parse {
         if let syn::Visibility::Public(_) = vis {
             match (is_extern_c, exported_name) {
                 (true, Some(exported_name)) => {
-                    let path = Path::new(exported_name);
+                    let path = Path::new(escape_raw_identifier(exported_name));
                     match Function::load(path, self_type, &sig, false, &attrs, mod_cfg) {
                         Ok(func) => {
                             info!("Take {}.", loggable_item_name());
@@ -965,5 +965,14 @@ impl Parse {
         // fine to just do it here instead of deferring it like we do with the
         // other calls to this function.
         self.load_syn_assoc_consts_from_impl(crate_name, mod_cfg, &impl_);
+    }
+}
+
+/// Remove leading "r#" if there's one since "r#" is invalid in generated language.
+fn escape_raw_identifier(i: String) -> String {
+    if i.starts_with("r#") {
+        i[2..].to_owned()
+    } else {
+        i
     }
 }
