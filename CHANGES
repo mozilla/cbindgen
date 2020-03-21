@@ -1,3 +1,16 @@
+## 0.13.2
+
+     * Constants now have suitable documentation. (#471)
+     * Fixed some C warnings by emitting void when there are no arguments. (#470)
+     * Avoids reading cargo.toml when not needed, which can cause panics in workspace situations.
+     * Only write `default` cases if the switch is not exhaustive. (#475)
+     * Some warnings have been refined. (#477)
+     * Code generation for static arrays has been fixed. (#479)
+     * Opt-in support for constexpr in constants. (#481)
+     * Fix C code generation and some warnings when extremely large constants are used. (#490)
+     * Proper escaping of enum variants and fields. (#483)
+     * Added support for RefCell (as an opaque type) and Cell. (#489)
+
 ## 0.13.1
 
      * Support `#[cfg]` on individual enum variants. (#469)
