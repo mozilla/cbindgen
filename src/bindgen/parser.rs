@@ -707,11 +707,22 @@ impl Parse {
                 return;
             }
         };
-        if ty.is_none() {
-            return;
-        }
 
-        let impl_path = ty.unwrap().get_root_path().unwrap();
+        let ty = match ty {
+            Some(ty) => ty,
+            None => return,
+        };
+
+        let impl_path = match ty.get_root_path() {
+            Some(p) => p,
+            None => {
+                warn!(
+                    "Couldn't find path for {:?}, skipping associated constants",
+                    ty
+                );
+                return;
+            }
+        };
 
         for item in items.into_iter() {
             if let syn::Visibility::Public(_) = item.vis {
