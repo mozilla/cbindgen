@@ -376,6 +376,21 @@ includes = ["my_great_lib.h"]
 # default: false
 no_includes = false
 
+# Whether to make a C header C++ compatible.
+# These will wrap generated functions into a `extern "C"` block, e.g.
+#
+# #ifdef __cplusplus
+# extern "C" {
+# #endif // __cplusplus
+#
+# // Generated functions.
+#
+# #ifdef __cplusplus
+# } // extern "C"
+# #endif // __cplusplus
+#
+# default: false
+cpp_compat = false
 
 
 
