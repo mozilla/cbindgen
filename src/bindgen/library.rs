@@ -54,7 +54,6 @@ impl Library {
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
-        self.remove_excluded();
         self.transfer_annotations();
         self.simplify_standard_types();
 
@@ -67,7 +66,10 @@ impl Library {
 
         if self.config.language == Language::C {
             self.instantiate_monomorphs();
+            self.remove_excluded();
             self.resolve_declaration_types();
+        } else {
+            self.remove_excluded();
         }
 
         self.rename_items();
