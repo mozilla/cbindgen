@@ -102,7 +102,15 @@ impl<'a> Mangler<'a> {
         if !self.last {
             self.push(Separator::ClosingAngleBracket)
         }
+        }
     }
+
+fn concat_separators(separator: &str, number: u8) -> String {
+    let mut result: String = "".to_string();
+    for _ in 0..number {
+        result += separator;
+    }
+    result
 }
 
 fn concat_separators(separator: &str, number: u8) -> String {
