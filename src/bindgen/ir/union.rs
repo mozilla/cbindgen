@@ -236,7 +236,7 @@ impl Item for Union {
             .zip(generic_values.iter())
             .collect::<Vec<_>>();
 
-        let mangled_path = mangle::mangle_path(&self.path, generic_values);
+        let mangled_path = mangle::mangle_path(&self.path, generic_values, library.get_mangling_separator());
         let monomorph = Union::new(
             mangled_path,
             GenericParams::default(),

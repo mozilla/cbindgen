@@ -28,12 +28,13 @@ struct Mangler<'a> {
 }
 
 impl<'a> Mangler<'a> {
-    fn new(input: &'a str, generic_values: &'a [Type], last: bool) -> Self {
+    fn new(input: &'a str, generic_values: &'a [Type], last: bool, mangle_separator: &Option<String>) -> Self {
         Self {
             input,
             generic_values,
             output: String::new(),
             last,
+            mangle_separator: &Option<String>,
         }
     }
 
@@ -43,7 +44,10 @@ impl<'a> Mangler<'a> {
     }
 
     fn push(&mut self, id: Separator) {
-        let separator = '_';
+        let separator = match mangle_separator {
+            Some(s) => s.to_owned(),
+            None => "_".to_string()
+        };
         let count = id as usize;
         self.output.extend(std::iter::repeat(separator).take(count));
     }
@@ -101,6 +105,14 @@ impl<'a> Mangler<'a> {
     }
 }
 
+fn concat_separators(separator: &str, number: u8) -> String {
+    let mut result: String = "".to_string();
+    for _ in 0..number {
+        result += separator;
+    }
+    result
+}
+
 #[test]
 fn generics() {
     use crate::bindgen::ir::{GenericPath, PrimitiveType};
@@ -121,25 +133,25 @@ fn generics() {
 
     // Foo<f32> => Foo_f32
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &vec![float()]),
+        mangle_path(&Path::new("Foo"), &vec![float()], &None),
         Path::new("Foo_f32")
     );
 
     // Foo<Bar<f32>> => Foo_Bar_f32
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &vec![generic_path("Bar", &[float()])]),
+        mangle_path(&Path::new("Foo"), &vec![generic_path("Bar", &[float()])], &None),
         Path::new("Foo_Bar_f32")
     );
 
     // Foo<Bar> => Foo_Bar
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &[path("Bar")]),
+        mangle_path(&Path::new("Foo"), &[path("Bar")], &None),
         Path::new("Foo_Bar")
     );
 
     // Foo<Bar<T>> => Foo_Bar_T
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &[generic_path("Bar", &[path("T")])]),
+        mangle_path(&Path::new("Foo"), &[generic_path("Bar", &[path("T")])], &None),
         Path::new("Foo_Bar_T")
     );
 
@@ -147,7 +159,8 @@ fn generics() {
     assert_eq!(
         mangle_path(
             &Path::new("Foo"),
-            &[generic_path("Bar", &[path("T")]), path("E")]
+            &[generic_path("Bar", &[path("T")]), path("E")],
+            &None,
         ),
         Path::new("Foo_Bar_T_____E")
     );
@@ -159,7 +172,8 @@ fn generics() {
             &[
                 generic_path("Bar", &[path("T")]),
                 generic_path("Bar", &[path("E")]),
-            ]
+            ],
+            &None,
         ),
         Path::new("Foo_Bar_T_____Bar_E")
     );

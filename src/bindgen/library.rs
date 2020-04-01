@@ -149,6 +149,10 @@ impl Library {
         None
     }
 
+    pub fn get_mangling_separator(&self) -> &Option<String> {
+        &self.config.export.mangling_separator
+    }
+
     fn remove_excluded(&mut self) {
         let config = &self.config;
         // FIXME: interpret `config.export.exclude` as `Path`s.
