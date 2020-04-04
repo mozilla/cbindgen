@@ -62,13 +62,19 @@ fn run_cbindgen(
     );
 }
 
-fn compile(cbindgen_output: &Path, tests_path: &Path, language: Language, style: Option<Style>) {
+fn compile(
+    cbindgen_output: &Path,
+    tests_path: &Path,
+    tmp_dir: &Path,
+    language: Language,
+    style: Option<Style>,
+) {
     let cc = match language {
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
     };
 
-    let mut object = cbindgen_output.to_path_buf();
+    let mut object = tmp_dir.join(cbindgen_output);
     object.set_extension("o");
 
     let mut command = Command::new(cc);
@@ -114,6 +120,7 @@ fn run_compile_test(
     cbindgen_path: &'static str,
     name: &'static str,
     path: &Path,
+    tmp_dir: &Path,
     language: Language,
     cpp_compat: bool,
     style: Option<Style>,
@@ -147,21 +154,27 @@ fn run_compile_test(
     output.push(format!("{}.{}", name, ext));
 
     run_cbindgen(cbindgen_path, path, &output, language, cpp_compat, style);
-    compile(&output, &tests_path, language, style);
+    compile(&output, &tests_path, tmp_dir, language, style);
 
     if language == Language::C && cpp_compat {
-        compile(&output, &tests_path, Language::Cxx, style)
+        compile(&output, &tests_path, tmp_dir, Language::Cxx, style)
     }
 }
 
 fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static str) {
     let test = Path::new(filename);
+    let tmp_dir = tempfile::Builder::new()
+        .prefix("cbindgen-test-output")
+        .tempdir()
+        .expect("Creating tmp dir failed");
+    let tmp_dir = tmp_dir.path();
     for style in &[Style::Type, Style::Tag, Style::Both] {
         for cpp_compat in &[true, false] {
             run_compile_test(
                 cbindgen_path,
                 name,
                 &test,
+                tmp_dir,
                 Language::C,
                 *cpp_compat,
                 Some(*style),
@@ -172,6 +185,7 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
         cbindgen_path,
         name,
         &test,
+        tmp_dir,
         Language::Cxx,
         /* cpp_compat = */ false,
         None,
