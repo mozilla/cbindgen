@@ -1,3 +1,10 @@
+## 0.14.0
+
+     * Minor tweak at how [export.exclude] is handled to allow excluding
+       generic instantiations in C mode. (#501)
+     * Documented cpp_compat option. (#496)
+     * Fixed a panic when parsing associated constants for a built-in type. (#494)
+
 ## 0.13.2
 
      * Constants now have suitable documentation. (#471)

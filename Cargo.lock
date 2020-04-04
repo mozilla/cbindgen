@@ -32,7 +32,7 @@ dependencies = [
 
 [[package]]
 name = "cbindgen"
-version = "0.13.2"
+version = "0.14.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
