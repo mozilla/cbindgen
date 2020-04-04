@@ -74,7 +74,10 @@ fn compile(
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
     };
 
-    let mut object = tmp_dir.join(cbindgen_output);
+    let file_name = cbindgen_output
+        .file_name()
+        .expect("cbindgen output should be a file");
+    let mut object = tmp_dir.join(file_name);
     object.set_extension("o");
 
     let mut command = Command::new(cc);
