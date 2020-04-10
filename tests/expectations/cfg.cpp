@@ -124,8 +124,9 @@ union C {
 #if defined(PLATFORM_UNIX)
       case Tag::C5: return c5 == other.c5;
 #endif
-      default: return true;
+      default: break;
     }
+    return true;
   }
 
   bool operator!=(const C& other) const {
