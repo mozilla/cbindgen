@@ -5,61 +5,98 @@
 use crate::bindgen::ir::{Path, Type};
 
 pub fn mangle_path(path: &Path, generic_values: &[Type]) -> Path {
-    internal_mangle_path(path, generic_values, true)
+    Path::new(mangle_name(path.name(), generic_values))
 }
 
 pub fn mangle_name(name: &str, generic_values: &[Type]) -> String {
-    internal_mangle_name(name, generic_values, true)
+    Mangler::new(name, generic_values, /* last = */ true).mangle()
 }
 
-fn internal_mangle_path(path: &Path, generic_values: &[Type], last_in_parent: bool) -> Path {
-    let name = path.name();
-    let mangled_name = internal_mangle_name(name, generic_values, last_in_parent);
-    Path::new(mangled_name)
+enum Separator {
+    OpeningAngleBracket = 1,
+    Comma,
+    ClosingAngleBracket,
+    BeginMutPtr,
+    BeginConstPtr,
 }
 
-fn internal_mangle_name(name: &str, generic_values: &[Type], last_in_parent: bool) -> String {
-    if generic_values.is_empty() {
-        return name.to_owned();
+struct Mangler<'a> {
+    input: &'a str,
+    generic_values: &'a [Type],
+    output: String,
+    last: bool,
+}
+
+impl<'a> Mangler<'a> {
+    fn new(input: &'a str, generic_values: &'a [Type], last: bool) -> Self {
+        Self {
+            input,
+            generic_values,
+            output: String::new(),
+            last,
+        }
     }
 
-    let mut mangled = name.to_owned();
+    fn mangle(mut self) -> String {
+        self.mangle_internal();
+        self.output
+    }
 
-    mangled.push_str("_"); // <
-    for (i, ty) in generic_values.iter().enumerate() {
-        if i != 0 {
-            mangled.push_str("__"); // ,
-        }
+    fn push(&mut self, id: Separator) {
+        let separator = '_';
+        let count = id as usize;
+        self.output.extend(std::iter::repeat(separator).take(count));
+    }
 
-        let is_last = i == generic_values.len() - 1;
+    fn append_mangled_type(&mut self, ty: &Type, last: bool) {
         match *ty {
             Type::Path(ref generic) => {
-                mangled.push_str(&internal_mangle_name(
-                    generic.export_name(),
-                    generic.generics(),
-                    last_in_parent && is_last,
-                ));
+                let sub_path =
+                    Mangler::new(generic.export_name(), generic.generics(), last).mangle();
+                self.output.push_str(&sub_path);
             }
             Type::Primitive(ref primitive) => {
-                mangled.push_str(primitive.to_repr_rust());
+                self.output.push_str(primitive.to_repr_rust());
             }
-            Type::MutRef(..)
-            | Type::Ref(..)
-            | Type::ConstPtr(..)
-            | Type::Ptr(..)
-            | Type::Array(..)
-            | Type::FuncPtr(..) => {
-                panic!("Unable to mangle generic parameter {:?} for '{}'", ty, name);
+            Type::Ptr(ref ty) | Type::MutRef(ref ty) => {
+                self.push(Separator::BeginMutPtr);
+                self.append_mangled_type(&**ty, last);
             }
+            Type::ConstPtr(ref ty) | Type::Ref(ref ty) => {
+                self.push(Separator::BeginConstPtr);
+                self.append_mangled_type(&**ty, last);
+            }
+            Type::Array(..) | Type::FuncPtr(..) => {
+                unimplemented!(
+                    "Unable to mangle generic parameter {:?} for '{}'",
+                    ty,
+                    self.input
+                );
+            }
+        }
+    }
+
+    fn mangle_internal(&mut self) {
+        debug_assert!(self.output.is_empty());
+        self.output = self.input.to_owned();
+        if self.generic_values.is_empty() {
+            return;
+        }
+
+        self.push(Separator::OpeningAngleBracket);
+        for (i, ty) in self.generic_values.iter().enumerate() {
+            if i != 0 {
+                self.push(Separator::Comma);
+            }
+            let last = self.last && i == self.generic_values.len() - 1;
+            self.append_mangled_type(ty, last);
         }
 
         // Skip writing the trailing '>' mangling when possible
-        if is_last && !last_in_parent {
-            mangled.push_str("___"); // >
+        if !self.last {
+            self.push(Separator::ClosingAngleBracket)
         }
     }
-
-    mangled
 }
 
 #[test]
