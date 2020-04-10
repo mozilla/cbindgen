@@ -946,9 +946,13 @@ impl Source for Enum {
                     }
                 }
                 if !exhaustive {
-                    write!(out, "default: return true;");
+                    write!(out, "default: break;");
                 }
                 out.close_brace(false);
+
+                out.new_line();
+                write!(out, "return true;");
+
                 out.close_brace(false);
 
                 if config.structure.derive_neq(&self.annotations) {

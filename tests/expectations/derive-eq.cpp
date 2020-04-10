@@ -82,8 +82,9 @@ union Bar {
       case Tag::Bazz: return bazz == aOther.bazz;
       case Tag::FooNamed: return foo_named == aOther.foo_named;
       case Tag::FooParen: return foo_paren == aOther.foo_paren;
-      default: return true;
+      default: break;
     }
+    return true;
   }
 
   bool operator!=(const Bar& aOther) const {
