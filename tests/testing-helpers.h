@@ -1,5 +1,5 @@
 #ifndef testing_helpers_h
-#define  testing_helpers_h
+#define testing_helpers_h
 
 // This is a helper file to easily add static_asserts to C / C++ tests.
 

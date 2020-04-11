@@ -73,6 +73,12 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_pragma_once(mut self, pragma_once: bool) -> Builder {
+        self.config.pragma_once = pragma_once;
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_autogen_warning<S: AsRef<str>>(mut self, autogen_warning: S) -> Builder {
         self.config.autogen_warning = Some(String::from(autogen_warning.as_ref()));
         self

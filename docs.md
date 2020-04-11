@@ -335,6 +335,10 @@ trailer = "/* Text to put at the end of the generated file */"
 # default: doesn't emit an include guard
 include_guard = "mozilla_wr_bindings_h"
 
+# Whether to add a `#pragma once` guard 
+# default: doesn't emit a `#pragma once`
+pragma_once = true
+
 # An optional string of text to output between major sections of the generated
 # file as a warning against manual editing
 #

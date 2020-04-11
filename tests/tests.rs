@@ -1,6 +1,7 @@
 extern crate cbindgen;
 
 use cbindgen::*;
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 use std::{env, fs, str};
@@ -154,9 +155,44 @@ fn run_compile_test(
         }
     };
 
-    output.push(format!("{}.{}", name, ext));
+    let header_suffix = ".header";
+    let header_position = name.rfind(&header_suffix);
+    let is_header = header_position.is_some();
+
+    let source_file = format!(
+        "{}.{}",
+        if is_header {
+            &name[0..header_position.unwrap()]
+        } else {
+            name
+        },
+        &ext
+    );
+    output.push(&source_file);
+
+    if is_header {
+        let header_ext = match output.extension().unwrap().to_str().unwrap().as_ref() {
+            "cpp" => "hpp",
+            "c" => "h",
+            _ => "",
+        };
+        let mut ofile = fs::File::create(output.as_path()).expect("unable to create surce file");
+        output.set_extension(header_ext);
+        let source_file_content = format!(
+            "#include \"{}\"\n",
+            output.file_name().unwrap().to_str().unwrap()
+        );
+        ofile
+            .write(source_file_content.as_bytes())
+            .expect("unable to write source file content");
+    }
 
     run_cbindgen(cbindgen_path, path, &output, language, cpp_compat, style);
+
+    if is_header {
+        output.set_file_name(source_file);
+    }
+
     compile(&output, &tests_path, tmp_dir, language, style);
 
     if language == Language::C && cpp_compat {
