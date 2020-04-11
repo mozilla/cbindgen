@@ -133,6 +133,11 @@ impl Bindings {
             write!(out, "#define {}", f);
             out.new_line();
         }
+        if self.config.pragma_once {
+            out.new_line_if_not_start();
+            write!(out, "#pragma once");
+            out.new_line();
+        }
         if self.config.include_version {
             out.new_line_if_not_start();
             write!(

@@ -705,6 +705,8 @@ pub struct Config {
     pub trailer: Option<String>,
     /// Optional name to use for an include guard
     pub include_guard: Option<String>,
+    /// Add a `#pragma once` guard
+    pub pragma_once: bool,
     /// Generates no includes at all. Overrides all other include options
     ///
     /// This option is useful when using cbindgen with tools such as python's cffi which
@@ -768,6 +770,7 @@ impl Default for Config {
             sys_includes: Vec::new(),
             trailer: None,
             include_guard: None,
+            pragma_once: false,
             autogen_warning: None,
             include_version: false,
             no_includes: false,
