@@ -2,7 +2,7 @@ extern crate cbindgen;
 
 use cbindgen::*;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs, str};
 
@@ -120,6 +120,46 @@ fn compile(
     }
 }
 
+fn prepare_compilation<'a>(
+    name: &'static str,
+    output_path: &'a Path,
+    tmp_dir: &'a Path,
+    tests_path: &'a Path,
+    ext: &'a str
+) -> (PathBuf, PathBuf, &'a Path) {
+    
+    let header_suffix = ".header";
+    let header_position = name.rfind(header_suffix);
+
+    if header_position.is_none() {
+        let include_path = tests_path;
+        let generate_file = output_path.join(format!("{}.{}", name, &ext));
+        let compile_file = generate_file.clone();
+
+        return (generate_file, compile_file, include_path);
+    }
+
+    let source_file = format!("{}.{}", &name[0..header_position.unwrap()], &ext);
+    let mut generate_file = output_path.join(&source_file);
+    let header_ext = match generate_file.extension().unwrap().to_str() {
+        Some("cpp") => "hpp",
+        Some("c") => "h",
+        _ => "h",
+    };
+    generate_file.set_extension(header_ext);
+    let temp_file_path = tmp_dir.join(source_file);
+    let mut temp_source_file = fs::File::create(temp_file_path.as_path()).expect("unable to create temp source file");
+    let source_file_content = format!(
+        "#include \"{}\"\n",
+        generate_file.file_name().unwrap().to_str().unwrap()
+    );
+    temp_source_file
+        .write(source_file_content.as_bytes())
+        .expect("unable to write source file content");
+
+    return (generate_file, temp_file_path, output_path);
+}
+
 fn run_compile_test(
     cbindgen_path: &'static str,
     name: &'static str,
@@ -155,48 +195,14 @@ fn run_compile_test(
         }
     };
 
-    let header_suffix = ".header";
-    let header_position = name.rfind(&header_suffix);
-    let is_header = header_position.is_some();
+    let (generate_file, compile_file, include_path) = prepare_compilation(name, output.as_path(), tmp_dir, &tests_path, ext);
 
-    let source_file = format!(
-        "{}.{}",
-        if is_header {
-            &name[0..header_position.unwrap()]
-        } else {
-            name
-        },
-        &ext
-    );
-    output.push(&source_file);
+    run_cbindgen(cbindgen_path, path, &generate_file, language, cpp_compat, style);
 
-    if is_header {
-        let header_ext = match output.extension().unwrap().to_str().unwrap().as_ref() {
-            "cpp" => "hpp",
-            "c" => "h",
-            _ => "",
-        };
-        let mut ofile = fs::File::create(output.as_path()).expect("unable to create surce file");
-        output.set_extension(header_ext);
-        let source_file_content = format!(
-            "#include \"{}\"\n",
-            output.file_name().unwrap().to_str().unwrap()
-        );
-        ofile
-            .write(source_file_content.as_bytes())
-            .expect("unable to write source file content");
-    }
-
-    run_cbindgen(cbindgen_path, path, &output, language, cpp_compat, style);
-
-    if is_header {
-        output.set_file_name(source_file);
-    }
-
-    compile(&output, &tests_path, tmp_dir, language, style);
+    compile(&compile_file, &include_path, tmp_dir, language, style);
 
     if language == Language::C && cpp_compat {
-        compile(&output, &tests_path, tmp_dir, Language::Cxx, style)
+        compile(&compile_file, &include_path, tmp_dir, Language::Cxx, style)
     }
 }
 
