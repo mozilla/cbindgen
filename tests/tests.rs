@@ -1,8 +1,7 @@
 extern crate cbindgen;
 
 use cbindgen::*;
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use std::{env, fs, str};
 
@@ -69,6 +68,7 @@ fn compile(
     tmp_dir: &Path,
     language: Language,
     style: Option<Style>,
+    skip_warning_as_error: bool,
 ) {
     let cc = match language {
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
@@ -87,7 +87,9 @@ fn compile(
     command.arg("-o").arg(&object);
     command.arg("-I").arg(tests_path);
     command.arg("-Wall");
-    command.arg("-Werror");
+    if !skip_warning_as_error {
+        command.arg("-Werror");
+    }
     // `swift_name` is not recognzied by gcc.
     command.arg("-Wno-attributes");
     if let Language::Cxx = language {
@@ -120,46 +122,6 @@ fn compile(
     }
 }
 
-fn prepare_compilation<'a>(
-    name: &'static str,
-    output_path: &'a Path,
-    tmp_dir: &'a Path,
-    tests_path: &'a Path,
-    ext: &'a str
-) -> (PathBuf, PathBuf, &'a Path) {
-    
-    let header_suffix = ".header";
-    let header_position = name.rfind(header_suffix);
-
-    if header_position.is_none() {
-        let include_path = tests_path;
-        let generate_file = output_path.join(format!("{}.{}", name, &ext));
-        let compile_file = generate_file.clone();
-
-        return (generate_file, compile_file, include_path);
-    }
-
-    let source_file = format!("{}.{}", &name[0..header_position.unwrap()], &ext);
-    let mut generate_file = output_path.join(&source_file);
-    let header_ext = match generate_file.extension().unwrap().to_str() {
-        Some("cpp") => "hpp",
-        Some("c") => "h",
-        _ => "h",
-    };
-    generate_file.set_extension(header_ext);
-    let temp_file_path = tmp_dir.join(source_file);
-    let mut temp_source_file = fs::File::create(temp_file_path.as_path()).expect("unable to create temp source file");
-    let source_file_content = format!(
-        "#include \"{}\"\n",
-        generate_file.file_name().unwrap().to_str().unwrap()
-    );
-    temp_source_file
-        .write(source_file_content.as_bytes())
-        .expect("unable to write source file content");
-
-    return (generate_file, temp_file_path, output_path);
-}
-
 fn run_compile_test(
     cbindgen_path: &'static str,
     name: &'static str,
@@ -171,14 +133,14 @@ fn run_compile_test(
 ) {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let tests_path = Path::new(&crate_dir).join("tests");
-    let mut output = tests_path.join("expectations");
+    let mut generated_file = tests_path.join("expectations");
     if let Some(style) = style {
         match style {
             Style::Both => {
-                output.push("both");
+                generated_file.push("both");
             }
             Style::Tag => {
-                output.push("tag");
+                generated_file.push("tag");
             }
             Style::Type => {}
         }
@@ -194,15 +156,47 @@ fn run_compile_test(
             }
         }
     };
+    let skip_warning_as_error_suffix = ".skip_warning_as_error";
+    let skip_warning_as_error_position = name.rfind(skip_warning_as_error_suffix);
+    let skip_warning_as_error = skip_warning_as_error_position.is_some();
+    let mut source_file = format!("{}.{}", name, &ext);
 
-    let (generate_file, compile_file, include_path) = prepare_compilation(name, output.as_path(), tmp_dir, &tests_path, ext);
+    if skip_warning_as_error {
+        source_file = format!(
+            "{}.{}",
+            &name[0..skip_warning_as_error_position.unwrap()],
+            &ext
+        );
+    }
+    generated_file.push(source_file);
 
-    run_cbindgen(cbindgen_path, path, &generate_file, language, cpp_compat, style);
+    run_cbindgen(
+        cbindgen_path,
+        path,
+        &generated_file,
+        language,
+        cpp_compat,
+        style,
+    );
 
-    compile(&compile_file, &include_path, tmp_dir, language, style);
+    compile(
+        &generated_file,
+        &tests_path,
+        tmp_dir,
+        language,
+        style,
+        skip_warning_as_error,
+    );
 
     if language == Language::C && cpp_compat {
-        compile(&compile_file, &include_path, tmp_dir, Language::Cxx, style)
+        compile(
+            &generated_file,
+            &tests_path,
+            tmp_dir,
+            Language::Cxx,
+            style,
+            skip_warning_as_error,
+        );
     }
 }
 
