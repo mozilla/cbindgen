@@ -55,7 +55,7 @@ pub fn parse_src(src_file: &FilePath, config: &Config) -> ParseResult {
         version: None,
     };
 
-    context.parse_mod(&pkg_ref, src_file)?;
+    context.parse_mod(&pkg_ref, src_file, 0)?;
     Ok(context.out)
 }
 
@@ -136,7 +136,7 @@ impl<'a> Parser<'a> {
             let crate_src = self.lib.as_ref().unwrap().find_crate_src(pkg);
 
             match crate_src {
-                Some(crate_src) => self.parse_mod(pkg, crate_src.as_path())?,
+                Some(crate_src) => self.parse_mod(pkg, crate_src.as_path(), 0)?,
                 None => {
                     // This should be an error, but is common enough to just elicit a warning
                     warn!(
@@ -237,11 +237,7 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    fn parse_mod(&mut self, pkg: &PackageRef, mod_path: &FilePath) -> Result<(), Error> {
-        self.parse_mod_depth(pkg, mod_path, 0)
-    }
-
-    fn parse_mod_depth(&mut self, pkg: &PackageRef, mod_path: &FilePath, depth: usize) -> Result<(), Error> {
+    fn parse_mod(&mut self, pkg: &PackageRef, mod_path: &FilePath, depth: usize) -> Result<(), Error> {
         let mod_parsed = {
             let owned_mod_path = mod_path.to_path_buf();
 
@@ -316,9 +312,9 @@ impl<'a> Parser<'a> {
                     let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
 
                     if next_mod_path1.exists() {
-                        self.parse_mod_depth(pkg, next_mod_path1.as_path(), depth + 1)?;
+                        self.parse_mod(pkg, next_mod_path1.as_path(), depth + 1)?;
                     } else if next_mod_path2.exists() {
-                        self.parse_mod_depth(pkg, next_mod_path2.as_path(), depth + 1)?;
+                        self.parse_mod(pkg, next_mod_path2.as_path(), depth + 1)?;
                     } else {
                         // Last chance to find a module path
                         let mut path_attr_found = false;
@@ -329,7 +325,7 @@ impl<'a> Parser<'a> {
                                 })) => match lit {
                                     syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
                                         path_attr_found = true;
-                                        self.parse_mod_depth(pkg, &mod_dir.join(path_lit.value()), depth + 1)?;
+                                        self.parse_mod(pkg, &mod_dir.join(path_lit.value()), depth + 1)?;
                                         break;
                                     }
                                     _ => (),
