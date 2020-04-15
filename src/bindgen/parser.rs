@@ -268,7 +268,7 @@ impl<'a> Parser<'a> {
         // Compute module directory according to Rust 2018 rules
         let mod_dir_2018;
 
-        let mod_dir = if depth == 0 {
+        let mod_dir = if depth == 0 || mod_path.ends_with("mod.rs") {
             mod_path.parent().unwrap()
         } else {
             mod_dir_2018 = mod_path.parent().unwrap().join(mod_path.file_stem().unwrap());
