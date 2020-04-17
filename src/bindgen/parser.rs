@@ -237,7 +237,12 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    fn parse_mod(&mut self, pkg: &PackageRef, mod_path: &FilePath, depth: usize) -> Result<(), Error> {
+    fn parse_mod(
+        &mut self,
+        pkg: &PackageRef,
+        mod_path: &FilePath,
+        depth: usize,
+    ) -> Result<(), Error> {
         let mod_parsed = {
             let owned_mod_path = mod_path.to_path_buf();
 
@@ -271,7 +276,10 @@ impl<'a> Parser<'a> {
         let mod_dir = if depth == 0 || mod_path.ends_with("mod.rs") {
             mod_path.parent().unwrap()
         } else {
-            mod_dir_2018 = mod_path.parent().unwrap().join(mod_path.file_stem().unwrap());
+            mod_dir_2018 = mod_path
+                .parent()
+                .unwrap()
+                .join(mod_path.file_stem().unwrap());
             &mod_dir_2018
         };
 
@@ -325,7 +333,11 @@ impl<'a> Parser<'a> {
                                 })) => match lit {
                                     syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
                                         path_attr_found = true;
-                                        self.parse_mod(pkg, &mod_dir.join(path_lit.value()), depth + 1)?;
+                                        self.parse_mod(
+                                            pkg,
+                                            &mod_dir.join(path_lit.value()),
+                                            depth + 1,
+                                        )?;
                                         break;
                                     }
                                     _ => (),
