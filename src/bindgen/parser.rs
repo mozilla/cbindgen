@@ -114,6 +114,7 @@ impl<'a> Parser<'a> {
         // If we have a whitelist, check it
         if let Some(ref include) = self.config.parse.include {
             if !include.contains(&pkg_name) {
+                debug!("Excluding crate {}", pkg_name);
                 return false;
             }
         }
@@ -124,6 +125,7 @@ impl<'a> Parser<'a> {
 
     fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
         assert!(self.lib.is_some());
+        debug!("Parsing crate {}", pkg.name);
         self.parsed_crates.insert(pkg.name.clone());
 
         // Check if we should use cargo expand for this crate

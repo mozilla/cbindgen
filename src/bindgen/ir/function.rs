@@ -159,12 +159,7 @@ impl Function {
             self.args = self
                 .args
                 .iter()
-                .map(|x| {
-                    (
-                        r.apply_to_snake_case(&x.0, IdentifierType::FunctionArg),
-                        x.1.clone(),
-                    )
-                })
+                .map(|x| (r.apply(&x.0, IdentifierType::FunctionArg), x.1.clone()))
                 .collect()
         }
 

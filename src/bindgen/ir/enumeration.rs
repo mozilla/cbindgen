@@ -139,10 +139,8 @@ impl EnumVariant {
             discriminant,
             body.map(|body| {
                 (
-                    RenameRule::SnakeCase.apply_to_pascal_case(
-                        &format!("{}", variant.ident),
-                        IdentifierType::StructMember,
-                    ),
+                    RenameRule::SnakeCase
+                        .apply(&format!("{}", variant.ident), IdentifierType::StructMember),
                     body,
                 )
             }),
@@ -452,14 +450,11 @@ impl Item for Enum {
                 .iter()
                 .map(|variant| {
                     EnumVariant::new(
-                        r.apply_to_pascal_case(
-                            &variant.export_name,
-                            IdentifierType::EnumVariant(self),
-                        ),
+                        r.apply(&variant.export_name, IdentifierType::EnumVariant(self)),
                         variant.discriminant,
                         variant.body.as_ref().map(|body| {
                             (
-                                r.apply_to_snake_case(&body.0, IdentifierType::StructMember),
+                                r.apply(&body.0, IdentifierType::StructMember),
                                 body.1.clone(),
                             )
                         }),
@@ -769,7 +764,7 @@ impl Source for Enum {
                             .rename_args
                             .as_ref()
                             .unwrap_or(&RenameRule::GeckoCase)
-                            .apply_to_snake_case(name, IdentifierType::FunctionArg)
+                            .apply(name, IdentifierType::FunctionArg)
                     };
 
                     write!(out, "static {} {}(", self.export_name, variant.export_name);
@@ -901,7 +896,7 @@ impl Source for Enum {
             }
 
             let other = if let Some(r) = config.function.rename_args {
-                r.apply_to_snake_case("other", IdentifierType::FunctionArg)
+                r.apply("other", IdentifierType::FunctionArg)
             } else {
                 String::from("other")
             };
