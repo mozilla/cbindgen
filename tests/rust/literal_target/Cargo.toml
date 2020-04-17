@@ -1,0 +1,7 @@
+[package]
+name = "literal_target"
+version = "0.1.0"
+authors = ["cbindgen"]
+
+[target.x86_64-pc-windows-gnu.dependencies]
+dep = { path = "../workspace/dep" }

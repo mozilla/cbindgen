@@ -124,23 +124,30 @@ impl Cfg {
     }
 
     pub fn load_metadata(dependency: &Dependency) -> Option<Cfg> {
-        dependency
-            .target
-            .as_ref()
-            .map(|target| {
-                syn::parse_str::<syn::Meta>(target)
-                    .expect("error parsing dependency's target metadata")
-            })
-            .and_then(|target| {
-                if let syn::Meta::List(syn::MetaList { path, nested, .. }) = target {
-                    if !path.is_ident("cfg") || nested.len() != 1 {
-                        return None;
+        match &dependency.target {
+            Some(target) => match syn::parse_str::<syn::Meta>(target) {
+                Ok(target) => {
+                    // Parsing succeeded using the #[cfg] syntax
+                    if let syn::Meta::List(syn::MetaList { path, nested, .. }) = target {
+                        if !path.is_ident("cfg") || nested.len() != 1 {
+                            return None;
+                        }
+                        Cfg::load_single(nested.first().unwrap())
+                    } else {
+                        None
                     }
-                    Cfg::load_single(nested.first().unwrap())
-                } else {
-                    None
                 }
-            })
+                Err(_) =>
+                // Parsing failed using #[cfg], this may be a literal target name
+                {
+                    Cfg::load_single(&syn::NestedMeta::Lit(syn::Lit::Str(syn::LitStr::new(
+                        target,
+                        proc_macro2::Span::call_site(),
+                    ))))
+                }
+            },
+            None => None,
+        }
     }
 
     fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {
