@@ -51,168 +51,35 @@ pub enum RenameRule {
 }
 
 impl RenameRule {
-    /// Applies the rename rule to a string that is formatted in PascalCase.
-    pub fn apply_to_pascal_case(self, text: &str, context: IdentifierType) -> String {
+    /// Applies the rename rule to a string
+    pub fn apply(self, text: &str, context: IdentifierType) -> String {
+        use heck::*;
+
         if text.is_empty() {
             return String::new();
         }
 
         match self {
-            RenameRule::None => String::from(text),
-            RenameRule::GeckoCase => context.to_str().to_owned() + text,
+            RenameRule::None => text.to_owned(),
+            RenameRule::GeckoCase => context.to_str().to_owned() + &text.to_camel_case(),
             RenameRule::LowerCase => text.to_lowercase(),
             RenameRule::UpperCase => text.to_uppercase(),
-            RenameRule::PascalCase => text.to_owned(),
-            RenameRule::CamelCase => text[..1].to_lowercase() + &text[1..],
-            RenameRule::SnakeCase => {
-                // Do not add additional `_` if the string already contains `_` e.g. `__Field`
-                // Do not split consecutive capital letters
-                let mut result = String::new();
-                let mut add_separator = true;
-                let mut prev_uppercase = false;
-                for (i, c) in text.char_indices() {
-                    if c == '_' {
-                        add_separator = false;
-                        prev_uppercase = false;
-                    }
-                    if c.is_uppercase() {
-                        if i != 0 && add_separator && !prev_uppercase {
-                            result.push_str("_");
-                        } else {
-                            add_separator = true;
-                        }
-                        prev_uppercase = true;
-                    } else {
-                        prev_uppercase = false;
-                    }
-                    for x in c.to_lowercase() {
-                        result.push(x);
-                    }
-                }
-                result
-            }
-            RenameRule::ScreamingSnakeCase => {
-                // Same as SnakeCase code above, but uses to_uppercase
-                let mut result = String::new();
-                let mut add_separator = true;
-                let mut prev_uppercase = false;
-                for (i, c) in text.char_indices() {
-                    if c == '_' {
-                        add_separator = false;
-                        prev_uppercase = false;
-                    }
-                    if c.is_uppercase() {
-                        if i != 0 && add_separator && !prev_uppercase {
-                            result.push_str("_");
-                        } else {
-                            add_separator = true;
-                        }
-                        prev_uppercase = true;
-                    } else {
-                        prev_uppercase = false;
-                    }
-                    for x in c.to_uppercase() {
-                        result.push(x);
-                    }
-                }
-                result
-            }
+            RenameRule::PascalCase => text.to_camel_case(),
+            RenameRule::CamelCase => text.to_mixed_case(),
+            RenameRule::SnakeCase => text.to_snake_case(),
+            RenameRule::ScreamingSnakeCase => text.to_shouty_snake_case(),
             RenameRule::QualifiedScreamingSnakeCase => {
                 let mut result = String::new();
 
                 if let IdentifierType::EnumVariant(e) = context {
-                    if let RenameRule::QualifiedScreamingSnakeCase = self {
-                        result.push_str(
-                            &RenameRule::ScreamingSnakeCase
-                                .apply_to_pascal_case(e.path().name(), IdentifierType::Enum),
-                        );
-                        result.push_str("_");
-                    }
+                    result.push_str(
+                        &RenameRule::ScreamingSnakeCase
+                            .apply(e.path().name(), IdentifierType::Enum),
+                    );
+                    result.push_str("_");
                 }
 
-                result
-                    .push_str(&RenameRule::ScreamingSnakeCase.apply_to_pascal_case(&text, context));
-                result
-            }
-        }
-    }
-
-    /// Applies the rename rule to a string that is formatted in snake_case.
-    pub fn apply_to_snake_case(self, mut text: &str, context: IdentifierType) -> String {
-        if text.is_empty() {
-            return String::new();
-        }
-
-        match self {
-            RenameRule::None => String::from(text),
-            RenameRule::GeckoCase => {
-                if &text[..1] == "_" {
-                    text = &text[1..];
-                }
-
-                context.to_str().to_owned()
-                    + &RenameRule::PascalCase.apply_to_snake_case(text, context)
-            }
-            RenameRule::LowerCase => text.to_lowercase(),
-            RenameRule::UpperCase => text.to_uppercase(),
-            RenameRule::PascalCase => {
-                let mut result = String::new();
-                let mut is_uppercase = true;
-                for c in text.chars() {
-                    if c == '_' {
-                        is_uppercase = true;
-                        continue;
-                    }
-
-                    if is_uppercase {
-                        for x in c.to_uppercase() {
-                            result.push(x);
-                        }
-                        is_uppercase = false;
-                    } else {
-                        result.push(c);
-                    }
-                }
-                result
-            }
-            RenameRule::CamelCase => {
-                // Same as PascalCase code above, but is_uppercase = false to start
-                let mut result = String::new();
-                let mut is_uppercase = false;
-                for c in text.chars() {
-                    if c == '_' {
-                        is_uppercase = true;
-                        continue;
-                    }
-
-                    if is_uppercase {
-                        for x in c.to_uppercase() {
-                            result.push(x);
-                        }
-                        is_uppercase = false;
-                    } else {
-                        result.push(c);
-                    }
-                }
-                result
-            }
-            RenameRule::SnakeCase => text.to_owned(),
-            RenameRule::ScreamingSnakeCase => text.to_owned().to_uppercase(),
-            RenameRule::QualifiedScreamingSnakeCase => {
-                let mut result = String::new();
-
-                if let IdentifierType::EnumVariant(e) = context {
-                    if let RenameRule::QualifiedScreamingSnakeCase = self {
-                        result.push_str(
-                            &RenameRule::ScreamingSnakeCase
-                                .apply_to_snake_case(e.path().name(), IdentifierType::Enum),
-                        );
-                        result.push_str("_");
-                    }
-                }
-
-                result
-                    .push_str(&RenameRule::ScreamingSnakeCase.apply_to_snake_case(&text, context));
+                result.push_str(&RenameRule::ScreamingSnakeCase.apply(&text, context));
                 result
             }
         }

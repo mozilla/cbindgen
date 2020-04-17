@@ -310,7 +310,7 @@ impl Item for Struct {
                 }
             } else if let Some(r) = find_first_some(&field_rules) {
                 for name in names {
-                    *name = r.apply_to_snake_case(name, IdentifierType::StructMember);
+                    *name = r.apply(name, IdentifierType::StructMember);
                 }
             } else if self.tuple_struct {
                 // If there is a tag field, skip it
@@ -489,7 +489,7 @@ impl Source for Struct {
                         .rename_args
                         .as_ref()
                         .unwrap_or(&RenameRule::GeckoCase)
-                        .apply_to_snake_case(name, IdentifierType::FunctionArg)
+                        .apply(name, IdentifierType::FunctionArg)
                 };
                 write!(out, "{}(", self.export_name());
                 let vec: Vec<_> = self
@@ -516,7 +516,7 @@ impl Source for Struct {
             }
 
             let other = if let Some(r) = config.function.rename_args {
-                r.apply_to_snake_case("other", IdentifierType::FunctionArg)
+                r.apply("other", IdentifierType::FunctionArg)
             } else {
                 String::from("other")
             };

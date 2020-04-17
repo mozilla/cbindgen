@@ -190,7 +190,7 @@ impl Item for Union {
                 .iter()
                 .map(|x| {
                     (
-                        r.apply_to_snake_case(&x.0, IdentifierType::StructMember),
+                        r.apply(&x.0, IdentifierType::StructMember),
                         x.1.clone(),
                         x.2.clone(),
                     )

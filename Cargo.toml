@@ -23,6 +23,7 @@ tempfile = "3.0"
 toml = "0.5"
 proc-macro2 = "1"
 quote = "1"
+heck = "0.3"
 
 [dependencies.syn]
 version = "1.0.3"
