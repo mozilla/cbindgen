@@ -1,6 +1,6 @@
-# This is a bit of an abuse of the warning config...
-autogen_warning = """
+header = """
 #define MY_ASSERT(...) do { } while (0)
+#define MY_ATTRS __attribute((noinline))
 """
 
 [enum]

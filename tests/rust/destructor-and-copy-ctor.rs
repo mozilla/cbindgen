@@ -77,6 +77,21 @@ pub enum Tazzzz {
     Taz7(u32),
 }
 
+/// cbindgen:derive-eq=true
+/// cbindgen:derive-neq=true
+/// cbindgen:neq-attributes=NODISCARD
+/// cbindgen:eq-attributes=NODISCARD
+/// cbindgen:destructor-attributes=NOINLINE
+/// cbindgen:copy-constructor-attributes=NOINLINE
+/// cbindgen:copy-assignment-attributes=NOINLINE
+#[repr(u8)]
+pub enum Qux {
+    /// cbindgen:derive-eq=true
+    Qux1(i32),
+    /// cbindgen:derive-eq=true
+    Qux2(u32),
+}
+
 
 #[no_mangle]
-pub extern "C" fn root(a: &Foo<u32>, b: &Baz<i32>, c: &Taz, d: Tazz, e: &Tazzz, f: &Tazzzz) {}
+pub extern "C" fn root(a: &Foo<u32>, b: &Baz<i32>, c: &Taz, d: Tazz, e: &Tazzz, f: &Tazzzz, g: &Qux) {}

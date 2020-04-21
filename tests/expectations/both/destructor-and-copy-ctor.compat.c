@@ -1,3 +1,7 @@
+#define NOINLINE __attribute__((noinline))
+#define NODISCARD [[nodiscard]]
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -245,6 +249,34 @@ typedef union Tazzzz {
   Taz7_Body taz7;
 } Tazzzz;
 
+enum Qux_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  Qux1,
+  Qux2,
+};
+#ifndef __cplusplus
+typedef uint8_t Qux_Tag;
+#endif // __cplusplus
+
+typedef struct Qux1_Body {
+  Qux_Tag tag;
+  int32_t _0;
+} Qux1_Body;
+
+typedef struct Qux2_Body {
+  Qux_Tag tag;
+  uint32_t _0;
+} Qux2_Body;
+
+typedef union Qux {
+  Qux_Tag tag;
+  Qux1_Body qux1;
+  Qux2_Body qux2;
+} Qux;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -254,7 +286,8 @@ void root(const Foo_u32 *a,
           const Taz *c,
           Tazz d,
           const Tazzz *e,
-          const Tazzzz *f);
+          const Tazzzz *f,
+          const Qux *g);
 
 #ifdef __cplusplus
 } // extern "C"

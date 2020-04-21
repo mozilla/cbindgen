@@ -1,3 +1,7 @@
+#define NOINLINE __attribute__((noinline))
+#define NODISCARD [[nodiscard]]
+
+
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
@@ -594,6 +598,106 @@ union Tazzzz {
   }
 };
 
+union Qux {
+  enum class Tag : uint8_t {
+    Qux1,
+    Qux2,
+  };
+
+  struct Qux1_Body {
+    Tag tag;
+    int32_t _0;
+
+    bool operator==(const Qux1_Body& other) const {
+      return _0 == other._0;
+    }
+  };
+
+  struct Qux2_Body {
+    Tag tag;
+    uint32_t _0;
+
+    bool operator==(const Qux2_Body& other) const {
+      return _0 == other._0;
+    }
+  };
+
+  struct {
+    Tag tag;
+  };
+  Qux1_Body qux1;
+  Qux2_Body qux2;
+
+  static Qux Qux1(const int32_t &a0) {
+    Qux result;
+    ::new (&result.qux1._0) (int32_t)(a0);
+    result.tag = Tag::Qux1;
+    return result;
+  }
+
+  bool IsQux1() const {
+    return tag == Tag::Qux1;
+  }
+
+  static Qux Qux2(const uint32_t &a0) {
+    Qux result;
+    ::new (&result.qux2._0) (uint32_t)(a0);
+    result.tag = Tag::Qux2;
+    return result;
+  }
+
+  bool IsQux2() const {
+    return tag == Tag::Qux2;
+  }
+
+  NODISCARD bool operator==(const Qux& other) const {
+    if (tag != other.tag) {
+      return false;
+    }
+    switch (tag) {
+      case Tag::Qux1: return qux1 == other.qux1;
+      case Tag::Qux2: return qux2 == other.qux2;
+
+    }
+    return true;
+  }
+
+  NODISCARD bool operator!=(const Qux& other) const {
+    return !(*this == other);
+  }
+
+  private:
+  Qux() {
+
+  }
+  public:
+
+
+  NOINLINE ~Qux() {
+    switch (tag) {
+      case Tag::Qux1: qux1.~Qux1_Body(); break;
+      case Tag::Qux2: qux2.~Qux2_Body(); break;
+
+    }
+  }
+
+  NOINLINE Qux(const Qux& other)
+   : tag(other.tag) {
+    switch (tag) {
+      case Tag::Qux1: ::new (&qux1) (Qux1_Body)(other.qux1); break;
+      case Tag::Qux2: ::new (&qux2) (Qux2_Body)(other.qux2); break;
+
+    }
+  }
+  NOINLINE Qux& operator=(const Qux& other) {
+    if (this != &other) {
+      this->~Qux();
+      new (this) Qux(other);
+    }
+    return *this;
+  }
+};
+
 extern "C" {
 
 void root(const Foo<uint32_t> *a,
@@ -601,6 +705,7 @@ void root(const Foo<uint32_t> *a,
           const Taz *c,
           Tazz d,
           const Tazzz *e,
-          const Tazzzz *f);
+          const Tazzzz *f,
+          const Qux *g);
 
 } // extern "C"

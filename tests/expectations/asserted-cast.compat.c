@@ -1,4 +1,5 @@
 #define MY_ASSERT(...) do { } while (0)
+#define MY_ATTRS __attribute((noinline))
 
 
 #include <stdarg.h>
