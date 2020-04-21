@@ -549,63 +549,77 @@ impl Source for Struct {
 
             let skip_fields = if self.is_tagged { 1 } else { 0 };
 
-            let mut emit_op = |op, conjuc| {
-                if !wrote_start_newline {
-                    wrote_start_newline = true;
+            macro_rules! emit_op {
+                ($op_name:expr, $op:expr, $conjuc:expr) => {{
+                    if !wrote_start_newline {
+                        #[allow(unused_assignments)]
+                        {
+                            wrote_start_newline = true;
+                        }
+                        out.new_line();
+                    }
+
                     out.new_line();
-                }
 
-                out.new_line();
+                    if let Some(Some(attrs)) =
+                        self.annotations.atom(concat!($op_name, "-attributes"))
+                    {
+                        write!(out, "{} ", attrs);
+                    }
 
-                write!(
-                    out,
-                    "bool operator{}(const {}& {}) const",
-                    op,
-                    self.export_name(),
-                    other
-                );
-                out.open_brace();
-                out.write("return ");
-                let vec: Vec<_> = self
-                    .fields
-                    .iter()
-                    .skip(skip_fields)
-                    .map(|x| format!("{} {} {}.{}", x.0, op, other, x.0))
-                    .collect();
-                out.write_vertical_source_list(&vec[..], ListType::Join(&format!(" {}", conjuc)));
-                out.write(";");
-                out.close_brace(false);
+                    write!(
+                        out,
+                        "bool operator{}(const {}& {}) const",
+                        $op,
+                        self.export_name(),
+                        other
+                    );
+                    out.open_brace();
+                    out.write("return ");
+                    let vec: Vec<_> = self
+                        .fields
+                        .iter()
+                        .skip(skip_fields)
+                        .map(|x| format!("{} {} {}.{}", x.0, $op, other, x.0))
+                        .collect();
+                    out.write_vertical_source_list(
+                        &vec[..],
+                        ListType::Join(&format!(" {}", $conjuc)),
+                    );
+                    out.write(";");
+                    out.close_brace(false);
+                }};
             };
 
             if config.structure.derive_eq(&self.annotations) && self.can_derive_eq() {
-                emit_op("==", "&&");
+                emit_op!("eq", "==", "&&");
             }
             if config.structure.derive_neq(&self.annotations) && self.can_derive_eq() {
-                emit_op("!=", "||");
+                emit_op!("neq", "!=", "||");
             }
             if config.structure.derive_lt(&self.annotations)
                 && self.fields.len() == 1
                 && self.fields[0].1.can_cmp_order()
             {
-                emit_op("<", "&&");
+                emit_op!("lt", "<", "&&");
             }
             if config.structure.derive_lte(&self.annotations)
                 && self.fields.len() == 1
                 && self.fields[0].1.can_cmp_order()
             {
-                emit_op("<=", "&&");
+                emit_op!("lte", "<=", "&&");
             }
             if config.structure.derive_gt(&self.annotations)
                 && self.fields.len() == 1
                 && self.fields[0].1.can_cmp_order()
             {
-                emit_op(">", "&&");
+                emit_op!("gt", ">", "&&");
             }
             if config.structure.derive_gte(&self.annotations)
                 && self.fields.len() == 1
                 && self.fields[0].1.can_cmp_order()
             {
-                emit_op(">=", "&&");
+                emit_op!("gte", ">=", "&&");
             }
         }
 

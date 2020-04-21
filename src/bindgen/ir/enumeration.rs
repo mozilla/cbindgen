@@ -37,6 +37,13 @@ impl VariantBody {
         Self::Empty(AnnotationSet::new())
     }
 
+    fn annotations(&self) -> &AnnotationSet {
+        match *self {
+            Self::Empty(ref anno) => anno,
+            Self::Body { ref body, .. } => &body.annotations,
+        }
+    }
+
     fn is_empty(&self) -> bool {
         match *self {
             Self::Empty(..) => true,
@@ -807,6 +814,19 @@ impl Source for Enum {
                             .apply(name, IdentifierType::FunctionArg)
                     };
 
+                    macro_rules! write_attrs {
+                        ($op:expr) => {{
+                            if let Some(Some(attrs)) = variant.body.annotations().atom(concat!(
+                                "variant-",
+                                $op,
+                                "-attributes"
+                            )) {
+                                write!(out, "{} ", attrs);
+                            }
+                        }};
+                    };
+
+                    write_attrs!("constructor");
                     write!(out, "static {} {}(", self.export_name, variant.export_name);
 
                     if let VariantBody::Body { ref body, .. } = variant.body {
@@ -871,6 +891,7 @@ impl Source for Enum {
                     out.new_line();
                     out.new_line();
 
+                    write_attrs!("is");
                     // FIXME: create a config for method case
                     write!(out, "bool Is{}() const", variant.export_name);
                     out.open_brace();
@@ -897,6 +918,11 @@ impl Source for Enum {
                         out.new_line();
 
                         let dig = field_count == 1 && body.tuple_struct;
+                        if const_casts {
+                            write_attrs!("const-cast");
+                        } else {
+                            write_attrs!("mut-cast");
+                        }
                         if dig {
                             let field = body.fields.iter().skip(skip_fields).next().unwrap();
                             let return_type = field.1.clone();
@@ -945,12 +971,21 @@ impl Source for Enum {
                 String::from("other")
             };
 
+            macro_rules! write_attrs {
+                ($op:expr) => {{
+                    if let Some(Some(attrs)) = self.annotations.atom(concat!($op, "-attributes")) {
+                        write!(out, "{} ", attrs);
+                    }
+                }};
+            };
+
             if config.language == Language::Cxx
                 && self.can_derive_eq()
                 && config.structure.derive_eq(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
+                write_attrs!("eq");
                 write!(
                     out,
                     "bool operator==(const {}& {}) const",
@@ -1001,6 +1036,7 @@ impl Source for Enum {
                 if config.structure.derive_neq(&self.annotations) {
                     out.new_line();
                     out.new_line();
+                    write_attrs!("neq");
                     write!(
                         out,
                         "bool operator!=(const {}& {}) const",
@@ -1036,6 +1072,7 @@ impl Source for Enum {
             {
                 out.new_line();
                 out.new_line();
+                write_attrs!("destructor");
                 write!(out, "~{}()", self.export_name);
                 out.open_brace();
                 write!(out, "switch (tag)");
@@ -1073,6 +1110,7 @@ impl Source for Enum {
             {
                 out.new_line();
                 out.new_line();
+                write_attrs!("copy-constructor");
                 write!(
                     out,
                     "{}(const {}& {})",
@@ -1116,6 +1154,7 @@ impl Source for Enum {
                         .derive_tagged_enum_copy_assignment(&self.annotations)
                 {
                     out.new_line();
+                    write_attrs!("copy-assignment");
                     write!(
                         out,
                         "{}& operator=(const {}& {})",
