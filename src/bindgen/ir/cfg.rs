@@ -124,29 +124,27 @@ impl Cfg {
     }
 
     pub fn load_metadata(dependency: &Dependency) -> Option<Cfg> {
-        match &dependency.target {
-            Some(target) => match syn::parse_str::<syn::Meta>(target) {
-                Ok(target) => {
-                    // Parsing succeeded using the #[cfg] syntax
-                    if let syn::Meta::List(syn::MetaList { path, nested, .. }) = target {
-                        if !path.is_ident("cfg") || nested.len() != 1 {
-                            return None;
-                        }
-                        Cfg::load_single(nested.first().unwrap())
-                    } else {
-                        None
+        let target = dependency.target.as_ref()?;
+        match syn::parse_str::<syn::Meta>(target) {
+            Ok(target) => {
+                // Parsing succeeded using the #[cfg] syntax
+                if let syn::Meta::List(syn::MetaList { path, nested, .. }) = target {
+                    if !path.is_ident("cfg") || nested.len() != 1 {
+                        return None;
                     }
+                    Cfg::load_single(nested.first().unwrap())
+                } else {
+                    None
                 }
-                Err(_) =>
-                // Parsing failed using #[cfg], this may be a literal target name
-                {
-                    Cfg::load_single(&syn::NestedMeta::Lit(syn::Lit::Str(syn::LitStr::new(
-                        target,
-                        proc_macro2::Span::call_site(),
-                    ))))
-                }
-            },
-            None => None,
+            }
+            Err(_) => {
+                // Parsing failed using #[cfg], this may be a literal target
+                // name
+                Cfg::load_single(&syn::NestedMeta::Lit(syn::Lit::Str(syn::LitStr::new(
+                    target,
+                    proc_macro2::Span::call_site(),
+                ))))
+            }
         }
     }
 
