@@ -1,0 +1,9 @@
+[package]
+name = "mod_2015"
+version = "0.1.0"
+authors = ["cbindgen"]
+edition = "2015"
+
+[lib]
+name = "mod_2015"
+crate-type = ["lib", "dylib"]

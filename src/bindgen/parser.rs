@@ -55,7 +55,7 @@ pub fn parse_src(src_file: &FilePath, config: &Config) -> ParseResult {
         version: None,
     };
 
-    context.parse_mod(&pkg_ref, src_file)?;
+    context.parse_mod(&pkg_ref, src_file, 0)?;
     Ok(context.out)
 }
 
@@ -136,7 +136,7 @@ impl<'a> Parser<'a> {
             let crate_src = self.lib.as_ref().unwrap().find_crate_src(pkg);
 
             match crate_src {
-                Some(crate_src) => self.parse_mod(pkg, crate_src.as_path())?,
+                Some(crate_src) => self.parse_mod(pkg, crate_src.as_path(), 0)?,
                 None => {
                     // This should be an error, but is common enough to just elicit a warning
                     warn!(
@@ -237,7 +237,12 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    fn parse_mod(&mut self, pkg: &PackageRef, mod_path: &FilePath) -> Result<(), Error> {
+    fn parse_mod(
+        &mut self,
+        pkg: &PackageRef,
+        mod_path: &FilePath,
+        depth: usize,
+    ) -> Result<(), Error> {
         let mod_parsed = {
             let owned_mod_path = mod_path.to_path_buf();
 
@@ -265,9 +270,20 @@ impl<'a> Parser<'a> {
             self.cache_src.get(&owned_mod_path).unwrap().clone()
         };
 
-        let mod_dir = mod_path.parent().unwrap();
+        // Compute module directory according to Rust 2018 rules
+        let mod_dir_2018;
 
-        self.process_mod(pkg, mod_dir, &mod_parsed)
+        let mod_dir = if depth == 0 || mod_path.ends_with("mod.rs") {
+            mod_path.parent().unwrap()
+        } else {
+            mod_dir_2018 = mod_path
+                .parent()
+                .unwrap()
+                .join(mod_path.file_stem().unwrap());
+            &mod_dir_2018
+        };
+
+        self.process_mod(pkg, &mod_dir, &mod_parsed, depth)
     }
 
     fn process_mod(
@@ -275,6 +291,7 @@ impl<'a> Parser<'a> {
         pkg: &PackageRef,
         mod_dir: &FilePath,
         items: &[syn::Item],
+        depth: usize,
     ) -> Result<(), Error> {
         self.out.load_syn_crate_mod(
             &self.config,
@@ -297,15 +314,15 @@ impl<'a> Parser<'a> {
                 }
 
                 if let Some((_, ref inline_items)) = item.content {
-                    self.process_mod(pkg, &mod_dir.join(&next_mod_name), inline_items)?;
+                    self.process_mod(pkg, &mod_dir.join(&next_mod_name), inline_items, depth)?;
                 } else {
                     let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
                     let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
 
                     if next_mod_path1.exists() {
-                        self.parse_mod(pkg, next_mod_path1.as_path())?;
+                        self.parse_mod(pkg, next_mod_path1.as_path(), depth + 1)?;
                     } else if next_mod_path2.exists() {
-                        self.parse_mod(pkg, next_mod_path2.as_path())?;
+                        self.parse_mod(pkg, next_mod_path2.as_path(), depth + 1)?;
                     } else {
                         // Last chance to find a module path
                         let mut path_attr_found = false;
@@ -316,7 +333,11 @@ impl<'a> Parser<'a> {
                                 })) => match lit {
                                     syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
                                         path_attr_found = true;
-                                        self.parse_mod(pkg, &mod_dir.join(path_lit.value()))?;
+                                        self.parse_mod(
+                                            pkg,
+                                            &mod_dir.join(path_lit.value()),
+                                            depth + 1,
+                                        )?;
                                         break;
                                     }
                                     _ => (),
