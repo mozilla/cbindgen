@@ -235,8 +235,6 @@ An annotation may be a bool, string (no quotes), or list of strings. If just the
 
 Most annotations are just local overrides for identical settings in the cbindgen.toml, but a few are unique because they don't make sense in a global context. The set of supported annotation are as follows:
 
-
-
 ### Struct Annotations
 
 * field-names=\[field1, field2, ...\] -- sets the names of all the fields in the output struct. These names will be output verbatim, and are not eligible for renaming.
@@ -251,8 +249,32 @@ The rest are just local overrides for the same options found in the cbindgen.tom
 * derive-lte
 * derive-gt
 * derive-gte
+* {eq,neq,lt,lte,gt,gte}-attributes: Takes a single identifier which will be
+  emitted before the signature of the auto-generated `operator==` / `operator!=`
+  / etc(if any). The idea is for this to be used to annotate the operator with
+  attributes, for example:
 
+```rust
+/// cbindgen:eq-attributes=MY_ATTRIBUTES
+#[repr(C)]
+pub struct Foo { .. }
+```
 
+Will generate something like:
+
+```
+  MY_ATTRIBUTES bool operator==(const Foo& other) const {
+    ...
+  }
+```
+
+Combined with something like:
+
+```
+#define MY_ATTRIBUTES [[nodiscard]]
+```
+
+for example.
 
 ### Enum Annotations
 
@@ -272,8 +294,18 @@ The rest are just local overrides for the same options found in the cbindgen.tom
 * enum-class
 * prefix-with-name
 * private-default-tagged-enum-constructor
+* {destructor,copy-constructor,copy-assignment}-attributes: See the description
+  of the struct attributes, these do the same for the respective generated code.
 
+### Enum variant annotations
 
+These apply to both tagged and untagged enum _variants_.
+
+* variant-{constructor,const-cast,mut-cast,is}-attributes: See the description
+  of the struct attributes. These do the same for the respective functions.
+
+TODO: We should allow to override the `derive-{const,mut}-casts`, helper methods
+et al. with per-variant annotations, probably.
 
 ### Union Annotations
 
