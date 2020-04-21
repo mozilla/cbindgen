@@ -1,3 +1,7 @@
+#define NOINLINE __attribute__((noinline))
+#define NODISCARD [[nodiscard]]
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -203,9 +207,32 @@ typedef union Tazzzz {
   Taz7_Body taz7;
 } Tazzzz;
 
+enum Qux_Tag {
+  Qux1,
+  Qux2,
+};
+typedef uint8_t Qux_Tag;
+
+typedef struct Qux1_Body {
+  Qux_Tag tag;
+  int32_t _0;
+} Qux1_Body;
+
+typedef struct Qux2_Body {
+  Qux_Tag tag;
+  uint32_t _0;
+} Qux2_Body;
+
+typedef union Qux {
+  Qux_Tag tag;
+  Qux1_Body qux1;
+  Qux2_Body qux2;
+} Qux;
+
 void root(const Foo_u32 *a,
           const Baz_i32 *b,
           const Taz *c,
           Tazz d,
           const Tazzz *e,
-          const Tazzzz *f);
+          const Tazzzz *f,
+          const Qux *g);

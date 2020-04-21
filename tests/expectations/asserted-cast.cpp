@@ -1,4 +1,5 @@
 #define MY_ASSERT(...) do { } while (0)
+#define MY_ATTRS __attribute((noinline))
 
 
 #include <cstdarg>
@@ -46,7 +47,7 @@ struct H {
     return foo._0;
   }
 
-  int16_t& AsH_Foo() {
+  MY_ATTRS int16_t& AsH_Foo() {
     MY_ASSERT(IsH_Foo());
     return foo._0;
   }
@@ -64,7 +65,7 @@ struct H {
     return tag == Tag::H_Bar;
   }
 
-  const H_Bar_Body& AsH_Bar() const {
+  MY_ATTRS const H_Bar_Body& AsH_Bar() const {
     MY_ASSERT(IsH_Bar());
     return bar;
   }
@@ -80,7 +81,7 @@ struct H {
     return result;
   }
 
-  bool IsH_Baz() const {
+  MY_ATTRS bool IsH_Baz() const {
     return tag == Tag::H_Baz;
   }
 };
