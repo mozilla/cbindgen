@@ -22,11 +22,45 @@ use crate::bindgen::utilities::find_first_some;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
+pub enum VariantBody {
+    Empty(AnnotationSet),
+    Body {
+        /// The variant field / export name.
+        name: String,
+        /// The struct with all the items.
+        body: Struct,
+    },
+}
+
+impl VariantBody {
+    fn empty() -> Self {
+        Self::Empty(AnnotationSet::new())
+    }
+
+    fn is_empty(&self) -> bool {
+        match *self {
+            Self::Empty(..) => true,
+            Self::Body { .. } => false,
+        }
+    }
+
+    fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)]) -> Self {
+        match *self {
+            Self::Empty(ref annos) => Self::Empty(annos.clone()),
+            Self::Body { ref name, ref body } => Self::Body {
+                name: name.clone(),
+                body: body.specialize(generic_values, mappings),
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct EnumVariant {
     pub name: String,
     pub export_name: String,
     pub discriminant: Option<i64>,
-    pub body: Option<(String, Struct)>,
+    pub body: VariantBody,
     pub cfg: Option<Cfg>,
     pub documentation: Documentation,
 }
@@ -98,52 +132,57 @@ impl EnumVariant {
         }
 
         let variant_cfg = Cfg::append(mod_cfg, Cfg::load(&variant.attrs));
+        let annotations = AnnotationSet::load(&variant.attrs)?;
         let body = match variant.fields {
-            syn::Fields::Unit => None,
+            syn::Fields::Unit => VariantBody::Empty(annotations),
             syn::Fields::Named(ref fields) => {
                 let path = Path::new(format!("{}_Body", variant.ident));
-                Some(Struct::new(
-                    path,
-                    generic_params,
-                    parse_fields(is_tagged, &fields.named, self_path)?,
-                    is_tagged,
-                    true,
-                    None,
-                    false,
-                    false,
-                    None,
-                    AnnotationSet::load(&variant.attrs)?,
-                    Documentation::none(),
-                ))
+                let name = RenameRule::SnakeCase
+                    .apply(&variant.ident.to_string(), IdentifierType::StructMember);
+                VariantBody::Body {
+                    name,
+                    body: Struct::new(
+                        path,
+                        generic_params,
+                        parse_fields(is_tagged, &fields.named, self_path)?,
+                        is_tagged,
+                        true,
+                        None,
+                        false,
+                        false,
+                        None,
+                        annotations,
+                        Documentation::none(),
+                    ),
+                }
             }
             syn::Fields::Unnamed(ref fields) => {
                 let path = Path::new(format!("{}_Body", variant.ident));
-                Some(Struct::new(
-                    path,
-                    generic_params,
-                    parse_fields(is_tagged, &fields.unnamed, self_path)?,
-                    is_tagged,
-                    true,
-                    None,
-                    false,
-                    true,
-                    None,
-                    AnnotationSet::load(&variant.attrs)?,
-                    Documentation::none(),
-                ))
+                let name = RenameRule::SnakeCase
+                    .apply(&variant.ident.to_string(), IdentifierType::StructMember);
+                VariantBody::Body {
+                    name,
+                    body: Struct::new(
+                        path,
+                        generic_params,
+                        parse_fields(is_tagged, &fields.unnamed, self_path)?,
+                        is_tagged,
+                        true,
+                        None,
+                        false,
+                        true,
+                        None,
+                        annotations,
+                        Documentation::none(),
+                    ),
+                }
             }
         };
 
         Ok(EnumVariant::new(
             variant.ident.to_string(),
             discriminant,
-            body.map(|body| {
-                (
-                    RenameRule::SnakeCase
-                        .apply(&format!("{}", variant.ident), IdentifierType::StructMember),
-                    body,
-                )
-            }),
+            body,
             variant_cfg,
             Documentation::load(&variant.attrs),
         ))
@@ -152,7 +191,7 @@ impl EnumVariant {
     pub fn new(
         name: String,
         discriminant: Option<i64>,
-        body: Option<(String, Struct)>,
+        body: VariantBody,
         cfg: Option<Cfg>,
         documentation: Documentation,
     ) -> Self {
@@ -168,14 +207,14 @@ impl EnumVariant {
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        if let Some((_, ref item)) = self.body {
-            item.add_dependencies(library, out);
+        if let VariantBody::Body { ref body, .. } = self.body {
+            body.add_dependencies(library, out);
         }
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
-        if let Some((_, ref mut ty)) = self.body {
-            ty.resolve_declaration_types(resolver);
+        if let VariantBody::Body { ref mut body, .. } = self.body {
+            body.resolve_declaration_types(resolver);
         }
     }
 
@@ -183,23 +222,21 @@ impl EnumVariant {
         Self::new(
             mangle::mangle_name(&self.name, generic_values),
             self.discriminant,
-            self.body
-                .as_ref()
-                .map(|&(ref name, ref ty)| (name.clone(), ty.specialize(generic_values, mappings))),
+            self.body.specialize(generic_values, mappings),
             self.cfg.clone(),
             self.documentation.clone(),
         )
     }
 
     fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
-        if let Some((_, ref ty)) = self.body {
-            ty.add_monomorphs(library, out);
+        if let VariantBody::Body { ref body, .. } = self.body {
+            body.add_monomorphs(library, out);
         }
     }
 
     fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        if let Some((_, ref mut ty)) = self.body {
-            ty.mangle_paths(monomorphs);
+        if let VariantBody::Body { ref mut body, .. } = self.body {
+            body.mangle_paths(monomorphs);
         }
     }
 }
@@ -247,11 +284,9 @@ impl Enum {
             return false;
         }
 
-        self.variants.iter().all(|variant| {
-            variant
-                .body
-                .as_ref()
-                .map_or(true, |&(_, ref body)| body.can_derive_eq())
+        self.variants.iter().all(|variant| match variant.body {
+            VariantBody::Empty(..) => true,
+            VariantBody::Body { ref body, .. } => body.can_derive_eq(),
         })
     }
 
@@ -289,7 +324,7 @@ impl Enum {
                 mod_cfg,
                 &path,
             )?;
-            is_tagged = is_tagged || variant.body.is_some();
+            is_tagged = is_tagged || !variant.body.is_empty();
             variants.push(variant);
         }
 
@@ -300,7 +335,7 @@ impl Enum {
                 variants.push(EnumVariant::new(
                     name,
                     None,
-                    None,
+                    VariantBody::empty(),
                     None,
                     Documentation::none(),
                 ));
@@ -311,7 +346,7 @@ impl Enum {
             variants.push(EnumVariant::new(
                 "Sentinel".to_owned(),
                 None,
-                None,
+                VariantBody::empty(),
                 None,
                 Documentation::simple(" Must be last for serialization purposes"),
             ));
@@ -409,7 +444,7 @@ impl Item for Enum {
             let new_tag = format!("{}_Tag", self.export_name);
             if self.repr.style == ReprStyle::Rust {
                 for variant in &mut self.variants {
-                    if let Some((_, ref mut body)) = variant.body {
+                    if let VariantBody::Body { ref mut body, .. } = variant.body {
                         let path = Path::new(new_tag.clone());
                         let generic_path = GenericPath::new(path, vec![]);
                         body.fields[0].1 = Type::Path(generic_path);
@@ -422,9 +457,13 @@ impl Item for Enum {
         for variant in &mut self.variants {
             reserved::escape(&mut variant.export_name);
 
-            if let Some((ref mut field_name, ref mut body)) = variant.body {
+            if let VariantBody::Body {
+                ref mut name,
+                ref mut body,
+            } = variant.body
+            {
                 body.rename_for_config(config);
-                reserved::escape(field_name);
+                reserved::escape(name);
             }
         }
 
@@ -433,7 +472,7 @@ impl Item for Enum {
         {
             for variant in &mut self.variants {
                 variant.export_name = format!("{}_{}", self.export_name, variant.export_name);
-                if let Some((_, ref mut body)) = variant.body {
+                if let VariantBody::Body { ref mut body, .. } = variant.body {
                     body.export_name = format!("{}_{}", self.export_name, body.export_name());
                 }
             }
@@ -452,12 +491,13 @@ impl Item for Enum {
                     EnumVariant::new(
                         r.apply(&variant.export_name, IdentifierType::EnumVariant(self)),
                         variant.discriminant,
-                        variant.body.as_ref().map(|body| {
-                            (
-                                r.apply(&body.0, IdentifierType::StructMember),
-                                body.1.clone(),
-                            )
-                        }),
+                        match variant.body {
+                            VariantBody::Empty(..) => variant.body.clone(),
+                            VariantBody::Body { ref name, ref body } => VariantBody::Body {
+                                name: r.apply(&name, IdentifierType::StructMember),
+                                body: body.clone(),
+                            },
+                        },
                         variant.cfg.clone(),
                         variant.documentation.clone(),
                     )
@@ -492,7 +532,7 @@ impl Item for Enum {
             .collect::<Vec<_>>();
 
         for variant in &self.variants {
-            if let Some((_, ref body)) = variant.body {
+            if let VariantBody::Body { ref body, .. } = variant.body {
                 body.instantiate_monomorph(generic_values, library, out);
             }
         }
@@ -654,7 +694,7 @@ impl Source for Enum {
         if is_tagged {
             // Emit the cases for the structs
             for variant in &self.variants {
-                if let Some((_, ref body)) = variant.body {
+                if let VariantBody::Body { ref body, .. } = variant.body {
                     out.new_line();
                     out.new_line();
                     let condition = variant.cfg.to_condition(config);
@@ -721,8 +761,8 @@ impl Source for Enum {
                 let mut first = true;
                 for variant in &self.variants {
                     let (field_name, body) = match variant.body {
-                        Some((ref field_name, ref body)) => (field_name, body),
-                        None => continue,
+                        VariantBody::Body { ref name, ref body } => (name, body),
+                        VariantBody::Empty(..) => continue,
                     };
 
                     if !first {
@@ -769,7 +809,7 @@ impl Source for Enum {
 
                     write!(out, "static {} {}(", self.export_name, variant.export_name);
 
-                    if let Some((_, ref body)) = variant.body {
+                    if let VariantBody::Body { ref body, .. } = variant.body {
                         let vec: Vec<_> = body
                             .fields
                             .iter()
@@ -787,7 +827,11 @@ impl Source for Enum {
 
                     write!(out, "{} result;", self.export_name);
 
-                    if let Some((ref variant_name, ref body)) = variant.body {
+                    if let VariantBody::Body {
+                        name: ref variant_name,
+                        ref body,
+                    } = variant.body
+                    {
                         for &(ref field_name, ref ty, ..) in body.fields.iter().skip(skip_fields) {
                             out.new_line();
                             match ty {
@@ -840,8 +884,8 @@ impl Source for Enum {
 
                     let mut derive_casts = |const_casts: bool| {
                         let (member_name, body) = match variant.body {
-                            Some((ref member_name, ref body)) => (member_name, body),
-                            None => return,
+                            VariantBody::Body { ref name, ref body } => (name, body),
+                            VariantBody::Empty(..) => return,
                         };
 
                         let field_count = body.fields.len() - skip_fields;
@@ -922,7 +966,11 @@ impl Source for Enum {
                 out.open_brace();
                 let mut exhaustive = true;
                 for variant in &self.variants {
-                    if let Some((ref variant_name, _)) = variant.body {
+                    if let VariantBody::Body {
+                        name: ref variant_name,
+                        ..
+                    } = variant.body
+                    {
                         let condition = variant.cfg.to_condition(config);
                         condition.write_before(config, out);
                         write!(
@@ -994,7 +1042,7 @@ impl Source for Enum {
                 out.open_brace();
                 let mut exhaustive = true;
                 for variant in &self.variants {
-                    if let Some((ref variant_name, ref item)) = variant.body {
+                    if let VariantBody::Body { ref name, ref body } = variant.body {
                         let condition = variant.cfg.to_condition(config);
                         condition.write_before(config, out);
                         write!(
@@ -1002,8 +1050,8 @@ impl Source for Enum {
                             "case {}::{}: {}.~{}(); break;",
                             self.tag.as_ref().unwrap(),
                             variant.export_name,
-                            variant_name,
-                            item.export_name(),
+                            name,
+                            body.export_name(),
                         );
                         condition.write_after(config, out);
                         out.new_line();
@@ -1037,7 +1085,7 @@ impl Source for Enum {
                 out.open_brace();
                 let mut exhaustive = true;
                 for variant in &self.variants {
-                    if let Some((ref variant_name, ref item)) = variant.body {
+                    if let VariantBody::Body { ref name, ref body } = variant.body {
                         let condition = variant.cfg.to_condition(config);
                         condition.write_before(config, out);
                         write!(
@@ -1045,10 +1093,10 @@ impl Source for Enum {
                             "case {}::{}: ::new (&{}) ({})({}.{}); break;",
                             self.tag.as_ref().unwrap(),
                             variant.export_name,
-                            variant_name,
-                            item.export_name(),
+                            name,
+                            body.export_name(),
                             other,
-                            variant_name,
+                            name,
                         );
                         condition.write_after(config, out);
                         out.new_line();
