@@ -1,3 +1,13 @@
+## 0.14.2
+
+     * Fixed minimal dependency versions. (#507)
+     * Add an option to write pragma once. (#511)
+     * Fix submodule scanning for implicit Rust 2018 modules. (#512)
+     * Fix dependency parsing / scanning to handle target-specific versions. (#513)
+     * Use heck for case conversion. (#514)
+     * Add support for verbatim content after includes. (#416)
+     * Allow to add attributes to most generated functions. (#515)
+
 ## 0.14.1
 
      * Handle mangling pointers. (#508)
