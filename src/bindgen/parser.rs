@@ -262,7 +262,8 @@ impl<'a> Parser<'a> {
         items: &[syn::Item],
         depth: usize,
     ) -> Result<(), Error> {
-        self.out.load_syn_crate_mod(
+        // We process the items first then the nested modules.
+        let nested_modules = self.out.load_syn_crate_mod(
             &self.config,
             &self.binding_crate_name,
             &pkg.name,
@@ -270,16 +271,7 @@ impl<'a> Parser<'a> {
             items,
         );
 
-        for item in items {
-            if item.has_test_attr() {
-                continue;
-            }
-
-            let item = match *item {
-                syn::Item::Mod(ref item) => item,
-                _ => continue,
-            };
-
+        for item in nested_modules {
             let next_mod_name = item.ident.to_string();
 
             let cfg = Cfg::load(&item.attrs);
@@ -418,15 +410,16 @@ impl Parse {
         self.functions.extend_from_slice(&other.functions);
     }
 
-    pub fn load_syn_crate_mod(
+    fn load_syn_crate_mod<'a>(
         &mut self,
         config: &Config,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
-        items: &[syn::Item],
-    ) {
+        items: &'a [syn::Item],
+    ) -> Vec<&'a syn::ItemMod> {
         let mut impls_with_assoc_consts = Vec::new();
+        let mut nested_modules = Vec::new();
 
         for item in items {
             if item.has_test_attr() {
@@ -493,6 +486,9 @@ impl Parse {
                 syn::Item::Macro(ref item) => {
                     self.load_builtin_macro(config, crate_name, mod_cfg, item)
                 }
+                syn::Item::Mod(ref item) => {
+                    nested_modules.push(item);
+                }
                 _ => {}
             }
         }
@@ -500,6 +496,8 @@ impl Parse {
         for item_impl in impls_with_assoc_consts {
             self.load_syn_assoc_consts_from_impl(crate_name, mod_cfg, item_impl)
         }
+
+        nested_modules
     }
 
     fn load_syn_assoc_consts_from_impl(
