@@ -179,7 +179,7 @@ impl<'a> Parser<'a> {
             return Ok(());
         }
 
-        let mod_parsed = {
+        let mod_items = {
             if !self.cache_expanded_crate.contains_key(&pkg.name) {
                 let s = self
                     .lib
@@ -203,48 +203,9 @@ impl<'a> Parser<'a> {
             self.cache_expanded_crate.get(&pkg.name).unwrap().clone()
         };
 
-        self.process_expanded_mod(pkg, &mod_parsed)
+        self.process_mod(pkg, None, &mod_items, 0)
     }
 
-    fn process_expanded_mod(&mut self, pkg: &PackageRef, items: &[syn::Item]) -> Result<(), Error> {
-        self.out.load_syn_crate_mod(
-            &self.config,
-            &self.binding_crate_name,
-            &pkg.name,
-            Cfg::join(&self.cfg_stack).as_ref(),
-            items,
-        );
-
-        for item in items {
-            if item.has_test_attr() {
-                continue;
-            }
-
-            let item = match *item {
-                syn::Item::Mod(ref item) => item,
-                _ => continue,
-            };
-
-            let cfg = Cfg::load(&item.attrs);
-            if let Some(ref cfg) = cfg {
-                self.cfg_stack.push(cfg.clone());
-            }
-
-            if let Some((_, ref inline_items)) = item.content {
-                self.process_expanded_mod(pkg, inline_items)?;
-            } else {
-                unreachable!();
-            }
-
-            if cfg.is_some() {
-                self.cfg_stack.pop();
-            }
-        }
-
-        Ok(())
-    }
-
-    // mod_path is None when processing expanded mods.
     fn parse_mod(
         &mut self,
         pkg: &PackageRef,
@@ -289,13 +250,15 @@ impl<'a> Parser<'a> {
             &mod_dir_2018
         };
 
-        self.process_mod(pkg, &mod_dir, &mod_items, depth)
+        self.process_mod(pkg, Some(&mod_dir), &mod_items, depth)
     }
 
+    /// `mod_dir` is the path to the current directory of the module. It may be
+    /// `None` for pre-expanded modules.
     fn process_mod(
         &mut self,
         pkg: &PackageRef,
-        mod_dir: &FilePath,
+        mod_dir: Option<&FilePath>,
         items: &[syn::Item],
         depth: usize,
     ) -> Result<(), Error> {
@@ -325,8 +288,14 @@ impl<'a> Parser<'a> {
             }
 
             if let Some((_, ref inline_items)) = item.content {
-                self.process_mod(pkg, &mod_dir.join(&next_mod_name), inline_items, depth)?;
-            } else {
+                let next_mod_dir = mod_dir.map(|dir| dir.join(&next_mod_name));
+                self.process_mod(
+                    pkg,
+                    next_mod_dir.as_ref().map(|p| &**p),
+                    inline_items,
+                    depth,
+                )?;
+            } else if let Some(mod_dir) = mod_dir {
                 let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
                 let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
 
@@ -366,6 +335,11 @@ impl<'a> Parser<'a> {
                         );
                     }
                 }
+            } else {
+                warn!(
+                    "Parsing expanded crate `{}`: can't find mod {}`.",
+                    pkg.name, next_mod_name
+                );
             }
 
             if cfg.is_some() {
