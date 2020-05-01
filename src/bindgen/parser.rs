@@ -422,7 +422,7 @@ impl Parse {
         let mut nested_modules = Vec::new();
 
         for item in items {
-            if item.has_test_attr() {
+            if item.should_skip_parsing() {
                 continue;
             }
             match item {
