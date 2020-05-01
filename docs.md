@@ -235,6 +235,19 @@ An annotation may be a bool, string (no quotes), or list of strings. If just the
 
 Most annotations are just local overrides for identical settings in the cbindgen.toml, but a few are unique because they don't make sense in a global context. The set of supported annotation are as follows:
 
+### Ignore annotation
+
+cbindgen will automatically ignore any `#[test]` or `#[cfg(test)]` item it
+finds. You can manually ignore other stuff with the `ignore` annotation
+attribute:
+
+```rust
+pub mod my_interesting_mod;
+
+/// cbindgen:ignore
+pub mod my_uninteresting_mod; // This won't be scanned by cbindgen.
+```
+
 ### Struct Annotations
 
 * field-names=\[field1, field2, ...\] -- sets the names of all the fields in the output struct. These names will be output verbatim, and are not eligible for renaming.
@@ -334,7 +347,6 @@ This attribute is commonly used in Objective-C/C/C++ via the `NS_SWIFT_NAME` and
 Given configuration in the cbindgen.toml, `cbindgen` can generate these attributes for you by guessing an appropriate method signature based on the existing function name (and type, if it is a method in an `impl` block).
 
 This is controlled by the `swift_name_macro` option in the cbindgen.toml.
-
 
 ## cbindgen.toml
 

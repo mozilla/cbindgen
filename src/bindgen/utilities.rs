@@ -71,26 +71,40 @@ impl SynItemFnHelpers for syn::ImplItemMethod {
     }
 }
 
+/// Returns whether this attribute causes us to skip at item. This basically
+/// checks for `#[cfg(test)]`, `#[test]`, `/// cbindgen::ignore` and
+/// variations thereof.
 fn is_skip_item_attr(attr: &syn::Meta) -> bool {
     match *attr {
         syn::Meta::Path(ref path) => {
-            if path.is_ident("test") {
-                return true;
-            }
+            // TODO(emilio): It'd be great if rustc allowed us to use a syntax
+            // like `#[cbindgen::ignore]` or such.
+            path.is_ident("test")
         }
         syn::Meta::List(ref list) => {
-            if list.path.is_ident("cfg") {
-                return list.nested.iter().any(|nested| match *nested {
-                    syn::NestedMeta::Meta(ref meta) => {
-                        return is_skip_item_attr(meta);
-                    }
-                    syn::NestedMeta::Lit(..) => false,
-                });
+            if !list.path.is_ident("cfg") {
+                return false;
             }
+            list.nested.iter().any(|nested| match *nested {
+                syn::NestedMeta::Meta(ref meta) => {
+                    return is_skip_item_attr(meta);
+                }
+                syn::NestedMeta::Lit(..) => false,
+            })
         }
-        syn::Meta::NameValue(..) => {}
+        syn::Meta::NameValue(ref name_value) => {
+            if name_value.path.is_ident("doc") {
+                if let syn::Lit::Str(ref content) = name_value.lit {
+                    // FIXME(emilio): Maybe should use the general annotation
+                    // mechanism, but it seems overkill for this.
+                    if content.value().trim() == "cbindgen:ignore" {
+                        return true;
+                    }
+                }
+            }
+            false
+        }
     }
-    false
 }
 
 pub trait SynAttributeHelpers {
