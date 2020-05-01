@@ -18,7 +18,7 @@ use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
     OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
-use crate::bindgen::utilities::{SynAbiHelpers, SynItemFnHelpers, SynItemHelpers};
+use crate::bindgen::utilities::{SynAbiHelpers, SynAttributeHelpers, SynItemFnHelpers};
 
 const STD_CRATES: &[&str] = &[
     "std",
