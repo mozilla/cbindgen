@@ -71,6 +71,28 @@ impl SynItemFnHelpers for syn::ImplItemMethod {
     }
 }
 
+fn is_skip_item_attr(attr: &syn::Meta) -> bool {
+    match *attr {
+        syn::Meta::Path(ref path) => {
+            if path.is_ident("test") {
+                return true;
+            }
+        }
+        syn::Meta::List(ref list) => {
+            if list.path.is_ident("cfg") {
+                return list.nested.iter().any(|nested| match *nested {
+                    syn::NestedMeta::Meta(ref meta) => {
+                        return is_skip_item_attr(meta);
+                    }
+                    syn::NestedMeta::Lit(..) => false,
+                });
+            }
+        }
+        syn::Meta::NameValue(..) => {}
+    }
+    false
+}
+
 pub trait SynAttributeHelpers {
     /// Returns the list of attributes for an item.
     fn attrs(&self) -> &[syn::Attribute];
@@ -91,40 +113,23 @@ pub trait SynAttributeHelpers {
             })
     }
 
-    /// Searches for attributes like `#[cfg(test)]`.
-    /// Example:
-    /// - `item.has_attr_list("cfg", &["test"])` => `#[cfg(test)]`
-    fn has_attr_list(&self, name: &str, args: &[&str]) -> bool {
-        self.attrs()
-            .iter()
-            .filter_map(|x| x.parse_meta().ok())
-            .any(|attr| {
-                if let syn::Meta::List(syn::MetaList { path, nested, .. }) = attr {
-                    if !path.is_ident(name) {
-                        return false;
-                    }
-                    args.iter().all(|arg| {
-                        nested.iter().any(|nested_meta| {
-                            if let syn::NestedMeta::Meta(syn::Meta::Path(path)) = nested_meta {
-                                path.is_ident(arg)
-                            } else {
-                                false
-                            }
-                        })
-                    })
-                } else {
-                    false
-                }
-            })
-    }
-
     fn is_no_mangle(&self) -> bool {
         self.has_attr_word("no_mangle")
     }
 
-    /// Searches for attributes `#[test]` and/or `#[cfg(test)]`.
-    fn has_test_attr(&self) -> bool {
-        self.has_attr_list("cfg", &["test"]) || self.has_attr_word("test")
+    /// Sees whether we should skip parsing a given item.
+    fn should_skip_parsing(&self) -> bool {
+        for attr in self.attrs() {
+            let meta = match attr.parse_meta() {
+                Ok(attr) => attr,
+                Err(..) => return false,
+            };
+            if is_skip_item_attr(&meta) {
+                return true;
+            }
+        }
+
+        false
     }
 
     fn attr_name_value_lookup(&self, name: &str) -> Option<String> {
