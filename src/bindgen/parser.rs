@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
@@ -218,42 +219,46 @@ impl<'a> Parser<'a> {
             if item.has_test_attr() {
                 continue;
             }
-            if let syn::Item::Mod(ref item) = *item {
-                let cfg = Cfg::load(&item.attrs);
-                if let Some(ref cfg) = cfg {
-                    self.cfg_stack.push(cfg.clone());
-                }
 
-                if let Some((_, ref inline_items)) = item.content {
-                    self.process_expanded_mod(pkg, inline_items)?;
-                } else {
-                    unreachable!();
-                }
+            let item = match *item {
+                syn::Item::Mod(ref item) => item,
+                _ => continue,
+            };
 
-                if cfg.is_some() {
-                    self.cfg_stack.pop();
-                }
+            let cfg = Cfg::load(&item.attrs);
+            if let Some(ref cfg) = cfg {
+                self.cfg_stack.push(cfg.clone());
+            }
+
+            if let Some((_, ref inline_items)) = item.content {
+                self.process_expanded_mod(pkg, inline_items)?;
+            } else {
+                unreachable!();
+            }
+
+            if cfg.is_some() {
+                self.cfg_stack.pop();
             }
         }
 
         Ok(())
     }
 
+    // mod_path is None when processing expanded mods.
     fn parse_mod(
         &mut self,
         pkg: &PackageRef,
         mod_path: &FilePath,
         depth: usize,
     ) -> Result<(), Error> {
-        let mod_parsed = {
-            let owned_mod_path = mod_path.to_path_buf();
-
-            if !self.cache_src.contains_key(&owned_mod_path) {
+        let mod_items = match self.cache_src.entry(mod_path.to_path_buf()) {
+            Entry::Vacant(vacant_entry) => {
                 let mut s = String::new();
                 let mut f = File::open(mod_path).map_err(|_| Error::ParseCannotOpenFile {
                     crate_name: pkg.name.clone(),
                     src_path: mod_path.to_str().unwrap().to_owned(),
                 })?;
+
                 f.read_to_string(&mut s)
                     .map_err(|_| Error::ParseCannotOpenFile {
                         crate_name: pkg.name.clone(),
@@ -262,14 +267,13 @@ impl<'a> Parser<'a> {
 
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
                     crate_name: pkg.name.clone(),
-                    src_path: owned_mod_path.to_string_lossy().into(),
+                    src_path: mod_path.to_string_lossy().into(),
                     error: x,
                 })?;
 
-                self.cache_src.insert(owned_mod_path.clone(), i.items);
+                vacant_entry.insert(i.items).clone()
             }
-
-            self.cache_src.get(&owned_mod_path).unwrap().clone()
+            Entry::Occupied(occupied_entry) => occupied_entry.get().clone(),
         };
 
         // Compute module directory according to Rust 2018 rules
@@ -285,7 +289,7 @@ impl<'a> Parser<'a> {
             &mod_dir_2018
         };
 
-        self.process_mod(pkg, &mod_dir, &mod_parsed, depth)
+        self.process_mod(pkg, &mod_dir, &mod_items, depth)
     }
 
     fn process_mod(
@@ -307,32 +311,36 @@ impl<'a> Parser<'a> {
             if item.has_test_attr() {
                 continue;
             }
-            if let syn::Item::Mod(ref item) = *item {
-                let next_mod_name = item.ident.to_string();
 
-                let cfg = Cfg::load(&item.attrs);
-                if let Some(ref cfg) = cfg {
-                    self.cfg_stack.push(cfg.clone());
-                }
+            let item = match *item {
+                syn::Item::Mod(ref item) => item,
+                _ => continue,
+            };
 
-                if let Some((_, ref inline_items)) = item.content {
-                    self.process_mod(pkg, &mod_dir.join(&next_mod_name), inline_items, depth)?;
+            let next_mod_name = item.ident.to_string();
+
+            let cfg = Cfg::load(&item.attrs);
+            if let Some(ref cfg) = cfg {
+                self.cfg_stack.push(cfg.clone());
+            }
+
+            if let Some((_, ref inline_items)) = item.content {
+                self.process_mod(pkg, &mod_dir.join(&next_mod_name), inline_items, depth)?;
+            } else {
+                let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
+                let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
+
+                if next_mod_path1.exists() {
+                    self.parse_mod(pkg, next_mod_path1.as_path(), depth + 1)?;
+                } else if next_mod_path2.exists() {
+                    self.parse_mod(pkg, next_mod_path2.as_path(), depth + 1)?;
                 } else {
-                    let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
-                    let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
-
-                    if next_mod_path1.exists() {
-                        self.parse_mod(pkg, next_mod_path1.as_path(), depth + 1)?;
-                    } else if next_mod_path2.exists() {
-                        self.parse_mod(pkg, next_mod_path2.as_path(), depth + 1)?;
-                    } else {
-                        // Last chance to find a module path
-                        let mut path_attr_found = false;
-                        for attr in &item.attrs {
-                            match attr.parse_meta() {
-                                Ok(syn::Meta::NameValue(syn::MetaNameValue {
-                                    path, lit, ..
-                                })) => match lit {
+                    // Last chance to find a module path
+                    let mut path_attr_found = false;
+                    for attr in &item.attrs {
+                        match attr.parse_meta() {
+                            Ok(syn::Meta::NameValue(syn::MetaNameValue { path, lit, .. })) => {
+                                match lit {
                                     syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
                                         path_attr_found = true;
                                         self.parse_mod(
@@ -343,25 +351,25 @@ impl<'a> Parser<'a> {
                                         break;
                                     }
                                     _ => (),
-                                },
-                                _ => (),
+                                }
                             }
-                        }
-
-                        // This should be an error, but it's common enough to
-                        // just elicit a warning
-                        if !path_attr_found {
-                            warn!(
-                                "Parsing crate `{}`: can't find mod {}`.",
-                                pkg.name, next_mod_name
-                            );
+                            _ => (),
                         }
                     }
-                }
 
-                if cfg.is_some() {
-                    self.cfg_stack.pop();
+                    // This should be an error, but it's common enough to
+                    // just elicit a warning
+                    if !path_attr_found {
+                        warn!(
+                            "Parsing crate `{}`: can't find mod {}`.",
+                            pkg.name, next_mod_name
+                        );
+                    }
                 }
+            }
+
+            if cfg.is_some() {
+                self.cfg_stack.pop();
             }
         }
 
