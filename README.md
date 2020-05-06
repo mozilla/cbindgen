@@ -67,6 +67,6 @@ You may also find it interesting to browse the projects that are using cbindgen 
 * [milksnake](https://github.com/getsentry/milksnake)
 * [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/gfx/webrender_bindings/webrender_ffi_generated.h))
 * [stylo](https://searchfox.org/mozilla-central/source/layout/style) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/layout/style/ServoStyleConsts.h))
-* [wgpu](https://github.com/gfx-rs/wgpu/tree/master/wgpu-native) ([generated header](https://github.com/gfx-rs/wgpu/blob/master/ffi/wgpu.h))
+* [wgpu-native](https://github.com/gfx-rs/wgpu-native) ([generated header](https://github.com/gfx-rs/wgpu-native/blob/master/ffi/wgpu.h))
 
 If you're using `cbindgen` and would like to be added to this list, please open a pull request!
