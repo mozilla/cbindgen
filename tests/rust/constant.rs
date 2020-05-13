@@ -26,10 +26,13 @@ pub const XBOOL: i64 = 1;
 pub const XFALSE: i64 = (0 << SHIFT) | XBOOL;
 pub const XTRUE: i64 = 1 << (SHIFT | XBOOL);
 
+pub const CAST: u8 = 'A' as u8;
+pub const DOUBLE_CAST: u32 = 1 as f32 as u32;
+
 #[repr(C)]
 struct Foo {
     x: [i32; FOO],
 }
 
 #[no_mangle]
-pub extern "C" fn root(x: Foo) { }
+pub extern "C" fn root(x: Foo) {}
