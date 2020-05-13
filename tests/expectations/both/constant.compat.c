@@ -3,7 +3,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define CAST (uint8_t)'A'
+
 #define DELIMITER ':'
+
+#define DOUBLE_CAST (uint32_t)(float)1
 
 #define EQUID L'\U00010083'
 

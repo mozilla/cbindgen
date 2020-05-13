@@ -3,7 +3,11 @@
 #include <cstdlib>
 #include <new>
 
+static const uint8_t CAST = (uint8_t)'A';
+
 static const uint32_t DELIMITER = ':';
+
+static const uint32_t DOUBLE_CAST = (uint32_t)(float)1;
 
 static const uint32_t EQUID = L'\U00010083';
 

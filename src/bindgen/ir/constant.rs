@@ -37,6 +37,10 @@ pub enum Literal {
         export_name: String,
         fields: HashMap<String, Literal>,
     },
+    Cast {
+        ty: Type,
+        value: Box<Literal>,
+    },
 }
 
 impl Literal {
@@ -45,7 +49,8 @@ impl Literal {
             Literal::PostfixUnaryOp { .. }
             | Literal::BinOp { .. }
             | Literal::Expr(..)
-            | Literal::Path(..) => {}
+            | Literal::Path(..)
+            | Literal::Cast { .. } => {}
             Literal::Struct {
                 ref mut path,
                 ref mut export_name,
@@ -72,6 +77,7 @@ impl Literal {
                 ..
             } => left.is_valid(bindings) && right.is_valid(bindings),
             Literal::Struct { ref path, .. } => bindings.struct_exists(path),
+            Literal::Cast { ref value, .. } => value.is_valid(bindings),
         }
     }
 }
@@ -104,6 +110,9 @@ impl Literal {
                 right.rename_for_config(config);
             }
             Literal::Expr(_) => {}
+            Literal::Cast { ref mut value, .. } => {
+                value.rename_for_config(config);
+            }
         }
     }
 
@@ -229,6 +238,19 @@ impl Literal {
 
             syn::Expr::Paren(syn::ExprParen { ref expr, .. }) => Self::load(expr),
 
+            syn::Expr::Cast(syn::ExprCast {
+                ref expr, ref ty, ..
+            }) => {
+                let val = Self::load(expr)?;
+                match Type::load(ty)? {
+                    Some(ty) => Ok(Literal::Cast {
+                        ty,
+                        value: Box::new(val),
+                    }),
+                    None => Err("Cannot cast to zero sized type.".to_owned()),
+                }
+            }
+
             _ => Err(format!("Unsupported expression. {:?}", *expr)),
         }
     }
@@ -251,6 +273,12 @@ impl Literal {
                 write!(out, " {} ", op);
                 right.write(config, out);
                 write!(out, ")");
+            }
+            Literal::Cast { ref ty, ref value } => {
+                write!(out, "(");
+                ty.write(config, out);
+                write!(out, ")");
+                value.write(config, out);
             }
             Literal::Struct {
                 export_name,
