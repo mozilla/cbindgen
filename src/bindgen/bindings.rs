@@ -216,7 +216,7 @@ impl Bindings {
         self.open_namespaces(&mut out);
 
         for constant in &self.constants {
-            if constant.ty.is_primitive_or_ptr_primitive() {
+            if constant.uses_only_primitive_types() {
                 out.new_line_if_not_start();
                 constant.write(&self.config, &mut out, None);
                 out.new_line();
@@ -247,7 +247,7 @@ impl Bindings {
         }
 
         for constant in &self.constants {
-            if !constant.ty.is_primitive_or_ptr_primitive() {
+            if !constant.uses_only_primitive_types() {
                 out.new_line_if_not_start();
                 constant.write(&self.config, &mut out, None);
                 out.new_line();
