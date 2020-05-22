@@ -27,6 +27,8 @@ typedef union {
 
 typedef C_A C_F;
 
+#define C_I (intptr_t)(C_F*)10
+
 extern const int32_t G;
 
 void root(const C_A *a, C_AwesomeB b, C_C c, C_D d, C_E e, C_F f);

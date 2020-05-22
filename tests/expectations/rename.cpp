@@ -26,6 +26,8 @@ union C_D {
 
 using C_F = C_A;
 
+static const intptr_t C_I = (intptr_t)(C_F*)10;
+
 extern "C" {
 
 extern const int32_t G;

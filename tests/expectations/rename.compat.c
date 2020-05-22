@@ -33,6 +33,8 @@ typedef union {
 
 typedef C_A C_F;
 
+#define C_I (intptr_t)(C_F*)10
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

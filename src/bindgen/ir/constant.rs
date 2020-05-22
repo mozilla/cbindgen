@@ -46,11 +46,17 @@ pub enum Literal {
 impl Literal {
     fn replace_self_with(&mut self, self_ty: &Path) {
         match *self {
-            Literal::PostfixUnaryOp { .. }
-            | Literal::BinOp { .. }
-            | Literal::Expr(..)
-            | Literal::Path(..)
-            | Literal::Cast { .. } => {}
+            Literal::PostfixUnaryOp { ref mut value, .. } => {
+                value.replace_self_with(self_ty);
+            }
+            Literal::BinOp {
+                ref mut left,
+                ref mut right,
+                ..
+            } => {
+                left.replace_self_with(self_ty);
+                right.replace_self_with(self_ty);
+            }
             Literal::Struct {
                 ref mut path,
                 ref mut export_name,
@@ -63,6 +69,14 @@ impl Literal {
                     expr.replace_self_with(self_ty);
                 }
             }
+            Literal::Cast {
+                ref mut ty,
+                ref mut value,
+            } => {
+                ty.replace_self_with(self_ty);
+                value.replace_self_with(self_ty);
+            }
+            Literal::Expr(..) | Literal::Path(..) => {}
         }
     }
 
@@ -78,6 +92,23 @@ impl Literal {
             } => left.is_valid(bindings) && right.is_valid(bindings),
             Literal::Struct { ref path, .. } => bindings.struct_exists(path),
             Literal::Cast { ref value, .. } => value.is_valid(bindings),
+        }
+    }
+
+    pub fn uses_only_primitive_types(&self) -> bool {
+        match self {
+            Literal::Expr(..) => true,
+            Literal::Path(..) => true,
+            Literal::PostfixUnaryOp { ref value, .. } => value.uses_only_primitive_types(),
+            Literal::BinOp {
+                ref left,
+                ref right,
+                ..
+            } => left.uses_only_primitive_types() & right.uses_only_primitive_types(),
+            Literal::Struct { .. } => false,
+            Literal::Cast { ref value, ref ty } => {
+                value.uses_only_primitive_types() && ty.is_primitive_or_ptr_primitive()
+            }
         }
     }
 }
@@ -110,7 +141,11 @@ impl Literal {
                 right.rename_for_config(config);
             }
             Literal::Expr(_) => {}
-            Literal::Cast { ref mut value, .. } => {
+            Literal::Cast {
+                ref mut ty,
+                ref mut value,
+            } => {
+                ty.rename_for_config(config, &GenericParams::default());
                 value.rename_for_config(config);
             }
         }
@@ -397,6 +432,10 @@ impl Constant {
             documentation,
             associated_to,
         }
+    }
+
+    pub fn uses_only_primitive_types(&self) -> bool {
+        self.value.uses_only_primitive_types() && self.ty.is_primitive_or_ptr_primitive()
     }
 }
 
