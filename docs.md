@@ -36,6 +36,8 @@ Then all you need to do is run it:
 cbindgen --config cbindgen.toml --crate my_rust_library --output my_header.h
 ```
 
+This produces a header file for C++.  For C, add the `--lang c` switch.
+
 See `cbindgen --help` for more options.
 
 [Get a template cbindgen.toml here.](template.toml)
