@@ -34,27 +34,27 @@ pub enum VariantBody {
 
 impl VariantBody {
     fn empty() -> Self {
-        Self::Empty(AnnotationSet::new())
+        VariantBody::Empty(AnnotationSet::new())
     }
 
     fn annotations(&self) -> &AnnotationSet {
         match *self {
-            Self::Empty(ref anno) => anno,
-            Self::Body { ref body, .. } => &body.annotations,
+            VariantBody::Empty(ref anno) => anno,
+            VariantBody::Body { ref body, .. } => &body.annotations,
         }
     }
 
     fn is_empty(&self) -> bool {
         match *self {
-            Self::Empty(..) => true,
-            Self::Body { .. } => false,
+            VariantBody::Empty(..) => true,
+            VariantBody::Body { .. } => false,
         }
     }
 
     fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)]) -> Self {
         match *self {
-            Self::Empty(ref annos) => Self::Empty(annos.clone()),
-            Self::Body { ref name, ref body } => Self::Body {
+            VariantBody::Empty(ref annos) => VariantBody::Empty(annos.clone()),
+            VariantBody::Body { ref name, ref body } => VariantBody::Body {
                 name: name.clone(),
                 body: body.specialize(generic_values, mappings),
             },
