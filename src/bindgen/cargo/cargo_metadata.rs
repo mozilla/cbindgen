@@ -9,7 +9,7 @@
 //   3. Add `--all-features` argument
 //   4. Remove the `--no-deps` argument
 
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::error;
@@ -18,7 +18,7 @@ use std::hash::{Hash, Hasher};
 use std::io;
 use std::path::Path;
 use std::process::{Command, Output};
-use std::str::{from_utf8, Utf8Error};
+use std::str::Utf8Error;
 
 use serde_json;
 
@@ -179,19 +179,29 @@ impl PartialEq for Dependency {
 impl Eq for Dependency {}
 
 /// The main entry point to obtaining metadata
-pub fn metadata(manifest_path: &Path) -> Result<Metadata, Error> {
-    let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
-    let mut cmd = Command::new(cargo);
-    cmd.arg("metadata");
-    cmd.arg("--all-features");
-    cmd.arg("--format-version").arg("1");
-    cmd.arg("--manifest-path");
-    cmd.arg(manifest_path);
-    let output = cmd.output()?;
-    if !output.status.success() {
-        return Err(Error::Metadata(output));
-    }
-    let stdout = from_utf8(&output.stdout)?;
-    let meta: Metadata = serde_json::from_str(stdout)?;
+pub fn metadata(
+    manifest_path: &Path,
+    existing_metadata_file: Option<&Path>,
+) -> Result<Metadata, Error> {
+    let output;
+    let metadata = match existing_metadata_file {
+        Some(path) => Cow::Owned(std::fs::read_to_string(path)?),
+        None => {
+            let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
+            let mut cmd = Command::new(cargo);
+            cmd.arg("metadata");
+            cmd.arg("--all-features");
+            cmd.arg("--format-version").arg("1");
+            cmd.arg("--manifest-path");
+            cmd.arg(manifest_path);
+            output = cmd.output()?;
+            if !output.status.success() {
+                return Err(Error::Metadata(output));
+            }
+            Cow::Borrowed(std::str::from_utf8(&output.stdout)?)
+        }
+    };
+
+    let meta: Metadata = serde_json::from_str(&*metadata)?;
     Ok(meta)
 }

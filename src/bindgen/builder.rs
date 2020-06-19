@@ -313,23 +313,14 @@ impl Builder {
         if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
             let lockfile = self.lockfile.as_ref().and_then(|p| p.to_str());
 
-            let cargo = if let Some(binding_lib_name) = binding_lib_name {
-                Cargo::load(
-                    &lib_dir,
-                    lockfile,
-                    Some(&binding_lib_name),
-                    self.config.parse.parse_deps,
-                    self.config.parse.clean,
-                )?
-            } else {
-                Cargo::load(
-                    &lib_dir,
-                    lockfile,
-                    None,
-                    self.config.parse.parse_deps,
-                    self.config.parse.clean,
-                )?
-            };
+            let cargo = Cargo::load(
+                &lib_dir,
+                lockfile,
+                binding_lib_name.as_deref(),
+                self.config.parse.parse_deps,
+                self.config.parse.clean,
+                /* existing_metadata = */ None,
+            )?;
 
             result.extend_with(&parser::parse_lib(cargo, &self.config)?);
         } else if let Some(cargo) = self.lib_cargo.clone() {

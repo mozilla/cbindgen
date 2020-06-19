@@ -90,6 +90,7 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
         matches.value_of("crate"),
         true,
         matches.is_present("clean"),
+        matches.value_of("metadata").map(Path::new),
     )?;
 
     // Load any config specified or search in the binding crate directory
@@ -208,6 +209,21 @@ fn main() {
                     is not specified, the Cargo.lock file is searched for in the \
                     same folder as the Cargo.toml file. This option is useful for \
                     projects that use workspaces.")
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("metadata")
+                .long("metadata")
+                .value_name("PATH")
+                .help(
+                    "Specify the path to the output of a `cargo metadata` \
+                     command that allows to get dependency information. \
+                     This is useful because cargo metadata may be the longest \
+                     part of cbindgen runtime, and you may want to share it \
+                     across cbindgen invocations. By default cbindgen will run \
+                     `cargo metadata --all-features --format-version 1 \
+                      --manifest-path <path/to/crate/Cargo.toml>"
+                )
                 .required(false),
         )
         .arg(
