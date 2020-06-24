@@ -1,3 +1,10 @@
+## 0.14.3
+
+     * Introduce cbindgen:ignore comment annotation, to allow ignoring items or modules. (#519)
+     * Support for casts in constant expressions. (#526)
+     * Make a non-fatal error a warning message. (#535)
+     * Add a --metadata option to the CLI, to allow passing pre-computed cargo metadata. (#538)
+
 ## 0.14.2
 
      * Fixed minimal dependency versions. (#507)
