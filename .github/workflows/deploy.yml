@@ -1,0 +1,45 @@
+name: deploy
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+
+  linux-binaries:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
+    - name: Build cbindgen
+      run: |
+        cargo build --release
+
+    - name: Strip cbindgen
+      run: |
+        strip target/release/cbindgen
+
+    - name: Get cbindgen's version
+      id: tagName
+      run: |
+        VERSION=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
+        echo "::set-output name=version::$VERSION"
+
+    - name: Create a release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: v${{ steps.tagName.outputs.version }}
+        files: |
+          target/release/cbindgen
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
