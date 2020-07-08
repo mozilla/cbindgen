@@ -1,0 +1,73 @@
+name: cbindgen
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  rustfmt-clippy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        components: clippy, rustfmt
+
+    - name: Run rustfmt
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: -- --check
+
+    - name: Run clippy
+      uses: actions-rs/clippy-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        args: --workspace -- -D warnings
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: nightly
+        override: true
+
+    - name: Build
+      run: |
+        cargo build --verbose
+
+    - name: Build no-default-features
+      run: |
+        cargo build --verbose --no-default-features
+
+    - name: Test
+      env:
+        CBINDGEN_TEST_VERIFY: 1
+      run: |
+        cargo test --verbose
+
+    - name: Cargo update minimal-versions
+      run: |
+        cargo update -Zminimal-versions
+
+    - name: Test minimal-versions
+      run: |
+        cargo test
