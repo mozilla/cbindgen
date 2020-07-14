@@ -286,7 +286,14 @@ impl SynFnArgHelpers for syn::FnArg {
             }) => match **pat {
                 syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
                     let ty = match Type::load(ty)? {
-                        Some(x) => x,
+                        Some(x) => {
+                            if let Type::Array(_, _) = x {
+                                return Err(
+                                    "Array as function arguments are not supported".to_owned()
+                                );
+                            }
+                            x
+                        }
                         None => return Ok(None),
                     };
                     Ok(Some((ident.to_string(), ty)))
