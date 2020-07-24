@@ -13,6 +13,8 @@ struct Fns {
 
 extern "C" {
 
+void no_return();
+
 void root(Fns _fns);
 
 } // extern "C"
