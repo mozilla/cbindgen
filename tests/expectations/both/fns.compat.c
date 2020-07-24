@@ -15,6 +15,8 @@ typedef struct Fns {
 extern "C" {
 #endif // __cplusplus
 
+void no_return(void);
+
 void root(Fns _fns);
 
 #ifdef __cplusplus

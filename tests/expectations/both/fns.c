@@ -11,4 +11,6 @@ typedef struct Fns {
   int8_t (*namedArgsWildcards)(int32_t _, int16_t named, int64_t _1);
 } Fns;
 
+void no_return(void);
+
 void root(Fns _fns);

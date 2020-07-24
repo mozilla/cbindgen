@@ -33,6 +33,7 @@ pub struct Function {
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
+    pub never_return: bool,
 }
 
 impl Function {
@@ -46,10 +47,16 @@ impl Function {
     ) -> Result<Function, String> {
         let mut args = sig.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
 
+        let mut never_return = false;
         let mut ret = match sig.output {
             syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
             syn::ReturnType::Type(_, ref ty) => {
-                Type::load(ty)?.unwrap_or_else(|| Type::Primitive(PrimitiveType::Void))
+                if let syn::Type::Never(_) = ty.as_ref() {
+                    never_return = true;
+                    Type::Primitive(PrimitiveType::Void)
+                } else {
+                    Type::load(ty)?.unwrap_or_else(|| Type::Primitive(PrimitiveType::Void))
+                }
             }
         };
 
@@ -69,6 +76,7 @@ impl Function {
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
             documentation: Documentation::load(attrs),
+            never_return,
         })
     }
 
@@ -205,6 +213,12 @@ impl Source for Function {
                 write!(out, " {}({})", swift_name_macro, func.swift_name());
             }
 
+            if func.never_return {
+                if let Some(ref no_return_attr) = config.function.no_return {
+                    out.write_fmt(format_args!(" {}", no_return_attr));
+                }
+            }
+
             out.write(";");
 
             condition.write_after(config, out);
@@ -244,6 +258,12 @@ impl Source for Function {
 
             if let Some(ref swift_name_macro) = config.function.swift_name_macro {
                 write!(out, " {}({})", swift_name_macro, func.swift_name());
+            }
+
+            if func.never_return {
+                if let Some(ref no_return_attr) = config.function.no_return {
+                    out.write_fmt(format_args!(" {}", no_return_attr));
+                }
             }
 
             out.write(";");

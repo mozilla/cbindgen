@@ -317,6 +317,8 @@ pub struct FunctionConfig {
     pub swift_name_macro: Option<String>,
     /// Sort key for function names
     pub sort_by: SortKey,
+    /// Optional text to output after functions which return `!`.
+    pub no_return: Option<String>,
 }
 
 impl Default for FunctionConfig {
@@ -329,6 +331,7 @@ impl Default for FunctionConfig {
             rename_args: None,
             swift_name_macro: None,
             sort_by: SortKey::Name,
+            no_return: None,
         }
     }
 }

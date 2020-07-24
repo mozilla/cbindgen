@@ -9,3 +9,8 @@ pub struct Fns {
 
 #[no_mangle]
 pub extern "C" fn root(_fns: Fns) {}
+
+#[no_mangle]
+pub extern "C" fn no_return() -> ! {
+    loop {}
+}
