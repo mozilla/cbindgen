@@ -73,6 +73,7 @@ renaming_overrides_prefixing = false
 [fn]
 rename_args = "None"
 # must_use = "MUST_USE_FUNC"
+# no_return = "NO_RETURN"
 # prefix = "START_FUNC"
 # postfix = "END_FUNC"
 args = "auto"

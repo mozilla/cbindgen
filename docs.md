@@ -629,6 +629,13 @@ args = "horizontal"
 # default: nothing is emitted for must_use functions
 must_use = "MUST_USE_FUNC"
 
+# An optional string that will be used in the attribute position for functions
+# that don't return (that return `!` in Rust).
+#
+# For instance, `__attribute__((noreturn))` would be a reasonable value if
+# targeting gcc/clang.
+no_return = "NO_RETURN"
+
 # An optional string that, if present, will be used to generate Swift function
 # and method signatures for generated functions, for example "CF_SWIFT_NAME".
 # If no such macro is available in your toolchain, you can define one using the
