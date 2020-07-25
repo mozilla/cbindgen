@@ -63,7 +63,7 @@ impl CDecl {
         let args = f
             .args
             .iter()
-            .map(|&(ref arg_name, ref arg_ty)| (arg_name.clone(), CDecl::from_type(arg_ty)))
+            .map(|arg| (arg.name.clone(), CDecl::from_type(&arg.ty)))
             .collect();
         self.declarators
             .push(CDeclarator::Func(args, layout_vertical));
