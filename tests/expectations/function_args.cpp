@@ -9,4 +9,6 @@ void pointer_test(const uint64_t *a);
 
 void print_from_rust();
 
+void unnamed(const uint64_t*);
+
 } // extern "C"

@@ -53,3 +53,5 @@ void free_function_should_exist_ref_mut(struct SelfTypeTestStruct *test_struct) 
 void free_function_should_not_exist_box(struct Box_SelfTypeTestStruct boxed) CF_SWIFT_NAME(free_function_should_not_exist_box(boxed:));
 
 void rust_print_hello_world(void) CF_SWIFT_NAME(rust_print_hello_world());
+
+void unnamed_argument(struct SelfTypeTestStruct*);

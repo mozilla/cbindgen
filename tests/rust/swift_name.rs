@@ -86,6 +86,11 @@ pub extern fn free_function_should_exist_ref_mut(test_struct: &mut SelfTypeTestS
 }
 
 #[no_mangle]
+pub extern fn unnamed_argument(_: &mut SelfTypeTestStruct) {
+  println!("unnamed_argument");
+}
+
+#[no_mangle]
 #[allow(unused_variables)]
 pub extern fn free_function_should_not_exist_box(boxed: Box<SelfTypeTestStruct>) {
   println!("free_function_should_not_exist_box");
