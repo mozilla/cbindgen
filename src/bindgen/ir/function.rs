@@ -28,7 +28,7 @@ pub struct Function {
     /// If the function is a method, this will contain the path of the type in the impl block
     pub self_type_path: Option<Path>,
     pub ret: Type,
-    pub args: Vec<(String, Type)>,
+    pub args: Vec<(Option<String>, Type)>,
     pub extern_decl: bool,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -80,14 +80,14 @@ impl Function {
         })
     }
 
-    pub fn swift_name(&self) -> String {
+    pub fn swift_name(&self) -> Option<String> {
         // If the symbol name starts with the type name, separate the two components with '.'
         // so that Swift recognises the association between the method and the type
         let (ref type_prefix, ref type_name) = match self.self_type_path {
             Some(ref type_name) => {
                 let type_name = type_name.to_string();
                 if !self.path.name().starts_with(&type_name) {
-                    return self.path.to_string();
+                    return Some(self.path.to_string());
                 }
                 (format!("{}.", type_name), type_name)
             }
@@ -101,13 +101,13 @@ impl Function {
             .trim_start_matches('_');
 
         let item_args = {
-            let mut items = vec![];
+            let mut items = Vec::with_capacity(self.args.len());
             for (arg, _) in self.args.iter() {
-                items.push(format!("{}:", arg.as_str()));
+                items.push(format!("{}:", arg.as_ref()?.as_str()));
             }
             items.join("")
         };
-        format!("{}{}({})", type_prefix, item_name, item_args)
+        Some(format!("{}{}({})", type_prefix, item_name, item_args))
     }
 
     pub fn path(&self) -> &Path {
@@ -164,16 +164,24 @@ impl Function {
         ];
 
         if let Some(r) = find_first_some(&rules) {
-            self.args = self
-                .args
-                .iter()
-                .map(|x| (r.apply(&x.0, IdentifierType::FunctionArg), x.1.clone()))
+            let args = std::mem::replace(&mut self.args, vec![]);
+            self.args = args
+                .into_iter()
+                .map(|(name, ty)| {
+                    let name = match name {
+                        Some(n) => n,
+                        None => return (name, ty),
+                    };
+                    (Some(r.apply(&name, IdentifierType::FunctionArg)), ty)
+                })
                 .collect()
         }
 
         // Escape C/C++ reserved keywords used in argument names
-        for args in &mut self.args {
-            reserved::escape(&mut args.0);
+        for arg in &mut self.args {
+            if let Some(ref mut name) = arg.0 {
+                reserved::escape(name);
+            }
         }
     }
 }
@@ -210,7 +218,9 @@ impl Source for Function {
             }
 
             if let Some(ref swift_name_macro) = config.function.swift_name_macro {
-                write!(out, " {}({})", swift_name_macro, func.swift_name());
+                if let Some(swift_name) = func.swift_name() {
+                    write!(out, " {}({})", swift_name_macro, swift_name);
+                }
             }
 
             if func.never_return {
@@ -257,7 +267,9 @@ impl Source for Function {
             }
 
             if let Some(ref swift_name_macro) = config.function.swift_name_macro {
-                write!(out, " {}({})", swift_name_macro, func.swift_name());
+                if let Some(swift_name) = func.swift_name() {
+                    write!(out, " {}({})", swift_name_macro, swift_name);
+                }
             }
 
             if func.never_return {
@@ -284,7 +296,7 @@ impl Source for Function {
 }
 
 pub trait SynFnArgHelpers {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String>;
+    fn as_ident_and_type(&self) -> Result<Option<(Option<String>, Type)>, String>;
 }
 
 fn gen_self_type(receiver: &syn::Receiver) -> Type {
@@ -299,29 +311,32 @@ fn gen_self_type(receiver: &syn::Receiver) -> Type {
 }
 
 impl SynFnArgHelpers for syn::FnArg {
-    fn as_ident_and_type(&self) -> Result<Option<(String, Type)>, String> {
+    fn as_ident_and_type(&self) -> Result<Option<(Option<String>, Type)>, String> {
         match *self {
             syn::FnArg::Typed(syn::PatType {
                 ref pat, ref ty, ..
-            }) => match **pat {
-                syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
-                    let ty = match Type::load(ty)? {
-                        Some(x) => {
-                            if let Type::Array(_, _) = x {
-                                return Err(
-                                    "Array as function arguments are not supported".to_owned()
-                                );
-                            }
-                            x
-                        }
-                        None => return Ok(None),
-                    };
-                    Ok(Some((ident.to_string(), ty)))
+            }) => {
+                let name = match **pat {
+                    syn::Pat::Wild(..) => None,
+                    syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => Some(ident.to_string()),
+                    _ => {
+                        return Err(format!(
+                            "Parameter has an unsupported argument name: {:?}",
+                            pat
+                        ))
+                    }
+                };
+                let ty = match Type::load(ty)? {
+                    Some(x) => x,
+                    None => return Ok(None),
+                };
+                if let Type::Array(..) = ty {
+                    return Err("Array as function arguments are not supported".to_owned());
                 }
-                _ => Err("Parameter has an unsupported type.".to_owned()),
-            },
+                Ok(Some((name, ty)))
+            }
             syn::FnArg::Receiver(ref receiver) => {
-                Ok(Some(("self".to_string(), gen_self_type(receiver))))
+                Ok(Some((Some("self".to_string()), gen_self_type(receiver))))
             }
         }
     }

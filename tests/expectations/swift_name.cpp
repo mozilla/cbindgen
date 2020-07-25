@@ -57,4 +57,6 @@ void free_function_should_not_exist_box(Box<SelfTypeTestStruct> boxed) CF_SWIFT_
 
 void rust_print_hello_world() CF_SWIFT_NAME(rust_print_hello_world());
 
+void unnamed_argument(SelfTypeTestStruct*);
+
 } // extern "C"

@@ -58,6 +58,8 @@ void free_function_should_not_exist_box(struct Box_SelfTypeTestStruct boxed) CF_
 
 void rust_print_hello_world(void) CF_SWIFT_NAME(rust_print_hello_world());
 
+void unnamed_argument(struct SelfTypeTestStruct*);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif // __cplusplus
