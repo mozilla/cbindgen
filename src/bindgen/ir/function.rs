@@ -22,13 +22,19 @@ use crate::bindgen::utilities::{find_first_some, IterHelpers};
 use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
+pub struct FunctionArgument {
+    pub name: Option<String>,
+    pub ty: Type,
+}
+
+#[derive(Debug, Clone)]
 pub struct Function {
     pub path: Path,
     /// Path to the self-type of the function
     /// If the function is a method, this will contain the path of the type in the impl block
     pub self_type_path: Option<Path>,
     pub ret: Type,
-    pub args: Vec<(Option<String>, Type)>,
+    pub args: Vec<FunctionArgument>,
     pub extern_decl: bool,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -45,7 +51,7 @@ impl Function {
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
-        let mut args = sig.inputs.iter().try_skip_map(|x| x.as_ident_and_type())?;
+        let mut args = sig.inputs.iter().try_skip_map(|x| x.as_argument())?;
 
         let mut never_return = false;
         let mut ret = match sig.output {
@@ -61,8 +67,8 @@ impl Function {
         };
 
         if let Some(self_path) = self_type_path {
-            for (_, ref mut ty) in &mut args {
-                ty.replace_self_with(self_path);
+            for arg in &mut args {
+                arg.ty.replace_self_with(self_path);
             }
             ret.replace_self_with(self_path);
         }
@@ -102,8 +108,8 @@ impl Function {
 
         let item_args = {
             let mut items = Vec::with_capacity(self.args.len());
-            for (arg, _) in self.args.iter() {
-                items.push(format!("{}:", arg.as_ref()?.as_str()));
+            for arg in self.args.iter() {
+                items.push(format!("{}:", arg.name.as_ref()?.as_str()));
             }
             items.join("")
         };
@@ -116,36 +122,36 @@ impl Function {
 
     pub fn simplify_standard_types(&mut self) {
         self.ret.simplify_standard_types();
-        for &mut (_, ref mut ty) in &mut self.args {
-            ty.simplify_standard_types();
+        for arg in &mut self.args {
+            arg.ty.simplify_standard_types();
         }
     }
 
     pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ret.add_dependencies(library, out);
-        for &(_, ref ty) in &self.args {
-            ty.add_dependencies(library, out);
+        for arg in &self.args {
+            arg.ty.add_dependencies(library, out);
         }
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         self.ret.add_monomorphs(library, out);
-        for &(_, ref ty) in &self.args {
-            ty.add_monomorphs(library, out);
+        for arg in &self.args {
+            arg.ty.add_monomorphs(library, out);
         }
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         self.ret.mangle_paths(monomorphs);
-        for &mut (_, ref mut ty) in &mut self.args {
-            ty.mangle_paths(monomorphs);
+        for arg in &mut self.args {
+            arg.ty.mangle_paths(monomorphs);
         }
     }
 
     pub fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.ret.resolve_declaration_types(resolver);
-        for &mut (_, ref mut ty) in &mut self.args {
-            ty.resolve_declaration_types(resolver);
+        for arg in &mut self.args {
+            arg.ty.resolve_declaration_types(resolver);
         }
     }
 
@@ -153,9 +159,6 @@ impl Function {
         // Rename the types used in arguments
         let generic_params = Default::default();
         self.ret.rename_for_config(config, &generic_params);
-        for &mut (_, ref mut ty) in &mut self.args {
-            ty.rename_for_config(config, &generic_params);
-        }
 
         // Apply rename rules to argument names
         let rules = [
@@ -167,19 +170,18 @@ impl Function {
             let args = std::mem::replace(&mut self.args, vec![]);
             self.args = args
                 .into_iter()
-                .map(|(name, ty)| {
-                    let name = match name {
-                        Some(n) => n,
-                        None => return (name, ty),
-                    };
-                    (Some(r.apply(&name, IdentifierType::FunctionArg)), ty)
+                .map(|arg| {
+                    let name = arg.name.map(|n| r.apply(&n, IdentifierType::FunctionArg));
+                    FunctionArgument { name, ty: arg.ty }
                 })
                 .collect()
         }
 
-        // Escape C/C++ reserved keywords used in argument names
+        // Escape C/C++ reserved keywords used in argument names, and
+        // recursively rename argument types.
         for arg in &mut self.args {
-            if let Some(ref mut name) = arg.0 {
+            arg.ty.rename_for_config(config, &generic_params);
+            if let Some(ref mut name) = arg.name {
                 reserved::escape(name);
             }
         }
@@ -295,8 +297,8 @@ impl Source for Function {
     }
 }
 
-pub trait SynFnArgHelpers {
-    fn as_ident_and_type(&self) -> Result<Option<(Option<String>, Type)>, String>;
+trait SynFnArgHelpers {
+    fn as_argument(&self) -> Result<Option<FunctionArgument>, String>;
 }
 
 fn gen_self_type(receiver: &syn::Receiver) -> Type {
@@ -311,7 +313,7 @@ fn gen_self_type(receiver: &syn::Receiver) -> Type {
 }
 
 impl SynFnArgHelpers for syn::FnArg {
-    fn as_ident_and_type(&self) -> Result<Option<(Option<String>, Type)>, String> {
+    fn as_argument(&self) -> Result<Option<FunctionArgument>, String> {
         match *self {
             syn::FnArg::Typed(syn::PatType {
                 ref pat, ref ty, ..
@@ -333,11 +335,12 @@ impl SynFnArgHelpers for syn::FnArg {
                 if let Type::Array(..) = ty {
                     return Err("Array as function arguments are not supported".to_owned());
                 }
-                Ok(Some((name, ty)))
+                Ok(Some(FunctionArgument { name, ty }))
             }
-            syn::FnArg::Receiver(ref receiver) => {
-                Ok(Some((Some("self".to_string()), gen_self_type(receiver))))
-            }
+            syn::FnArg::Receiver(ref receiver) => Ok(Some(FunctionArgument {
+                name: Some("self".to_string()),
+                ty: gen_self_type(receiver),
+            })),
         }
     }
 }
