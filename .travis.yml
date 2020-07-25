@@ -2,8 +2,6 @@ language: rust
 cache: cargo
 rust:
   - nightly
-before_script:
-  - rustup component add rustfmt
 addons:
   apt:
     sources:
@@ -12,15 +10,7 @@ addons:
       - gcc-8
       - g++-8
 script:
-  - export CC=gcc-8
-  - export CXX=g++-8
-  - cargo fmt --all -- --check
-  - cargo build --verbose
-  - cargo build --verbose --no-default-features
-  - CBINDGEN_TEST_VERIFY=1 cargo test --verbose
-  - cargo build --verbose --release
-  - cargo update -Zminimal-versions
-  - cargo test
+  - ./ci/script.sh
 deploy:
   provider: releases
   api_key:
