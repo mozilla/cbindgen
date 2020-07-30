@@ -18,5 +18,13 @@ bitflags! {
     }
 }
 
+bitflags! {
+    #[repr(C)]
+    pub struct DebugFlags: u32 {
+        /// Flag with the topmost bit set of the u32
+        const BIGGEST_ALLOWED = 1 << 31;
+    }
+}
+
 #[no_mangle]
-pub extern "C" fn root(flags: AlignFlags) {}
+pub extern "C" fn root(flags: AlignFlags, bigger_flags: DebugFlags) {}
