@@ -83,8 +83,6 @@ fn compile(
 
     let mut command = Command::new(cc);
     command.arg("-D").arg("DEFINED");
-    command.arg("-c").arg(cbindgen_output);
-    command.arg("-o").arg(&object);
     command.arg("-I").arg(tests_path);
     command.arg("-Wall");
     if !skip_warning_as_error {
@@ -92,10 +90,17 @@ fn compile(
     }
     // `swift_name` is not recognzied by gcc.
     command.arg("-Wno-attributes");
+    // clang warns about unused const variables.
+    command.arg("-Wno-unused-const-variable");
+    // clang also warns about returning non-instantiated templates (they could
+    // be specialized, but they're not so it's fine).
+    command.arg("-Wno-return-type-c-linkage");
     if let Language::Cxx = language {
         // enum class is a c++11 extension which makes g++ on macos 10.14 error out
         // inline variables are are a c++17 extension
         command.arg("-std=c++17");
+        // Prevents warnings when compiling .c files as c++.
+        command.arg("-x").arg("c++");
         if let Ok(extra_flags) = env::var("CXXFLAGS") {
             command.args(extra_flags.split_whitespace());
         }
@@ -112,6 +117,9 @@ fn compile(
             style_str(style).to_uppercase()
         ));
     }
+
+    command.arg("-o").arg(&object);
+    command.arg("-c").arg(cbindgen_output);
 
     println!("Running: {:?}", command);
     let out = command.output().expect("failed to compile");
