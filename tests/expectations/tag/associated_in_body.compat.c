@@ -14,23 +14,23 @@ struct StyleAlignFlags {
 /**
  * 'auto'
  */
-#define StyleAlignFlags_AUTO (StyleAlignFlags){ .bits = 0 }
+#define StyleAlignFlags_AUTO (StyleAlignFlags){ .bits = (uint8_t)0 }
 /**
  * 'normal'
  */
-#define StyleAlignFlags_NORMAL (StyleAlignFlags){ .bits = 1 }
+#define StyleAlignFlags_NORMAL (StyleAlignFlags){ .bits = (uint8_t)1 }
 /**
  * 'start'
  */
-#define StyleAlignFlags_START (StyleAlignFlags){ .bits = (1 << 1) }
+#define StyleAlignFlags_START (StyleAlignFlags){ .bits = (uint8_t)(1 << 1) }
 /**
  * 'end'
  */
-#define StyleAlignFlags_END (StyleAlignFlags){ .bits = (1 << 2) }
+#define StyleAlignFlags_END (StyleAlignFlags){ .bits = (uint8_t)(1 << 2) }
 /**
  * 'flex-start'
  */
-#define StyleAlignFlags_FLEX_START (StyleAlignFlags){ .bits = (1 << 3) }
+#define StyleAlignFlags_FLEX_START (StyleAlignFlags){ .bits = (uint8_t)(1 << 3) }
 
 #ifdef __cplusplus
 extern "C" {

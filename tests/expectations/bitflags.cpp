@@ -38,18 +38,52 @@ struct AlignFlags {
   }
 };
 /// 'auto'
-static const AlignFlags AlignFlags_AUTO = AlignFlags{ /* .bits = */ 0 };
+static const AlignFlags AlignFlags_AUTO = AlignFlags{ /* .bits = */ (uint8_t)0 };
 /// 'normal'
-static const AlignFlags AlignFlags_NORMAL = AlignFlags{ /* .bits = */ 1 };
+static const AlignFlags AlignFlags_NORMAL = AlignFlags{ /* .bits = */ (uint8_t)1 };
 /// 'start'
-static const AlignFlags AlignFlags_START = AlignFlags{ /* .bits = */ (1 << 1) };
+static const AlignFlags AlignFlags_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 1) };
 /// 'end'
-static const AlignFlags AlignFlags_END = AlignFlags{ /* .bits = */ (1 << 2) };
+static const AlignFlags AlignFlags_END = AlignFlags{ /* .bits = */ (uint8_t)(1 << 2) };
 /// 'flex-start'
-static const AlignFlags AlignFlags_FLEX_START = AlignFlags{ /* .bits = */ (1 << 3) };
+static const AlignFlags AlignFlags_FLEX_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 3) };
+
+struct DebugFlags {
+  uint32_t bits;
+
+  explicit operator bool() const {
+    return !!bits;
+  }
+  DebugFlags operator~() const {
+    return {static_cast<decltype(bits)>(~bits)};
+  }
+  DebugFlags operator|(const DebugFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits | other.bits)};
+  }
+  DebugFlags& operator|=(const DebugFlags& other) {
+    *this = (*this | other);
+    return *this;
+  }
+  DebugFlags operator&(const DebugFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits & other.bits)};
+  }
+  DebugFlags& operator&=(const DebugFlags& other) {
+    *this = (*this & other);
+    return *this;
+  }
+  DebugFlags operator^(const DebugFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
+  }
+  DebugFlags& operator^=(const DebugFlags& other) {
+    *this = (*this ^ other);
+    return *this;
+  }
+};
+/// Flag with the topmost bit set of the u32
+static const DebugFlags DebugFlags_BIGGEST_ALLOWED = DebugFlags{ /* .bits = */ (uint32_t)(1 << 31) };
 
 extern "C" {
 
-void root(AlignFlags flags);
+void root(AlignFlags flags, DebugFlags bigger_flags);
 
 } // extern "C"
