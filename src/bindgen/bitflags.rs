@@ -43,7 +43,7 @@ impl Bitflags {
             }
         };
 
-        let consts = flags.expand(name);
+        let consts = flags.expand(name, repr);
         let impl_ = parse_quote! {
             impl #name {
                 #consts
@@ -81,7 +81,7 @@ struct Flag {
 }
 
 impl Flag {
-    fn expand(&self, struct_name: &syn::Ident) -> TokenStream {
+    fn expand(&self, struct_name: &syn::Ident, repr: &syn::Type) -> TokenStream {
         let Flag {
             ref attrs,
             ref name,
@@ -90,7 +90,7 @@ impl Flag {
         } = *self;
         quote! {
             #(#attrs)*
-            pub const #name : #struct_name = #struct_name { bits: #value };
+            pub const #name : #struct_name = #struct_name { bits: (#value) as #repr };
         }
     }
 }
@@ -124,10 +124,10 @@ impl Parse for Flags {
 }
 
 impl Flags {
-    fn expand(&self, struct_name: &syn::Ident) -> TokenStream {
+    fn expand(&self, struct_name: &syn::Ident, repr: &syn::Type) -> TokenStream {
         let mut ts = quote! {};
         for flag in &self.0 {
-            ts.extend(flag.expand(struct_name));
+            ts.extend(flag.expand(struct_name, repr));
         }
         ts
     }
