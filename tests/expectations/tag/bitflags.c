@@ -14,22 +14,30 @@ struct AlignFlags {
 /**
  * 'auto'
  */
-#define AlignFlags_AUTO (AlignFlags){ .bits = 0 }
+#define AlignFlags_AUTO (AlignFlags){ .bits = (uint8_t)0 }
 /**
  * 'normal'
  */
-#define AlignFlags_NORMAL (AlignFlags){ .bits = 1 }
+#define AlignFlags_NORMAL (AlignFlags){ .bits = (uint8_t)1 }
 /**
  * 'start'
  */
-#define AlignFlags_START (AlignFlags){ .bits = (1 << 1) }
+#define AlignFlags_START (AlignFlags){ .bits = (uint8_t)(1 << 1) }
 /**
  * 'end'
  */
-#define AlignFlags_END (AlignFlags){ .bits = (1 << 2) }
+#define AlignFlags_END (AlignFlags){ .bits = (uint8_t)(1 << 2) }
 /**
  * 'flex-start'
  */
-#define AlignFlags_FLEX_START (AlignFlags){ .bits = (1 << 3) }
+#define AlignFlags_FLEX_START (AlignFlags){ .bits = (uint8_t)(1 << 3) }
 
-void root(struct AlignFlags flags);
+struct DebugFlags {
+  uint32_t bits;
+};
+/**
+ * Flag with the topmost bit set of the u32
+ */
+#define DebugFlags_BIGGEST_ALLOWED (DebugFlags){ .bits = (uint32_t)(1 << 31) }
+
+void root(struct AlignFlags flags, struct DebugFlags bigger_flags);
