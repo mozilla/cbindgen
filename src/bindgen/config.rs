@@ -765,6 +765,8 @@ pub struct Config {
     pub documentation: bool,
     /// How documentation comments should be styled.
     pub documentation_style: DocumentationStyle,
+    /// Optional attribute to apply to pointers that are required to not be null
+    pub non_null_attribute: Option<String>,
 }
 
 impl Default for Config {
@@ -800,6 +802,7 @@ impl Default for Config {
             defines: HashMap::new(),
             documentation: true,
             documentation_style: DocumentationStyle::Auto,
+            non_null_attribute: None,
         }
     }
 }
