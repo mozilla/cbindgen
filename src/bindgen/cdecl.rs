@@ -14,7 +14,7 @@ use crate::bindgen::{Config, Language};
 // http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
 
 enum CDeclarator {
-    Ptr(bool),
+    Ptr(bool, bool),
     Ref,
     Array(String),
     Func(Vec<(Option<String>, CDecl)>, bool),
@@ -115,12 +115,20 @@ impl CDecl {
             }
 
             Type::ConstPtr(ref t) => {
-                self.declarators.push(CDeclarator::Ptr(is_const));
+                self.declarators.push(CDeclarator::Ptr(is_const, false));
                 self.build_type(t, true);
             }
             Type::Ptr(ref t) => {
-                self.declarators.push(CDeclarator::Ptr(is_const));
+                self.declarators.push(CDeclarator::Ptr(is_const, false));
                 self.build_type(t, false);
+            }
+            Type::NonNullPtr(ref t) => {
+                self.declarators.push(CDeclarator::Ptr(is_const, true));
+                self.build_type(t, false);
+            }
+            Type::ConstNonNullPtr(ref t) => {
+                self.declarators.push(CDeclarator::Ptr(is_const, true));
+                self.build_type(t, true);
             }
             Type::Ref(ref t) => {
                 self.declarators.push(CDeclarator::Ref);
@@ -140,7 +148,7 @@ impl CDecl {
                     .iter()
                     .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty)))
                     .collect();
-                self.declarators.push(CDeclarator::Ptr(false));
+                self.declarators.push(CDeclarator::Ptr(false, false));
                 self.declarators.push(CDeclarator::Func(args, false));
                 self.build_type(ret, false);
             }
@@ -178,11 +186,17 @@ impl CDecl {
             let next_is_pointer = iter_rev.peek().map_or(false, |x| x.is_ptr());
 
             match *declarator {
-                CDeclarator::Ptr(ref is_const) => {
-                    if *is_const {
-                        out.write("*const ");
+                CDeclarator::Ptr(ref is_const, ref is_nonnull) => {
+                    let non_null_attribute = if *is_nonnull {
+                        config.non_null_attribute.as_ref()
                     } else {
-                        out.write("*");
+                        None
+                    };
+                    match (non_null_attribute, is_const) {
+                        (None, true) => out.write("*const "),
+                        (None, false) => out.write("*"),
+                        (Some(attr), true) => write!(out, "*const {} ", attr),
+                        (Some(attr), false) => write!(out, "* {} ", attr),
                     }
                 }
                 CDeclarator::Ref => {
