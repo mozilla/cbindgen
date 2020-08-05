@@ -494,7 +494,7 @@ impl Constant {
         debug_assert!(config.structure.associated_constants_in_body);
         debug_assert!(config.constant.allow_static_const);
 
-        if let Type::ConstPtr { .. } = self.ty {
+        if let Type::Ptr { is_const: true, .. } = self.ty {
             out.write("static ");
         } else {
             out.write("static const ");
@@ -579,7 +579,7 @@ impl Constant {
                 out.write(if in_body { "inline " } else { "static " });
             }
 
-            if let Type::ConstPtr { .. } = self.ty {
+            if let Type::Ptr { is_const: true, .. } = self.ty {
                 // Nothing.
             } else {
                 out.write("const ");

@@ -836,7 +836,7 @@ impl Source for Enum {
                             .skip(skip_fields)
                             .map(|&(ref name, ref ty, _)| {
                                 // const-ref args to constructor
-                                (arg_renamer(name), Type::Ref(Box::new(ty.clone())))
+                                (arg_renamer(name), Type::const_ref_to(ty))
                             })
                             .collect();
                         out.write_vertical_source_list(&vec[..], ListType::Join(","));
@@ -926,10 +926,11 @@ impl Source for Enum {
                         if dig {
                             let field = body.fields.iter().skip(skip_fields).next().unwrap();
                             let return_type = field.1.clone();
-                            let return_type = if const_casts {
-                                Type::Ref(Box::new(return_type))
-                            } else {
-                                Type::MutRef(Box::new(return_type))
+                            let return_type = Type::Ptr {
+                                ty: Box::new(return_type),
+                                is_const: const_casts,
+                                is_ref: true,
+                                is_nullable: false,
                             };
                             return_type.write(config, out);
                         } else if const_casts {

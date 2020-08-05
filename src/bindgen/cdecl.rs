@@ -14,8 +14,11 @@ use crate::bindgen::{Config, Language};
 // http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
 
 enum CDeclarator {
-    Ptr { is_const: bool, is_nullable: bool },
-    Ref,
+    Ptr {
+        is_const: bool,
+        is_nullable: bool,
+        is_ref: bool,
+    },
     Array(String),
     Func(Vec<(Option<String>, CDecl)>, bool),
 }
@@ -23,7 +26,7 @@ enum CDeclarator {
 impl CDeclarator {
     fn is_ptr(&self) -> bool {
         match self {
-            CDeclarator::Ptr { .. } | CDeclarator::Ref | CDeclarator::Func(..) => true,
+            CDeclarator::Ptr { .. } | CDeclarator::Func(..) => true,
             _ => false,
         }
     }
@@ -113,34 +116,18 @@ impl CDecl {
                 );
                 self.type_name = p.to_string();
             }
-
-            Type::ConstPtr {
-                ref ty,
-                is_nullable,
-            } => {
-                self.declarators.push(CDeclarator::Ptr {
-                    is_const,
-                    is_nullable: *is_nullable,
-                });
-                self.build_type(ty, true);
-            }
             Type::Ptr {
                 ref ty,
                 is_nullable,
+                is_const: ptr_is_const,
+                is_ref,
             } => {
                 self.declarators.push(CDeclarator::Ptr {
                     is_const,
                     is_nullable: *is_nullable,
+                    is_ref: *is_ref,
                 });
-                self.build_type(ty, false);
-            }
-            Type::Ref(ref t) => {
-                self.declarators.push(CDeclarator::Ref);
-                self.build_type(t, true);
-            }
-            Type::MutRef(ref t) => {
-                self.declarators.push(CDeclarator::Ref);
-                self.build_type(t, false);
+                self.build_type(ty, *ptr_is_const);
             }
             Type::Array(ref t, ref constant) => {
                 let len = constant.as_str().to_owned();
@@ -155,6 +142,7 @@ impl CDecl {
                 self.declarators.push(CDeclarator::Ptr {
                     is_const: false,
                     is_nullable: true,
+                    is_ref: false,
                 });
                 self.declarators.push(CDeclarator::Func(args, false));
                 self.build_type(ret, false);
@@ -196,20 +184,17 @@ impl CDecl {
                 CDeclarator::Ptr {
                     is_const,
                     is_nullable,
+                    is_ref,
                 } => {
+                    out.write(if is_ref { "&" } else { "*" });
                     if is_const {
-                        out.write("*const ")
-                    } else {
-                        out.write("*")
+                        out.write("const ");
                     }
-                    if !is_nullable {
+                    if !is_nullable && !is_ref {
                         if let Some(attr) = &config.pointer.non_null_attribute {
                             write!(out, "{} ", attr);
                         }
                     }
-                }
-                CDeclarator::Ref => {
-                    out.write("&");
                 }
                 CDeclarator::Array(..) => {
                     if next_is_pointer {
@@ -237,9 +222,6 @@ impl CDecl {
         while let Some(declarator) = iter.next() {
             match *declarator {
                 CDeclarator::Ptr { .. } => {
-                    last_was_pointer = true;
-                }
-                CDeclarator::Ref => {
                     last_was_pointer = true;
                 }
                 CDeclarator::Array(ref constant) => {

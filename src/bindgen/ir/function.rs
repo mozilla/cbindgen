@@ -303,18 +303,16 @@ trait SynFnArgHelpers {
 
 fn gen_self_type(receiver: &syn::Receiver) -> Type {
     let self_ty = Type::Path(GenericPath::self_path());
-    match receiver.reference {
-        Some(_) => match receiver.mutability {
-            Some(_) => Type::Ptr {
-                ty: Box::new(self_ty),
-                is_nullable: true,
-            },
-            None => Type::ConstPtr {
-                ty: Box::new(self_ty),
-                is_nullable: true,
-            },
-        },
-        None => self_ty,
+    if receiver.reference.is_none() {
+        return self_ty;
+    }
+
+    let is_const = receiver.mutability.is_none();
+    Type::Ptr {
+        ty: Box::new(self_ty),
+        is_const,
+        is_nullable: false,
+        is_ref: false,
     }
 }
 
