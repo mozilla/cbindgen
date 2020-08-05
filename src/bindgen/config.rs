@@ -693,21 +693,13 @@ impl ParseConfig {
 }
 
 /// Settings to apply to pointers
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Default, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct PtrConfig {
     /// Optional attribute to apply to pointers that are required to not be null
     pub non_null_attribute: Option<String>,
-}
-
-impl Default for PtrConfig {
-    fn default() -> Self {
-        Self {
-            non_null_attribute: None,
-        }
-    }
 }
 
 /// A collection of settings to customize the generated bindings.
