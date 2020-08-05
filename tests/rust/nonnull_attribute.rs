@@ -37,16 +37,16 @@ pub extern "C" fn mutltiple_args(
 }
 
 #[no_mangle]
-pub extern "C" fn mut_ref_arg(arg: &Pointers<u64>) {}
+pub extern "C" fn ref_arg(arg: &Pointers<u64>) {}
 
 #[no_mangle]
-pub extern "C" fn ref_arg(arg: &mut Pointers<u64>) {}
+pub extern "C" fn mut_ref_arg(arg: &mut Pointers<u64>) {}
 
 #[no_mangle]
-pub extern "C" fn optional_mut_ref_arg(arg: Option<&Pointers<u64>>) {}
+pub extern "C" fn optional_ref_arg(arg: Option<&Pointers<u64>>) {}
 
 #[no_mangle]
-pub extern "C" fn optional_ref_arg(arg: Option<&mut Pointers<u64>>) {}
+pub extern "C" fn optional_mut_ref_arg(arg: Option<&mut Pointers<u64>>) {}
 
 #[no_mangle]
 pub extern "C" fn nullable_const_ptr(arg: *const Pointers<u64>) {}

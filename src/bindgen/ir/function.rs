@@ -305,8 +305,14 @@ fn gen_self_type(receiver: &syn::Receiver) -> Type {
     let self_ty = Type::Path(GenericPath::self_path());
     match receiver.reference {
         Some(_) => match receiver.mutability {
-            Some(_) => Type::Ptr(Box::new(self_ty)),
-            None => Type::ConstPtr(Box::new(self_ty)),
+            Some(_) => Type::Ptr {
+                ty: Box::new(self_ty),
+                is_nullable: true,
+            },
+            None => Type::ConstPtr {
+                ty: Box::new(self_ty),
+                is_nullable: true,
+            },
         },
         None => self_ty,
     }

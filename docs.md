@@ -476,11 +476,6 @@ tab_width = 3
 # default: "auto"
 documentation_style = "doxy"
 
-# An optional string that, if present, will decorate all pointers that are
-# required to be non null. Nullability is inferred from the Rust type: `&T`,
-# `&mut T` and `NonNull<T>` are all require a valid pointer value. 
-non_null_attribute = "_Nonnull"
-
 
 
 
@@ -941,6 +936,12 @@ default_features = true
 #
 # default: []
 features = ["cbindgen"]
+
+[ptr]
+# An optional string to decorate all pointers that are
+# required to be non null. Nullability is inferred from the Rust type: `&T`,
+# `&mut T` and `NonNull<T>` all require a valid pointer value. 
+non_null_attribute = "_Nonnull"
 
 ```
 
