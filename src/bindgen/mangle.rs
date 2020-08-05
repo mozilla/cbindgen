@@ -58,12 +58,14 @@ impl<'a> Mangler<'a> {
             Type::Primitive(ref primitive) => {
                 self.output.push_str(primitive.to_repr_rust());
             }
-            Type::Ptr { ref ty, .. } | Type::MutRef(ref ty) => {
-                self.push(Separator::BeginMutPtr);
-                self.append_mangled_type(&**ty, last);
-            }
-            Type::ConstPtr { ref ty, .. } | Type::Ref(ref ty) => {
-                self.push(Separator::BeginConstPtr);
+            Type::Ptr {
+                ref ty, is_const, ..
+            } => {
+                self.push(if is_const {
+                    Separator::BeginConstPtr
+                } else {
+                    Separator::BeginMutPtr
+                });
                 self.append_mangled_type(&**ty, last);
             }
             Type::Array(..) | Type::FuncPtr(..) => {
