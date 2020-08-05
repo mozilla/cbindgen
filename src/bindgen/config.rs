@@ -692,6 +692,24 @@ impl ParseConfig {
     }
 }
 
+/// Settings to apply to pointers
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct PtrConfig {
+    /// Optional attribute to apply to pointers that are required to not be null
+    pub non_null_attribute: Option<String>,
+}
+
+impl Default for PtrConfig {
+    fn default() -> Self {
+        Self {
+            non_null_attribute: None,
+        }
+    }
+}
+
 /// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -765,8 +783,9 @@ pub struct Config {
     pub documentation: bool,
     /// How documentation comments should be styled.
     pub documentation_style: DocumentationStyle,
-    /// Optional attribute to apply to pointers that are required to not be null
-    pub non_null_attribute: Option<String>,
+    /// Configuration options for pointers
+    #[serde(rename = "ptr")]
+    pub pointer: PtrConfig,
 }
 
 impl Default for Config {
@@ -802,7 +821,7 @@ impl Default for Config {
             defines: HashMap::new(),
             documentation: true,
             documentation_style: DocumentationStyle::Auto,
-            non_null_attribute: None,
+            pointer: PtrConfig::default(),
         }
     }
 }

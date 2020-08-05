@@ -6,4 +6,5 @@ header = """
 #endif
 """
 
+[ptr]
 non_null_attribute = "CBINDGEN_NONNULL"

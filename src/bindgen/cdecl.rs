@@ -14,7 +14,7 @@ use crate::bindgen::{Config, Language};
 // http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
 
 enum CDeclarator {
-    Ptr(bool, bool),
+    Ptr { is_const: bool, is_nullable: bool },
     Ref,
     Array(String),
     Func(Vec<(Option<String>, CDecl)>, bool),
@@ -23,7 +23,7 @@ enum CDeclarator {
 impl CDeclarator {
     fn is_ptr(&self) -> bool {
         match self {
-            CDeclarator::Ptr(..) | CDeclarator::Ref | CDeclarator::Func(..) => true,
+            CDeclarator::Ptr { .. } | CDeclarator::Ref | CDeclarator::Func(..) => true,
             _ => false,
         }
     }
@@ -114,21 +114,25 @@ impl CDecl {
                 self.type_name = p.to_string();
             }
 
-            Type::ConstPtr(ref t) => {
-                self.declarators.push(CDeclarator::Ptr(is_const, false));
-                self.build_type(t, true);
+            Type::ConstPtr {
+                ref ty,
+                is_nullable,
+            } => {
+                self.declarators.push(CDeclarator::Ptr {
+                    is_const,
+                    is_nullable: *is_nullable,
+                });
+                self.build_type(ty, true);
             }
-            Type::Ptr(ref t) => {
-                self.declarators.push(CDeclarator::Ptr(is_const, false));
-                self.build_type(t, false);
-            }
-            Type::NonNullPtr(ref t) => {
-                self.declarators.push(CDeclarator::Ptr(is_const, true));
-                self.build_type(t, false);
-            }
-            Type::ConstNonNullPtr(ref t) => {
-                self.declarators.push(CDeclarator::Ptr(is_const, true));
-                self.build_type(t, true);
+            Type::Ptr {
+                ref ty,
+                is_nullable,
+            } => {
+                self.declarators.push(CDeclarator::Ptr {
+                    is_const,
+                    is_nullable: *is_nullable,
+                });
+                self.build_type(ty, false);
             }
             Type::Ref(ref t) => {
                 self.declarators.push(CDeclarator::Ref);
@@ -148,7 +152,10 @@ impl CDecl {
                     .iter()
                     .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty)))
                     .collect();
-                self.declarators.push(CDeclarator::Ptr(false, false));
+                self.declarators.push(CDeclarator::Ptr {
+                    is_const: false,
+                    is_nullable: true,
+                });
                 self.declarators.push(CDeclarator::Func(args, false));
                 self.build_type(ret, false);
             }
@@ -186,17 +193,19 @@ impl CDecl {
             let next_is_pointer = iter_rev.peek().map_or(false, |x| x.is_ptr());
 
             match *declarator {
-                CDeclarator::Ptr(ref is_const, ref is_nonnull) => {
-                    let non_null_attribute = if *is_nonnull {
-                        config.non_null_attribute.as_ref()
+                CDeclarator::Ptr {
+                    is_const,
+                    is_nullable,
+                } => {
+                    if is_const {
+                        out.write("*const ")
                     } else {
-                        None
-                    };
-                    match (non_null_attribute, is_const) {
-                        (None, true) => out.write("*const "),
-                        (None, false) => out.write("*"),
-                        (Some(attr), true) => write!(out, "*const {} ", attr),
-                        (Some(attr), false) => write!(out, "* {} ", attr),
+                        out.write("*")
+                    }
+                    if !is_nullable {
+                        if let Some(attr) = &config.pointer.non_null_attribute {
+                            write!(out, "{} ", attr);
+                        }
                     }
                 }
                 CDeclarator::Ref => {
@@ -227,7 +236,7 @@ impl CDecl {
         #[allow(clippy::while_let_on_iterator)]
         while let Some(declarator) = iter.next() {
             match *declarator {
-                CDeclarator::Ptr(..) => {
+                CDeclarator::Ptr { .. } => {
                     last_was_pointer = true;
                 }
                 CDeclarator::Ref => {

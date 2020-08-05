@@ -209,10 +209,8 @@ impl ArrayLength {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Type {
-    ConstPtr(Box<Type>),
-    Ptr(Box<Type>),
-    ConstNonNullPtr(Box<Type>),
-    NonNullPtr(Box<Type>),
+    ConstPtr { ty: Box<Type>, is_nullable: bool },
+    Ptr { ty: Box<Type>, is_nullable: bool },
     Ref(Box<Type>),
     MutRef(Box<Type>),
     Path(GenericPath),
@@ -237,8 +235,14 @@ impl Type {
                 };
 
                 match reference.mutability {
-                    Some(_) => Type::NonNullPtr(Box::new(converted)),
-                    None => Type::ConstNonNullPtr(Box::new(converted)),
+                    Some(_) => Type::Ptr {
+                        ty: Box::new(converted),
+                        is_nullable: false,
+                    },
+                    None => Type::ConstPtr {
+                        ty: Box::new(converted),
+                        is_nullable: false,
+                    },
                 }
             }
             syn::Type::Ptr(ref pointer) => {
@@ -254,8 +258,14 @@ impl Type {
                 };
 
                 match pointer.mutability {
-                    Some(_) => Type::Ptr(Box::new(converted)),
-                    None => Type::ConstPtr(Box::new(converted)),
+                    Some(_) => Type::Ptr {
+                        ty: Box::new(converted),
+                        is_nullable: true,
+                    },
+                    None => Type::ConstPtr {
+                        ty: Box::new(converted),
+                        is_nullable: true,
+                    },
                 }
             }
             syn::Type::Path(ref path) => {
@@ -360,7 +370,7 @@ impl Type {
     pub fn is_primitive_or_ptr_primitive(&self) -> bool {
         match *self {
             Type::Primitive(..) => true,
-            Type::ConstPtr(ref x) => match x.as_ref() {
+            Type::ConstPtr { ref ty, .. } => match ty.as_ref() {
                 Type::Primitive(..) => true,
                 _ => false,
             },
@@ -370,10 +380,8 @@ impl Type {
 
     pub fn is_repr_ptr(&self) -> bool {
         match *self {
-            Type::Ptr(..) => true,
-            Type::NonNullPtr(..) => true,
-            Type::ConstPtr(..) => true,
-            Type::ConstNonNullPtr(..) => true,
+            Type::Ptr { .. } => true,
+            Type::ConstPtr { .. } => true,
             Type::FuncPtr(..) => true,
             _ => false,
         }
@@ -381,10 +389,14 @@ impl Type {
 
     pub fn make_nullable(&self) -> Option<Self> {
         match self.clone() {
-            Type::Ptr(x) => Some(Type::Ptr(x)),
-            Type::NonNullPtr(x) => Some(Type::Ptr(x)),
-            Type::ConstPtr(x) => Some(Type::ConstPtr(x)),
-            Type::ConstNonNullPtr(x) => Some(Type::ConstPtr(x)),
+            Type::Ptr { ty, .. } => Some(Type::Ptr {
+                ty,
+                is_nullable: true,
+            }),
+            Type::ConstPtr { ty, .. } => Some(Type::ConstPtr {
+                ty,
+                is_nullable: true,
+            }),
             Type::FuncPtr(x, y) => Some(Type::FuncPtr(x, y)),
             _ => None,
         }
@@ -406,7 +418,10 @@ impl Type {
         match path.name() {
             // FIXME(#223): This is not quite correct.
             "Option" if generic.is_repr_ptr() => generic.make_nullable(),
-            "NonNull" => Some(Type::NonNullPtr(Box::new(generic))),
+            "NonNull" => Some(Type::Ptr {
+                ty: Box::new(generic),
+                is_nullable: false,
+            }),
             "Cell" => Some(generic),
             _ => None,
         }
@@ -423,10 +438,8 @@ impl Type {
             Type::Array(ref mut ty, ..)
             | Type::MutRef(ref mut ty)
             | Type::Ref(ref mut ty)
-            | Type::Ptr(ref mut ty)
-            | Type::NonNullPtr(ref mut ty)
-            | Type::ConstNonNullPtr(ref mut ty)
-            | Type::ConstPtr(ref mut ty) => ty.replace_self_with(self_ty),
+            | Type::Ptr { ref mut ty, .. }
+            | Type::ConstPtr { ref mut ty, .. } => ty.replace_self_with(self_ty),
             Type::Path(ref mut generic_path) => {
                 generic_path.replace_self_with(self_ty);
             }
@@ -444,10 +457,8 @@ impl Type {
         let mut current = self;
         loop {
             match *current {
-                Type::ConstPtr(ref ty) => current = ty,
-                Type::Ptr(ref ty) => current = ty,
-                Type::NonNullPtr(ref ty) => current = ty,
-                Type::ConstNonNullPtr(ref ty) => current = ty,
+                Type::ConstPtr { ref ty, .. } => current = ty,
+                Type::Ptr { ref ty, .. } => current = ty,
                 Type::Ref(ref ty) => current = ty,
                 Type::MutRef(ref ty) => current = ty,
                 Type::Path(ref generic) => {
@@ -468,12 +479,20 @@ impl Type {
 
     pub fn specialize(&self, mappings: &[(&Path, &Type)]) -> Type {
         match *self {
-            Type::ConstPtr(ref ty) => Type::ConstPtr(Box::new(ty.specialize(mappings))),
-            Type::Ptr(ref ty) => Type::Ptr(Box::new(ty.specialize(mappings))),
-            Type::NonNullPtr(ref ty) => Type::NonNullPtr(Box::new(ty.specialize(mappings))),
-            Type::ConstNonNullPtr(ref ty) => {
-                Type::ConstNonNullPtr(Box::new(ty.specialize(mappings)))
-            }
+            Type::ConstPtr {
+                ref ty,
+                is_nullable,
+            } => Type::ConstPtr {
+                ty: Box::new(ty.specialize(mappings)),
+                is_nullable,
+            },
+            Type::Ptr {
+                ref ty,
+                is_nullable,
+            } => Type::Ptr {
+                ty: Box::new(ty.specialize(mappings)),
+                is_nullable,
+            },
             Type::Ref(ref ty) => Type::Ref(Box::new(ty.specialize(mappings))),
             Type::MutRef(ref ty) => Type::MutRef(Box::new(ty.specialize(mappings))),
             Type::Path(ref generic_path) => {
@@ -514,16 +533,10 @@ impl Type {
         out: &mut Dependencies,
     ) {
         match *self {
-            Type::ConstPtr(ref ty) => {
+            Type::ConstPtr { ref ty, .. } => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
-            Type::Ptr(ref ty) => {
-                ty.add_dependencies_ignoring_generics(generic_params, library, out);
-            }
-            Type::NonNullPtr(ref ty) => {
-                ty.add_dependencies_ignoring_generics(generic_params, library, out);
-            }
-            Type::ConstNonNullPtr(ref ty) => {
+            Type::Ptr { ref ty, .. } => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
             Type::Ref(ref ty) | Type::MutRef(ref ty) => {
@@ -574,16 +587,10 @@ impl Type {
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         match *self {
-            Type::ConstPtr(ref ty) => {
+            Type::ConstPtr { ref ty, .. } => {
                 ty.add_monomorphs(library, out);
             }
-            Type::Ptr(ref ty) => {
-                ty.add_monomorphs(library, out);
-            }
-            Type::NonNullPtr(ref ty) => {
-                ty.add_monomorphs(library, out);
-            }
-            Type::ConstNonNullPtr(ref ty) => {
+            Type::Ptr { ref ty, .. } => {
                 ty.add_monomorphs(library, out);
             }
             Type::Ref(ref ty) | Type::MutRef(ref ty) => {
@@ -616,16 +623,10 @@ impl Type {
 
     pub fn rename_for_config(&mut self, config: &Config, generic_params: &GenericParams) {
         match *self {
-            Type::ConstPtr(ref mut ty) => {
+            Type::ConstPtr { ref mut ty, .. } => {
                 ty.rename_for_config(config, generic_params);
             }
-            Type::Ptr(ref mut ty) => {
-                ty.rename_for_config(config, generic_params);
-            }
-            Type::NonNullPtr(ref mut ty) => {
-                ty.rename_for_config(config, generic_params);
-            }
-            Type::ConstNonNullPtr(ref mut ty) => {
+            Type::Ptr { ref mut ty, .. } => {
                 ty.rename_for_config(config, generic_params);
             }
             Type::Ref(ref mut ty) | Type::MutRef(ref mut ty) => {
@@ -650,16 +651,10 @@ impl Type {
 
     pub fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         match *self {
-            Type::ConstPtr(ref mut ty) => {
+            Type::ConstPtr { ref mut ty, .. } => {
                 ty.resolve_declaration_types(resolver);
             }
-            Type::Ptr(ref mut ty) => {
-                ty.resolve_declaration_types(resolver);
-            }
-            Type::NonNullPtr(ref mut ty) => {
-                ty.resolve_declaration_types(resolver);
-            }
-            Type::ConstNonNullPtr(ref mut ty) => {
+            Type::Ptr { ref mut ty, .. } => {
                 ty.resolve_declaration_types(resolver);
             }
             Type::Ref(ref mut ty) | Type::MutRef(ref mut ty) => {
@@ -683,16 +678,10 @@ impl Type {
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         match *self {
-            Type::ConstPtr(ref mut ty) => {
+            Type::ConstPtr { ref mut ty, .. } => {
                 ty.mangle_paths(monomorphs);
             }
-            Type::Ptr(ref mut ty) => {
-                ty.mangle_paths(monomorphs);
-            }
-            Type::NonNullPtr(ref mut ty) => {
-                ty.mangle_paths(monomorphs);
-            }
-            Type::ConstNonNullPtr(ref mut ty) => {
+            Type::Ptr { ref mut ty, .. } => {
                 ty.mangle_paths(monomorphs);
             }
             Type::Ref(ref mut ty) | Type::MutRef(ref mut ty) => {
@@ -728,10 +717,8 @@ impl Type {
 
     pub fn can_cmp_order(&self) -> bool {
         match *self {
-            Type::ConstPtr(..) => true,
-            Type::Ptr(..) => true,
-            Type::NonNullPtr(..) => true,
-            Type::ConstNonNullPtr(..) => true,
+            Type::ConstPtr { .. } => true,
+            Type::Ptr { .. } => true,
             Type::Ref(..) | Type::MutRef(..) => false,
             Type::Path(..) => true,
             Type::Primitive(ref p) => p.can_cmp_order(),
@@ -742,10 +729,8 @@ impl Type {
 
     pub fn can_cmp_eq(&self) -> bool {
         match *self {
-            Type::ConstPtr(..) => true,
-            Type::Ptr(..) => true,
-            Type::NonNullPtr(..) => true,
-            Type::ConstNonNullPtr(..) => true,
+            Type::ConstPtr { .. } => true,
+            Type::Ptr { .. } => true,
             Type::Ref(..) | Type::MutRef(..) => false,
             Type::Path(..) => true,
             Type::Primitive(ref p) => p.can_cmp_eq(),
