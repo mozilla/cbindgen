@@ -51,12 +51,12 @@ impl VariantBody {
         }
     }
 
-    fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)]) -> Self {
+    fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)], mangling_separator: &Option<String>) -> Self {
         match *self {
             Self::Empty(ref annos) => Self::Empty(annos.clone()),
             Self::Body { ref name, ref body } => Self::Body {
                 name: name.clone(),
-                body: body.specialize(generic_values, mappings),
+                body: body.specialize(generic_values, mappings, mangling_separator),
             },
         }
     }

@@ -4,12 +4,12 @@
 
 use crate::bindgen::ir::{Path, Type};
 
-pub fn mangle_path(path: &Path, generic_values: &[Type]) -> Path {
-    Path::new(mangle_name(path.name(), generic_values))
+pub fn mangle_path(path: &Path, generic_values: &[Type], mangle_seperator: &Option<String>) -> Path {
+    Path::new(mangle_name(path.name(), generic_values, mangle_seperator))
 }
 
-pub fn mangle_name(name: &str, generic_values: &[Type]) -> String {
-    Mangler::new(name, generic_values, /* last = */ true).mangle()
+pub fn mangle_name(name: &str, generic_values: &[Type], mangle_seperator: &Option<String>) -> String {
+    Mangler::new(name, generic_values, /* last = */ true, mangle_seperator).mangle()
 }
 
 enum Separator {
@@ -25,6 +25,7 @@ struct Mangler<'a> {
     generic_values: &'a [Type],
     output: String,
     last: bool,
+    mangle_separator: Option<String>
 }
 
 impl<'a> Mangler<'a> {
@@ -34,7 +35,7 @@ impl<'a> Mangler<'a> {
             generic_values,
             output: String::new(),
             last,
-            mangle_separator: &Option<String>,
+            mangle_separator: mangle_separator.clone(),
         }
     }
 
@@ -44,7 +45,7 @@ impl<'a> Mangler<'a> {
     }
 
     fn push(&mut self, id: Separator) {
-        let separator = match mangle_separator {
+        let separator = match &self.mangle_separator {
             Some(s) => s.to_owned(),
             None => "_".to_string()
         };
@@ -104,14 +105,6 @@ impl<'a> Mangler<'a> {
         }
         }
     }
-
-fn concat_separators(separator: &str, number: u8) -> String {
-    let mut result: String = "".to_string();
-    for _ in 0..number {
-        result += separator;
-    }
-    result
-}
 
 fn concat_separators(separator: &str, number: u8) -> String {
     let mut result: String = "".to_string();
