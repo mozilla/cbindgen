@@ -172,8 +172,8 @@ impl Struct {
         }
     }
 
-    pub fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)], mangling_separator: &Option<String>) -> Self {
-        let mangled_path = mangle::mangle_path(&self.path, generic_values, mangling_separator);
+    pub fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)], config: &Config) -> Self {
+        let mangled_path = mangle::mangle_path(&self.path, generic_values, &config.export.mangling_separator);
         Struct::new(
             mangled_path,
             GenericParams::default(),
@@ -377,7 +377,7 @@ impl Item for Struct {
             .zip(generic_values.iter())
             .collect::<Vec<_>>();
 
-        let monomorph = self.specialize(generic_values, &mappings, library.get_mangling_separator());
+        let monomorph = self.specialize(generic_values, &mappings, library.get_config());
 
         // Instantiate any monomorphs for any generic paths we may have just created.
         monomorph.add_monomorphs(library, out);

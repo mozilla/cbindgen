@@ -149,8 +149,8 @@ impl Library {
         None
     }
 
-    pub fn get_mangling_separator(&self) -> &Option<String> {
-        &self.config.export.mangling_separator
+    pub fn get_config(&self) -> &Config {
+        &self.config
     }
 
     fn remove_excluded(&mut self) {

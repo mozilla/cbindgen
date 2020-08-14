@@ -25,17 +25,21 @@ struct Mangler<'a> {
     generic_values: &'a [Type],
     output: String,
     last: bool,
-    mangle_separator: Option<String>
+    mangle_separator: &'a str
 }
 
 impl<'a> Mangler<'a> {
-    fn new(input: &'a str, generic_values: &'a [Type], last: bool, mangle_separator: &Option<String>) -> Self {
+    fn new(input: &'a str, generic_values: &'a [Type], last: bool, mangle_separator: &'a Option<String>) -> Self {
+        let seperator = match mangle_separator {
+            Some(s) => s,
+            None => "_",
+        };
         Self {
             input,
             generic_values,
             output: String::new(),
             last,
-            mangle_separator: mangle_separator.clone(),
+            mangle_separator: seperator
         }
     }
 
@@ -45,19 +49,15 @@ impl<'a> Mangler<'a> {
     }
 
     fn push(&mut self, id: Separator) {
-        let separator = match &self.mangle_separator {
-            Some(s) => s.to_owned(),
-            None => "_".to_string()
-        };
         let count = id as usize;
-        self.output.extend(std::iter::repeat(separator).take(count));
+        self.output.extend(std::iter::repeat(self.mangle_separator).take(count));
     }
 
     fn append_mangled_type(&mut self, ty: &Type, last: bool) {
         match *ty {
             Type::Path(ref generic) => {
                 let sub_path =
-                    Mangler::new(generic.export_name(), generic.generics(), last).mangle();
+                    Mangler::new(generic.export_name(), generic.generics(), last, &Some(self.mangle_separator.to_owned())).mangle();
                 self.output.push_str(&sub_path);
             }
             Type::Primitive(ref primitive) => {
@@ -105,14 +105,6 @@ impl<'a> Mangler<'a> {
         }
         }
     }
-
-fn concat_separators(separator: &str, number: u8) -> String {
-    let mut result: String = "".to_string();
-    for _ in 0..number {
-        result += separator;
-    }
-    result
-}
 
 #[test]
 fn generics() {

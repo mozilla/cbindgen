@@ -117,7 +117,7 @@ impl Item for OpaqueItem {
             generic_values.len(),
         );
 
-        let mangled_path = mangle::mangle_path(&self.path, generic_values, library.get_mangling_separator());
+        let mangled_path = mangle::mangle_path(&self.path, generic_values, &library.get_config().export.mangling_separator);
         let monomorph = OpaqueItem::new(
             mangled_path,
             GenericParams::default(),
