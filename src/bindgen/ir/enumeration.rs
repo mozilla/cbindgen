@@ -154,17 +154,17 @@ impl EnumVariant {
                 VariantBody::Body {
                     name,
                     body: Struct::new(
-                    path,
-                    generic_params,
-                    parse_fields(is_tagged, &fields.named, self_path)?,
-                    is_tagged,
-                    true,
-                    None,
-                    false,
-                    false,
-                    None,
+                        path,
+                        generic_params,
+                        parse_fields(is_tagged, &fields.named, self_path)?,
+                        is_tagged,
+                        true,
+                        None,
+                        false,
+                        false,
+                        None,
                         annotations,
-                    Documentation::none(),
+                        Documentation::none(),
                     ),
                 }
             }
@@ -175,17 +175,17 @@ impl EnumVariant {
                 VariantBody::Body {
                     name,
                     body: Struct::new(
-                    path,
-                    generic_params,
-                    parse_fields(is_tagged, &fields.unnamed, self_path)?,
-                    is_tagged,
-                    true,
-                    None,
-                    false,
-                    true,
-                    None,
+                        path,
+                        generic_params,
+                        parse_fields(is_tagged, &fields.unnamed, self_path)?,
+                        is_tagged,
+                        true,
+                        None,
+                        false,
+                        true,
+                        None,
                         annotations,
-                    Documentation::none(),
+                        Documentation::none(),
                     ),
                 }
             }
@@ -194,7 +194,7 @@ impl EnumVariant {
         Ok(EnumVariant::new(
             variant.ident.to_string(),
             discriminant,
-                    body,
+            body,
             variant_cfg,
             Documentation::load(&variant.attrs),
         ))
