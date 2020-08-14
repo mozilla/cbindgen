@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <new>
 
-template<typename T>
+template<typename T = void>
 struct Bar;
 
 template<typename T>

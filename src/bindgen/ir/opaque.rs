@@ -105,12 +105,16 @@ impl Item for OpaqueItem {
         out: &mut Monomorphs,
     ) {
         assert!(
-            self.generic_params.len() > 0,
+            !self.generic_params.is_empty(),
             "{} is not generic",
             self.path
         );
+
+        // We can be instantiated with less generic params because of default
+        // template parameters, or because of empty types that we remove during
+        // parsing (`()`).
         assert!(
-            self.generic_params.len() == generic_values.len(),
+            self.generic_params.len() >= generic_values.len(),
             "{} has {} params but is being instantiated with {} values",
             self.path,
             self.generic_params.len(),
@@ -137,7 +141,7 @@ impl Source for OpaqueItem {
 
         self.documentation.write(config, out);
 
-        self.generic_params.write(config, out);
+        self.generic_params.write_with_default(config, out);
 
         if config.style.generate_typedef() && config.language == Language::C {
             write!(
