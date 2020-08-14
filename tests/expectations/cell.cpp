@@ -3,10 +3,10 @@
 #include <cstdlib>
 #include <new>
 
-template<typename T>
+template<typename T = void>
 struct NotReprC;
 
-template<typename T>
+template<typename T = void>
 struct RefCell;
 
 using Foo = NotReprC<RefCell<int32_t>>;

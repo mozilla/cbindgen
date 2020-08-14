@@ -3,15 +3,15 @@
 #include <cstdlib>
 #include <new>
 
-template<typename T>
+template<typename T = void>
 struct Option;
 
-template<typename T, typename E>
+template<typename T = void, typename E = void>
 struct Result;
 
 struct String;
 
-template<typename T>
+template<typename T = void>
 struct Vec;
 
 extern "C" {
