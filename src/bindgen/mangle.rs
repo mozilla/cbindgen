@@ -25,7 +25,7 @@ struct Mangler<'a> {
     generic_values: &'a [Type],
     output: String,
     last: bool,
-    mangle_separator: &'a str
+    mangle_separator: &'a str,
 }
 
 impl<'a> Mangler<'a> {
@@ -39,7 +39,7 @@ impl<'a> Mangler<'a> {
             generic_values,
             output: String::new(),
             last,
-            mangle_separator: seperator
+            mangle_separator: seperator,
         }
     }
 
@@ -103,8 +103,8 @@ impl<'a> Mangler<'a> {
         if !self.last {
             self.push(Separator::ClosingAngleBracket)
         }
-        }
     }
+}
 
 #[test]
 fn generics() {
