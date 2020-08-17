@@ -253,7 +253,7 @@ fn generics() {
                 generic_path("Bar", &[path("T")]),
                 generic_path("Bar", &[path("E")]),
             ],
-            None,
+            Some(""),
             false,
         ),
         Path::new("FooBarTBarE")
