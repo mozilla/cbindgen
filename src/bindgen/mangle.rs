@@ -4,8 +4,8 @@
 
 use crate::bindgen::ir::{Path, Type};
 
-pub fn mangle_path(path: &Path, generic_values: &[Type], mangle_separator: Option<&str>) -> Path {
-    Path::new(mangle_name(path.name(), generic_values, mangle_separator))
+pub fn mangle_path(path: &Path, generic_values: &[Type], mangle_separator: Option<&str>, capitalize_primitives: bool) -> Path {
+    Path::new(mangle_name(path.name(), generic_values, mangle_separator, capitalize_primitives))
 }
 
 pub fn mangle_name(name: &str, generic_values: &[Type], mangle_separator: Option<&str>, capitalize_primitives: bool) -> String {
@@ -54,7 +54,7 @@ impl<'a> Mangler<'a> {
             output: String::new(),
             last,
             mangle_separator: separator,
-            capitalize_primitives: capitalize_items,
+            capitalize_primitives,
         }
     }
 
