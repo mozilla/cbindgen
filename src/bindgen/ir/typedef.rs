@@ -177,7 +177,7 @@ impl Item for Typedef {
         let mangled_path = mangle::mangle_path(
             &self.path,
             generic_values,
-            library.get_config().export.mangling_separator.as_deref());
+            library.get_config().export.mangle_separator.as_deref());
 
         let monomorph = Typedef::new(
             mangled_path,

@@ -4,8 +4,8 @@
 
 use crate::bindgen::ir::{Path, Type};
 
-pub fn mangle_path(path: &Path, generic_values: &[Type], mangle_seperator: Option<&str>) -> Path {
-    Path::new(mangle_name(path.name(), generic_values, mangle_seperator))
+pub fn mangle_path(path: &Path, generic_values: &[Type], mangle_separator: Option<&str>) -> Path {
+    Path::new(mangle_name(path.name(), generic_values, mangle_separator))
 }
 
 pub fn mangle_name(name: &str, generic_values: &[Type], mangle_separator: Option<&str>) -> String {

@@ -247,7 +247,7 @@ pub struct ExportConfig {
     /// Whether renaming overrides or extends prefixing.
     pub renaming_overrides_prefixing: bool,
     /// Name mangling character. Defaults to `_`
-    pub mangling_separator: Option<String>,
+    pub mangle_separator: Option<String>,
 }
 
 impl ExportConfig {
