@@ -241,6 +241,7 @@ impl EnumVariant {
                 &self.name,
                 generic_values,
                 config.export.mangle_separator.as_deref(),
+                config.export.capitalize_primitives),
             ),
             self.discriminant,
             self.body.specialize(generic_values, mappings, config),
@@ -562,6 +563,7 @@ impl Item for Enum {
             &self.path,
             generic_values,
             library.get_config().export.mangle_separator.as_deref(),
+            library.get_config().export.capitalize_primitives,
         );
 
         let monomorph = Enum::new(
@@ -1070,8 +1072,8 @@ impl Source for Enum {
 
             if config.language == Language::Cxx
                 && config
-                    .enumeration
-                    .private_default_tagged_enum_constructor(&self.annotations)
+                .enumeration
+                .private_default_tagged_enum_constructor(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
@@ -1087,8 +1089,8 @@ impl Source for Enum {
 
             if config.language == Language::Cxx
                 && config
-                    .enumeration
-                    .derive_tagged_enum_destructor(&self.annotations)
+                .enumeration
+                .derive_tagged_enum_destructor(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
@@ -1125,8 +1127,8 @@ impl Source for Enum {
 
             if config.language == Language::Cxx
                 && config
-                    .enumeration
-                    .derive_tagged_enum_copy_constructor(&self.annotations)
+                .enumeration
+                .derive_tagged_enum_copy_constructor(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
@@ -1170,8 +1172,8 @@ impl Source for Enum {
 
                 if config.language == Language::Cxx
                     && config
-                        .enumeration
-                        .derive_tagged_enum_copy_assignment(&self.annotations)
+                    .enumeration
+                    .derive_tagged_enum_copy_assignment(&self.annotations)
                 {
                     out.new_line();
                     write_attrs!("copy-assignment");

@@ -248,6 +248,8 @@ pub struct ExportConfig {
     pub renaming_overrides_prefixing: bool,
     /// Name mangling character. Defaults to `_`
     pub mangle_separator: Option<String>,
+    /// Whether to capitalise primitives, e.g. if mangle_separator is empty
+    pub capitalize_primitives: bool,
 }
 
 impl ExportConfig {

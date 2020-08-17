@@ -125,6 +125,7 @@ impl Item for OpaqueItem {
             &self.path,
             generic_values,
             library.get_config().export.mangle_separator.as_deref(),
+            library.get_config().export.capitalize_primitives,
         );
 
         let monomorph = OpaqueItem::new(

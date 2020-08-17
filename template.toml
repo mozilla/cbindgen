@@ -58,6 +58,7 @@ exclude = []
 # prefix = "CAPI_"
 item_types = []
 renaming_overrides_prefixing = false
+capitalise_items = false
 
 
 

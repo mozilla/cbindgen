@@ -178,6 +178,7 @@ impl Item for Typedef {
             &self.path,
             generic_values,
             library.get_config().export.mangle_separator.as_deref(),
+            library.get_config().export.capitalize_primitives,
         );
 
         let monomorph = Typedef::new(

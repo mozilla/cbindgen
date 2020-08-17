@@ -182,6 +182,7 @@ impl Struct {
             &self.path,
             generic_values,
             config.export.mangle_separator.as_deref(),
+            config.export.capitalize_primitives,
         );
         Struct::new(
             mangled_path,
