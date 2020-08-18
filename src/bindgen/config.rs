@@ -287,6 +287,8 @@ pub struct ExportConfig {
     pub include: Vec<String>,
     /// A list of items to not include in the generated bindings
     pub exclude: Vec<String>,
+    /// The rename rule to apply to the type names
+    pub rename_types: Option<RenameRule>,
     /// Table of name conversions to apply to item names
     pub rename: HashMap<String, String>,
     /// Table of raw strings to prepend to the body of items.
@@ -299,8 +301,8 @@ pub struct ExportConfig {
     pub item_types: Vec<ItemType>,
     /// Whether renaming overrides or extends prefixing.
     pub renaming_overrides_prefixing: bool,
-    /// Name mangling character. Defaults to `_`
-    pub mangle_separator: Option<String>,
+    /// Remove the underscores used for name mangling
+    pub remove_underscores: bool,
 }
 
 impl ExportConfig {

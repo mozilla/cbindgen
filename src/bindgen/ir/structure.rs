@@ -180,7 +180,8 @@ impl Struct {
         let mangled_path = mangle::mangle_path(
             &self.path,
             generic_values,
-            config.export.mangle_separator.as_deref(),
+            config.export.remove_underscores,
+            config.export.rename_types,
         );
         Struct::new(
             mangled_path,
