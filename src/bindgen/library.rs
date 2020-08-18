@@ -149,6 +149,10 @@ impl Library {
         None
     }
 
+    pub fn get_config(&self) -> &Config {
+        &self.config
+    }
+
     fn remove_excluded(&mut self) {
         let config = &self.config;
         // FIXME: interpret `config.export.exclude` as `Path`s.

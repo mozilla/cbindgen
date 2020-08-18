@@ -101,7 +101,7 @@ impl Item for OpaqueItem {
     fn instantiate_monomorph(
         &self,
         generic_values: &[Type],
-        _library: &Library,
+        library: &Library,
         out: &mut Monomorphs,
     ) {
         assert!(
@@ -121,7 +121,12 @@ impl Item for OpaqueItem {
             generic_values.len(),
         );
 
-        let mangled_path = mangle::mangle_path(&self.path, generic_values);
+        let mangled_path = mangle::mangle_path(
+            &self.path,
+            generic_values,
+            library.get_config().export.mangle_separator.as_deref(),
+        );
+
         let monomorph = OpaqueItem::new(
             mangled_path,
             GenericParams::default(),

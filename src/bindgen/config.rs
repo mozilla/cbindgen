@@ -246,6 +246,8 @@ pub struct ExportConfig {
     pub item_types: Vec<ItemType>,
     /// Whether renaming overrides or extends prefixing.
     pub renaming_overrides_prefixing: bool,
+    /// Name mangling character. Defaults to `_`
+    pub mangle_separator: Option<String>,
 }
 
 impl ExportConfig {

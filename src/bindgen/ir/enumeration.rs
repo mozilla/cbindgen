@@ -51,12 +51,17 @@ impl VariantBody {
         }
     }
 
-    fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)]) -> Self {
+    fn specialize(
+        &self,
+        generic_values: &[Type],
+        mappings: &[(&Path, &Type)],
+        config: &Config,
+    ) -> Self {
         match *self {
             Self::Empty(ref annos) => Self::Empty(annos.clone()),
             Self::Body { ref name, ref body } => Self::Body {
                 name: name.clone(),
-                body: body.specialize(generic_values, mappings),
+                body: body.specialize(generic_values, mappings, config),
             },
         }
     }
@@ -225,11 +230,20 @@ impl EnumVariant {
         }
     }
 
-    fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)]) -> Self {
+    fn specialize(
+        &self,
+        generic_values: &[Type],
+        mappings: &[(&Path, &Type)],
+        config: &Config,
+    ) -> Self {
         Self::new(
-            mangle::mangle_name(&self.name, generic_values),
+            mangle::mangle_name(
+                &self.name,
+                generic_values,
+                config.export.mangle_separator.as_deref(),
+            ),
             self.discriminant,
-            self.body.specialize(generic_values, mappings),
+            self.body.specialize(generic_values, mappings, config),
             self.cfg.clone(),
             self.documentation.clone(),
         )
@@ -544,14 +558,19 @@ impl Item for Enum {
             }
         }
 
-        let mangled_path = mangle::mangle_path(&self.path, generic_values);
+        let mangled_path = mangle::mangle_path(
+            &self.path,
+            generic_values,
+            library.get_config().export.mangle_separator.as_deref(),
+        );
+
         let monomorph = Enum::new(
             mangled_path,
             GenericParams::default(),
             self.repr,
             self.variants
                 .iter()
-                .map(|v| v.specialize(generic_values, &mappings))
+                .map(|v| v.specialize(generic_values, &mappings, library.get_config()))
                 .collect(),
             self.tag.clone(),
             self.cfg.clone(),
