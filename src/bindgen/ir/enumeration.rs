@@ -51,7 +51,12 @@ impl VariantBody {
         }
     }
 
-    fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)], config: &Config) -> Self {
+    fn specialize(
+        &self,
+        generic_values: &[Type],
+        mappings: &[(&Path, &Type)],
+        config: &Config,
+    ) -> Self {
         match *self {
             Self::Empty(ref annos) => Self::Empty(annos.clone()),
             Self::Body { ref name, ref body } => Self::Body {
@@ -225,9 +230,18 @@ impl EnumVariant {
         }
     }
 
-    fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)], config: &Config) -> Self {
+    fn specialize(
+        &self,
+        generic_values: &[Type],
+        mappings: &[(&Path, &Type)],
+        config: &Config,
+    ) -> Self {
         Self::new(
-            mangle::mangle_name(&self.name, generic_values, config.export.mangle_separator.as_deref()),
+            mangle::mangle_name(
+                &self.name,
+                generic_values,
+                config.export.mangle_separator.as_deref(),
+            ),
             self.discriminant,
             self.body.specialize(generic_values, mappings, config),
             self.cfg.clone(),
@@ -547,7 +561,8 @@ impl Item for Enum {
         let mangled_path = mangle::mangle_path(
             &self.path,
             generic_values,
-            library.get_config().export.mangle_separator.as_deref());
+            library.get_config().export.mangle_separator.as_deref(),
+        );
 
         let monomorph = Enum::new(
             mangled_path,
@@ -1055,8 +1070,8 @@ impl Source for Enum {
 
             if config.language == Language::Cxx
                 && config
-                .enumeration
-                .private_default_tagged_enum_constructor(&self.annotations)
+                    .enumeration
+                    .private_default_tagged_enum_constructor(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
@@ -1072,8 +1087,8 @@ impl Source for Enum {
 
             if config.language == Language::Cxx
                 && config
-                .enumeration
-                .derive_tagged_enum_destructor(&self.annotations)
+                    .enumeration
+                    .derive_tagged_enum_destructor(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
@@ -1110,8 +1125,8 @@ impl Source for Enum {
 
             if config.language == Language::Cxx
                 && config
-                .enumeration
-                .derive_tagged_enum_copy_constructor(&self.annotations)
+                    .enumeration
+                    .derive_tagged_enum_copy_constructor(&self.annotations)
             {
                 out.new_line();
                 out.new_line();
@@ -1155,8 +1170,8 @@ impl Source for Enum {
 
                 if config.language == Language::Cxx
                     && config
-                    .enumeration
-                    .derive_tagged_enum_copy_assignment(&self.annotations)
+                        .enumeration
+                        .derive_tagged_enum_copy_assignment(&self.annotations)
                 {
                     out.new_line();
                     write_attrs!("copy-assignment");

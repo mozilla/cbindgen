@@ -172,8 +172,17 @@ impl Struct {
         }
     }
 
-    pub fn specialize(&self, generic_values: &[Type], mappings: &[(&Path, &Type)], config: &Config) -> Self {
-        let mangled_path = mangle::mangle_path(&self.path, generic_values, config.export.mangle_separator.as_deref());
+    pub fn specialize(
+        &self,
+        generic_values: &[Type],
+        mappings: &[(&Path, &Type)],
+        config: &Config,
+    ) -> Self {
+        let mangled_path = mangle::mangle_path(
+            &self.path,
+            generic_values,
+            config.export.mangle_separator.as_deref(),
+        );
         Struct::new(
             mangled_path,
             GenericParams::default(),

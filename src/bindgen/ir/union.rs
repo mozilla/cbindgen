@@ -239,7 +239,8 @@ impl Item for Union {
         let mangled_path = mangle::mangle_path(
             &self.path,
             generic_values,
-            library.get_config().export.mangle_separator.as_deref());
+            library.get_config().export.mangle_separator.as_deref(),
+        );
 
         let monomorph = Union::new(
             mangled_path,
