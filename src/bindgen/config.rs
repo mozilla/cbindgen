@@ -299,8 +299,10 @@ pub struct ExportConfig {
     pub item_types: Vec<ItemType>,
     /// Whether renaming overrides or extends prefixing.
     pub renaming_overrides_prefixing: bool,
-    /// Name mangling character. Defaults to `_`
-    pub mangle_separator: Option<String>,
+    /// Remove the underscores used for name mangling
+    pub remove_underscores: bool,
+    /// Whether to capitalise primitives, e.g. if mangle_separator is empty
+    pub pascal_case_primitives: bool,
 }
 
 impl ExportConfig {
