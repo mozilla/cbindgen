@@ -241,7 +241,7 @@ impl EnumVariant {
                 &self.name,
                 generic_values,
                 config.export.mangle_separator.as_deref(),
-                config.export.capitalize_primitives),
+                config.export.capitalize_primitives,
             ),
             self.discriminant,
             self.body.specialize(generic_values, mappings, config),
