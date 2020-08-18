@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::bindgen::ir::{Path, Type};
+use std::borrow::Cow;
+use std::ops::Deref;
 
 pub fn mangle_path(path: &Path, generic_values: &[Type], mangle_separator: Option<&str>, capitalize_primitives: bool) -> Path {
     Path::new(mangle_name(path.name(), generic_values, mangle_separator, capitalize_primitives))
@@ -83,16 +85,16 @@ impl<'a> Mangler<'a> {
                 self.output.push_str(&sub_path);
             }
             Type::Primitive(ref primitive) => {
-                let mut primitive_string = primitive.to_repr_rust().to_owned();
+                let mut primitive_string = Cow::Borrowed(primitive.to_repr_rust());
                 if self.capitalize_primitives {
                     let mut c = primitive_string.chars();
                     let primitive_string_capitalized = match c.next() {
                         None => String::new(),
                         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
                     };
-                    primitive_string = primitive_string_capitalized;
+                    primitive_string = Cow::Owned(primitive_string_capitalized);
                 }
-                self.output.push_str(primitive_string.as_str());
+                self.output.push_str(primitive_string.deref());
             }
             Type::Ptr {
                 ref ty, is_const, ..
