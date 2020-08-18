@@ -139,14 +139,6 @@ impl<'a> Mangler<'a> {
     }
 }
 
-fn concat_separators(separator: &str, number: u8) -> String {
-    let mut result: String = "".to_string();
-    for _ in 0..number {
-        result += separator;
-    }
-    result
-}
-
 #[test]
 fn generics() {
     use crate::bindgen::ir::{GenericPath, PrimitiveType};
