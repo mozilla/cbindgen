@@ -3,17 +3,35 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::bindgen::ir::{Path, Type};
+use crate::bindgen::rename::IdentifierType;
+use crate::bindgen::rename::RenameRule;
 
-pub fn mangle_path(path: &Path, generic_values: &[Type], mangle_separator: Option<&str>) -> Path {
-    Path::new(mangle_name(path.name(), generic_values, mangle_separator))
+pub fn mangle_path(
+    path: &Path,
+    generic_values: &[Type],
+    remove_underscores: bool,
+    rename_types: Option<RenameRule>,
+) -> Path {
+    Path::new(mangle_name(
+        path.name(),
+        generic_values,
+        remove_underscores,
+        rename_types,
+    ))
 }
 
-pub fn mangle_name(name: &str, generic_values: &[Type], mangle_separator: Option<&str>) -> String {
+pub fn mangle_name(
+    name: &str,
+    generic_values: &[Type],
+    remove_underscores: bool,
+    rename_types: Option<RenameRule>,
+) -> String {
     Mangler::new(
         name,
         generic_values,
         /* last = */ true,
-        mangle_separator,
+        remove_underscores,
+        rename_types,
     )
     .mangle()
 }
@@ -31,7 +49,8 @@ struct Mangler<'a> {
     generic_values: &'a [Type],
     output: String,
     last: bool,
-    mangle_separator: &'a str,
+    remove_underscores: bool,
+    rename_types: Option<RenameRule>,
 }
 
 impl<'a> Mangler<'a> {
@@ -39,18 +58,16 @@ impl<'a> Mangler<'a> {
         input: &'a str,
         generic_values: &'a [Type],
         last: bool,
-        mangle_separator: Option<&'a str>,
+        remove_underscores: bool,
+        type_rename_rule: Option<RenameRule>,
     ) -> Self {
-        let separator = match mangle_separator {
-            Some(s) => s,
-            None => "_",
-        };
         Self {
             input,
             generic_values,
             output: String::new(),
             last,
-            mangle_separator: separator,
+            remove_underscores,
+            rename_types: type_rename_rule,
         }
     }
 
@@ -61,8 +78,8 @@ impl<'a> Mangler<'a> {
 
     fn push(&mut self, id: Separator) {
         let count = id as usize;
-        self.output
-            .extend(std::iter::repeat(self.mangle_separator).take(count));
+        let separator = if self.remove_underscores { "" } else { "_" };
+        self.output.extend(std::iter::repeat(separator).take(count));
     }
 
     fn append_mangled_type(&mut self, ty: &Type, last: bool) {
@@ -72,13 +89,27 @@ impl<'a> Mangler<'a> {
                     generic.export_name(),
                     generic.generics(),
                     last,
-                    Some(self.mangle_separator),
+                    self.remove_underscores,
+                    self.rename_types,
                 )
                 .mangle();
-                self.output.push_str(&sub_path);
+
+                self.output.push_str(
+                    &self
+                        .rename_types
+                        .as_ref()
+                        .unwrap_or(&RenameRule::None)
+                        .apply(&sub_path, IdentifierType::Type),
+                );
             }
             Type::Primitive(ref primitive) => {
-                self.output.push_str(primitive.to_repr_rust());
+                self.output.push_str(
+                    &self
+                        .rename_types
+                        .as_ref()
+                        .unwrap_or(&RenameRule::None)
+                        .apply(primitive.to_repr_rust(), IdentifierType::Type),
+                );
             }
             Type::Ptr {
                 ref ty, is_const, ..
@@ -126,9 +157,14 @@ impl<'a> Mangler<'a> {
 #[test]
 fn generics() {
     use crate::bindgen::ir::{GenericPath, PrimitiveType};
+    use crate::bindgen::rename::RenameRule::PascalCase;
 
     fn float() -> Type {
         Type::Primitive(PrimitiveType::Float)
+    }
+
+    fn c_char() -> Type {
+        Type::Primitive(PrimitiveType::Char)
     }
 
     fn path(path: &str) -> Type {
@@ -143,7 +179,7 @@ fn generics() {
 
     // Foo<f32> => Foo_f32
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &vec![float()], None),
+        mangle_path(&Path::new("Foo"), &vec![float()], false, None),
         Path::new("Foo_f32")
     );
 
@@ -152,21 +188,44 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &vec![generic_path("Bar", &[float()])],
-            None
+            false,
+            None,
         ),
         Path::new("Foo_Bar_f32")
     );
 
     // Foo<Bar> => Foo_Bar
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &[path("Bar")], None),
+        mangle_path(&Path::new("Foo"), &[path("Bar")], false, None),
         Path::new("Foo_Bar")
     );
 
     // Foo<Bar> => FooBar
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &[path("Bar")], Some("")),
+        mangle_path(&Path::new("Foo"), &[path("Bar")], true, None),
         Path::new("FooBar")
+    );
+
+    // Foo<Bar<f32>> => FooBarF32
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &vec![generic_path("Bar", &[float()])],
+            true,
+            Some(PascalCase),
+        ),
+        Path::new("FooBarF32")
+    );
+
+    // Foo<Bar<c_char>> => FooBarCChar
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &vec![generic_path("Bar", &[c_char()])],
+            true,
+            Some(PascalCase),
+        ),
+        Path::new("FooBarCChar")
     );
 
     // Foo<Bar<T>> => Foo_Bar_T
@@ -174,7 +233,8 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &[generic_path("Bar", &[path("T")])],
-            None
+            false,
+            None,
         ),
         Path::new("Foo_Bar_T")
     );
@@ -184,6 +244,7 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &[generic_path("Bar", &[path("T")]), path("E")],
+            false,
             None,
         ),
         Path::new("Foo_Bar_T_____E")
@@ -197,8 +258,34 @@ fn generics() {
                 generic_path("Bar", &[path("T")]),
                 generic_path("Bar", &[path("E")]),
             ],
+            false,
             None,
         ),
         Path::new("Foo_Bar_T_____Bar_E")
+    );
+
+    // Foo<Bar<T>, E> => FooBarTE
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &[generic_path("Bar", &[path("T")]), path("E")],
+            true,
+            Some(PascalCase),
+        ),
+        Path::new("FooBarTE")
+    );
+
+    // Foo<Bar<T>, Bar<E>> => FooBarTBarE
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &[
+                generic_path("Bar", &[path("T")]),
+                generic_path("Bar", &[path("E")]),
+            ],
+            true,
+            Some(PascalCase),
+        ),
+        Path::new("FooBarTBarE")
     );
 }
