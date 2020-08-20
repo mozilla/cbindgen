@@ -1,6 +1,6 @@
 [package]
 name = "cbindgen"
-version = "0.14.3"
+version = "0.14.4"
 authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>",
            "Kartikaya Gupta <kats@mozilla.com>",
            "Ryan Hunt <rhunt@eqrion.net>"]

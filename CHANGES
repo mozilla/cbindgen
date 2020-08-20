@@ -1,3 +1,20 @@
+## 0.14.4
+
+     * Allow to override the mangling separator (#502)
+
+     * cbindgen now handles better having ZSTs in template parameters, and
+       default template parameters (#563).
+
+     * Support for annotating nonnull pointers (#558)
+
+     * Fixed bitflags that overflow a signed integer (#556)
+
+     * Support for wildcard argument names (#550)
+
+     * Support for the never return type, with configurable annotation (#549)
+
+     * Properly reject arrays as function arguments (#540)
+
 ## 0.14.3
 
      * Introduce cbindgen:ignore comment annotation, to allow ignoring items or modules. (#519)
