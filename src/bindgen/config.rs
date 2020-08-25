@@ -704,6 +704,51 @@ pub struct PtrConfig {
     pub non_null_attribute: Option<String>,
 }
 
+/// Controls what type of line endings are used in the generated code.
+#[derive(Debug, Clone, Copy, Deserialize)]
+pub enum LineEndingStyle {
+    /// Use Unix-style linefeed characters
+    LF,
+    /// Use Mac-style carrie-return characters
+    CR,
+
+    /// Use Windows-style carriage-return and linefeed characters
+    CRLF,
+
+    /// Use the native mode for the platform
+    Native,
+}
+
+impl Default for LineEndingStyle {
+    fn default() -> Self {
+        LineEndingStyle::LF
+    }
+}
+
+impl LineEndingStyle {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::LF => &"\n",
+            Self::CR => &"\r",
+            Self::CRLF => &"\r\n",
+            Self::Native => {
+                #[cfg(target_os = "windows")]
+                {
+                    Self::CRLF.as_str()
+                }
+                #[cfg(target_os = "macos")]
+                {
+                    Self::CR.as_str()
+                }
+                #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+                {
+                    Self::LF.as_str()
+                }
+            }
+        }
+    }
+}
+
 /// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -745,6 +790,8 @@ pub struct Config {
     pub line_length: usize,
     /// The amount of spaces in a tab
     pub tab_width: usize,
+    /// The type of line endings to generate
+    pub line_endings: Option<LineEndingStyle>,
     /// The language to output bindings for
     pub language: Language,
     /// Include preprocessor defines in C bindings to ensure C++ compatibility
@@ -801,6 +848,7 @@ impl Default for Config {
             braces: Braces::SameLine,
             line_length: 100,
             tab_width: 2,
+            line_endings: None,
             language: Language::Cxx,
             cpp_compat: false,
             style: Style::Type,

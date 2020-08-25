@@ -65,6 +65,7 @@ pub struct SourceWriter<'a, F: Write> {
     line_number: usize,
     max_line_length: usize,
 }
+
 pub type MeasureWriter<'a> = SourceWriter<'a, NullFile>;
 
 impl<'a, F: Write> SourceWriter<'a, F> {
@@ -137,7 +138,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn new_line(&mut self) {
-        writeln!(self.out).unwrap();
+        write!(self.out, "{}", self.bindings.config.line_endings.unwrap_or_default().as_str()).unwrap();
         self.line_started = false;
         self.line_length = 0;
         self.line_number += 1;
