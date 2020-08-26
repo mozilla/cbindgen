@@ -48,6 +48,61 @@ impl FromStr for Language {
 
 deserialize_enum_str!(Language);
 
+/// Controls what type of line endings are used in the generated code.
+#[derive(Debug, Clone, Copy)]
+pub enum LineEndingStyle {
+    /// Use Unix-style linefeed characters
+    LF,
+    /// Use classic Mac-style carriage-return characters
+    CR,
+    /// Use Windows-style carriage-return and linefeed characters
+    CRLF,
+    /// Use the native mode for the platform: CRLF on Windows, LF everywhere else.
+    Native,
+}
+
+impl Default for LineEndingStyle {
+    fn default() -> Self {
+        LineEndingStyle::LF
+    }
+}
+
+impl LineEndingStyle {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::LF => "\n",
+            Self::CR => "\r",
+            Self::CRLF => "\r\n",
+            Self::Native => {
+                #[cfg(target_os = "windows")]
+                {
+                    Self::CRLF.as_str()
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    Self::LF.as_str()
+                }
+            }
+        }
+    }
+}
+
+impl FromStr for LineEndingStyle {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_ref() {
+            "native" => Ok(Self::Native),
+            "lf" => Ok(Self::LF),
+            "crlf" => Ok(Self::CRLF),
+            "cr" => Ok(Self::CR),
+            _ => Err(format!("Unrecognized line ending style: '{}'.", s)),
+        }
+    }
+}
+
+deserialize_enum_str!(LineEndingStyle);
+
 /// A style of braces to use for generating code.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Braces {
@@ -745,6 +800,8 @@ pub struct Config {
     pub line_length: usize,
     /// The amount of spaces in a tab
     pub tab_width: usize,
+    /// The type of line endings to generate
+    pub line_endings: LineEndingStyle,
     /// The language to output bindings for
     pub language: Language,
     /// Include preprocessor defines in C bindings to ensure C++ compatibility
@@ -801,6 +858,7 @@ impl Default for Config {
             braces: Braces::SameLine,
             line_length: 100,
             tab_width: 2,
+            line_endings: LineEndingStyle::default(),
             language: Language::Cxx,
             cpp_compat: false,
             style: Style::Type,
