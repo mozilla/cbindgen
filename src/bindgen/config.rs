@@ -70,9 +70,9 @@ impl Default for LineEndingStyle {
 impl LineEndingStyle {
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::LF => &"\n",
-            Self::CR => &"\r",
-            Self::CRLF => &"\r\n",
+            Self::LF => "\n",
+            Self::CR => "\r",
+            Self::CRLF => "\r\n",
             Self::Native => {
                 #[cfg(target_os = "windows")]
                 {
@@ -801,7 +801,7 @@ pub struct Config {
     /// The amount of spaces in a tab
     pub tab_width: usize,
     /// The type of line endings to generate
-    pub line_endings: Option<LineEndingStyle>,
+    pub line_endings: LineEndingStyle,
     /// The language to output bindings for
     pub language: Language,
     /// Include preprocessor defines in C bindings to ensure C++ compatibility
@@ -858,7 +858,7 @@ impl Default for Config {
             braces: Braces::SameLine,
             line_length: 100,
             tab_width: 2,
-            line_endings: None,
+            line_endings: LineEndingStyle::default(),
             language: Language::Cxx,
             cpp_compat: false,
             style: Style::Type,
