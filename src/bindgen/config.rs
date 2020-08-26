@@ -48,6 +48,61 @@ impl FromStr for Language {
 
 deserialize_enum_str!(Language);
 
+/// Controls what type of line endings are used in the generated code.
+#[derive(Debug, Clone, Copy)]
+pub enum LineEndingStyle {
+    /// Use Unix-style linefeed characters
+    LF,
+    /// Use classic Mac-style carriage-return characters
+    CR,
+    /// Use Windows-style carriage-return and linefeed characters
+    CRLF,
+    /// Use the native mode for the platform: CRLF on Windows, LF everywhere else.
+    Native,
+}
+
+impl Default for LineEndingStyle {
+    fn default() -> Self {
+        LineEndingStyle::LF
+    }
+}
+
+impl LineEndingStyle {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::LF => &"\n",
+            Self::CR => &"\r",
+            Self::CRLF => &"\r\n",
+            Self::Native => {
+                #[cfg(target_os = "windows")]
+                {
+                    Self::CRLF.as_str()
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    Self::LF.as_str()
+                }
+            }
+        }
+    }
+}
+
+impl FromStr for LineEndingStyle {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_ref() {
+            "native" => Ok(Self::Native),
+            "lf" => Ok(Self::LF),
+            "crlf" => Ok(Self::CRLF),
+            "cr" => Ok(Self::CR),
+            _ => Err(format!("Unrecognized line ending style: '{}'.", s)),
+        }
+    }
+}
+
+deserialize_enum_str!(LineEndingStyle);
+
 /// A style of braces to use for generating code.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Braces {
@@ -702,51 +757,6 @@ impl ParseConfig {
 pub struct PtrConfig {
     /// Optional attribute to apply to pointers that are required to not be null
     pub non_null_attribute: Option<String>,
-}
-
-/// Controls what type of line endings are used in the generated code.
-#[derive(Debug, Clone, Copy, Deserialize)]
-pub enum LineEndingStyle {
-    /// Use Unix-style linefeed characters
-    LF,
-    /// Use Mac-style carrie-return characters
-    CR,
-
-    /// Use Windows-style carriage-return and linefeed characters
-    CRLF,
-
-    /// Use the native mode for the platform
-    Native,
-}
-
-impl Default for LineEndingStyle {
-    fn default() -> Self {
-        LineEndingStyle::LF
-    }
-}
-
-impl LineEndingStyle {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::LF => &"\n",
-            Self::CR => &"\r",
-            Self::CRLF => &"\r\n",
-            Self::Native => {
-                #[cfg(target_os = "windows")]
-                {
-                    Self::CRLF.as_str()
-                }
-                #[cfg(target_os = "macos")]
-                {
-                    Self::CR.as_str()
-                }
-                #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-                {
-                    Self::LF.as_str()
-                }
-            }
-        }
-    }
 }
 
 /// A collection of settings to customize the generated bindings.
