@@ -3,21 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::bindgen::ir::{Path, Type};
-use convert_case::{Case, Casing};
-use std::borrow::Cow;
-use std::ops::Deref;
+use crate::bindgen::rename::IdentifierType;
+use crate::bindgen::rename::RenameRule;
+#[cfg(test)]
+use crate::bindgen::rename::RenameRule::PascalCase;
 
 pub fn mangle_path(
     path: &Path,
     generic_values: &[Type],
     remove_underscores: bool,
-    pascal_case_primitives: bool,
+    rename_types: Option<RenameRule>,
 ) -> Path {
     Path::new(mangle_name(
         path.name(),
         generic_values,
         remove_underscores,
-        pascal_case_primitives,
+        rename_types,
     ))
 }
 
@@ -25,14 +26,14 @@ pub fn mangle_name(
     name: &str,
     generic_values: &[Type],
     remove_underscores: bool,
-    pascal_case_primitives: bool,
+    rename_types: Option<RenameRule>,
 ) -> String {
     Mangler::new(
         name,
         generic_values,
         /* last = */ true,
         remove_underscores,
-        pascal_case_primitives,
+        rename_types,
     )
     .mangle()
 }
@@ -51,7 +52,7 @@ struct Mangler<'a> {
     output: String,
     last: bool,
     remove_underscores: bool,
-    pascal_case_primitives: bool,
+    rename_types: Option<RenameRule>,
 }
 
 impl<'a> Mangler<'a> {
@@ -60,7 +61,7 @@ impl<'a> Mangler<'a> {
         generic_values: &'a [Type],
         last: bool,
         remove_underscores: bool,
-        pascal_case_primitives: bool,
+        type_rename_rule: Option<RenameRule>,
     ) -> Self {
         Self {
             input,
@@ -68,7 +69,7 @@ impl<'a> Mangler<'a> {
             output: String::new(),
             last,
             remove_underscores,
-            pascal_case_primitives,
+            rename_types: type_rename_rule,
         }
     }
 
@@ -91,17 +92,26 @@ impl<'a> Mangler<'a> {
                     generic.generics(),
                     last,
                     self.remove_underscores,
-                    self.pascal_case_primitives,
+                    self.rename_types,
                 )
                 .mangle();
-                self.output.push_str(&sub_path);
+
+                self.output.push_str(
+                    &self
+                        .rename_types
+                        .as_ref()
+                        .unwrap_or(&RenameRule::None)
+                        .apply(&sub_path, IdentifierType::Type),
+                );
             }
             Type::Primitive(ref primitive) => {
-                let mut primitive_string = Cow::Borrowed(primitive.to_repr_rust());
-                if self.pascal_case_primitives {
-                    primitive_string = Cow::Owned(primitive_string.to_case(Case::Pascal));
-                }
-                self.output.push_str(primitive_string.deref());
+                self.output.push_str(
+                    &self
+                        .rename_types
+                        .as_ref()
+                        .unwrap_or(&RenameRule::None)
+                        .apply(primitive.to_repr_rust(), IdentifierType::Type),
+                );
             }
             Type::Ptr {
                 ref ty, is_const, ..
@@ -170,7 +180,7 @@ fn generics() {
 
     // Foo<f32> => Foo_f32
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &vec![float()], false, false),
+        mangle_path(&Path::new("Foo"), &vec![float()], false, None::<RenameRule>),
         Path::new("Foo_f32")
     );
 
@@ -180,20 +190,20 @@ fn generics() {
             &Path::new("Foo"),
             &vec![generic_path("Bar", &[float()])],
             false,
-            false,
+            None,
         ),
         Path::new("Foo_Bar_f32")
     );
 
     // Foo<Bar> => Foo_Bar
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &[path("Bar")], false, false),
+        mangle_path(&Path::new("Foo"), &[path("Bar")], false, None),
         Path::new("Foo_Bar")
     );
 
     // Foo<Bar> => FooBar
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &[path("Bar")], true, false),
+        mangle_path(&Path::new("Foo"), &[path("Bar")], true, None),
         Path::new("FooBar")
     );
 
@@ -203,7 +213,7 @@ fn generics() {
             &Path::new("Foo"),
             &vec![generic_path("Bar", &[float()])],
             true,
-            true,
+            Some(PascalCase),
         ),
         Path::new("FooBarF32")
     );
@@ -214,7 +224,7 @@ fn generics() {
             &Path::new("Foo"),
             &vec![generic_path("Bar", &[c_char()])],
             true,
-            true,
+            Some(PascalCase),
         ),
         Path::new("FooBarCChar")
     );
@@ -225,7 +235,7 @@ fn generics() {
             &Path::new("Foo"),
             &[generic_path("Bar", &[path("T")])],
             false,
-            false,
+            None,
         ),
         Path::new("Foo_Bar_T")
     );
@@ -236,7 +246,7 @@ fn generics() {
             &Path::new("Foo"),
             &[generic_path("Bar", &[path("T")]), path("E")],
             false,
-            false,
+            None,
         ),
         Path::new("Foo_Bar_T_____E")
     );
@@ -250,7 +260,7 @@ fn generics() {
                 generic_path("Bar", &[path("E")]),
             ],
             false,
-            false,
+            None,
         ),
         Path::new("Foo_Bar_T_____Bar_E")
     );
@@ -261,7 +271,7 @@ fn generics() {
             &Path::new("Foo"),
             &[generic_path("Bar", &[path("T")]), path("E")],
             true,
-            false,
+            Some(PascalCase),
         ),
         Path::new("FooBarTE")
     );
@@ -275,7 +285,7 @@ fn generics() {
                 generic_path("Bar", &[path("E")]),
             ],
             true,
-            false,
+            Some(PascalCase),
         ),
         Path::new("FooBarTBarE")
     );

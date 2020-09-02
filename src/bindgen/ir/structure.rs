@@ -181,7 +181,7 @@ impl Struct {
             &self.path,
             generic_values,
             config.export.remove_underscores,
-            config.export.pascal_case_primitives,
+            config.export.rename_types,
         );
         Struct::new(
             mangled_path,

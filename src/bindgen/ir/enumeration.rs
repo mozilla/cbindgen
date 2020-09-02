@@ -240,7 +240,7 @@ impl EnumVariant {
                 &self.name,
                 generic_values,
                 config.export.remove_underscores,
-                config.export.pascal_case_primitives,
+                config.export.rename_types,
             ),
             self.discriminant,
             self.body.specialize(generic_values, mappings, config),
@@ -563,7 +563,7 @@ impl Item for Enum {
             &self.path,
             generic_values,
             library.get_config().export.remove_underscores,
-            library.get_config().export.pascal_case_primitives,
+            library.get_config().export.rename_types,
         );
 
         let monomorph = Enum::new(

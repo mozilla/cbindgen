@@ -12,6 +12,7 @@ pub enum IdentifierType<'a> {
     StructMember,
     EnumVariant(&'a Enum),
     FunctionArg,
+    Type,
     Enum,
 }
 
@@ -21,6 +22,7 @@ impl<'a> IdentifierType<'a> {
             IdentifierType::StructMember => "m",
             IdentifierType::EnumVariant(..) => "",
             IdentifierType::FunctionArg => "a",
+            IdentifierType::Type => "t",
             IdentifierType::Enum => "",
         }
     }

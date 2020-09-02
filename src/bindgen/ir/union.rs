@@ -239,7 +239,7 @@ impl Item for Union {
             &self.path,
             generic_values,
             library.get_config().export.remove_underscores,
-            library.get_config().export.pascal_case_primitives,
+            library.get_config().export.rename_types,
         );
 
         let monomorph = Union::new(
