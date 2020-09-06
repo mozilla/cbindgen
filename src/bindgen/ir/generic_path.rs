@@ -1,8 +1,6 @@
 use std::io::Write;
 use std::ops::Deref;
 
-use syn;
-
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use crate::bindgen::ir::{Path, Type};

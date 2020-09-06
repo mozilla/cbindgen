@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use proc_macro2::TokenStream;
-use syn;
 use syn::parse::{Parse, ParseStream, Parser, Result as ParseResult};
 
 // $(#[$outer:meta])*

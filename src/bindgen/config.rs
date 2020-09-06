@@ -10,8 +10,6 @@ use std::{fmt, fs, path::Path as StdPath};
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
 use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
-use toml;
-
 use crate::bindgen::ir::annotation::AnnotationSet;
 use crate::bindgen::ir::path::Path;
 use crate::bindgen::ir::repr::ReprAlign;
@@ -880,11 +878,11 @@ impl Default for Config {
 
 impl Config {
     pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {
-        let config_text = fs::read_to_string(file_name.as_ref()).or_else(|_| {
-            Err(format!(
+        let config_text = fs::read_to_string(file_name.as_ref()).map_err(|_| {
+            format!(
                 "Couldn't open config file: {}.",
                 file_name.as_ref().display()
-            ))
+            )
         })?;
 
         match toml::from_str::<Config>(&config_text) {

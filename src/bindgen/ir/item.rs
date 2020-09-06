@@ -79,14 +79,14 @@ pub struct ItemMap<T: Item> {
 }
 
 impl<T: Item + Clone> ItemMap<T> {
-    pub fn new() -> ItemMap<T> {
+    pub fn default() -> ItemMap<T> {
         ItemMap {
             data: BTreeMap::new(),
         }
     }
 
     pub fn rebuild(&mut self) {
-        let old = mem::replace(self, ItemMap::new());
+        let old = mem::replace(self, ItemMap::default());
         old.for_all_items(|x| {
             self.try_insert(x.clone());
         });

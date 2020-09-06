@@ -29,6 +29,7 @@ pub struct Library {
 }
 
 impl Library {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         config: Config,
         constants: ItemMap<Constant>,
@@ -304,7 +305,7 @@ impl Library {
             return;
         }
 
-        let mut resolver = DeclarationTypeResolver::new();
+        let mut resolver = DeclarationTypeResolver::default();
 
         self.structs.for_all_items(|x| {
             x.collect_declaration_types(&mut resolver);

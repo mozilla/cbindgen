@@ -5,8 +5,6 @@
 use std::collections::HashMap;
 use std::io::Write;
 
-use syn;
-
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;

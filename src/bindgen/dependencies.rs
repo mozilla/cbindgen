@@ -8,6 +8,7 @@ use std::collections::HashSet;
 use crate::bindgen::ir::{ItemContainer, Path};
 
 /// A dependency list is used for gathering what order to output the types.
+#[derive(Default)]
 pub struct Dependencies {
     pub order: Vec<ItemContainer>,
     pub items: HashSet<Path>,

@@ -139,7 +139,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
 
     pub fn new_line(&mut self) {
         self.out
-            .write(self.bindings.config.line_endings.as_str().as_bytes())
+            .write_all(self.bindings.config.line_endings.as_str().as_bytes())
             .unwrap();
         self.line_started = false;
         self.line_length = 0;

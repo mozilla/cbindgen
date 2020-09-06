@@ -8,8 +8,6 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
-use syn;
-
 use crate::bindgen::bitflags;
 use crate::bindgen::cargo::{Cargo, PackageRef};
 use crate::bindgen::config::{Config, ParseConfig};
@@ -98,6 +96,9 @@ struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
+    // TODO: Change the Vec::contains calls to .iter().any() or something
+    // else that allows to use a &str instead of a &String
+    #[allow(clippy::ptr_arg)]
     fn should_parse_dependency(&self, pkg_name: &String) -> bool {
         if self.parsed_crates.contains(pkg_name) {
             return false;
@@ -281,12 +282,7 @@ impl<'a> Parser<'a> {
 
             if let Some((_, ref inline_items)) = item.content {
                 let next_mod_dir = mod_dir.map(|dir| dir.join(&next_mod_name));
-                self.process_mod(
-                    pkg,
-                    next_mod_dir.as_ref().map(|p| &**p),
-                    inline_items,
-                    depth,
-                )?;
+                self.process_mod(pkg, next_mod_dir.as_deref(), inline_items, depth)?;
             } else if let Some(mod_dir) = mod_dir {
                 let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
                 let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
@@ -299,22 +295,21 @@ impl<'a> Parser<'a> {
                     // Last chance to find a module path
                     let mut path_attr_found = false;
                     for attr in &item.attrs {
-                        match attr.parse_meta() {
-                            Ok(syn::Meta::NameValue(syn::MetaNameValue { path, lit, .. })) => {
-                                match lit {
-                                    syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
-                                        path_attr_found = true;
-                                        self.parse_mod(
-                                            pkg,
-                                            &mod_dir.join(path_lit.value()),
-                                            depth + 1,
-                                        )?;
-                                        break;
-                                    }
-                                    _ => (),
+                        if let Ok(syn::Meta::NameValue(syn::MetaNameValue { path, lit, .. })) =
+                            attr.parse_meta()
+                        {
+                            match lit {
+                                syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
+                                    path_attr_found = true;
+                                    self.parse_mod(
+                                        pkg,
+                                        &mod_dir.join(path_lit.value()),
+                                        depth + 1,
+                                    )?;
+                                    break;
                                 }
+                                _ => (),
                             }
-                            _ => (),
                         }
                     }
 
@@ -358,13 +353,13 @@ pub struct Parse {
 impl Parse {
     pub fn new() -> Parse {
         Parse {
-            constants: ItemMap::new(),
-            globals: ItemMap::new(),
-            enums: ItemMap::new(),
-            structs: ItemMap::new(),
-            unions: ItemMap::new(),
-            opaque_items: ItemMap::new(),
-            typedefs: ItemMap::new(),
+            constants: ItemMap::default(),
+            globals: ItemMap::default(),
+            enums: ItemMap::default(),
+            structs: ItemMap::default(),
+            unions: ItemMap::default(),
+            opaque_items: ItemMap::default(),
+            typedefs: ItemMap::default(),
             functions: Vec::new(),
         }
     }
@@ -607,6 +602,7 @@ impl Parse {
         );
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn load_fn_declaration(
         &mut self,
         config: &Config,
