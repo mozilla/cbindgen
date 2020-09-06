@@ -65,7 +65,7 @@ impl Literal {
                 if path.replace_self_with(self_ty) {
                     *export_name = self_ty.name().to_owned();
                 }
-                for (ref _name, ref mut expr) in fields {
+                for ref mut expr in fields.values_mut() {
                     expr.replace_self_with(self_ty);
                 }
             }
@@ -122,7 +122,7 @@ impl Literal {
                 ..
             } => {
                 config.export.rename(export_name);
-                for (_, lit) in fields {
+                for lit in fields.values_mut() {
                     lit.rename_for_config(config);
                 }
             }

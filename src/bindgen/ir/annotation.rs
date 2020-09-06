@@ -5,8 +5,6 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use syn;
-
 use crate::bindgen::utilities::SynAttributeHelpers;
 
 // A system for specifying properties on items. Annotations are
@@ -31,7 +29,7 @@ pub enum AnnotationValue {
 }
 
 /// A set of annotations specified by a document comment.
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct AnnotationSet {
     annotations: HashMap<String, AnnotationValue>,
     pub must_use: bool,

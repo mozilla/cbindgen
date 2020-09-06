@@ -7,8 +7,6 @@ use std::io;
 use std::io::Read;
 use std::path::Path;
 
-use toml;
-
 #[derive(Debug)]
 /// Possible errors that can occur during Cargo.toml parsing.
 pub enum Error {

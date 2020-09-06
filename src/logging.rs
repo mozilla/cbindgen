@@ -5,7 +5,6 @@
 use std::io;
 use std::io::Write;
 
-use log;
 use log::*;
 
 pub struct TraceLogger;
@@ -27,7 +26,7 @@ impl log::Log for TraceLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
+            eprintln!("{}: {}", record.level(), record.args());
         }
     }
 
@@ -50,7 +49,7 @@ impl log::Log for WarnLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
+            eprintln!("{}: {}", record.level(), record.args());
         }
     }
 
@@ -73,7 +72,7 @@ impl log::Log for ErrorLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
+            eprintln!("{}: {}", record.level(), record.args());
         }
     }
 
@@ -96,7 +95,7 @@ impl log::Log for InfoLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            writeln!(io::stderr(), "{}: {}", record.level(), record.args()).unwrap();
+            eprintln!("{}: {}", record.level(), record.args());
         }
     }
 

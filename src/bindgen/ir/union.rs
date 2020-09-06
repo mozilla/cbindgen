@@ -4,8 +4,6 @@
 
 use std::io::Write;
 
-use syn;
-
 use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -73,6 +71,7 @@ impl Union {
         ))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         path: Path,
         generic_params: GenericParams,

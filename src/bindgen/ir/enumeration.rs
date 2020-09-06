@@ -4,8 +4,6 @@
 
 use std::io::Write;
 
-use syn;
-
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -21,6 +19,7 @@ use crate::bindgen::reserved;
 use crate::bindgen::utilities::find_first_some;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum VariantBody {
     Empty(AnnotationSet),
@@ -391,6 +390,7 @@ impl Enum {
         ))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         path: Path,
         generic_params: GenericParams,
@@ -765,7 +765,7 @@ impl Source for Enum {
                 out.open_brace();
             }
 
-            if config.language == Language::C && !size.is_some() && !config.style.generate_typedef()
+            if config.language == Language::C && size.is_none() && !config.style.generate_typedef()
             {
                 out.write("enum ");
             }
@@ -943,7 +943,7 @@ impl Source for Enum {
                             write_attrs!("mut-cast");
                         }
                         if dig {
-                            let field = body.fields.iter().skip(skip_fields).next().unwrap();
+                            let field = body.fields.get(skip_fields).unwrap();
                             let return_type = field.1.clone();
                             let return_type = Type::Ptr {
                                 ty: Box::new(return_type),

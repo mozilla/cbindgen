@@ -4,8 +4,6 @@
 
 #![allow(clippy::redundant_closure_call)]
 
-use syn;
-
 pub trait IterHelpers: Iterator {
     fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
     where
@@ -21,7 +19,7 @@ where
         F: FnMut(&Self::Item) -> Result<Option<T>, E>,
     {
         let mut out = Vec::new();
-        while let Some(item) = self.next() {
+        for item in self {
             if let Some(x) = f(&item)? {
                 out.push(x);
             }
@@ -86,9 +84,7 @@ fn is_skip_item_attr(attr: &syn::Meta) -> bool {
                 return false;
             }
             list.nested.iter().any(|nested| match *nested {
-                syn::NestedMeta::Meta(ref meta) => {
-                    return is_skip_item_attr(meta);
-                }
+                syn::NestedMeta::Meta(ref meta) => is_skip_item_attr(meta),
                 syn::NestedMeta::Lit(..) => false,
             })
         }
@@ -260,7 +256,7 @@ impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
         if let Some(ref abi) = *self {
             if let Some(ref lit_string) = abi.name {
-                return lit_string.value() == String::from("C");
+                return lit_string.value() == "C";
             }
         }
         false
@@ -277,7 +273,7 @@ impl SynAbiHelpers for Option<syn::Abi> {
 impl SynAbiHelpers for syn::Abi {
     fn is_c(&self) -> bool {
         if let Some(ref lit_string) = self.name {
-            lit_string.value() == String::from("C")
+            lit_string.value() == "C"
         } else {
             false
         }

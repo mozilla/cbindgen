@@ -4,8 +4,6 @@
 
 use std::io::Write;
 
-use syn;
-
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Layout};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;

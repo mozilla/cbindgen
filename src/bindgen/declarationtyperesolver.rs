@@ -6,6 +6,7 @@ use std::collections::HashSet;
 
 use crate::bindgen::ir::Path;
 
+#[derive(Default)]
 pub struct DeclarationTypeResolver {
     structs: HashSet<Path>,
     enums: HashSet<Path>,
@@ -30,14 +31,6 @@ impl DeclarationType {
 }
 
 impl DeclarationTypeResolver {
-    pub fn new() -> DeclarationTypeResolver {
-        DeclarationTypeResolver {
-            structs: HashSet::new(),
-            enums: HashSet::new(),
-            unions: HashSet::new(),
-        }
-    }
-
     pub fn add_enum(&mut self, path: &Path) {
         self.enums.insert(path.clone());
     }

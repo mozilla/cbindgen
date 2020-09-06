@@ -20,8 +20,6 @@ use std::path::Path;
 use std::process::{Command, Output};
 use std::str::Utf8Error;
 
-use serde_json;
-
 #[derive(Clone, Deserialize, Debug)]
 /// Starting point for metadata returned by `cargo metadata`
 pub struct Metadata {

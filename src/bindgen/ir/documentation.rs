@@ -4,8 +4,6 @@
 
 use std::io::Write;
 
-use syn;
-
 use crate::bindgen::config::{Config, DocumentationStyle, Language};
 use crate::bindgen::utilities::SynAttributeHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};

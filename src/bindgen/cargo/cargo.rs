@@ -145,7 +145,7 @@ impl Cargo {
                         if package.name_and_version.name != dep_name {
                             return None;
                         }
-                        package.name_and_version.version.as_ref().map(|v| v.as_str())
+                        package.name_and_version.version.as_deref()
                     });
 
                     // If the iterator contains more items, meaning multiple versions of the same
@@ -237,7 +237,7 @@ impl Cargo {
         cargo_expand::expand(
             &self.manifest_path,
             &package.name,
-            package.version.as_ref().map(|v| &**v),
+            package.version.as_deref(),
             self.clean,
             expand_all_features,
             expand_default_features,

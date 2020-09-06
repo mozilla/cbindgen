@@ -5,8 +5,6 @@
 use std::fmt;
 use std::io::Write;
 
-use syn;
-
 use crate::bindgen::cdecl;
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;

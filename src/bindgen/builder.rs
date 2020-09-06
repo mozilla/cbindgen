@@ -23,6 +23,7 @@ pub struct Builder {
 }
 
 impl Builder {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Builder {
         Builder {
             config: Config::default(),

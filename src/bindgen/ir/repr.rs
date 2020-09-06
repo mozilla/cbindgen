@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use syn;
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ReprStyle {
     Rust,
@@ -109,9 +107,9 @@ impl Repr {
                     // #[repr(packed(n))] not supported because of some open questions about how
                     // to calculate the native alignment of types. See eqrion/cbindgen#433.
                     if args.is_some() {
-                        return Err(format!(
-                            "Not-yet-implemented #[repr(packed(...))] encountered."
-                        ));
+                        return Err(
+                            "Not-yet-implemented #[repr(packed(...))] encountered.".to_string()
+                        );
                     }
                     let align = ReprAlign::Packed;
                     // Only permit a single alignment-setting repr.
