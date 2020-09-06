@@ -1,7 +1,7 @@
-# `cbindgen` &emsp; [![Build Status]][travis] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.32%2B-blue.svg?maxAge=3600)](https://github.com/eqrion/cbindgen)
+# `cbindgen` &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.32%2B-blue.svg?maxAge=3600)](https://github.com/eqrion/cbindgen)
 
-[Build Status]: https://api.travis-ci.org/eqrion/cbindgen.svg?branch=master
-[travis]: https://travis-ci.org/eqrion/cbindgen
+[Build Status]: https://github.com/eqrion/cbindgen/workflows/cbindgen/badge.svg
+[actions]: https://github.com/eqrion/cbindgen/actions
 [Latest Version]: https://img.shields.io/crates/v/cbindgen.svg
 [crates.io]: https://crates.io/crates/cbindgen
 [Api Rustdoc]: https://img.shields.io/badge/api-rustdoc-blue.svg
