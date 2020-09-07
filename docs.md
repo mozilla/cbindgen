@@ -339,6 +339,19 @@ All function attributes are just local overrides for the same options found in t
 * rename-all=RenameRule
 * prefix
 * postfix
+* ptrs-as-arrays=\[[ptr\_name1; array\_length1], [ptr\_name2; array\_length2], ...\] -- represents the pointer arguments of a function as arrays. Below how the mappings are performed:
+
+```
+arg: *const T --> const T arg[array_length]
+arg: *mut T ---> T arg[array_length]
+```
+
+If `array_length` is not specified:
+
+```
+arg: *const T --> const T arg[]
+arg: *mut T --> T arg[]
+```
 
 ## Generating Swift Bindings
 
