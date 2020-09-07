@@ -5,7 +5,7 @@
 use std::io::Write;
 
 use crate::bindgen::declarationtyperesolver::DeclarationType;
-use crate::bindgen::ir::{Function, Type};
+use crate::bindgen::ir::{ArrayLength, Function, Type};
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
 
@@ -56,6 +56,25 @@ impl CDecl {
         cdecl.build_type(t, false);
         cdecl
     }
+
+    fn from_func_arg(t: &Type, array_length: Option<&str>) -> CDecl {
+        let mut cdecl = CDecl::new();
+        let length = match array_length {
+            Some(l) => l,
+            None => return CDecl::from_type(t),
+        };
+        let (ty, is_const) = match t {
+            Type::Ptr { ty, is_const, .. } => (ty, is_const),
+            _ => unreachable!(
+                "Should never have an array length for a non pointer type {:?}",
+                t
+            ),
+        };
+        let ptr_as_array = Type::Array(ty.clone(), ArrayLength::Value(length.to_string()));
+        cdecl.build_type(&ptr_as_array, *is_const);
+        cdecl
+    }
+
     fn from_func(f: &Function, layout_vertical: bool) -> CDecl {
         let mut cdecl = CDecl::new();
         cdecl.build_func(f, layout_vertical);
@@ -66,7 +85,12 @@ impl CDecl {
         let args = f
             .args
             .iter()
-            .map(|arg| (arg.name.clone(), CDecl::from_type(&arg.ty)))
+            .map(|arg| {
+                (
+                    arg.name.clone(),
+                    CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref()),
+                )
+            })
             .collect();
         self.declarators
             .push(CDeclarator::Func(args, layout_vertical));

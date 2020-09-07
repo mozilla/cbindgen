@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashMap;
 use std::io::Write;
 
 use crate::bindgen::cdecl;
@@ -23,6 +24,7 @@ use crate::bindgen::writer::{Source, SourceWriter};
 pub struct FunctionArgument {
     pub name: Option<String>,
     pub ty: Type,
+    pub array_length: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -170,7 +172,11 @@ impl Function {
                 .into_iter()
                 .map(|arg| {
                     let name = arg.name.map(|n| r.apply(&n, IdentifierType::FunctionArg));
-                    FunctionArgument { name, ty: arg.ty }
+                    FunctionArgument {
+                        name,
+                        ty: arg.ty,
+                        array_length: None,
+                    }
                 })
                 .collect()
         }
@@ -181,6 +187,37 @@ impl Function {
             arg.ty.rename_for_config(config, &generic_params);
             if let Some(ref mut name) = arg.name {
                 reserved::escape(name);
+            }
+        }
+
+        // Save the array length of the pointer arguments which need to use
+        // the C-array notation
+        if let Some(tuples) = self.annotations.list("ptrs-as-arrays") {
+            let mut ptrs_as_arrays: HashMap<String, String> = HashMap::new();
+            for str_tuple in tuples {
+                let parts: Vec<&str> = str_tuple[1..str_tuple.len() - 1]
+                    .split(';')
+                    .map(|x| x.trim())
+                    .collect();
+                if parts.len() != 2 {
+                    warn!(
+                        "{:?} does not follow the correct syntax, so the annotation is being ignored",
+                        parts
+                    );
+                    continue;
+                }
+                ptrs_as_arrays.insert(parts[0].to_string(), parts[1].to_string());
+            }
+
+            for arg in &mut self.args {
+                if !matches!(arg.ty, Type::Ptr { .. }) {
+                    continue;
+                }
+                let name = match arg.name {
+                    Some(ref name) => name,
+                    None => continue,
+                };
+                arg.array_length = ptrs_as_arrays.get(name).cloned();
             }
         }
     }
@@ -337,11 +374,16 @@ impl SynFnArgHelpers for syn::FnArg {
                 if let Type::Array(..) = ty {
                     return Err("Array as function arguments are not supported".to_owned());
                 }
-                Ok(Some(FunctionArgument { name, ty }))
+                Ok(Some(FunctionArgument {
+                    name,
+                    ty,
+                    array_length: None,
+                }))
             }
             syn::FnArg::Receiver(ref receiver) => Ok(Some(FunctionArgument {
                 name: Some("self".to_string()),
                 ty: gen_self_type(receiver),
+                array_length: None,
             })),
         }
     }
