@@ -1,3 +1,9 @@
+## 0.14.5
+
+     * Add support to specify line ending style (#568)
+     * Add cbindgen:ptrs-as-arrays annotation to allow making function
+       arguments C/C++ arrays.
+
 ## 0.14.4
 
      * Allow to override the mangling separator (#502)
