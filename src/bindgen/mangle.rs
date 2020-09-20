@@ -5,8 +5,6 @@
 use crate::bindgen::ir::{Path, Type};
 use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::rename::RenameRule;
-#[cfg(test)]
-use crate::bindgen::rename::RenameRule::PascalCase;
 
 pub fn mangle_path(
     path: &Path,
@@ -159,6 +157,7 @@ impl<'a> Mangler<'a> {
 #[test]
 fn generics() {
     use crate::bindgen::ir::{GenericPath, PrimitiveType};
+    use crate::bindgen::rename::RenameRule::PascalCase;
 
     fn float() -> Type {
         Type::Primitive(PrimitiveType::Float)
@@ -180,7 +179,7 @@ fn generics() {
 
     // Foo<f32> => Foo_f32
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &vec![float()], false, None::<RenameRule>),
+        mangle_path(&Path::new("Foo"), &vec![float()], false, None),
         Path::new("Foo_f32")
     );
 

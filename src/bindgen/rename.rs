@@ -22,7 +22,7 @@ impl<'a> IdentifierType<'a> {
             IdentifierType::StructMember => "m",
             IdentifierType::EnumVariant(..) => "",
             IdentifierType::FunctionArg => "a",
-            IdentifierType::Type => "t",
+            IdentifierType::Type => "",
             IdentifierType::Enum => "",
         }
     }
