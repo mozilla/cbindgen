@@ -1,3 +1,7 @@
+## 0.14.6
+
+     * Fixed the builds with older versions of rustc.
+
 ## 0.14.5
 
      * Add support to specify line ending style (#568)

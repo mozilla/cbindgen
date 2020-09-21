@@ -210,8 +210,9 @@ impl Function {
             }
 
             for arg in &mut self.args {
-                if !matches!(arg.ty, Type::Ptr { .. }) {
-                    continue;
+                match arg.ty {
+                    Type::Ptr { .. } => {},
+                    _ => continue,
                 }
                 let name = match arg.name {
                     Some(ref name) => name,
