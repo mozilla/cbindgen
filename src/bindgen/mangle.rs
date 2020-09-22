@@ -2,38 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use crate::bindgen::config::MangleConfig;
 use crate::bindgen::ir::{Path, Type};
 use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::rename::RenameRule;
 
-pub fn mangle_path(
-    path: &Path,
-    generic_values: &[Type],
-    remove_underscores: bool,
-    rename_types: Option<RenameRule>,
-) -> Path {
-    Path::new(mangle_name(
-        path.name(),
-        generic_values,
-        remove_underscores,
-        rename_types,
-    ))
+pub fn mangle_path(path: &Path, generic_values: &[Type], config: &MangleConfig) -> Path {
+    Path::new(mangle_name(path.name(), generic_values, config))
 }
 
-pub fn mangle_name(
-    name: &str,
-    generic_values: &[Type],
-    remove_underscores: bool,
-    rename_types: Option<RenameRule>,
-) -> String {
-    Mangler::new(
-        name,
-        generic_values,
-        /* last = */ true,
-        remove_underscores,
-        rename_types,
-    )
-    .mangle()
+pub fn mangle_name(name: &str, generic_values: &[Type], config: &MangleConfig) -> String {
+    Mangler::new(name, generic_values, /* last = */ true, config).mangle()
 }
 
 enum Separator {
@@ -49,8 +28,7 @@ struct Mangler<'a> {
     generic_values: &'a [Type],
     output: String,
     last: bool,
-    remove_underscores: bool,
-    rename_types: Option<RenameRule>,
+    config: &'a MangleConfig,
 }
 
 impl<'a> Mangler<'a> {
@@ -58,16 +36,14 @@ impl<'a> Mangler<'a> {
         input: &'a str,
         generic_values: &'a [Type],
         last: bool,
-        remove_underscores: bool,
-        type_rename_rule: Option<RenameRule>,
+        config: &'a MangleConfig,
     ) -> Self {
         Self {
             input,
             generic_values,
             output: String::new(),
             last,
-            remove_underscores,
-            rename_types: type_rename_rule,
+            config,
         }
     }
 
@@ -78,36 +54,35 @@ impl<'a> Mangler<'a> {
 
     fn push(&mut self, id: Separator) {
         let count = id as usize;
-        let separator = if self.remove_underscores { "" } else { "_" };
+        let separator = if self.config.remove_underscores {
+            ""
+        } else {
+            "_"
+        };
         self.output.extend(std::iter::repeat(separator).take(count));
     }
 
     fn append_mangled_type(&mut self, ty: &Type, last: bool) {
         match *ty {
             Type::Path(ref generic) => {
-                let sub_path = Mangler::new(
-                    generic.export_name(),
-                    generic.generics(),
-                    last,
-                    self.remove_underscores,
-                    self.rename_types,
-                )
-                .mangle();
+                let sub_path =
+                    Mangler::new(generic.export_name(), generic.generics(), last, self.config)
+                        .mangle();
 
                 self.output.push_str(
                     &self
+                        .config
                         .rename_types
-                        .as_ref()
-                        .unwrap_or(&RenameRule::None)
+                        .unwrap_or(RenameRule::None)
                         .apply(&sub_path, IdentifierType::Type),
                 );
             }
             Type::Primitive(ref primitive) => {
                 self.output.push_str(
                     &self
+                        .config
                         .rename_types
-                        .as_ref()
-                        .unwrap_or(&RenameRule::None)
+                        .unwrap_or(RenameRule::None)
                         .apply(primitive.to_repr_rust(), IdentifierType::Type),
                 );
             }
@@ -179,7 +154,7 @@ fn generics() {
 
     // Foo<f32> => Foo_f32
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &vec![float()], false, None),
+        mangle_path(&Path::new("Foo"), &vec![float()], &MangleConfig::default()),
         Path::new("Foo_f32")
     );
 
@@ -188,21 +163,27 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &vec![generic_path("Bar", &[float()])],
-            false,
-            None,
+            &MangleConfig::default(),
         ),
         Path::new("Foo_Bar_f32")
     );
 
     // Foo<Bar> => Foo_Bar
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &[path("Bar")], false, None),
+        mangle_path(&Path::new("Foo"), &[path("Bar")], &MangleConfig::default()),
         Path::new("Foo_Bar")
     );
 
     // Foo<Bar> => FooBar
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &[path("Bar")], true, None),
+        mangle_path(
+            &Path::new("Foo"),
+            &[path("Bar")],
+            &MangleConfig {
+                remove_underscores: true,
+                rename_types: None,
+            }
+        ),
         Path::new("FooBar")
     );
 
@@ -211,8 +192,10 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &vec![generic_path("Bar", &[float()])],
-            true,
-            Some(PascalCase),
+            &MangleConfig {
+                remove_underscores: true,
+                rename_types: Some(PascalCase),
+            },
         ),
         Path::new("FooBarF32")
     );
@@ -222,8 +205,10 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &vec![generic_path("Bar", &[c_char()])],
-            true,
-            Some(PascalCase),
+            &MangleConfig {
+                remove_underscores: true,
+                rename_types: Some(PascalCase),
+            },
         ),
         Path::new("FooBarCChar")
     );
@@ -233,8 +218,7 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &[generic_path("Bar", &[path("T")])],
-            false,
-            None,
+            &MangleConfig::default(),
         ),
         Path::new("Foo_Bar_T")
     );
@@ -244,8 +228,7 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &[generic_path("Bar", &[path("T")]), path("E")],
-            false,
-            None,
+            &MangleConfig::default(),
         ),
         Path::new("Foo_Bar_T_____E")
     );
@@ -258,8 +241,7 @@ fn generics() {
                 generic_path("Bar", &[path("T")]),
                 generic_path("Bar", &[path("E")]),
             ],
-            false,
-            None,
+            &MangleConfig::default(),
         ),
         Path::new("Foo_Bar_T_____Bar_E")
     );
@@ -269,8 +251,10 @@ fn generics() {
         mangle_path(
             &Path::new("Foo"),
             &[generic_path("Bar", &[path("T")]), path("E")],
-            true,
-            Some(PascalCase),
+            &MangleConfig {
+                remove_underscores: true,
+                rename_types: Some(PascalCase),
+            },
         ),
         Path::new("FooBarTE")
     );
@@ -283,8 +267,10 @@ fn generics() {
                 generic_path("Bar", &[path("T")]),
                 generic_path("Bar", &[path("E")]),
             ],
-            true,
-            Some(PascalCase),
+            &MangleConfig {
+                remove_underscores: true,
+                rename_types: Some(PascalCase),
+            },
         ),
         Path::new("FooBarTBarE")
     );

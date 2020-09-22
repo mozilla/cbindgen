@@ -236,12 +236,7 @@ impl EnumVariant {
         config: &Config,
     ) -> Self {
         Self::new(
-            mangle::mangle_name(
-                &self.name,
-                generic_values,
-                config.export.remove_underscores,
-                config.export.rename_types,
-            ),
+            mangle::mangle_name(&self.name, generic_values, &config.export.mangle),
             self.discriminant,
             self.body.specialize(generic_values, mappings, config),
             self.cfg.clone(),
@@ -562,8 +557,7 @@ impl Item for Enum {
         let mangled_path = mangle::mangle_path(
             &self.path,
             generic_values,
-            library.get_config().export.remove_underscores,
-            library.get_config().export.rename_types,
+            &library.get_config().export.mangle,
         );
 
         let monomorph = Enum::new(

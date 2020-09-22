@@ -591,6 +591,14 @@ private:
   void cppMethod() const;
 """
 
+# Configuration for name mangling
+[export.mangle]
+# Whether the types should be renamed during mangling, for example
+# c_char -> CChar, etc.
+rename_types = "PascalCase"
+# Whether the underscores from the mangled name should be omitted.
+remove_underscores = false
+
 [layout]
 # A string that should come before the name of any type which has been marked
 # as `#[repr(packed)]`. For instance, "__attribute__((packed))" would be a
