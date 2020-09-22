@@ -28,15 +28,6 @@ where
     }
 }
 
-pub fn find_first_some<T>(slice: &[Option<T>]) -> Option<&T> {
-    for x in slice {
-        if let Some(ref x) = *x {
-            return Some(x);
-        }
-    }
-    None
-}
-
 pub trait SynItemFnHelpers: SynAttributeHelpers {
     fn exported_name(&self) -> Option<String>;
 }

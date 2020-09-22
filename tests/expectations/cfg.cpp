@@ -104,9 +104,9 @@ union C {
 #endif
 
 #if defined(PLATFORM_UNIX)
-  static C C5(const int32_t &aInt) {
+  static C C5(const int32_t &int_) {
     C result;
-    ::new (&result.c5.int_) (int32_t)(aInt);
+    ::new (&result.c5.int_) (int32_t)(int_);
     result.tag = Tag::C5;
     return result;
   }

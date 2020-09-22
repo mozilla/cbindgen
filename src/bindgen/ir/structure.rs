@@ -16,7 +16,7 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::utilities::{find_first_some, IterHelpers};
+use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -303,18 +303,18 @@ impl Item for Struct {
         {
             let mut names = self.fields.iter_mut().map(|field| &mut field.0);
 
-            let field_rules = [
-                self.annotations.parse_atom::<RenameRule>("rename-all"),
-                config.structure.rename_fields,
-            ];
+            let field_rules = self
+                .annotations
+                .parse_atom::<RenameRule>("rename-all")
+                .unwrap_or(config.structure.rename_fields);
 
             if let Some(o) = self.annotations.list("field-names") {
                 for (dest, src) in names.zip(o) {
                     *dest = src;
                 }
-            } else if let Some(r) = find_first_some(&field_rules) {
+            } else if let Some(r) = field_rules.not_none() {
                 for name in names {
-                    *name = r.apply(name, IdentifierType::StructMember);
+                    *name = r.apply(name, IdentifierType::StructMember).into_owned();
                 }
             } else if self.tuple_struct {
                 // If there is a tag field, skip it
@@ -491,9 +491,8 @@ impl Source for Struct {
                     config
                         .function
                         .rename_args
-                        .as_ref()
-                        .unwrap_or(&RenameRule::GeckoCase)
                         .apply(name, IdentifierType::FunctionArg)
+                        .into_owned()
                 };
                 write!(out, "{}(", self.export_name());
                 let vec: Vec<_> = self
@@ -519,11 +518,10 @@ impl Source for Struct {
                 out.new_line();
             }
 
-            let other = if let Some(r) = config.function.rename_args {
-                r.apply("other", IdentifierType::FunctionArg)
-            } else {
-                String::from("other")
-            };
+            let other = config
+                .function
+                .rename_args
+                .apply("other", IdentifierType::FunctionArg);
 
             if self
                 .annotations

@@ -310,7 +310,7 @@ pub struct ExportConfig {
 #[serde(default)]
 pub struct MangleConfig {
     /// The rename rule to apply to the type names mangled.
-    pub rename_types: Option<RenameRule>,
+    pub rename_types: RenameRule,
     /// Remove the underscores used for name mangling.
     pub remove_underscores: bool,
 }
@@ -379,7 +379,7 @@ pub struct FunctionConfig {
     /// The style to layout the args
     pub args: Layout,
     /// The rename rule to apply to function args
-    pub rename_args: Option<RenameRule>,
+    pub rename_args: RenameRule,
     /// An optional macro to use when generating Swift function name attributes
     pub swift_name_macro: Option<String>,
     /// Sort key for function names
@@ -395,7 +395,7 @@ impl Default for FunctionConfig {
             postfix: None,
             must_use: None,
             args: Layout::Auto,
-            rename_args: None,
+            rename_args: RenameRule::None,
             swift_name_macro: None,
             sort_by: SortKey::Name,
             no_return: None,
@@ -426,7 +426,7 @@ impl FunctionConfig {
 #[serde(default)]
 pub struct StructConfig {
     /// The rename rule to apply to the name of struct fields
-    pub rename_fields: Option<RenameRule>,
+    pub rename_fields: RenameRule,
     /// Whether to generate a constructor for the struct (which takes
     /// arguments to initialize all the members)
     pub derive_constructor: bool,
@@ -501,7 +501,7 @@ impl StructConfig {
 #[serde(default)]
 pub struct EnumConfig {
     /// The rename rule to apply to the name of enum variants
-    pub rename_variants: Option<RenameRule>,
+    pub rename_variants: RenameRule,
     /// Whether to add a `Sentinel` value at the end of every enum
     /// This is useful in Gecko for IPC serialization
     pub add_sentinel: bool,
@@ -540,7 +540,7 @@ pub struct EnumConfig {
 impl Default for EnumConfig {
     fn default() -> EnumConfig {
         EnumConfig {
-            rename_variants: None,
+            rename_variants: RenameRule::None,
             add_sentinel: false,
             prefix_with_name: false,
             derive_helper_methods: false,

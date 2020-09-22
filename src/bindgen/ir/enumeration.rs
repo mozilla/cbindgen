@@ -16,7 +16,6 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::utilities::find_first_some;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[allow(clippy::large_enum_variant)]
@@ -149,7 +148,8 @@ impl EnumVariant {
             syn::Fields::Named(ref fields) => {
                 let path = Path::new(format!("{}_Body", variant.ident));
                 let name = RenameRule::SnakeCase
-                    .apply(&variant.ident.to_string(), IdentifierType::StructMember);
+                    .apply(&variant.ident.to_string(), IdentifierType::StructMember)
+                    .into_owned();
                 VariantBody::Body {
                     name,
                     body: Struct::new(
@@ -170,7 +170,8 @@ impl EnumVariant {
             syn::Fields::Unnamed(ref fields) => {
                 let path = Path::new(format!("{}_Body", variant.ident));
                 let name = RenameRule::SnakeCase
-                    .apply(&variant.ident.to_string(), IdentifierType::StructMember);
+                    .apply(&variant.ident.to_string(), IdentifierType::StructMember)
+                    .into_owned();
                 VariantBody::Body {
                     name,
                     body: Struct::new(
@@ -495,23 +496,24 @@ impl Item for Enum {
             }
         }
 
-        let rules = [
-            self.annotations.parse_atom::<RenameRule>("rename-all"),
-            config.enumeration.rename_variants,
-        ];
+        let rules = self
+            .annotations
+            .parse_atom::<RenameRule>("rename-all")
+            .unwrap_or(config.enumeration.rename_variants);
 
-        if let Some(r) = find_first_some(&rules) {
+        if let Some(r) = rules.not_none() {
             self.variants = self
                 .variants
                 .iter()
                 .map(|variant| {
                     EnumVariant::new(
-                        r.apply(&variant.export_name, IdentifierType::EnumVariant(self)),
+                        r.apply(&variant.export_name, IdentifierType::EnumVariant(self))
+                            .into_owned(),
                         variant.discriminant,
                         match variant.body {
                             VariantBody::Empty(..) => variant.body.clone(),
                             VariantBody::Body { ref name, ref body } => VariantBody::Body {
-                                name: r.apply(&name, IdentifierType::StructMember),
+                                name: r.apply(&name, IdentifierType::StructMember).into_owned(),
                                 body: body.clone(),
                             },
                         },
@@ -824,9 +826,8 @@ impl Source for Enum {
                         config
                             .function
                             .rename_args
-                            .as_ref()
-                            .unwrap_or(&RenameRule::GeckoCase)
                             .apply(name, IdentifierType::FunctionArg)
+                            .into_owned()
                     };
 
                     macro_rules! write_attrs {
@@ -981,11 +982,10 @@ impl Source for Enum {
                 }
             }
 
-            let other = if let Some(r) = config.function.rename_args {
-                r.apply("other", IdentifierType::FunctionArg)
-            } else {
-                String::from("other")
-            };
+            let other = config
+                .function
+                .rename_args
+                .apply("other", IdentifierType::FunctionArg);
 
             macro_rules! write_attrs {
                 ($op:expr) => {{

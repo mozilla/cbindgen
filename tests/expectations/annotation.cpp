@@ -11,8 +11,8 @@ enum class C : uint32_t {
 struct A {
   int32_t m0;
 
-  A(int32_t const& aM0)
-    : m0(aM0)
+  A(int32_t const& m0)
+    : m0(m0)
   {}
 
   bool operator<(const A& other) const {
@@ -52,9 +52,9 @@ union F {
   Foo_Body foo;
   Bar_Body bar;
 
-  static F Foo(const int16_t &a0) {
+  static F Foo(const int16_t &_0) {
     F result;
-    ::new (&result.foo._0) (int16_t)(a0);
+    ::new (&result.foo._0) (int16_t)(_0);
     result.tag = Tag::Foo;
     return result;
   }
@@ -63,11 +63,11 @@ union F {
     return tag == Tag::Foo;
   }
 
-  static F Bar(const uint8_t &aX,
-               const int16_t &aY) {
+  static F Bar(const uint8_t &x,
+               const int16_t &y) {
     F result;
-    ::new (&result.bar.x) (uint8_t)(aX);
-    ::new (&result.bar.y) (int16_t)(aY);
+    ::new (&result.bar.x) (uint8_t)(x);
+    ::new (&result.bar.y) (int16_t)(y);
     result.tag = Tag::Bar;
     return result;
   }
@@ -109,9 +109,9 @@ struct H {
     There_Body there;
   };
 
-  static H Hello(const int16_t &a0) {
+  static H Hello(const int16_t &_0) {
     H result;
-    ::new (&result.hello._0) (int16_t)(a0);
+    ::new (&result.hello._0) (int16_t)(_0);
     result.tag = Tag::Hello;
     return result;
   }
@@ -120,11 +120,11 @@ struct H {
     return tag == Tag::Hello;
   }
 
-  static H There(const uint8_t &aX,
-                 const int16_t &aY) {
+  static H There(const uint8_t &x,
+                 const int16_t &y) {
     H result;
-    ::new (&result.there.x) (uint8_t)(aX);
-    ::new (&result.there.y) (int16_t)(aY);
+    ::new (&result.there.x) (uint8_t)(x);
+    ::new (&result.there.y) (int16_t)(y);
     result.tag = Tag::There;
     return result;
   }

@@ -5,7 +5,6 @@
 use crate::bindgen::config::MangleConfig;
 use crate::bindgen::ir::{Path, Type};
 use crate::bindgen::rename::IdentifierType;
-use crate::bindgen::rename::RenameRule;
 
 pub fn mangle_path(path: &Path, generic_values: &[Type], config: &MangleConfig) -> Path {
     Path::new(mangle_name(path.name(), generic_values, config))
@@ -73,7 +72,6 @@ impl<'a> Mangler<'a> {
                     &self
                         .config
                         .rename_types
-                        .unwrap_or(RenameRule::None)
                         .apply(&sub_path, IdentifierType::Type),
                 );
             }
@@ -82,7 +80,6 @@ impl<'a> Mangler<'a> {
                     &self
                         .config
                         .rename_types
-                        .unwrap_or(RenameRule::None)
                         .apply(primitive.to_repr_rust(), IdentifierType::Type),
                 );
             }
@@ -132,7 +129,7 @@ impl<'a> Mangler<'a> {
 #[test]
 fn generics() {
     use crate::bindgen::ir::{GenericPath, PrimitiveType};
-    use crate::bindgen::rename::RenameRule::PascalCase;
+    use crate::bindgen::rename::RenameRule::{self, PascalCase};
 
     fn float() -> Type {
         Type::Primitive(PrimitiveType::Float)
@@ -181,7 +178,7 @@ fn generics() {
             &[path("Bar")],
             &MangleConfig {
                 remove_underscores: true,
-                rename_types: None,
+                rename_types: RenameRule::None,
             }
         ),
         Path::new("FooBar")
@@ -194,7 +191,7 @@ fn generics() {
             &vec![generic_path("Bar", &[float()])],
             &MangleConfig {
                 remove_underscores: true,
-                rename_types: Some(PascalCase),
+                rename_types: PascalCase,
             },
         ),
         Path::new("FooBarF32")
@@ -207,7 +204,7 @@ fn generics() {
             &vec![generic_path("Bar", &[c_char()])],
             &MangleConfig {
                 remove_underscores: true,
-                rename_types: Some(PascalCase),
+                rename_types: PascalCase,
             },
         ),
         Path::new("FooBarCChar")
@@ -253,7 +250,7 @@ fn generics() {
             &[generic_path("Bar", &[path("T")]), path("E")],
             &MangleConfig {
                 remove_underscores: true,
-                rename_types: Some(PascalCase),
+                rename_types: PascalCase,
             },
         ),
         Path::new("FooBarTE")
@@ -269,7 +266,7 @@ fn generics() {
             ],
             &MangleConfig {
                 remove_underscores: true,
-                rename_types: Some(PascalCase),
+                rename_types: PascalCase,
             },
         ),
         Path::new("FooBarTBarE")
