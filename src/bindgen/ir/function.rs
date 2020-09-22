@@ -211,7 +211,7 @@ impl Function {
 
             for arg in &mut self.args {
                 match arg.ty {
-                    Type::Ptr { .. } => {},
+                    Type::Ptr { .. } => {}
                     _ => continue,
                 }
                 let name = match arg.name {
