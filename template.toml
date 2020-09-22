@@ -68,6 +68,7 @@ renaming_overrides_prefixing = false
 [export.body]
 
 
+[export.mangle]
 
 
 [fn]

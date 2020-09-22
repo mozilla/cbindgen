@@ -177,12 +177,7 @@ impl Struct {
         mappings: &[(&Path, &Type)],
         config: &Config,
     ) -> Self {
-        let mangled_path = mangle::mangle_path(
-            &self.path,
-            generic_values,
-            config.export.remove_underscores,
-            config.export.rename_types,
-        );
+        let mangled_path = mangle::mangle_path(&self.path, generic_values, &config.export.mangle);
         Struct::new(
             mangled_path,
             GenericParams::default(),
