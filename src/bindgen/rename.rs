@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::str::FromStr;
 
 use crate::bindgen::ir::{Enum, Item};
@@ -53,16 +54,23 @@ pub enum RenameRule {
 }
 
 impl RenameRule {
+    pub(crate) fn not_none(self) -> Option<Self> {
+        match self {
+            RenameRule::None => None,
+            other => Some(other),
+        }
+    }
+
     /// Applies the rename rule to a string
-    pub fn apply(self, text: &str, context: IdentifierType) -> String {
+    pub fn apply<'a>(self, text: &'a str, context: IdentifierType) -> Cow<'a, str> {
         use heck::*;
 
         if text.is_empty() {
-            return String::new();
+            return Cow::Borrowed(text);
         }
 
-        match self {
-            RenameRule::None => text.to_owned(),
+        Cow::Owned(match self {
+            RenameRule::None => return Cow::Borrowed(text),
             RenameRule::GeckoCase => context.to_str().to_owned() + &text.to_camel_case(),
             RenameRule::LowerCase => text.to_lowercase(),
             RenameRule::UpperCase => text.to_uppercase(),
@@ -84,7 +92,7 @@ impl RenameRule {
                 result.push_str(&RenameRule::ScreamingSnakeCase.apply(&text, context));
                 result
             }
-        }
+        })
     }
 }
 

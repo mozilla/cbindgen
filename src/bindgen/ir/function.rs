@@ -17,7 +17,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::utilities::{find_first_some, IterHelpers};
+use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -161,17 +161,19 @@ impl Function {
         self.ret.rename_for_config(config, &generic_params);
 
         // Apply rename rules to argument names
-        let rules = [
-            self.annotations.parse_atom::<RenameRule>("rename-all"),
-            config.function.rename_args,
-        ];
+        let rules = self
+            .annotations
+            .parse_atom::<RenameRule>("rename-all")
+            .unwrap_or(config.function.rename_args);
 
-        if let Some(r) = find_first_some(&rules) {
+        if let Some(r) = rules.not_none() {
             let args = std::mem::replace(&mut self.args, vec![]);
             self.args = args
                 .into_iter()
                 .map(|arg| {
-                    let name = arg.name.map(|n| r.apply(&n, IdentifierType::FunctionArg));
+                    let name = arg
+                        .name
+                        .map(|n| r.apply(&n, IdentifierType::FunctionArg).into_owned());
                     FunctionArgument {
                         name,
                         ty: arg.ty,

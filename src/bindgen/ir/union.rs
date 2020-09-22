@@ -16,7 +16,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
-use crate::bindgen::utilities::{find_first_some, IterHelpers};
+use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -166,10 +166,10 @@ impl Item for Union {
             ty.rename_for_config(config, &self.generic_params);
         }
 
-        let rules = [
-            self.annotations.parse_atom::<RenameRule>("rename-all"),
-            config.structure.rename_fields,
-        ];
+        let rules = self
+            .annotations
+            .parse_atom::<RenameRule>("rename-all")
+            .unwrap_or(config.structure.rename_fields);
 
         if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();
@@ -183,13 +183,13 @@ impl Item for Union {
             }
 
             self.fields = overriden_fields;
-        } else if let Some(r) = find_first_some(&rules) {
+        } else if let Some(r) = rules.not_none() {
             self.fields = self
                 .fields
                 .iter()
                 .map(|x| {
                     (
-                        r.apply(&x.0, IdentifierType::StructMember),
+                        r.apply(&x.0, IdentifierType::StructMember).into_owned(),
                         x.1.clone(),
                         x.2.clone(),
                     )
