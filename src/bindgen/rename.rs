@@ -76,7 +76,7 @@ impl RenameRule {
                         &RenameRule::ScreamingSnakeCase
                             .apply(e.path().name(), IdentifierType::Enum),
                     );
-                    result.push_str("_");
+                    result.push('_');
                 }
 
                 result.push_str(&RenameRule::ScreamingSnakeCase.apply(&text, context));

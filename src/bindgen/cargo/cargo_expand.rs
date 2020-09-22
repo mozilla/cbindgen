@@ -96,7 +96,7 @@ pub fn expand(
         let mut features_str = String::new();
         for (index, feature) in features.iter().enumerate() {
             if index != 0 {
-                features_str.push_str(" ");
+                features_str.push(' ');
             }
             features_str.push_str(feature);
         }
@@ -111,7 +111,7 @@ pub fn expand(
     cmd.arg("-p");
     let mut package = crate_name.to_owned();
     if let Some(version) = version {
-        package.push_str(":");
+        package.push(':');
         package.push_str(version);
     }
     cmd.arg(&package);
