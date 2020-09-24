@@ -16,7 +16,7 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::utilities::IterHelpers;
+use crate::bindgen::utilities::{IterHelpers, SynAttributeHelpers};
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -76,13 +76,18 @@ impl Struct {
                 let out = fields
                     .named
                     .iter()
-                    .try_skip_map(|x| x.as_ident_and_type(&path))?;
+                    .filter(|field| !field.should_skip_parsing())
+                    .try_skip_map(|field| field.as_ident_and_type(&path))?;
                 (out, false)
             }
             syn::Fields::Unnamed(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
-                for field in fields.unnamed.iter() {
+                for field in fields
+                    .unnamed
+                    .iter()
+                    .filter(|field| !field.should_skip_parsing())
+                {
                     if let Some(mut x) = Type::load(&field.ty)? {
                         x.replace_self_with(&path);
                         out.push((format!("{}", current), x, Documentation::load(&field.attrs)));

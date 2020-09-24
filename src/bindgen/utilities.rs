@@ -229,6 +229,7 @@ impl_syn_item_helper!(syn::ItemMod);
 impl_syn_item_helper!(syn::ItemForeignMod);
 impl_syn_item_helper!(syn::ItemType);
 impl_syn_item_helper!(syn::ItemStruct);
+impl_syn_item_helper!(syn::Field);
 impl_syn_item_helper!(syn::ItemEnum);
 impl_syn_item_helper!(syn::ItemUnion);
 impl_syn_item_helper!(syn::ItemTrait);
