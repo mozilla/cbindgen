@@ -3,4 +3,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-void no_ignore_root(void);
+typedef struct {
+  int32_t x;
+  int32_t z;
+} OneFieldIgnored;
+
+typedef struct {
+
+} AllFieldsIgnored;
+
+void no_ignore_root(OneFieldIgnored one, AllFieldsIgnored all);
