@@ -392,6 +392,7 @@ impl Parse {
         add_opaque("BTreeSet", vec!["T"]);
         add_opaque("LinkedList", vec!["T"]);
         add_opaque("VecDeque", vec!["T"]);
+        add_opaque("ManuallyDrop", vec!["T"]);
     }
 
     pub fn extend_with(&mut self, other: &Parse) {
