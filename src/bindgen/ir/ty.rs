@@ -433,7 +433,7 @@ impl Type {
                 is_nullable: false,
                 is_ref: false,
             }),
-            "Cell" | "ManuallyDrop" => Some(generic),
+            "Cell" | "ManuallyDrop" | "MaybeUninit" => Some(generic),
             _ => None,
         }
     }
