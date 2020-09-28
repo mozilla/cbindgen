@@ -6,7 +6,7 @@ use std::fmt;
 use std::io::Write;
 
 use crate::bindgen::cdecl;
-use crate::bindgen::config::Config;
+use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{Documentation, GenericParams, GenericPath, Path};
@@ -411,7 +411,7 @@ impl Type {
         }
     }
 
-    fn simplified_type(&self) -> Option<Self> {
+    fn simplified_type(&self, config: &Config) -> Option<Self> {
         let path = match *self {
             Type::Path(ref p) => p,
             _ => return None,
@@ -422,7 +422,7 @@ impl Type {
         }
 
         let mut generic = path.generics()[0].clone();
-        generic.simplify_standard_types();
+        generic.simplify_standard_types(config);
 
         match path.name() {
             // FIXME(#223): This is not quite correct.
@@ -433,13 +433,14 @@ impl Type {
                 is_nullable: false,
                 is_ref: false,
             }),
-            "Cell" | "ManuallyDrop" | "MaybeUninit" => Some(generic),
+            "Cell" => Some(generic),
+            "ManuallyDrop" | "MaybeUninit" if config.language == Language::C => Some(generic),
             _ => None,
         }
     }
 
-    pub fn simplify_standard_types(&mut self) {
-        if let Some(ty) = self.simplified_type() {
+    pub fn simplify_standard_types(&mut self, config: &Config) {
+        if let Some(ty) = self.simplified_type(config) {
             *self = ty;
         }
     }
