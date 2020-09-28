@@ -120,10 +120,10 @@ impl Function {
         &self.path
     }
 
-    pub fn simplify_standard_types(&mut self) {
-        self.ret.simplify_standard_types();
+    pub fn simplify_standard_types(&mut self, config: &Config) {
+        self.ret.simplify_standard_types(config);
         for arg in &mut self.args {
-            arg.ty.simplify_standard_types();
+            arg.ty.simplify_standard_types(config);
         }
     }
 

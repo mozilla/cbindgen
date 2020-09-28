@@ -96,9 +96,9 @@ impl Union {
         }
     }
 
-    pub fn simplify_standard_types(&mut self) {
+    pub fn simplify_standard_types(&mut self, config: &Config) {
         for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.simplify_standard_types();
+            ty.simplify_standard_types(config);
         }
     }
 

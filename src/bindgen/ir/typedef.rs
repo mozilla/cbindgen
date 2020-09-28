@@ -66,8 +66,8 @@ impl Typedef {
         }
     }
 
-    pub fn simplify_standard_types(&mut self) {
-        self.aliased.simplify_standard_types();
+    pub fn simplify_standard_types(&mut self, config: &Config) {
+        self.aliased.simplify_standard_types(config);
     }
 
     pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {
