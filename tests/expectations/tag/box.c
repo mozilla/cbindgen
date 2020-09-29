@@ -19,4 +19,6 @@ struct MyStruct {
 
 void drop_box(int32_t *x);
 
+void drop_box_opt(int32_t *x);
+
 void root(const Foo *a, const struct MyStruct *with_box);

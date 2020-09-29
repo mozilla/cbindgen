@@ -12,6 +12,9 @@ using Box = T*;
 template<typename T = void>
 struct NotReprC;
 
+template<typename T = void>
+struct Option;
+
 using Foo = NotReprC<Box<int32_t>>;
 
 struct MyStruct {
@@ -21,6 +24,8 @@ struct MyStruct {
 extern "C" {
 
 void drop_box(Box<int32_t> x);
+
+void drop_box_opt(Option<Box<int32_t>> x);
 
 void root(const Foo *a, const MyStruct *with_box);
 
