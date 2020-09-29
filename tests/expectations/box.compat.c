@@ -1,3 +1,9 @@
+#ifdef __cplusplus
+template <typename T>
+using Box = T*;
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,7 +21,7 @@ typedef struct {
 extern "C" {
 #endif // __cplusplus
 
-void delete(int32_t *x);
+void drop_box(int32_t *x);
 
 void root(const Foo *a, const MyStruct *with_box);
 

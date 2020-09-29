@@ -1,0 +1,10 @@
+header = """
+#ifdef __cplusplus
+template <typename T>
+using MaybeUninit = T;
+#endif
+"""
+[export]
+exclude = [
+  "MaybeUninit",
+]

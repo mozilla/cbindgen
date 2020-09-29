@@ -130,7 +130,6 @@ fn compile(
     }
 }
 
-const SKIP_CPP_SUFFIX: &'static str = ".skip_cpp";
 const SKIP_WARNING_AS_ERROR_SUFFIX: &'static str = ".skip_warning_as_error";
 
 fn run_compile_test(
@@ -169,11 +168,8 @@ fn run_compile_test(
     };
 
     let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();
-    let skip_cpp = name.rfind(SKIP_CPP_SUFFIX).is_some();
 
-    let source_file = format!("{}.{}", &name, &ext)
-        .replace(SKIP_CPP_SUFFIX, "")
-        .replace(SKIP_WARNING_AS_ERROR_SUFFIX, "");
+    let source_file = format!("{}.{}", &name, &ext).replace(SKIP_WARNING_AS_ERROR_SUFFIX, "");
 
     generated_file.push(source_file);
 
@@ -195,7 +191,7 @@ fn run_compile_test(
         skip_warning_as_error,
     );
 
-    if language == Language::C && cpp_compat && !skip_cpp {
+    if language == Language::C && cpp_compat {
         compile(
             &generated_file,
             &tests_path,
@@ -228,19 +224,15 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
         }
     }
 
-    let skip_cpp = name.rfind(SKIP_CPP_SUFFIX).is_some();
-
-    if !skip_cpp {
-        run_compile_test(
-            cbindgen_path,
-            name,
-            &test,
-            tmp_dir,
-            Language::Cxx,
-            /* cpp_compat = */ false,
-            None,
-        );
-    }
+    run_compile_test(
+        cbindgen_path,
+        name,
+        &test,
+        tmp_dir,
+        Language::Cxx,
+        /* cpp_compat = */ false,
+        None,
+    );
 }
 
 macro_rules! test_file {
