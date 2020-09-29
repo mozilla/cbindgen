@@ -130,6 +130,9 @@ fn compile(
     }
 }
 
+const SKIP_CPP_SUFFIX: &'static str = ".skip_cpp";
+const SKIP_WARNING_AS_ERROR_SUFFIX: &'static str = ".skip_warning_as_error";
+
 fn run_compile_test(
     cbindgen_path: &'static str,
     name: &'static str,
@@ -164,18 +167,14 @@ fn run_compile_test(
             }
         }
     };
-    let skip_warning_as_error_suffix = ".skip_warning_as_error";
-    let skip_warning_as_error_position = name.rfind(skip_warning_as_error_suffix);
-    let skip_warning_as_error = skip_warning_as_error_position.is_some();
-    let mut source_file = format!("{}.{}", name, &ext);
 
-    if skip_warning_as_error {
-        source_file = format!(
-            "{}.{}",
-            &name[0..skip_warning_as_error_position.unwrap()],
-            &ext
-        );
-    }
+    let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();
+    let skip_cpp = name.rfind(SKIP_CPP_SUFFIX).is_some();
+
+    let source_file = format!("{}.{}", &name, &ext)
+        .replace(SKIP_CPP_SUFFIX, "")
+        .replace(SKIP_WARNING_AS_ERROR_SUFFIX, "");
+
     generated_file.push(source_file);
 
     run_cbindgen(
@@ -196,7 +195,7 @@ fn run_compile_test(
         skip_warning_as_error,
     );
 
-    if language == Language::C && cpp_compat {
+    if language == Language::C && cpp_compat && !skip_cpp {
         compile(
             &generated_file,
             &tests_path,
@@ -228,15 +227,20 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
             );
         }
     }
-    run_compile_test(
-        cbindgen_path,
-        name,
-        &test,
-        tmp_dir,
-        Language::Cxx,
-        /* cpp_compat = */ false,
-        None,
-    );
+
+    let skip_cpp = name.rfind(SKIP_CPP_SUFFIX).is_some();
+
+    if !skip_cpp {
+        run_compile_test(
+            cbindgen_path,
+            name,
+            &test,
+            tmp_dir,
+            Language::Cxx,
+            /* cpp_compat = */ false,
+            None,
+        );
+    }
 }
 
 macro_rules! test_file {
