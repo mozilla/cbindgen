@@ -1,3 +1,9 @@
+#ifdef __cplusplus
+template <typename T>
+using Box = T*;
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -11,6 +17,6 @@ struct MyStruct {
   int32_t *number;
 };
 
-void delete(int32_t *x);
+void drop_box(int32_t *x);
 
 void root(const Foo *a, const struct MyStruct *with_box);

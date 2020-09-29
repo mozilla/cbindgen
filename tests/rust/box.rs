@@ -13,4 +13,4 @@ pub type Foo = NotReprC<Box<i32>>;
 pub extern "C" fn root(a: &Foo, with_box: &MyStruct) {}
 
 #[no_mangle]
-pub extern "C" fn delete(x: Box<i32>) {}
+pub extern "C" fn drop_box(x: Box<i32>) {}
