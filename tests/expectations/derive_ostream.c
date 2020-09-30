@@ -48,4 +48,28 @@ typedef union {
   Bar_Body bar;
 } F;
 
-void root(A a, B b, C c, D d, F f);
+enum H_Tag {
+  Hello,
+  There,
+  Everyone,
+};
+typedef uint8_t H_Tag;
+
+typedef struct {
+  int16_t _0;
+} Hello_Body;
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} There_Body;
+
+typedef struct {
+  H_Tag tag;
+  union {
+    Hello_Body hello;
+    There_Body there;
+  };
+} H;
+
+void root(A a, B b, C c, D d, F f, H h);

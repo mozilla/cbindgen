@@ -48,4 +48,28 @@ union F {
   struct Bar_Body bar;
 };
 
-void root(struct A a, struct B b, C c, struct D d, union F f);
+enum H_Tag {
+  Hello,
+  There,
+  Everyone,
+};
+typedef uint8_t H_Tag;
+
+struct Hello_Body {
+  int16_t _0;
+};
+
+struct There_Body {
+  uint8_t x;
+  int16_t y;
+};
+
+struct H {
+  H_Tag tag;
+  union {
+    struct Hello_Body hello;
+    struct There_Body there;
+  };
+};
+
+void root(struct A a, struct B b, C c, struct D d, union F f, struct H h);

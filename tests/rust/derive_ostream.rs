@@ -30,6 +30,14 @@ enum F {
     Baz
 }
 
+/// cbindgen:derive-ostream
+#[repr(C, u8)]
+enum H {
+    Hello(i16),
+    There { x: u8, y: i16 },
+    Everyone
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     a: A,
@@ -37,5 +45,6 @@ pub extern "C" fn root(
     c: C,
     d: D,
     f: F,
+    h: H,
 ) { }
 

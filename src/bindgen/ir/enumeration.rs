@@ -803,24 +803,27 @@ impl Source for Enum {
                     .variants
                     .iter()
                     .map(|x| {
+                        let tag_str = format!("\"{}\"", x.export_name);
                         if let VariantBody::Body { ref name, .. } = x.body {
                             format!(
-                                "case {}::{}::{}: {} << {}.{}; break;",
+                                "case {}::{}::{}: {} << {}{}{}.{}; break;",
                                 self.export_name(),
                                 enum_name,
                                 x.export_name,
                                 stream,
+                                if separate_tag { &tag_str } else { "" },
+                                if separate_tag { " << " } else { "" },
                                 instance,
                                 name,
                             )
                         } else {
                             format!(
-                                "case {}::{}::{}: {} << \"{}\"; break;",
+                                "case {}::{}::{}: {} << {}; break;",
                                 self.export_name(),
                                 enum_name,
                                 x.export_name,
                                 stream,
-                                x.export_name,
+                                tag_str,
                             )
                         }
                     })
