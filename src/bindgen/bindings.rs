@@ -180,6 +180,8 @@ impl Bindings {
                 out.new_line();
                 out.write("#include <cstdlib>");
                 out.new_line();
+                out.write("#include <ostream>");
+                out.new_line();
                 out.write("#include <new>");
                 out.new_line();
                 if self.config.enumeration.cast_assert_name.is_none()

@@ -7,6 +7,7 @@ using MaybeUninit = T;
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <ostream>
 #include <new>
 
 template<typename T = void>

@@ -10,6 +10,7 @@ struct DefaultHasher;
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <ostream>
 #include <new>
 
 template<typename K = void, typename V = void, typename Hasher = void>
