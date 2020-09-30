@@ -442,6 +442,8 @@ pub struct StructConfig {
     pub derive_gt: bool,
     /// Whether to generate a greater than or equal to operator on structs with one field
     pub derive_gte: bool,
+    /// Whether to generate a ostream serializer for the struct
+    pub derive_ostream: bool,
     /// Whether associated constants should be in the body. Only applicable to
     /// non-transparent structs, and in C++-only.
     pub associated_constants_in_body: bool,
@@ -492,6 +494,12 @@ impl StructConfig {
         }
         self.derive_gte
     }
+    pub(crate) fn derive_ostream(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-ostream") {
+            return x;
+        }
+        self.derive_ostream
+    }
 }
 
 /// Settings to apply to generated enums.
@@ -529,6 +537,8 @@ pub struct EnumConfig {
     /// This is only generated if a copy constructor for the same tagged enum is
     /// generated as well.
     pub derive_tagged_enum_copy_assignment: bool,
+    /// Whether to generate a ostream serializer for the struct
+    pub derive_ostream: bool,
     /// Declare the enum as an enum class.
     /// Only relevant when targeting C++.
     pub enum_class: bool,
@@ -551,6 +561,7 @@ impl Default for EnumConfig {
             derive_tagged_enum_destructor: false,
             derive_tagged_enum_copy_constructor: false,
             derive_tagged_enum_copy_assignment: false,
+            derive_ostream: false,
             enum_class: true,
             private_default_tagged_enum_constructor: false,
         }
@@ -599,6 +610,12 @@ impl EnumConfig {
             return x;
         }
         self.derive_tagged_enum_copy_assignment
+    }
+    pub(crate) fn derive_ostream(&self, annotations: &AnnotationSet) -> bool {
+        if let Some(x) = annotations.bool("derive-ostream") {
+            return x;
+        }
+        self.derive_ostream
     }
     pub(crate) fn enum_class(&self, annotations: &AnnotationSet) -> bool {
         if let Some(x) = annotations.bool("enum-class") {

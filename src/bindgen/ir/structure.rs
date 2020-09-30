@@ -549,6 +549,44 @@ impl Source for Struct {
                 self.emit_bitflags_binop('^', &other, out);
             }
 
+            // Generate a serializer function that allows dumping this struct
+            // to an std::ostream. It's defined as a friend function inside the
+            // struct definition, and doesn't need the `inline` keyword even
+            // though it's implemented right in the generated header file.
+            if config.structure.derive_ostream(&self.annotations) {
+                if !wrote_start_newline {
+                    wrote_start_newline = true;
+                    out.new_line();
+                }
+
+                out.new_line();
+                let stream = config
+                    .function
+                    .rename_args
+                    .apply("stream", IdentifierType::FunctionArg);
+                let instance = config
+                    .function
+                    .rename_args
+                    .apply("instance", IdentifierType::FunctionArg);
+                write!(
+                    out,
+                    "friend std::ostream& operator<<(std::ostream& {}, const {}& {})",
+                    stream,
+                    self.export_name(),
+                    instance,
+                );
+                out.open_brace();
+                write!(out, "return {} << \"{{ \"", stream);
+                let vec: Vec<_> = self
+                    .fields
+                    .iter()
+                    .map(|x| format!(" << \"{}=\" << {}.{}", x.0, instance, x.0))
+                    .collect();
+                out.write_vertical_source_list(&vec[..], ListType::Join(" << \", \""));
+                out.write(" << \" }\";");
+                out.close_brace(false);
+            }
+
             let skip_fields = if self.is_tagged { 1 } else { 0 };
 
             macro_rules! emit_op {

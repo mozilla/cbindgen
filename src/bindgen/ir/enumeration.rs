@@ -714,6 +714,53 @@ impl Source for Enum {
         }
         // Done emitting the enum
 
+        // Emit an ostream function if required, but for now we only support
+        // untagged enums because tagged ones get a little tricky...
+        let derive_ostream = config.enumeration.derive_ostream(&self.annotations);
+        if !is_tagged && config.language == Language::Cxx && derive_ostream {
+            let stream = config
+                .function
+                .rename_args
+                .apply("stream", IdentifierType::FunctionArg);
+            let instance = config
+                .function
+                .rename_args
+                .apply("instance", IdentifierType::FunctionArg);
+
+            out.new_line();
+            out.new_line();
+            // We mark the function inline because the header might get included
+            // into multiple compilation units that get linked together, and not
+            // marking it inline would result in multiply-defined symbol errors.
+            write!(
+                out,
+                "inline std::ostream& operator<<(std::ostream& {}, const {}& {})",
+                stream,
+                self.export_name(),
+                instance,
+            );
+
+            out.open_brace();
+            write!(out, "switch ({})", instance);
+            out.open_brace();
+            let vec: Vec<_> = self
+                .variants
+                .iter()
+                .map(|x| {
+                    format!(
+                        "case {}::{}: {} << \"{}\"; break;",
+                        enum_name, x.export_name, stream, x.export_name
+                    )
+                })
+                .collect();
+            out.write_vertical_source_list(&vec[..], ListType::Join(""));
+            out.close_brace(false);
+            out.new_line();
+
+            write!(out, "return {};", stream);
+            out.close_brace(false);
+        }
+
         // If tagged, we need to emit structs for the cases and union them together
         if is_tagged {
             // Emit the cases for the structs
