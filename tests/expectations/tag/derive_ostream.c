@@ -24,4 +24,28 @@ struct D {
   struct B Things;
 };
 
-void root(struct A a, struct B b, C c, struct D d);
+enum F_Tag {
+  Foo,
+  Bar,
+  Baz,
+};
+typedef uint8_t F_Tag;
+
+struct Foo_Body {
+  F_Tag tag;
+  int16_t _0;
+};
+
+struct Bar_Body {
+  F_Tag tag;
+  uint8_t x;
+  int16_t y;
+};
+
+union F {
+  F_Tag tag;
+  struct Foo_Body foo;
+  struct Bar_Body bar;
+};
+
+void root(struct A a, struct B b, C c, struct D d, union F f);
