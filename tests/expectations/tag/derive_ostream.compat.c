@@ -30,11 +30,41 @@ struct D {
   struct B Things;
 };
 
+enum F_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  Foo,
+  Bar,
+  Baz,
+};
+#ifndef __cplusplus
+typedef uint8_t F_Tag;
+#endif // __cplusplus
+
+struct Foo_Body {
+  F_Tag tag;
+  int16_t _0;
+};
+
+struct Bar_Body {
+  F_Tag tag;
+  uint8_t x;
+  int16_t y;
+};
+
+union F {
+  F_Tag tag;
+  struct Foo_Body foo;
+  struct Bar_Body bar;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(struct A a, struct B b, C c, struct D d);
+void root(struct A a, struct B b, C c, struct D d, union F f);
 
 #ifdef __cplusplus
 } // extern "C"

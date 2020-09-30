@@ -719,10 +719,13 @@ impl Source for Enum {
         }
         // Done emitting the enum
 
-        // Emit an ostream function if required, but for now we only support
-        // untagged enums because tagged ones get a little tricky...
+        // Emit an ostream function if required.
         let derive_ostream = config.enumeration.derive_ostream(&self.annotations);
-        if !is_tagged && config.language == Language::Cxx && derive_ostream {
+        if config.language == Language::Cxx && derive_ostream {
+            // For untagged enums, this emits the serializer function for the
+            // enum. For tagged enums, this emits the serializer function for
+            // the tag. In the latter case we need a couple of minor changes
+            // due to the function living inside the top-level struct or enum.
             let stream = config
                 .function
                 .rename_args
@@ -734,14 +737,24 @@ impl Source for Enum {
 
             out.new_line();
             out.new_line();
-            // We mark the function inline because the header might get included
-            // into multiple compilation units that get linked together, and not
-            // marking it inline would result in multiply-defined symbol errors.
+            // For untagged enums, we mark the function inline because the
+            // header might get included into multiple compilation units that
+            // get linked together, and not marking it inline would result in
+            // multiply-defined symbol errors. For tagged enums we don't have
+            // the same problem, but mark it as a friend function of the
+            // containing union/struct.
+            // Note also that for tagged enums, the case labels for switch
+            // statements apparently need to be qualified to the top-level
+            // generated struct or union. This is why the generated case labels
+            // below use the A::B::C format for tagged enums, with A being
+            // self.export_name(). Failure to have that qualification results
+            // in a surprising compilation failure for the generated header.
             write!(
                 out,
-                "inline std::ostream& operator<<(std::ostream& {}, const {}& {})",
+                "{} std::ostream& operator<<(std::ostream& {}, const {}& {})",
+                if is_tagged { "friend" } else { "inline" },
                 stream,
-                self.export_name(),
+                enum_name,
                 instance,
             );
 
@@ -753,8 +766,13 @@ impl Source for Enum {
                 .iter()
                 .map(|x| {
                     format!(
-                        "case {}::{}: {} << \"{}\"; break;",
-                        enum_name, x.export_name, stream, x.export_name
+                        "case {}{}{}::{}: {} << \"{}\"; break;",
+                        if is_tagged { self.export_name() } else { "" },
+                        if is_tagged { "::" } else { "" },
+                        enum_name,
+                        x.export_name,
+                        stream,
+                        x.export_name
                     )
                 })
                 .collect();
@@ -764,6 +782,56 @@ impl Source for Enum {
 
             write!(out, "return {};", stream);
             out.close_brace(false);
+
+            if is_tagged {
+                // For tagged enums, this emits the serializer function for
+                // the top-level enum or struct.
+                out.new_line();
+                out.new_line();
+                write!(
+                    out,
+                    "friend std::ostream& operator<<(std::ostream& {}, const {}& {})",
+                    stream,
+                    self.export_name(),
+                    instance,
+                );
+
+                out.open_brace();
+                write!(out, "switch ({}.tag)", instance);
+                out.open_brace();
+                let vec: Vec<_> = self
+                    .variants
+                    .iter()
+                    .map(|x| {
+                        if let VariantBody::Body { ref name, .. } = x.body {
+                            format!(
+                                "case {}::{}::{}: {} << {}.{}; break;",
+                                self.export_name(),
+                                enum_name,
+                                x.export_name,
+                                stream,
+                                instance,
+                                name,
+                            )
+                        } else {
+                            format!(
+                                "case {}::{}::{}: {} << \"{}\"; break;",
+                                self.export_name(),
+                                enum_name,
+                                x.export_name,
+                                stream,
+                                x.export_name,
+                            )
+                        }
+                    })
+                    .collect();
+                out.write_vertical_source_list(&vec[..], ListType::Join(""));
+                out.close_brace(false);
+                out.new_line();
+
+                write!(out, "return {};", stream);
+                out.close_brace(false);
+            }
         }
 
         // If tagged, we need to emit structs for the cases and union them together

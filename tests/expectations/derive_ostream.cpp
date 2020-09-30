@@ -47,8 +47,62 @@ struct D {
   }
 };
 
+union F {
+  enum class Tag : uint8_t {
+    Foo,
+    Bar,
+    Baz,
+  };
+
+  friend std::ostream& operator<<(std::ostream& stream, const Tag& instance) {
+    switch (instance) {
+      case F::Tag::Foo: stream << "Foo"; break;
+      case F::Tag::Bar: stream << "Bar"; break;
+      case F::Tag::Baz: stream << "Baz"; break;
+    }
+    return stream;
+  }
+
+  friend std::ostream& operator<<(std::ostream& stream, const F& instance) {
+    switch (instance.tag) {
+      case F::Tag::Foo: stream << instance.foo; break;
+      case F::Tag::Bar: stream << instance.bar; break;
+      case F::Tag::Baz: stream << "Baz"; break;
+    }
+    return stream;
+  }
+
+  struct Foo_Body {
+    Tag tag;
+    int16_t _0;
+
+    friend std::ostream& operator<<(std::ostream& stream, const Foo_Body& instance) {
+      return stream << "{ " << "tag=" << instance.tag << ", "
+                            << "_0=" << instance._0 << " }";
+    }
+  };
+
+  struct Bar_Body {
+    Tag tag;
+    uint8_t x;
+    int16_t y;
+
+    friend std::ostream& operator<<(std::ostream& stream, const Bar_Body& instance) {
+      return stream << "{ " << "tag=" << instance.tag << ", "
+                            << "x=" << instance.x << ", "
+                            << "y=" << instance.y << " }";
+    }
+  };
+
+  struct {
+    Tag tag;
+  };
+  Foo_Body foo;
+  Bar_Body bar;
+};
+
 extern "C" {
 
-void root(A a, B b, C c, D d);
+void root(A a, B b, C c, D d, F f);
 
 } // extern "C"

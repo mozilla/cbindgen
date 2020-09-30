@@ -22,11 +22,20 @@ struct D {
     Things: B,
 }
 
+/// cbindgen:derive-ostream
+#[repr(u8)]
+enum F {
+    Foo(i16),
+    Bar { x: u8, y: i16 },
+    Baz
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     a: A,
     b: B,
     c: C,
     d: D,
+    f: F,
 ) { }
 
