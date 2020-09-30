@@ -60,11 +60,41 @@ typedef union {
   Bar_Body bar;
 } F;
 
+enum H_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  Hello,
+  There,
+  Everyone,
+};
+#ifndef __cplusplus
+typedef uint8_t H_Tag;
+#endif // __cplusplus
+
+typedef struct {
+  int16_t _0;
+} Hello_Body;
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} There_Body;
+
+typedef struct {
+  H_Tag tag;
+  union {
+    Hello_Body hello;
+    There_Body there;
+  };
+} H;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(A a, B b, C c, D d, F f);
+void root(A a, B b, C c, D d, F f, H h);
 
 #ifdef __cplusplus
 } // extern "C"

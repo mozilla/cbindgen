@@ -101,8 +101,58 @@ union F {
   Bar_Body bar;
 };
 
+struct H {
+  enum class Tag : uint8_t {
+    Hello,
+    There,
+    Everyone,
+  };
+
+  friend std::ostream& operator<<(std::ostream& stream, const Tag& instance) {
+    switch (instance) {
+      case H::Tag::Hello: stream << "Hello"; break;
+      case H::Tag::There: stream << "There"; break;
+      case H::Tag::Everyone: stream << "Everyone"; break;
+    }
+    return stream;
+  }
+
+  friend std::ostream& operator<<(std::ostream& stream, const H& instance) {
+    switch (instance.tag) {
+      case H::Tag::Hello: stream << "Hello" << instance.hello; break;
+      case H::Tag::There: stream << "There" << instance.there; break;
+      case H::Tag::Everyone: stream << "Everyone"; break;
+    }
+    return stream;
+  }
+
+  struct Hello_Body {
+    int16_t _0;
+
+    friend std::ostream& operator<<(std::ostream& stream, const Hello_Body& instance) {
+      return stream << "{ " << "_0=" << instance._0 << " }";
+    }
+  };
+
+  struct There_Body {
+    uint8_t x;
+    int16_t y;
+
+    friend std::ostream& operator<<(std::ostream& stream, const There_Body& instance) {
+      return stream << "{ " << "x=" << instance.x << ", "
+                            << "y=" << instance.y << " }";
+    }
+  };
+
+  Tag tag;
+  union {
+    Hello_Body hello;
+    There_Body there;
+  };
+};
+
 extern "C" {
 
-void root(A a, B b, C c, D d, F f);
+void root(A a, B b, C c, D d, F f, H h);
 
 } // extern "C"
