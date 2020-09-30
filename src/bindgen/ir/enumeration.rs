@@ -8,8 +8,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath, Item,
-    ItemContainer, Path, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
+    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath,
+    Item, ItemContainer, Path, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -100,6 +100,7 @@ impl EnumVariant {
         generic_params: GenericParams,
         mod_cfg: Option<&Cfg>,
         self_path: &Path,
+        enum_annotations: &AnnotationSet,
     ) -> Result<Self, String> {
         let discriminant = match variant.discriminant {
             Some((_, ref expr)) => match value_from_expr(expr) {
@@ -142,7 +143,10 @@ impl EnumVariant {
         }
 
         let variant_cfg = Cfg::append(mod_cfg, Cfg::load(&variant.attrs));
-        let annotations = AnnotationSet::load(&variant.attrs)?;
+        let mut annotations = AnnotationSet::load(&variant.attrs)?;
+        if let Some(b) = enum_annotations.bool("derive-ostream") {
+            annotations.add("derive-ostream", AnnotationValue::Bool(b));
+        }
         let body = match variant.fields {
             syn::Fields::Unit => VariantBody::Empty(annotations),
             syn::Fields::Named(ref fields) => {
@@ -333,6 +337,8 @@ impl Enum {
         let mut variants = Vec::new();
         let mut is_tagged = false;
 
+        let annotations = AnnotationSet::load(&item.attrs)?;
+
         for variant in item.variants.iter() {
             let variant = EnumVariant::load(
                 repr.style == ReprStyle::Rust,
@@ -340,12 +346,11 @@ impl Enum {
                 generic_params.clone(),
                 mod_cfg,
                 &path,
+                &annotations,
             )?;
             is_tagged = is_tagged || !variant.body.is_empty();
             variants.push(variant);
         }
-
-        let annotations = AnnotationSet::load(&item.attrs)?;
 
         if let Some(names) = annotations.list("enum-trailing-values") {
             for name in names {
