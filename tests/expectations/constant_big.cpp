@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <ostream>
 #include <new>
 
 static const int64_t SIGNED_DOESNT_NEED_ULL_SUFFIX = -9223372036854775807;

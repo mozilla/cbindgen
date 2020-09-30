@@ -1,6 +1,7 @@
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
+#include <ostream>
 #include <new>
 #ifndef NO_RETURN_ATTR
   #ifdef __GNUC__
