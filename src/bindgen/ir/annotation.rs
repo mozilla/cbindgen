@@ -115,6 +115,10 @@ impl AnnotationSet {
         })
     }
 
+    pub fn add(&mut self, name: &str, value: AnnotationValue) {
+        self.annotations.insert(name.to_string(), value);
+    }
+
     pub fn list(&self, name: &str) -> Option<Vec<String>> {
         match self.annotations.get(name) {
             Some(&AnnotationValue::List(ref x)) => Some(x.clone()),
