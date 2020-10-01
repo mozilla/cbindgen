@@ -155,8 +155,30 @@ struct H {
   };
 };
 
+struct I {
+  enum class Tag : uint8_t {
+    ThereAgain,
+    SomethingElse,
+  };
+
+  struct ThereAgain_Body {
+    uint8_t x;
+    int16_t y;
+
+    friend std::ostream& operator<<(std::ostream& stream, const ThereAgain_Body& instance) {
+      return stream << "{ " << "x=" << instance.x << ", "
+                            << "y=" << instance.y << " }";
+    }
+  };
+
+  Tag tag;
+  union {
+    ThereAgain_Body there_again;
+  };
+};
+
 extern "C" {
 
-void root(A a, B b, C c, D d, F f, H h);
+void root(A a, B b, C c, D d, F f, H h, I i);
 
 } // extern "C"

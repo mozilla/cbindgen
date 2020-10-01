@@ -72,4 +72,22 @@ typedef struct {
   };
 } H;
 
-void root(A a, B b, C c, D d, F f, H h);
+enum I_Tag {
+  ThereAgain,
+  SomethingElse,
+};
+typedef uint8_t I_Tag;
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} ThereAgain_Body;
+
+typedef struct {
+  I_Tag tag;
+  union {
+    ThereAgain_Body there_again;
+  };
+} I;
+
+void root(A a, B b, C c, D d, F f, H h, I i);

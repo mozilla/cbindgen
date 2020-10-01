@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -115,8 +116,11 @@ impl AnnotationSet {
         })
     }
 
-    pub fn add(&mut self, name: &str, value: AnnotationValue) {
-        self.annotations.insert(name.to_string(), value);
+    /// Adds an annotation value if none is specified.
+    pub fn add_default(&mut self, name: &str, value: AnnotationValue) {
+        if let Entry::Vacant(e) = self.annotations.entry(name.to_string()) {
+            e.insert(value);
+        }
     }
 
     pub fn list(&self, name: &str) -> Option<Vec<String>> {
