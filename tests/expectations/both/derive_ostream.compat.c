@@ -90,11 +90,40 @@ typedef struct H {
   };
 } H;
 
+enum J_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  Hi,
+  Peoples,
+};
+#ifndef __cplusplus
+typedef uint8_t J_Tag;
+#endif // __cplusplus
+
+typedef struct Hi_Body {
+  int16_t _0;
+} Hi_Body;
+
+typedef struct Peoples_Body {
+  uint8_t x;
+  int16_t y;
+} Peoples_Body;
+
+typedef struct J {
+  J_Tag tag;
+  union {
+    Hi_Body hi;
+    Peoples_Body peoples;
+  };
+} J;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(A a, B b, C c, D d, F f, H h);
+void root(A a, B b, C c, D d, F f, H h, J j);
 
 #ifdef __cplusplus
 } // extern "C"

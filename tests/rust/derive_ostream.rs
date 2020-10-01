@@ -38,6 +38,14 @@ enum H {
     Everyone
 }
 
+/// cbindgen:derive-ostream=false
+#[repr(C, u8)]
+enum J {
+    Hi(i16),
+    /// cbindgen:derive-ostream=true
+    Peoples { x: u8, y: i16 },
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     a: A,
@@ -46,5 +54,6 @@ pub extern "C" fn root(
     d: D,
     f: F,
     h: H,
+    j: J,
 ) { }
 

@@ -72,4 +72,27 @@ struct H {
   };
 };
 
-void root(struct A a, struct B b, C c, struct D d, union F f, struct H h);
+enum J_Tag {
+  Hi,
+  Peoples,
+};
+typedef uint8_t J_Tag;
+
+struct Hi_Body {
+  int16_t _0;
+};
+
+struct Peoples_Body {
+  uint8_t x;
+  int16_t y;
+};
+
+struct J {
+  J_Tag tag;
+  union {
+    struct Hi_Body hi;
+    struct Peoples_Body peoples;
+  };
+};
+
+void root(struct A a, struct B b, C c, struct D d, union F f, struct H h, struct J j);

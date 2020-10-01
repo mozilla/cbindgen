@@ -119,6 +119,10 @@ impl AnnotationSet {
         self.annotations.insert(name.to_string(), value);
     }
 
+    pub fn contains(&self, name: &str) -> bool {
+        self.annotations.contains_key(name)
+    }
+
     pub fn list(&self, name: &str) -> Option<Vec<String>> {
         match self.annotations.get(name) {
             Some(&AnnotationValue::List(ref x)) => Some(x.clone()),

@@ -72,4 +72,27 @@ typedef struct {
   };
 } H;
 
-void root(A a, B b, C c, D d, F f, H h);
+enum J_Tag {
+  Hi,
+  Peoples,
+};
+typedef uint8_t J_Tag;
+
+typedef struct {
+  int16_t _0;
+} Hi_Body;
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} Peoples_Body;
+
+typedef struct {
+  J_Tag tag;
+  union {
+    Hi_Body hi;
+    Peoples_Body peoples;
+  };
+} J;
+
+void root(A a, B b, C c, D d, F f, H h, J j);

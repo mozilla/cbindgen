@@ -151,8 +151,35 @@ struct H {
   };
 };
 
+struct J {
+  enum class Tag : uint8_t {
+    Hi,
+    Peoples,
+  };
+
+  struct Hi_Body {
+    int16_t _0;
+  };
+
+  struct Peoples_Body {
+    uint8_t x;
+    int16_t y;
+
+    friend std::ostream& operator<<(std::ostream& stream, const Peoples_Body& instance) {
+      return stream << "{ " << "x=" << instance.x << ", "
+                            << "y=" << instance.y << " }";
+    }
+  };
+
+  Tag tag;
+  union {
+    Hi_Body hi;
+    Peoples_Body peoples;
+  };
+};
+
 extern "C" {
 
-void root(A a, B b, C c, D d, F f, H h);
+void root(A a, B b, C c, D d, F f, H h, J j);
 
 } // extern "C"

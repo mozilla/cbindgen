@@ -90,11 +90,40 @@ struct H {
   };
 };
 
+enum J_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  Hi,
+  Peoples,
+};
+#ifndef __cplusplus
+typedef uint8_t J_Tag;
+#endif // __cplusplus
+
+struct Hi_Body {
+  int16_t _0;
+};
+
+struct Peoples_Body {
+  uint8_t x;
+  int16_t y;
+};
+
+struct J {
+  J_Tag tag;
+  union {
+    struct Hi_Body hi;
+    struct Peoples_Body peoples;
+  };
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(struct A a, struct B b, C c, struct D d, union F f, struct H h);
+void root(struct A a, struct B b, C c, struct D d, union F f, struct H h, struct J j);
 
 #ifdef __cplusplus
 } // extern "C"
