@@ -759,6 +759,17 @@ impl Source for Enum {
             );
 
             out.open_brace();
+            if is_tagged {
+                // C++ name resolution rules are weird.
+                write!(
+                    out,
+                    "using {} = {}::{};",
+                    enum_name,
+                    self.export_name(),
+                    enum_name
+                );
+                out.new_line();
+            }
             write!(out, "switch ({})", instance);
             out.open_brace();
             let vec: Vec<_> = self
@@ -766,13 +777,8 @@ impl Source for Enum {
                 .iter()
                 .map(|x| {
                     format!(
-                        "case {}{}{}::{}: {} << \"{}\"; break;",
-                        if is_tagged { self.export_name() } else { "" },
-                        if is_tagged { "::" } else { "" },
-                        enum_name,
-                        x.export_name,
-                        stream,
-                        x.export_name
+                        "case {}::{}: {} << \"{}\"; break;",
+                        enum_name, x.export_name, stream, x.export_name
                     )
                 })
                 .collect();
@@ -797,6 +803,17 @@ impl Source for Enum {
                 );
 
                 out.open_brace();
+
+                // C++ name resolution rules are weird.
+                write!(
+                    out,
+                    "using {} = {}::{};",
+                    enum_name,
+                    self.export_name(),
+                    enum_name
+                );
+                out.new_line();
+
                 write!(out, "switch ({}.tag)", instance);
                 out.open_brace();
                 let vec: Vec<_> = self
@@ -806,8 +823,7 @@ impl Source for Enum {
                         let tag_str = format!("\"{}\"", x.export_name);
                         if let VariantBody::Body { ref name, .. } = x.body {
                             format!(
-                                "case {}::{}::{}: {} << {}{}{}.{}; break;",
-                                self.export_name(),
+                                "case {}::{}: {} << {}{}{}.{}; break;",
                                 enum_name,
                                 x.export_name,
                                 stream,
@@ -818,12 +834,8 @@ impl Source for Enum {
                             )
                         } else {
                             format!(
-                                "case {}::{}::{}: {} << {}; break;",
-                                self.export_name(),
-                                enum_name,
-                                x.export_name,
-                                stream,
-                                tag_str,
+                                "case {}::{}: {} << {}; break;",
+                                enum_name, x.export_name, stream, tag_str,
                             )
                         }
                     })

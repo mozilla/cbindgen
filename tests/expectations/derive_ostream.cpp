@@ -55,19 +55,21 @@ union F {
   };
 
   friend std::ostream& operator<<(std::ostream& stream, const Tag& instance) {
+    using Tag = F::Tag;
     switch (instance) {
-      case F::Tag::Foo: stream << "Foo"; break;
-      case F::Tag::Bar: stream << "Bar"; break;
-      case F::Tag::Baz: stream << "Baz"; break;
+      case Tag::Foo: stream << "Foo"; break;
+      case Tag::Bar: stream << "Bar"; break;
+      case Tag::Baz: stream << "Baz"; break;
     }
     return stream;
   }
 
   friend std::ostream& operator<<(std::ostream& stream, const F& instance) {
+    using Tag = F::Tag;
     switch (instance.tag) {
-      case F::Tag::Foo: stream << instance.foo; break;
-      case F::Tag::Bar: stream << instance.bar; break;
-      case F::Tag::Baz: stream << "Baz"; break;
+      case Tag::Foo: stream << instance.foo; break;
+      case Tag::Bar: stream << instance.bar; break;
+      case Tag::Baz: stream << "Baz"; break;
     }
     return stream;
   }
@@ -109,19 +111,21 @@ struct H {
   };
 
   friend std::ostream& operator<<(std::ostream& stream, const Tag& instance) {
+    using Tag = H::Tag;
     switch (instance) {
-      case H::Tag::Hello: stream << "Hello"; break;
-      case H::Tag::There: stream << "There"; break;
-      case H::Tag::Everyone: stream << "Everyone"; break;
+      case Tag::Hello: stream << "Hello"; break;
+      case Tag::There: stream << "There"; break;
+      case Tag::Everyone: stream << "Everyone"; break;
     }
     return stream;
   }
 
   friend std::ostream& operator<<(std::ostream& stream, const H& instance) {
+    using Tag = H::Tag;
     switch (instance.tag) {
-      case H::Tag::Hello: stream << "Hello" << instance.hello; break;
-      case H::Tag::There: stream << "There" << instance.there; break;
-      case H::Tag::Everyone: stream << "Everyone"; break;
+      case Tag::Hello: stream << "Hello" << instance.hello; break;
+      case Tag::There: stream << "There" << instance.there; break;
+      case Tag::Everyone: stream << "Everyone"; break;
     }
     return stream;
   }
