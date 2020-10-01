@@ -90,11 +90,35 @@ typedef struct {
   };
 } H;
 
+enum I_Tag
+#ifdef __cplusplus
+  : uint8_t
+#endif // __cplusplus
+ {
+  ThereAgain,
+  SomethingElse,
+};
+#ifndef __cplusplus
+typedef uint8_t I_Tag;
+#endif // __cplusplus
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} ThereAgain_Body;
+
+typedef struct {
+  I_Tag tag;
+  union {
+    ThereAgain_Body there_again;
+  };
+} I;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(A a, B b, C c, D d, F f, H h);
+void root(A a, B b, C c, D d, F f, H h, I i);
 
 #ifdef __cplusplus
 } // extern "C"

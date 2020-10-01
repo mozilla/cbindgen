@@ -145,7 +145,7 @@ impl EnumVariant {
         let variant_cfg = Cfg::append(mod_cfg, Cfg::load(&variant.attrs));
         let mut annotations = AnnotationSet::load(&variant.attrs)?;
         if let Some(b) = enum_annotations.bool("derive-ostream") {
-            annotations.add("derive-ostream", AnnotationValue::Bool(b));
+            annotations.add_default("derive-ostream", AnnotationValue::Bool(b));
         }
         let body = match variant.fields {
             syn::Fields::Unit => VariantBody::Empty(annotations),
