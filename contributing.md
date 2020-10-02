@@ -4,7 +4,7 @@ Thanks for wanting to contribute!
 
 If you want help or mentorship, please file a Github issue and I'll be sure to provide guidance to the best of my ability.
 
-Otherwise be sure to check out `ARCHITECTURE.md` for an overview on the internals.
+Otherwise be sure to check out `internals.md` for an overview on the internals.
 
 ## Filing a pull request
 
