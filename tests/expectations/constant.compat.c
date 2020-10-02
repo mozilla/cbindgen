@@ -9,11 +9,11 @@
 
 #define DOUBLE_CAST (uint32_t)(float)1
 
-#define EQUID L'\U00010083'
+#define EQUID U'\U00010083'
 
 #define FOO 10
 
-#define HEART L'\U00002764'
+#define HEART U'\U00002764'
 
 #define LEFTCURLY '{'
 
