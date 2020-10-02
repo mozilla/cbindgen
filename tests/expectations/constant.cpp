@@ -10,11 +10,11 @@ static const uint32_t DELIMITER = ':';
 
 static const uint32_t DOUBLE_CAST = (uint32_t)(float)1;
 
-static const uint32_t EQUID = L'\U00010083';
+static const uint32_t EQUID = U'\U00010083';
 
 static const int32_t FOO = 10;
 
-static const uint32_t HEART = L'\U00002764';
+static const uint32_t HEART = U'\U00002764';
 
 static const uint32_t LEFTCURLY = '{';
 
