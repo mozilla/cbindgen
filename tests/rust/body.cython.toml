@@ -1,0 +1,17 @@
+[export.body]
+"MyCLikeEnum" = """
+    BogusVariantForSerializationForExample,
+"""
+
+"MyUnion" = """
+    int32_t extra_member; # yolo
+"""
+
+[export.pre_body]
+"MyCLikeEnum_Prepended" = """
+    BogusVariantForSerializationForExample,
+"""
+
+"MyUnion_Prepended" = """
+    int32_t extra_member; # yolo
+"""

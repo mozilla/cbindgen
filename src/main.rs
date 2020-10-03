@@ -25,22 +25,19 @@ use clap::{App, Arg, ArgMatches};
 mod bindgen;
 mod logging;
 
-use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Language, Profile, Style};
+use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Profile, Style};
 
 fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // We allow specifying a language to override the config default. This is
     // used by compile-tests.
     if let Some(lang) = matches.value_of("lang") {
-        config.language = match lang {
-            "C++" => Language::Cxx,
-            "c++" => Language::Cxx,
-            "C" => Language::C,
-            "c" => Language::C,
-            _ => {
-                error!("Unknown language specified.");
+        config.language = match lang.parse() {
+            Ok(lang) => lang,
+            Err(reason) => {
+                error!("{}", reason);
                 return;
             }
-        };
+        }
     }
 
     if matches.is_present("cpp-compat") {
@@ -155,7 +152,7 @@ fn main() {
                 .long("lang")
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
-                .possible_values(&["c++", "C++", "c", "C"]),
+                .possible_values(&["c++", "C++", "c", "C", "cython", "Cython"]),
         )
         .arg(
             Arg::with_name("cpp-compat")

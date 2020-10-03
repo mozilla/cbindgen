@@ -1,0 +1,5 @@
+[export]
+prefix = "PREFIX_"
+exclude = [
+  "Y", # right hand side crashes Cython compiler
+]

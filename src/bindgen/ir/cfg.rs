@@ -6,7 +6,7 @@ use std::fmt;
 use std::io::Write;
 
 use crate::bindgen::cargo::cargo_metadata::Dependency;
-use crate::bindgen::config::Config;
+use crate::bindgen::config::{Config, Language};
 use crate::bindgen::writer::SourceWriter;
 
 #[derive(PartialEq, Eq)]
@@ -283,15 +283,23 @@ impl Condition {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         match *self {
             Condition::Define(ref define) => {
-                out.write("defined(");
-                write!(out, "{}", define);
-                out.write(")");
+                if config.language == Language::Cython {
+                    write!(out, "{}", define);
+                } else {
+                    out.write("defined(");
+                    write!(out, "{}", define);
+                    out.write(")");
+                }
             }
             Condition::Any(ref conditions) => {
                 out.write("(");
                 for (i, condition) in conditions.iter().enumerate() {
                     if i != 0 {
-                        out.write(" || ");
+                        out.write(if config.language == Language::Cython {
+                            " or "
+                        } else {
+                            " || "
+                        });
                     }
                     condition.write(config, out);
                 }
@@ -301,14 +309,22 @@ impl Condition {
                 out.write("(");
                 for (i, condition) in conditions.iter().enumerate() {
                     if i != 0 {
-                        out.write(" && ");
+                        out.write(if config.language == Language::Cython {
+                            " and "
+                        } else {
+                            " && "
+                        });
                     }
                     condition.write(config, out);
                 }
                 out.write(")");
             }
             Condition::Not(ref condition) => {
-                out.write("!");
+                out.write(if config.language == Language::Cython {
+                    "not "
+                } else {
+                    "!"
+                });
                 condition.write(config, out);
             }
         }
@@ -323,20 +339,30 @@ pub trait ConditionWrite {
 impl ConditionWrite for Option<Condition> {
     fn write_before<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if let Some(ref cfg) = *self {
-            out.push_set_spaces(0);
-            out.write("#if ");
-            cfg.write(config, out);
-            out.pop_set_spaces();
-            out.new_line();
+            if config.language == Language::Cython {
+                out.write("IF ");
+                cfg.write(config, out);
+                out.open_brace();
+            } else {
+                out.push_set_spaces(0);
+                out.write("#if ");
+                cfg.write(config, out);
+                out.pop_set_spaces();
+                out.new_line();
+            }
         }
     }
 
-    fn write_after<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
+    fn write_after<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         if self.is_some() {
-            out.new_line();
-            out.push_set_spaces(0);
-            out.write("#endif");
-            out.pop_set_spaces();
+            if config.language == Language::Cython {
+                out.close_brace(false);
+            } else {
+                out.new_line();
+                out.push_set_spaces(0);
+                out.write("#endif");
+                out.pop_set_spaces();
+            }
         }
     }
 }

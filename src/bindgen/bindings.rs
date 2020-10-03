@@ -126,14 +126,14 @@ impl Bindings {
             write!(out, "{}", f);
             out.new_line();
         }
-        if let Some(ref f) = self.config.include_guard {
+        if let Some(f) = self.config.include_guard() {
             out.new_line_if_not_start();
             write!(out, "#ifndef {}", f);
             out.new_line();
             write!(out, "#define {}", f);
             out.new_line();
         }
-        if self.config.pragma_once {
+        if self.config.pragma_once && self.config.language != Language::Cython {
             out.new_line_if_not_start();
             write!(out, "#pragma once");
             out.new_line();
@@ -154,8 +154,8 @@ impl Bindings {
         }
 
         if self.config.no_includes
-            && self.config.sys_includes.is_empty()
-            && self.config.includes.is_empty()
+            && self.config.sys_includes().is_empty()
+            && self.config.includes().is_empty()
             && self.config.after_includes.is_none()
         {
             return;
@@ -164,50 +164,70 @@ impl Bindings {
         out.new_line_if_not_start();
 
         if !self.config.no_includes {
-            if self.config.language == Language::C {
-                out.write("#include <stdarg.h>");
-                out.new_line();
-                out.write("#include <stdbool.h>");
-                out.new_line();
-                if self.config.usize_is_size_t {
-                    out.write("#include <stddef.h>");
+            match self.config.language {
+                Language::C => {
+                    out.write("#include <stdarg.h>");
+                    out.new_line();
+                    out.write("#include <stdbool.h>");
+                    out.new_line();
+                    if self.config.usize_is_size_t {
+                        out.write("#include <stddef.h>");
+                        out.new_line();
+                    }
+                    out.write("#include <stdint.h>");
+                    out.new_line();
+                    out.write("#include <stdlib.h>");
                     out.new_line();
                 }
-                out.write("#include <stdint.h>");
-                out.new_line();
-                out.write("#include <stdlib.h>");
-                out.new_line();
-            } else {
-                out.write("#include <cstdarg>");
-                out.new_line();
-                if self.config.usize_is_size_t {
-                    out.write("#include <cstddef>");
+                Language::Cxx => {
+                    out.write("#include <cstdarg>");
                     out.new_line();
+                    if self.config.usize_is_size_t {
+                        out.write("#include <cstddef>");
+                        out.new_line();
+                    }
+                    out.write("#include <cstdint>");
+                    out.new_line();
+                    out.write("#include <cstdlib>");
+                    out.new_line();
+                    out.write("#include <ostream>");
+                    out.new_line();
+                    out.write("#include <new>");
+                    out.new_line();
+                    if self.config.enumeration.cast_assert_name.is_none()
+                        && (self.config.enumeration.derive_mut_casts
+                            || self.config.enumeration.derive_const_casts)
+                    {
+                        out.write("#include <cassert>");
+                        out.new_line();
+                    }
                 }
-                out.write("#include <cstdint>");
-                out.new_line();
-                out.write("#include <cstdlib>");
-                out.new_line();
-                out.write("#include <ostream>");
-                out.new_line();
-                out.write("#include <new>");
-                out.new_line();
-                if self.config.enumeration.cast_assert_name.is_none()
-                    && (self.config.enumeration.derive_mut_casts
-                        || self.config.enumeration.derive_const_casts)
-                {
-                    out.write("#include <cassert>");
+                Language::Cython => {
+                    out.write(
+                        "from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t",
+                    );
                     out.new_line();
+                    out.write(
+                        "from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, uintptr_t",
+                    );
+                    out.new_line();
+                    out.write("cdef extern from *");
+                    out.open_brace();
+                    out.write("ctypedef bint bool");
+                    out.new_line();
+                    out.write("ctypedef struct va_list");
+                    out.new_line();
+                    out.close_brace(false);
                 }
             }
         }
 
-        for include in &self.config.sys_includes {
+        for include in self.config.sys_includes() {
             write!(out, "#include <{}>", include);
             out.new_line();
         }
 
-        for include in &self.config.includes {
+        for include in self.config.includes() {
             write!(out, "#include \"{}\"", include);
             out.new_line();
         }
@@ -320,9 +340,18 @@ impl Bindings {
             }
         }
 
+        if self.config.language == Language::Cython
+            && self.globals.is_empty()
+            && self.constants.is_empty()
+            && self.items.is_empty()
+            && self.functions.is_empty()
+        {
+            out.write("pass");
+        }
+
         self.close_namespaces(&mut out);
 
-        if let Some(ref f) = self.config.include_guard {
+        if let Some(f) = self.config.include_guard() {
             out.new_line_if_not_start();
             if self.config.language == Language::C {
                 write!(out, "#endif /* {} */", f);
@@ -357,6 +386,17 @@ impl Bindings {
     }
 
     fn open_close_namespaces<F: Write>(&self, op: NamespaceOperation, out: &mut SourceWriter<F>) {
+        if self.config.language == Language::Cython {
+            if op == NamespaceOperation::Open {
+                out.new_line();
+                out.write("cdef extern from *");
+                out.open_brace();
+            } else {
+                out.close_brace(false);
+            }
+            return;
+        }
+
         let mut namespaces = self.all_namespaces();
         if namespaces.is_empty() {
             return;

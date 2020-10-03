@@ -12,6 +12,9 @@ enum class E : int8_t {
   C = (1 + 2),
   D = FOUR,
   F = 5,
+};
+
+enum class E_NoCython : int8_t {
   G = (int8_t)'6',
   H = (int8_t)false,
 };
@@ -19,5 +22,7 @@ enum class E : int8_t {
 extern "C" {
 
 void root(const E*);
+
+void root_no_cython(const E_NoCython*);
 
 } // extern "C"

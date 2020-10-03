@@ -1,0 +1,15 @@
+header = """
+DEF PLATFORM_UNIX = 0
+DEF PLATFORM_WIN = 0
+DEF X11 = 0
+DEF M_32 = 0
+"""
+
+[defines]
+"unix" = "PLATFORM_UNIX"
+"windows" = "PLATFORM_WIN"
+"x11" = "X11"
+"target_pointer_width = 32" = "M_32"
+
+[export]
+exclude = ["C"] # conditional compilation is not supported for enumerators

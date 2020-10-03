@@ -36,7 +36,9 @@ Then all you need to do is run it:
 cbindgen --config cbindgen.toml --crate my_rust_library --output my_header.h
 ```
 
-This produces a header file for C++.  For C, add the `--lang c` switch.
+This produces a header file for C++.  For C, add the `--lang c` switch. \
+`cbindgen` also supports generation of [Cython](https://cython.org) bindings,
+use `--lang cython` for that.
 
 See `cbindgen --help` for more options.
 
@@ -372,7 +374,7 @@ Note that many options defined here only apply for one of C or C++. Usually it's
 ```toml
 # The language to output bindings in
 #
-# possible values: "C", "C++"
+# possible values: "C", "C++", "Cython"
 #
 # default: "C++"
 language = "C"

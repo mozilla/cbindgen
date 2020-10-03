@@ -33,16 +33,25 @@ fn run_cbindgen(
                 command.arg("--cpp-compat");
             }
         }
+        Language::Cython => {
+            command.arg("--lang").arg("cython");
+        }
     }
 
     if let Some(style) = style {
         command.arg("--style").arg(style_str(style));
     }
 
-    let mut config = path.clone().to_path_buf();
-    config.set_extension("toml");
-    if config.exists() {
-        command.arg("--config").arg(config);
+    let config_exts = match language {
+        Language::Cython => &["cython.toml", "toml"][..],
+        _ => &["toml"],
+    };
+    for config_ext in config_exts {
+        let config = path.with_extension(config_ext);
+        if config.exists() {
+            command.arg("--config").arg(config);
+            break;
+        }
     }
 
     command.arg(path);
@@ -69,6 +78,7 @@ fn compile(
     let cc = match language {
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
+        Language::Cython => env::var("CYTHON").unwrap_or_else(|_| "cython".to_owned()),
     };
 
     let file_name = cbindgen_output
@@ -78,44 +88,57 @@ fn compile(
     object.set_extension("o");
 
     let mut command = Command::new(cc);
-    command.arg("-D").arg("DEFINED");
-    command.arg("-I").arg(tests_path);
-    command.arg("-Wall");
-    if !skip_warning_as_error {
-        command.arg("-Werror");
-    }
-    // `swift_name` is not recognzied by gcc.
-    command.arg("-Wno-attributes");
-    // clang warns about unused const variables.
-    command.arg("-Wno-unused-const-variable");
-    // clang also warns about returning non-instantiated templates (they could
-    // be specialized, but they're not so it's fine).
-    command.arg("-Wno-return-type-c-linkage");
-    if let Language::Cxx = language {
-        // enum class is a c++11 extension which makes g++ on macos 10.14 error out
-        // inline variables are are a c++17 extension
-        command.arg("-std=c++17");
-        // Prevents warnings when compiling .c files as c++.
-        command.arg("-x").arg("c++");
-        if let Ok(extra_flags) = env::var("CXXFLAGS") {
-            command.args(extra_flags.split_whitespace());
-        }
-    } else {
-        if let Ok(extra_flags) = env::var("CFLAGS") {
-            command.args(extra_flags.split_whitespace());
-        }
-    }
+    match language {
+        Language::Cxx | Language::C => {
+            command.arg("-D").arg("DEFINED");
+            command.arg("-I").arg(tests_path);
+            command.arg("-Wall");
+            if !skip_warning_as_error {
+                command.arg("-Werror");
+            }
+            // `swift_name` is not recognzied by gcc.
+            command.arg("-Wno-attributes");
+            // clang warns about unused const variables.
+            command.arg("-Wno-unused-const-variable");
+            // clang also warns about returning non-instantiated templates (they could
+            // be specialized, but they're not so it's fine).
+            command.arg("-Wno-return-type-c-linkage");
+            if let Language::Cxx = language {
+                // enum class is a c++11 extension which makes g++ on macos 10.14 error out
+                // inline variables are are a c++17 extension
+                command.arg("-std=c++17");
+                // Prevents warnings when compiling .c files as c++.
+                command.arg("-x").arg("c++");
+                if let Ok(extra_flags) = env::var("CXXFLAGS") {
+                    command.args(extra_flags.split_whitespace());
+                }
+            } else {
+                if let Ok(extra_flags) = env::var("CFLAGS") {
+                    command.args(extra_flags.split_whitespace());
+                }
+            }
 
-    if let Some(style) = style {
-        command.arg("-D");
-        command.arg(format!(
-            "CBINDGEN_STYLE_{}",
-            style_str(style).to_uppercase()
-        ));
-    }
+            if let Some(style) = style {
+                command.arg("-D");
+                command.arg(format!(
+                    "CBINDGEN_STYLE_{}",
+                    style_str(style).to_uppercase()
+                ));
+            }
 
-    command.arg("-o").arg(&object);
-    command.arg("-c").arg(cbindgen_output);
+            command.arg("-o").arg(&object);
+            command.arg("-c").arg(cbindgen_output);
+        }
+        Language::Cython => {
+            command.arg("-Wextra");
+            if !skip_warning_as_error {
+                command.arg("-Werror");
+            }
+            command.arg("-3");
+            command.arg("-o").arg(&object);
+            command.arg(cbindgen_output);
+        }
+    }
 
     println!("Running: {:?}", command);
     let out = command.output().expect("failed to compile");
@@ -154,6 +177,10 @@ fn run_compile_test(
         Language::Cxx => ".cpp",
         Language::C if cpp_compat => ".compat.c",
         Language::C => ".c",
+        // cbindgen is supposed to generate declaration files (`.pxd`), but `cython` compiler
+        // is extension-sensitive and won't work on them, so we use implementation files (`.pyx`)
+        // in the test suite.
+        Language::Cython => ".pyx",
     };
 
     let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();
@@ -248,6 +275,21 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
         None,
         &mut HashSet::new(),
     );
+
+    // `Style::Both` should be identical to `Style::Tag` for Cython.
+    let mut cbindgen_outputs = HashSet::new();
+    for style in &[Style::Type, Style::Tag] {
+        run_compile_test(
+            cbindgen_path,
+            name,
+            &test,
+            tmp_dir,
+            Language::Cython,
+            /* cpp_compat = */ false,
+            Some(*style),
+            &mut cbindgen_outputs,
+        );
+    }
 }
 
 macro_rules! test_file {

@@ -6,6 +6,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use crate::bindgen::config::{Config, Language};
 use crate::bindgen::utilities::SynAttributeHelpers;
 
 // A system for specifying properties on items. Annotations are
@@ -46,6 +47,10 @@ impl AnnotationSet {
 
     pub fn is_empty(&self) -> bool {
         self.annotations.is_empty() && !self.must_use
+    }
+
+    pub(crate) fn must_use(&self, config: &Config) -> bool {
+        self.must_use && config.language != Language::Cython
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {

@@ -6,7 +6,7 @@ use std::cmp;
 use std::io;
 use std::io::Write;
 
-use crate::bindgen::config::{Braces, Config};
+use crate::bindgen::config::{Braces, Config, Language};
 use crate::bindgen::Bindings;
 
 /// A type of way to format a list.
@@ -153,28 +153,42 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn open_brace(&mut self) {
-        match self.bindings.config.braces {
-            Braces::SameLine => {
-                self.write(" {");
+        match self.bindings.config.language {
+            Language::Cxx | Language::C => match self.bindings.config.braces {
+                Braces::SameLine => {
+                    self.write(" {");
+                    self.push_tab();
+                    self.new_line();
+                }
+                Braces::NextLine => {
+                    self.new_line();
+                    self.write("{");
+                    self.push_tab();
+                    self.new_line();
+                }
+            },
+            Language::Cython => {
+                self.write(":");
+                self.new_line();
                 self.push_tab();
-                self.new_line();
-            }
-            Braces::NextLine => {
-                self.new_line();
-                self.write("{");
-                self.push_tab();
-                self.new_line();
             }
         }
     }
 
     pub fn close_brace(&mut self, semicolon: bool) {
-        self.pop_tab();
-        self.new_line();
-        if semicolon {
-            self.write("};");
-        } else {
-            self.write("}");
+        match self.bindings.config.language {
+            Language::Cxx | Language::C => {
+                self.pop_tab();
+                self.new_line();
+                if semicolon {
+                    self.write("};");
+                } else {
+                    self.write("}");
+                }
+            }
+            Language::Cython => {
+                self.pop_tab();
+            }
         }
     }
 

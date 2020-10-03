@@ -62,12 +62,12 @@ impl Library {
             SortKey::None => { /* keep input order */ }
         }
 
-        if self.config.language == Language::C {
+        if self.config.language != Language::Cxx {
             self.instantiate_monomorphs();
-            self.remove_excluded();
+        }
+        self.remove_excluded();
+        if self.config.language == Language::C {
             self.resolve_declaration_types();
-        } else {
-            self.remove_excluded();
         }
 
         self.rename_items();

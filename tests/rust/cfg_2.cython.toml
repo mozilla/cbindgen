@@ -1,0 +1,9 @@
+header = """
+DEF DEFINED = 1
+DEF NOT_DEFINED = 0
+"""
+
+[defines]
+"unix" = "DEFINED"
+"macos" = "NOT_DEFINED"
+"windows" = "NOT_DEFINED"
