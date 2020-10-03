@@ -374,6 +374,25 @@ impl Type {
         Ok(Some(converted))
     }
 
+    pub fn walk(&self, f: &mut impl FnMut(&Self)) {
+        f(self);
+        match self {
+            Type::Array(ty, ..) | Type::Ptr { ty, .. } => ty.walk(f),
+            Type::Path(generic_path) => {
+                for ty in generic_path.generics() {
+                    ty.walk(f);
+                }
+            }
+            Type::Primitive(..) => {}
+            Type::FuncPtr(ret, args) => {
+                ret.walk(f);
+                for arg in args {
+                    arg.1.walk(f);
+                }
+            }
+        }
+    }
+
     pub fn is_primitive_or_ptr_primitive(&self) -> bool {
         match *self {
             Type::Primitive(..) => true,

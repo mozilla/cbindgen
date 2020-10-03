@@ -363,14 +363,19 @@ pub struct Constant {
     pub associated_to: Option<Path>,
 }
 
-fn can_handle(ty: &Type, expr: &syn::Expr) -> bool {
-    if ty.is_primitive_or_ptr_primitive() {
-        return true;
-    }
-    match *expr {
-        syn::Expr::Struct(_) => true,
-        _ => false,
-    }
+// If we can convert the right hand side and the const item is well formed,
+// then we should be able to convert the left side as well, even if it uses user-defined types.
+// The one exception is that we cannot convert `str` type even if we can convert string literals.
+fn can_handle(ty: &Type) -> Result<(), String> {
+    let mut res = Ok(());
+    ty.walk(&mut |ty| {
+        if let Type::Path(generic_path) = ty {
+            if generic_path.name() == "str" {
+                res = Err("`str` is not supported".to_owned());
+            }
+        }
+    });
+    res
 }
 
 impl Constant {
@@ -390,8 +395,8 @@ impl Constant {
             }
         };
 
-        if !can_handle(&ty, expr) {
-            return Err("Unhandled const definition".to_owned());
+        if let Err(reason) = can_handle(&ty) {
+            return Err(format!("Unhandled const definition: {}", reason));
         }
 
         let mut lit = Literal::load(&expr)?;
