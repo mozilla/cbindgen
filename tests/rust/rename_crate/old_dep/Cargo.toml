@@ -1,8 +1,8 @@
 [package]
-name = "old-dep-name"
+name = "old_dep_name"
 version = "0.1.0"
 authors = ["cbindgen"]
 edition = "2018"
 
 [target.'cfg(not(target_os = "freebsd"))'.dependencies]
-no-extern = { path = "../no-extern/" }
+no_extern = { path = "../no_extern/" }

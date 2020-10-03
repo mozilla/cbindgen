@@ -1,5 +1,5 @@
 [package]
-name = "no-extern"
+name = "no_extern"
 version = "0.1.0"
 authors = ["cbindgen"]
 edition = "2018"

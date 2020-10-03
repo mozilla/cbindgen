@@ -5,21 +5,20 @@ name = "dependency"
 version = "0.1.0"
 
 [[package]]
-name = "no-extern"
+name = "no_extern"
 version = "0.1.0"
 
 [[package]]
-name = "old-dep-name"
+name = "old_dep_name"
 version = "0.1.0"
 dependencies = [
- "no-extern 0.1.0",
+ "no_extern",
 ]
 
 [[package]]
-name = "rename-crate"
+name = "rename_crate"
 version = "0.1.0"
 dependencies = [
- "dependency 0.1.0",
- "old-dep-name 0.1.0",
+ "dependency",
+ "old_dep_name",
 ]
-
