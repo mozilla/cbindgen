@@ -835,6 +835,19 @@ pub struct PtrConfig {
     pub non_null_attribute: Option<String>,
 }
 
+/// Settings specific to Cython bindings.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct CythonConfig {
+    /// Header specified in the top level `cdef extern from header:` declaration.
+    pub header: Option<String>,
+    /// `from module cimport name1, name2, ...` declarations added in the same place
+    /// where you'd get includes in C.
+    pub cimports: HashMap<String, Vec<String>>,
+}
+
 /// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -918,6 +931,8 @@ pub struct Config {
     /// Configuration options for pointers
     #[serde(rename = "ptr")]
     pub pointer: PtrConfig,
+    /// Configuration options specific to Cython.
+    pub cython: CythonConfig,
 }
 
 impl Default for Config {
@@ -957,6 +972,7 @@ impl Default for Config {
             documentation: true,
             documentation_style: DocumentationStyle::Auto,
             pointer: PtrConfig::default(),
+            cython: CythonConfig::default(),
         }
     }
 }

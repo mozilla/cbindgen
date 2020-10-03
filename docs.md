@@ -979,6 +979,19 @@ features = ["cbindgen"]
 # `&mut T` and `NonNull<T>` all require a valid pointer value. 
 non_null_attribute = "_Nonnull"
 
+# Options specific to Cython bindings.
+
+[cython]
+
+# Header specified in the top level `cdef extern from header:` declaration.
+#
+# default: *
+header = '"my_header.h"'
+
+# `from module cimport name1, name2` declarations added in the same place
+# where you'd get includes in C.
+[cython.cimports]
+module = ["name1", "name2"]
 ```
 
 
