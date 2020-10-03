@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::BTreeMap;
+use indexmap::IndexMap;
 use std::mem;
 
 use crate::bindgen::config::Config;
@@ -75,13 +75,13 @@ pub enum ItemValue<T: Item> {
 
 #[derive(Debug, Clone)]
 pub struct ItemMap<T: Item> {
-    data: BTreeMap<Path, ItemValue<T>>,
+    data: IndexMap<Path, ItemValue<T>>,
 }
 
 impl<T: Item + Clone> ItemMap<T> {
     pub fn default() -> ItemMap<T> {
         ItemMap {
-            data: BTreeMap::new(),
+            data: Default::default(),
         }
     }
 
@@ -150,7 +150,7 @@ impl<T: Item + Clone> ItemMap<T> {
     where
         F: Fn(&T) -> bool,
     {
-        let data = mem::replace(&mut self.data, BTreeMap::new());
+        let data = mem::replace(&mut self.data, Default::default());
 
         for (name, container) in data {
             match container {
