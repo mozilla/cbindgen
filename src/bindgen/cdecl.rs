@@ -180,8 +180,10 @@ impl CDecl {
             write!(out, "{} ", self.type_qualifers);
         }
 
-        if let Some(ref ctype) = self.type_ctype {
-            write!(out, "{} ", ctype.to_str());
+        if config.language != Language::Cython {
+            if let Some(ref ctype) = self.type_ctype {
+                write!(out, "{} ", ctype.to_str());
+            }
         }
 
         write!(out, "{}", self.type_name);
@@ -214,7 +216,7 @@ impl CDecl {
                     if is_const {
                         out.write("const ");
                     }
-                    if !is_nullable && !is_ref {
+                    if !is_nullable && !is_ref && config.language != Language::Cython {
                         if let Some(attr) = &config.pointer.non_null_attribute {
                             write!(out, "{} ", attr);
                         }

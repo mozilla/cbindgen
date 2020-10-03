@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::io::Write;
 
 use crate::bindgen::cdecl;
-use crate::bindgen::config::{Config, Layout};
+use crate::bindgen::config::{Config, Language, Layout};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
@@ -86,7 +86,14 @@ impl Function {
         })
     }
 
-    pub fn swift_name(&self) -> Option<String> {
+    pub(crate) fn never_return(&self, config: &Config) -> bool {
+        self.never_return && config.language != Language::Cython
+    }
+
+    pub fn swift_name(&self, config: &Config) -> Option<String> {
+        if config.language == Language::Cython {
+            return None;
+        }
         // If the symbol name starts with the type name, separate the two components with '.'
         // so that Swift recognises the association between the method and the type
         let (ref type_prefix, ref type_name) = match self.self_type_path {
@@ -243,7 +250,7 @@ impl Source for Function {
                 if let Some(ref prefix) = prefix {
                     write!(out, "{} ", prefix);
                 }
-                if func.annotations.must_use {
+                if func.annotations.must_use(config) {
                     if let Some(ref anno) = config.function.must_use {
                         write!(out, "{} ", anno);
                     }
@@ -258,12 +265,12 @@ impl Source for Function {
             }
 
             if let Some(ref swift_name_macro) = config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name() {
+                if let Some(swift_name) = func.swift_name(config) {
                     write!(out, " {}({})", swift_name_macro, swift_name);
                 }
             }
 
-            if func.never_return {
+            if func.never_return(config) {
                 if let Some(ref no_return_attr) = config.function.no_return {
                     out.write_fmt(format_args!(" {}", no_return_attr));
                 }
@@ -291,7 +298,7 @@ impl Source for Function {
                     write!(out, "{}", prefix);
                     out.new_line();
                 }
-                if func.annotations.must_use {
+                if func.annotations.must_use(config) {
                     if let Some(ref anno) = config.function.must_use {
                         write!(out, "{}", anno);
                         out.new_line();
@@ -307,12 +314,12 @@ impl Source for Function {
             }
 
             if let Some(ref swift_name_macro) = config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name() {
+                if let Some(swift_name) = func.swift_name(config) {
                     write!(out, " {}({})", swift_name_macro, swift_name);
                 }
             }
 
-            if func.never_return {
+            if func.never_return(config) {
                 if let Some(ref no_return_attr) = config.function.no_return {
                     out.write_fmt(format_args!(" {}", no_return_attr));
                 }

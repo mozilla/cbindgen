@@ -442,7 +442,7 @@ impl Item for Enum {
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.export_name);
 
-        if config.language == Language::C && self.tag.is_some() {
+        if config.language != Language::Cxx && self.tag.is_some() {
             // it makes sense to always prefix Tag with type name in C
             let new_tag = format!("{}_Tag", self.export_name);
             if self.repr.style == ReprStyle::Rust {
@@ -590,7 +590,7 @@ impl Source for Enum {
         if is_tagged && config.language == Language::Cxx {
             out.write(if separate_tag { "struct" } else { "union" });
 
-            if self.annotations.must_use {
+            if self.annotations.must_use(config) {
                 if let Some(ref anno) = config.structure.must_use {
                     write!(out, " {}", anno)
                 }
@@ -615,48 +615,61 @@ impl Source for Enum {
         };
 
         // Emit the actual enum
-        if config.language == Language::C {
-            if let Some(prim) = size {
-                // If we need to specify size, then we have no choice but to create a typedef,
-                // so `config.style` is not respected.
-                write!(out, "enum {}", enum_name);
+        match config.language {
+            Language::C => {
+                if let Some(prim) = size {
+                    // If we need to specify size, then we have no choice but to create a typedef,
+                    // so `config.style` is not respected.
+                    write!(out, "enum {}", enum_name);
 
-                if config.cpp_compatible_c() {
-                    out.new_line();
-                    out.write("#ifdef __cplusplus");
-                    out.new_line();
-                    write!(out, "  : {}", prim);
-                    out.new_line();
-                    out.write("#endif // __cplusplus");
-                    out.new_line();
-                }
-            } else {
-                if config.style.generate_typedef() {
-                    out.write("typedef ");
-                }
-                out.write("enum");
-                if config.style.generate_tag() {
-                    write!(out, " {}", enum_name);
+                    if config.cpp_compatible_c() {
+                        out.new_line();
+                        out.write("#ifdef __cplusplus");
+                        out.new_line();
+                        write!(out, "  : {}", prim);
+                        out.new_line();
+                        out.write("#endif // __cplusplus");
+                        out.new_line();
+                    }
+                } else {
+                    if config.style.generate_typedef() {
+                        out.write("typedef ");
+                    }
+                    out.write("enum");
+                    if config.style.generate_tag() {
+                        write!(out, " {}", enum_name);
+                    }
                 }
             }
-        } else {
-            if config.enumeration.enum_class(&self.annotations) {
-                out.write("enum class");
-            } else {
-                out.write("enum");
-            }
+            Language::Cxx => {
+                if config.enumeration.enum_class(&self.annotations) {
+                    out.write("enum class");
+                } else {
+                    out.write("enum");
+                }
 
-            if self.annotations.must_use {
-                if let Some(ref anno) = config.enumeration.must_use {
-                    write!(out, " {}", anno)
+                if self.annotations.must_use(config) {
+                    if let Some(ref anno) = config.enumeration.must_use {
+                        write!(out, " {}", anno)
+                    }
+                }
+
+                write!(out, " {}", enum_name);
+                if let Some(prim) = size {
+                    write!(out, " : {}", prim);
                 }
             }
-
-            write!(out, " {}", enum_name);
-            if let Some(prim) = size {
-                write!(out, " : {}", prim);
+            Language::Cython => {
+                if size.is_some() {
+                    // If we need to specify size, then we have no choice but to create a typedef,
+                    // so `config.style` is not respected.
+                    write!(out, "cdef enum");
+                } else {
+                    write!(out, "{}enum {}", config.style.cython_def(), enum_name);
+                }
             }
         }
+
         out.open_brace();
         for (i, variant) in self.variants.iter().enumerate() {
             if i != 0 {
@@ -678,9 +691,9 @@ impl Source for Enum {
                 out.write("#ifndef __cplusplus");
             }
 
-            if config.language == Language::C {
+            if config.language != Language::Cxx {
                 out.new_line();
-                write!(out, "typedef {} {};", prim, enum_name);
+                write!(out, "{} {} {};", config.language.typedef(), prim, enum_name);
             }
 
             if config.cpp_compatible_c() {
@@ -838,15 +851,17 @@ impl Source for Enum {
             out.new_line();
             out.new_line();
 
-            // Emit the actual union
-            if config.language == Language::C {
-                if config.style.generate_typedef() {
-                    out.write("typedef ");
+            // Emit the actual union (code here should mirror {struct,union}.rs).
+            if config.language != Language::Cxx {
+                match config.language {
+                    Language::C if config.style.generate_typedef() => out.write("typedef "),
+                    Language::C | Language::Cxx => {}
+                    Language::Cython => out.write(config.style.cython_def()),
                 }
 
                 out.write(if separate_tag { "struct" } else { "union" });
 
-                if config.style.generate_tag() {
+                if config.language != Language::C || config.style.generate_tag() {
                     write!(out, " {}", self.export_name());
                 }
 
@@ -883,7 +898,11 @@ impl Source for Enum {
 
             out.new_line();
 
-            if separate_tag {
+            // Cython extern declarations don't manage layouts, layouts are defined entierly by the
+            // corresponding C code. So we can inline the unnamed union into the struct and get the
+            // same observable result. Moreother we have to do it because Cython doesn't support
+            // unnamed unions.
+            if separate_tag && config.language != Language::Cython {
                 out.write("union");
                 out.open_brace();
             }
@@ -902,7 +921,7 @@ impl Source for Enum {
                     first = false;
                     let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
-                    if config.style.generate_typedef() {
+                    if config.style.generate_typedef() || config.language == Language::Cython {
                         write!(out, "{} {};", body.export_name(), field_name);
                     } else {
                         write!(out, "struct {} {};", body.export_name(), field_name);
@@ -911,7 +930,8 @@ impl Source for Enum {
                 }
             }
 
-            if separate_tag {
+            // See the comment about Cython on `open_brace`.
+            if separate_tag && config.language != Language::Cython {
                 out.close_brace(true);
             }
 

@@ -22,6 +22,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub enum Language {
     Cxx,
     C,
+    Cython,
 }
 
 impl FromStr for Language {
@@ -39,12 +40,23 @@ impl FromStr for Language {
             "C++" => Ok(Language::Cxx),
             "c" => Ok(Language::C),
             "C" => Ok(Language::C),
+            "cython" => Ok(Language::Cython),
+            "Cython" => Ok(Language::Cython),
             _ => Err(format!("Unrecognized Language: '{}'.", s)),
         }
     }
 }
 
 deserialize_enum_str!(Language);
+
+impl Language {
+    pub(crate) fn typedef(self) -> &'static str {
+        match self {
+            Language::Cxx | Language::C => "typedef",
+            Language::Cython => "ctypedef",
+        }
+    }
+}
 
 /// Controls what type of line endings are used in the generated code.
 #[derive(Debug, Clone, Copy)]
@@ -198,6 +210,15 @@ impl Style {
         match self {
             Style::Both | Style::Type => true,
             Style::Tag => false,
+        }
+    }
+
+    // https://cython.readthedocs.io/en/latest/src/userguide/external_C_code.html#styles-of-struct-union-and-enum-declaration
+    pub fn cython_def(self) -> &'static str {
+        if self.generate_tag() {
+            "cdef "
+        } else {
+            "ctypedef "
         }
     }
 }
@@ -943,6 +964,30 @@ impl Default for Config {
 impl Config {
     pub(crate) fn cpp_compatible_c(&self) -> bool {
         self.language == Language::C && self.cpp_compat
+    }
+
+    pub(crate) fn include_guard(&self) -> Option<&str> {
+        if self.language == Language::Cython {
+            None
+        } else {
+            self.include_guard.as_deref()
+        }
+    }
+
+    pub(crate) fn includes(&self) -> &[String] {
+        if self.language == Language::Cython {
+            &[]
+        } else {
+            &self.includes
+        }
+    }
+
+    pub(crate) fn sys_includes(&self) -> &[String] {
+        if self.language == Language::Cython {
+            &[]
+        } else {
+            &self.sys_includes
+        }
     }
 
     pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {

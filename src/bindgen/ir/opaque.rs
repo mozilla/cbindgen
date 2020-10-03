@@ -146,15 +146,29 @@ impl Source for OpaqueItem {
 
         self.generic_params.write_with_default(config, out);
 
-        if config.style.generate_typedef() && config.language == Language::C {
-            write!(
-                out,
-                "typedef struct {} {};",
-                self.export_name(),
-                self.export_name()
-            );
-        } else {
-            write!(out, "struct {};", self.export_name());
+        match config.language {
+            Language::C if config.style.generate_typedef() => {
+                write!(
+                    out,
+                    "typedef struct {} {};",
+                    self.export_name(),
+                    self.export_name()
+                );
+            }
+            Language::C | Language::Cxx => {
+                write!(out, "struct {};", self.export_name());
+            }
+            Language::Cython => {
+                write!(
+                    out,
+                    "{}struct {}",
+                    config.style.cython_def(),
+                    self.export_name()
+                );
+                out.open_brace();
+                out.write("pass");
+                out.close_brace(false);
+            }
         }
 
         condition.write_after(config, out);

@@ -290,28 +290,33 @@ impl Source for Union {
         //   typedef union {
         // C with Both as style:
         //   typedef union Name {
-        if config.language == Language::C && config.style.generate_typedef() {
-            out.write("typedef ");
+        match config.language {
+            Language::C if config.style.generate_typedef() => out.write("typedef "),
+            Language::C | Language::Cxx => {}
+            Language::Cython => out.write(config.style.cython_def()),
         }
 
         out.write("union");
 
-        if let Some(align) = self.alignment {
-            match align {
-                ReprAlign::Packed => {
-                    if let Some(ref anno) = config.layout.packed {
-                        write!(out, " {}", anno);
+        // Cython supports `packed` on structs (see comments there), but not on unions.
+        if config.language != Language::Cython {
+            if let Some(align) = self.alignment {
+                match align {
+                    ReprAlign::Packed => {
+                        if let Some(ref anno) = config.layout.packed {
+                            write!(out, " {}", anno);
+                        }
                     }
-                }
-                ReprAlign::Align(n) => {
-                    if let Some(ref anno) = config.layout.aligned_n {
-                        write!(out, " {}({})", anno, n);
+                    ReprAlign::Align(n) => {
+                        if let Some(ref anno) = config.layout.aligned_n {
+                            write!(out, " {}({})", anno, n);
+                        }
                     }
                 }
             }
         }
 
-        if config.language == Language::Cxx || config.style.generate_tag() {
+        if config.language != Language::C || config.style.generate_tag() {
             write!(out, " {}", self.export_name);
         }
 
@@ -324,6 +329,9 @@ impl Source for Union {
         }
 
         out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
+        if config.language == Language::Cython && self.fields.is_empty() {
+            out.write("pass");
+        }
 
         // Emit the post_body section, if relevant
         if let Some(body) = config.export.post_body(&self.path) {

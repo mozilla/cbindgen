@@ -1,0 +1,10 @@
+# header = """
+# #ifdef __cplusplus
+# template <typename T>
+# using Box = T*;
+# #endif
+# """
+[export]
+exclude = [
+  "Box",
+]

@@ -307,9 +307,17 @@ impl Literal {
                 write!(out, ")");
             }
             Literal::Cast { ref ty, ref value } => {
-                write!(out, "(");
+                out.write(if config.language == Language::Cython {
+                    "<"
+                } else {
+                    "("
+                });
                 ty.write(config, out);
-                write!(out, ")");
+                out.write(if config.language == Language::Cython {
+                    ">"
+                } else {
+                    ")"
+                });
                 value.write(config, out);
             }
             Literal::Struct {
@@ -317,10 +325,10 @@ impl Literal {
                 fields,
                 path,
             } => {
-                if config.language == Language::C {
-                    write!(out, "({})", export_name);
-                } else {
-                    write!(out, "{}", export_name);
+                match config.language {
+                    Language::C => write!(out, "({})", export_name),
+                    Language::Cxx => write!(out, "{}", export_name),
+                    Language::Cython => write!(out, "<{}>", export_name),
                 }
 
                 write!(out, "{{ ");
@@ -334,10 +342,10 @@ impl Literal {
                         } else {
                             is_first_field = false;
                         }
-                        if config.language == Language::Cxx {
-                            write!(out, "/* .{} = */ ", ordered_key);
-                        } else {
-                            write!(out, ".{} = ", ordered_key);
+                        match config.language {
+                            Language::Cxx => write!(out, "/* .{} = */ ", ordered_key),
+                            Language::C => write!(out, ".{} = ", ordered_key),
+                            Language::Cython => {}
                         }
                         lit.write(config, out);
                     }
@@ -551,19 +559,24 @@ impl Constant {
             false
         };
 
-        if (config.constant.allow_static_const || allow_constexpr)
-            && config.language == Language::Cxx
+        if config.language == Language::Cython
+            || (config.language == Language::Cxx
+                && (config.constant.allow_static_const || allow_constexpr))
         {
-            if allow_constexpr {
-                out.write("constexpr ")
-            }
+            if config.language == Language::Cxx {
+                if allow_constexpr {
+                    out.write("constexpr ")
+                }
 
-            if config.constant.allow_static_const {
-                out.write(if in_body { "inline " } else { "static " });
-            }
+                if config.constant.allow_static_const {
+                    out.write(if in_body { "inline " } else { "static " });
+                }
 
-            if let Type::Ptr { is_const: true, .. } = self.ty {
-                // Nothing.
+                if let Type::Ptr { is_const: true, .. } = self.ty {
+                    // Nothing.
+                } else {
+                    out.write("const ");
+                }
             } else {
                 out.write("const ");
             }

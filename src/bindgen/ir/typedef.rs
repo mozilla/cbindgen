@@ -203,14 +203,18 @@ impl Source for Typedef {
 
         self.generic_params.write(config, out);
 
-        if config.language == Language::C {
-            out.write("typedef ");
-            Field::from_name_and_type(self.export_name().to_owned(), self.aliased.clone())
-                .write(config, out);
-        } else {
-            write!(out, "using {} = ", self.export_name());
-            self.aliased.write(config, out);
+        match config.language {
+            Language::Cxx => {
+                write!(out, "using {} = ", self.export_name());
+                self.aliased.write(config, out);
+            }
+            Language::C | Language::Cython => {
+                write!(out, "{} ", config.language.typedef());
+                Field::from_name_and_type(self.export_name().to_owned(), self.aliased.clone())
+                    .write(config, out);
+            }
         }
+
         out.write(";");
 
         condition.write_after(config, out);

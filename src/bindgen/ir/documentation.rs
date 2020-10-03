@@ -43,6 +43,15 @@ impl Source for Documentation {
             return;
         }
 
+        // Cython uses Python-style comments, so `documentation_style` is not relevant.
+        if config.language == Language::Cython {
+            for line in &self.doc_comment {
+                write!(out, "#{}", line);
+                out.new_line();
+            }
+            return;
+        }
+
         let style = match config.documentation_style {
             DocumentationStyle::Auto if config.language == Language::C => DocumentationStyle::Doxy,
             DocumentationStyle::Auto if config.language == Language::Cxx => DocumentationStyle::Cxx,
