@@ -156,6 +156,7 @@ impl Bindings {
         if self.config.no_includes
             && self.config.sys_includes().is_empty()
             && self.config.includes().is_empty()
+            && (self.config.cython.cimports.is_empty() || self.config.language != Language::Cython)
             && self.config.after_includes.is_none()
         {
             return;
@@ -230,6 +231,13 @@ impl Bindings {
         for include in self.config.includes() {
             write!(out, "#include \"{}\"", include);
             out.new_line();
+        }
+
+        if self.config.language == Language::Cython {
+            for (module, names) in &self.config.cython.cimports {
+                write!(out, "from {} cimport {}", module, names.join(", "));
+                out.new_line();
+            }
         }
 
         if let Some(ref line) = self.config.after_includes {
@@ -389,7 +397,8 @@ impl Bindings {
         if self.config.language == Language::Cython {
             if op == NamespaceOperation::Open {
                 out.new_line();
-                out.write("cdef extern from *");
+                let header = self.config.cython.header.as_deref().unwrap_or("*");
+                write!(out, "cdef extern from {}", header);
                 out.open_brace();
             } else {
                 out.close_brace(false);
