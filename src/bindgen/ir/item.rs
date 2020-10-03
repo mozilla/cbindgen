@@ -78,15 +78,17 @@ pub struct ItemMap<T: Item> {
     data: IndexMap<Path, ItemValue<T>>,
 }
 
-impl<T: Item + Clone> ItemMap<T> {
-    pub fn default() -> ItemMap<T> {
+impl<T: Item> Default for ItemMap<T> {
+    fn default() -> ItemMap<T> {
         ItemMap {
             data: Default::default(),
         }
     }
+}
 
+impl<T: Item + Clone> ItemMap<T> {
     pub fn rebuild(&mut self) {
-        let old = mem::replace(self, ItemMap::default());
+        let old = mem::take(self);
         old.for_all_items(|x| {
             self.try_insert(x.clone());
         });
@@ -150,7 +152,7 @@ impl<T: Item + Clone> ItemMap<T> {
     where
         F: Fn(&T) -> bool,
     {
-        let data = mem::replace(&mut self.data, Default::default());
+        let data = mem::take(&mut self.data);
 
         for (name, container) in data {
             match container {

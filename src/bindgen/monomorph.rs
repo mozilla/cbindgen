@@ -87,22 +87,22 @@ impl Monomorphs {
     }
 
     pub fn drain_opaques(&mut self) -> Vec<OpaqueItem> {
-        mem::replace(&mut self.opaques, Vec::new())
+        mem::take(&mut self.opaques)
     }
 
     pub fn drain_structs(&mut self) -> Vec<Struct> {
-        mem::replace(&mut self.structs, Vec::new())
+        mem::take(&mut self.structs)
     }
 
     pub fn drain_unions(&mut self) -> Vec<Union> {
-        mem::replace(&mut self.unions, Vec::new())
+        mem::take(&mut self.unions)
     }
 
     pub fn drain_typedefs(&mut self) -> Vec<Typedef> {
-        mem::replace(&mut self.typedefs, Vec::new())
+        mem::take(&mut self.typedefs)
     }
 
     pub fn drain_enums(&mut self) -> Vec<Enum> {
-        mem::replace(&mut self.enums, Vec::new())
+        mem::take(&mut self.enums)
     }
 }

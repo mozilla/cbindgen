@@ -167,7 +167,7 @@ impl Function {
             .unwrap_or(config.function.rename_args);
 
         if let Some(r) = rules.not_none() {
-            let args = std::mem::replace(&mut self.args, vec![]);
+            let args = std::mem::take(&mut self.args);
             self.args = args
                 .into_iter()
                 .map(|arg| {
