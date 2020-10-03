@@ -195,12 +195,9 @@ impl Literal {
                 })
             }
 
-            // Match literals like "one", 'a', 32 etc
+            // Match literals like true, 'a', 32 etc
             syn::Expr::Lit(syn::ExprLit { ref lit, .. }) => {
                 match lit {
-                    syn::Lit::Str(ref value) => {
-                        Ok(Literal::Expr(format!("u8\"{}\"", value.value())))
-                    }
                     syn::Lit::Byte(ref value) => Ok(Literal::Expr(format!("{}", value.value()))),
                     syn::Lit::Char(ref value) => Ok(Literal::Expr(match value.value() as u32 {
                         0..=255 => format!("'{}'", value.value().escape_default()),
@@ -363,16 +360,6 @@ pub struct Constant {
     pub associated_to: Option<Path>,
 }
 
-fn can_handle(ty: &Type, expr: &syn::Expr) -> bool {
-    if ty.is_primitive_or_ptr_primitive() {
-        return true;
-    }
-    match *expr {
-        syn::Expr::Struct(_) => true,
-        _ => false,
-    }
-}
-
 impl Constant {
     pub fn load(
         path: Path,
@@ -389,10 +376,6 @@ impl Constant {
                 return Err("Cannot have a zero sized const definition.".to_owned());
             }
         };
-
-        if !can_handle(&ty, expr) {
-            return Err("Unhandled const definition".to_owned());
-        }
 
         let mut lit = Literal::load(&expr)?;
 
