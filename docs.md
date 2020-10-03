@@ -683,7 +683,7 @@ swift_name_macro = "CF_SWIFT_NAME"
 # default: "None"
 rename_args = "PascalCase"
 
-# This rule specifies if the order of functions will be sorted in some way.
+# This rule specifies the order in which functions will be sorted.
 #
 # "Name": sort by the name of the function
 # "None": keep order in which the functions have been parsed
@@ -885,6 +885,13 @@ allow_static_const = true
 # default: false
 allow_constexpr = false
 
+# This rule specifies the order in which constants will be sorted.
+#
+# "Name": sort by the name of the constant
+# "None": keep order in which the constants have been parsed
+#
+# default: "Name"
+sort_by = "None"
 
 
 

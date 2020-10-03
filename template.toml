@@ -43,6 +43,7 @@ line-endings = "LF" # also "CR", "CRLF", "Native"
 ############################# Codegen Options ##################################
 
 style = "both"
+sort_by = "Name" # default for `fn.sort_by` and `const.sort_by`
 
 
 
@@ -117,6 +118,7 @@ private_default_tagged_enum_constructor = false
 [const]
 allow_static_const = true
 allow_constexpr = false
+sort_by = "Name"
 
 
 
@@ -145,8 +147,3 @@ crates = []
 all_features = false
 default_features = true
 features = []
-
-
-
-
-

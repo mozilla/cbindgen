@@ -255,7 +255,7 @@ impl FromStr for ItemType {
 deserialize_enum_str!(ItemType);
 
 /// Type which specifies the sort order of functions
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SortKey {
     Name,
     None,
@@ -382,8 +382,8 @@ pub struct FunctionConfig {
     pub rename_args: RenameRule,
     /// An optional macro to use when generating Swift function name attributes
     pub swift_name_macro: Option<String>,
-    /// Sort key for function names
-    pub sort_by: SortKey,
+    /// Sort key for functions
+    pub sort_by: Option<SortKey>,
     /// Optional text to output after functions which return `!`.
     pub no_return: Option<String>,
 }
@@ -397,7 +397,7 @@ impl Default for FunctionConfig {
             args: Layout::Auto,
             rename_args: RenameRule::None,
             swift_name_macro: None,
-            sort_by: SortKey::Name,
+            sort_by: None,
             no_return: None,
         }
     }
@@ -644,6 +644,8 @@ pub struct ConstantConfig {
     pub allow_static_const: bool,
     /// Whether a generated constant should be constexpr in C++ mode.
     pub allow_constexpr: bool,
+    /// Sort key for constants
+    pub sort_by: Option<SortKey>,
 }
 
 impl Default for ConstantConfig {
@@ -651,6 +653,7 @@ impl Default for ConstantConfig {
         ConstantConfig {
             allow_static_const: true,
             allow_constexpr: false,
+            sort_by: None,
         }
     }
 }
@@ -835,6 +838,8 @@ pub struct Config {
     pub cpp_compat: bool,
     /// The style to declare structs, enums and unions in for C
     pub style: Style,
+    /// Default sort key for functions and constants.
+    pub sort_by: SortKey,
     /// The configuration options for parsing
     pub parse: ParseConfig,
     /// The configuration options for exporting
@@ -889,6 +894,7 @@ impl Default for Config {
             language: Language::Cxx,
             cpp_compat: false,
             style: Style::Type,
+            sort_by: SortKey::Name,
             macro_expansion: Default::default(),
             parse: ParseConfig::default(),
             export: ExportConfig::default(),
