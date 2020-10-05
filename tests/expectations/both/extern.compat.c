@@ -12,9 +12,9 @@ typedef struct Normal {
 extern "C" {
 #endif // __cplusplus
 
-extern void bar(Normal a);
-
 extern int32_t foo(void);
+
+extern void bar(Normal a);
 
 #ifdef __cplusplus
 } // extern "C"

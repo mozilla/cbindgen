@@ -6,8 +6,8 @@
 
 extern "C" {
 
-extern const char CONST_GLOBAL_ARRAY[128];
-
 extern char MUT_GLOBAL_ARRAY[128];
+
+extern const char CONST_GLOBAL_ARRAY[128];
 
 } // extern "C"

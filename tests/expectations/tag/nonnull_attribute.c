@@ -12,6 +12,13 @@
 
 struct Opaque;
 
+struct References {
+  const struct Opaque *CBINDGEN_NONNULL a;
+  struct Opaque *CBINDGEN_NONNULL b;
+  const struct Opaque *c;
+  struct Opaque *d;
+};
+
 struct Pointers_u64 {
   float *CBINDGEN_NONNULL a;
   uint64_t *CBINDGEN_NONNULL b;
@@ -26,27 +33,20 @@ struct Pointers_u64 {
   uint64_t *k;
 };
 
-struct References {
-  const struct Opaque *CBINDGEN_NONNULL a;
-  struct Opaque *CBINDGEN_NONNULL b;
-  const struct Opaque *c;
-  struct Opaque *d;
-};
-
-void mut_ref_arg(struct Pointers_u64 *CBINDGEN_NONNULL arg);
+void value_arg(struct References arg);
 
 void mutltiple_args(int32_t *CBINDGEN_NONNULL arg,
                     struct Pointers_u64 *foo,
                     struct Opaque *CBINDGEN_NONNULL *CBINDGEN_NONNULL d);
 
-void nullable_const_ptr(const struct Pointers_u64 *arg);
+void ref_arg(const struct Pointers_u64 *CBINDGEN_NONNULL arg);
 
-void nullable_mut_ptr(struct Pointers_u64 *arg);
-
-void optional_mut_ref_arg(struct Pointers_u64 *arg);
+void mut_ref_arg(struct Pointers_u64 *CBINDGEN_NONNULL arg);
 
 void optional_ref_arg(const struct Pointers_u64 *arg);
 
-void ref_arg(const struct Pointers_u64 *CBINDGEN_NONNULL arg);
+void optional_mut_ref_arg(struct Pointers_u64 *arg);
 
-void value_arg(struct References arg);
+void nullable_const_ptr(const struct Pointers_u64 *arg);
+
+void nullable_mut_ptr(struct Pointers_u64 *arg);

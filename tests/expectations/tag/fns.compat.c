@@ -15,9 +15,9 @@ struct Fns {
 extern "C" {
 #endif // __cplusplus
 
-void no_return(void);
-
 void root(struct Fns _fns);
+
+void no_return(void);
 
 #ifdef __cplusplus
 } // extern "C"

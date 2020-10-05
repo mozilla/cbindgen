@@ -4,6 +4,14 @@
 #include <ostream>
 #include <new>
 
+struct Foo {
+  int32_t x;
+};
+
+struct RenamedTy {
+  uint64_t y;
+};
+
 #if !defined(DEFINE_FREEBSD)
 struct NoExternTy {
   uint8_t field;
@@ -22,20 +30,12 @@ struct ContainsNoExternTy {
 };
 #endif
 
-struct RenamedTy {
-  uint64_t y;
-};
-
-struct Foo {
-  int32_t x;
-};
-
 extern "C" {
 
-void no_extern_func(ContainsNoExternTy a);
+void root(Foo a);
 
 void renamed_func(RenamedTy a);
 
-void root(Foo a);
+void no_extern_func(ContainsNoExternTy a);
 
 } // extern "C"

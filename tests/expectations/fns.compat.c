@@ -15,9 +15,9 @@ typedef struct {
 extern "C" {
 #endif // __cplusplus
 
-void no_return(void);
-
 void root(Fns _fns);
+
+void no_return(void);
 
 #ifdef __cplusplus
 } // extern "C"

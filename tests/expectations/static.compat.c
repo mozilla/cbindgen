@@ -13,11 +13,11 @@ typedef struct {
 extern "C" {
 #endif // __cplusplus
 
-extern const Bar BAR;
+extern const int32_t NUMBER;
 
 extern Foo FOO;
 
-extern const int32_t NUMBER;
+extern const Bar BAR;
 
 void root(void);
 

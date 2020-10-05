@@ -4,9 +4,9 @@
 #include <ostream>
 #include <new>
 
-constexpr static const float CONSTANT_FLOAT32 = 312.292;
-
 constexpr static const int64_t CONSTANT_I64 = 216;
+
+constexpr static const float CONSTANT_FLOAT32 = 312.292;
 
 constexpr static const uint32_t DELIMITER = ':';
 
