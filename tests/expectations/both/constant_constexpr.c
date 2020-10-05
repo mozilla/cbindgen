@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define CONSTANT_FLOAT32 312.292
-
 #define CONSTANT_I64 216
+
+#define CONSTANT_FLOAT32 312.292
 
 #define DELIMITER ':'
 

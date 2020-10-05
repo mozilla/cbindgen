@@ -13,6 +13,13 @@
 typedef struct Opaque Opaque;
 
 typedef struct {
+  const Opaque *CBINDGEN_NONNULL a;
+  Opaque *CBINDGEN_NONNULL b;
+  const Opaque *c;
+  Opaque *d;
+} References;
+
+typedef struct {
   float *CBINDGEN_NONNULL a;
   uint64_t *CBINDGEN_NONNULL b;
   Opaque *CBINDGEN_NONNULL c;
@@ -26,34 +33,27 @@ typedef struct {
   uint64_t *k;
 } Pointers_u64;
 
-typedef struct {
-  const Opaque *CBINDGEN_NONNULL a;
-  Opaque *CBINDGEN_NONNULL b;
-  const Opaque *c;
-  Opaque *d;
-} References;
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void mut_ref_arg(Pointers_u64 *CBINDGEN_NONNULL arg);
+void value_arg(References arg);
 
 void mutltiple_args(int32_t *CBINDGEN_NONNULL arg,
                     Pointers_u64 *foo,
                     Opaque *CBINDGEN_NONNULL *CBINDGEN_NONNULL d);
 
-void nullable_const_ptr(const Pointers_u64 *arg);
+void ref_arg(const Pointers_u64 *CBINDGEN_NONNULL arg);
 
-void nullable_mut_ptr(Pointers_u64 *arg);
-
-void optional_mut_ref_arg(Pointers_u64 *arg);
+void mut_ref_arg(Pointers_u64 *CBINDGEN_NONNULL arg);
 
 void optional_ref_arg(const Pointers_u64 *arg);
 
-void ref_arg(const Pointers_u64 *CBINDGEN_NONNULL arg);
+void optional_mut_ref_arg(Pointers_u64 *arg);
 
-void value_arg(References arg);
+void nullable_const_ptr(const Pointers_u64 *arg);
+
+void nullable_mut_ptr(Pointers_u64 *arg);
 
 #ifdef __cplusplus
 } // extern "C"

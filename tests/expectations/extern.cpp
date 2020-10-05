@@ -11,8 +11,8 @@ struct Normal {
 
 extern "C" {
 
-extern void bar(Normal a);
-
 extern int32_t foo();
+
+extern void bar(Normal a);
 
 } // extern "C"

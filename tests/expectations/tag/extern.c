@@ -8,6 +8,6 @@ struct Normal {
   float y;
 };
 
-extern void bar(struct Normal a);
-
 extern int32_t foo(void);
+
+extern void bar(struct Normal a);

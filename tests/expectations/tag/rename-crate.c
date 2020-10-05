@@ -3,6 +3,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Foo {
+  int32_t x;
+};
+
+struct RenamedTy {
+  uint64_t y;
+};
+
 #if !defined(DEFINE_FREEBSD)
 struct NoExternTy {
   uint8_t field;
@@ -21,16 +29,8 @@ struct ContainsNoExternTy {
 };
 #endif
 
-struct RenamedTy {
-  uint64_t y;
-};
-
-struct Foo {
-  int32_t x;
-};
-
-void no_extern_func(struct ContainsNoExternTy a);
+void root(struct Foo a);
 
 void renamed_func(struct RenamedTy a);
 
-void root(struct Foo a);
+void no_extern_func(struct ContainsNoExternTy a);

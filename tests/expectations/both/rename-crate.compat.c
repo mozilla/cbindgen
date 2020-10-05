@@ -3,6 +3,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+typedef struct Foo {
+  int32_t x;
+} Foo;
+
+typedef struct RenamedTy {
+  uint64_t y;
+} RenamedTy;
+
 #if !defined(DEFINE_FREEBSD)
 typedef struct NoExternTy {
   uint8_t field;
@@ -21,23 +29,15 @@ typedef struct ContainsNoExternTy {
 } ContainsNoExternTy;
 #endif
 
-typedef struct RenamedTy {
-  uint64_t y;
-} RenamedTy;
-
-typedef struct Foo {
-  int32_t x;
-} Foo;
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void no_extern_func(ContainsNoExternTy a);
+void root(Foo a);
 
 void renamed_func(RenamedTy a);
 
-void root(Foo a);
+void no_extern_func(ContainsNoExternTy a);
 
 #ifdef __cplusplus
 } // extern "C"

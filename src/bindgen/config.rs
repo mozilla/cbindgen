@@ -894,7 +894,7 @@ impl Default for Config {
             language: Language::Cxx,
             cpp_compat: false,
             style: Style::Type,
-            sort_by: SortKey::Name,
+            sort_by: SortKey::None,
             macro_expansion: Default::default(),
             parse: ParseConfig::default(),
             export: ExportConfig::default(),

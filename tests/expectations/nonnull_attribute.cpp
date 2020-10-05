@@ -13,6 +13,13 @@
 
 struct Opaque;
 
+struct References {
+  const Opaque *CBINDGEN_NONNULL a;
+  Opaque *CBINDGEN_NONNULL b;
+  const Opaque *c;
+  Opaque *d;
+};
+
 template<typename T>
 struct Pointers {
   float *CBINDGEN_NONNULL a;
@@ -28,31 +35,24 @@ struct Pointers {
   T *k;
 };
 
-struct References {
-  const Opaque *CBINDGEN_NONNULL a;
-  Opaque *CBINDGEN_NONNULL b;
-  const Opaque *c;
-  Opaque *d;
-};
-
 extern "C" {
 
-void mut_ref_arg(Pointers<uint64_t> *CBINDGEN_NONNULL arg);
+void value_arg(References arg);
 
 void mutltiple_args(int32_t *CBINDGEN_NONNULL arg,
                     Pointers<uint64_t> *foo,
                     Opaque *CBINDGEN_NONNULL *CBINDGEN_NONNULL d);
 
-void nullable_const_ptr(const Pointers<uint64_t> *arg);
+void ref_arg(const Pointers<uint64_t> *CBINDGEN_NONNULL arg);
 
-void nullable_mut_ptr(Pointers<uint64_t> *arg);
-
-void optional_mut_ref_arg(Pointers<uint64_t> *arg);
+void mut_ref_arg(Pointers<uint64_t> *CBINDGEN_NONNULL arg);
 
 void optional_ref_arg(const Pointers<uint64_t> *arg);
 
-void ref_arg(const Pointers<uint64_t> *CBINDGEN_NONNULL arg);
+void optional_mut_ref_arg(Pointers<uint64_t> *arg);
 
-void value_arg(References arg);
+void nullable_const_ptr(const Pointers<uint64_t> *arg);
+
+void nullable_mut_ptr(Pointers<uint64_t> *arg);
 
 } // extern "C"

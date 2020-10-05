@@ -24,10 +24,10 @@ struct MyStruct {
 
 extern "C" {
 
+void root(const Foo *a, const MyStruct *with_box);
+
 void drop_box(Box<int32_t> x);
 
 void drop_box_opt(Option<Box<int32_t>> x);
-
-void root(const Foo *a, const MyStruct *with_box);
 
 } // extern "C"

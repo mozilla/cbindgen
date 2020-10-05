@@ -11,6 +11,6 @@ struct Fns {
   int8_t (*namedArgsWildcards)(int32_t _, int16_t named, int64_t _1);
 };
 
-void no_return(void);
-
 void root(struct Fns _fns);
+
+void no_return(void);

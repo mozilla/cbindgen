@@ -7,8 +7,8 @@ struct Foo {
 
 };
 
-void cbindgen(void);
-
 void extra_debug_fn(void);
+
+void cbindgen(void);
 
 void root(struct Foo a);

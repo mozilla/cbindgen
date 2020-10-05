@@ -11,9 +11,9 @@ typedef struct Foo {
 extern "C" {
 #endif // __cplusplus
 
-void cbindgen(void);
-
 void extra_debug_fn(void);
+
+void cbindgen(void);
 
 void root(Foo a);
 

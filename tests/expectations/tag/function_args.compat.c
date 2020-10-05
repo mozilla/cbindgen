@@ -7,11 +7,11 @@
 extern "C" {
 #endif // __cplusplus
 
+void unnamed(const uint64_t*);
+
 void pointer_test(const uint64_t *a);
 
 void print_from_rust(void);
-
-void unnamed(const uint64_t*);
 
 #ifdef __cplusplus
 } // extern "C"

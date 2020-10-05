@@ -688,8 +688,8 @@ rename_args = "PascalCase"
 # "Name": sort by the name of the function
 # "None": keep order in which the functions have been parsed
 #
-# default: "Name"
-sort_by = "None"
+# default: "None"
+sort_by = "Name"
 
 [struct]
 # A rule to use to rename struct field names. The renaming assumes the input is
@@ -890,8 +890,8 @@ allow_constexpr = false
 # "Name": sort by the name of the constant
 # "None": keep order in which the constants have been parsed
 #
-# default: "Name"
-sort_by = "None"
+# default: "None"
+sort_by = "Name"
 
 
 

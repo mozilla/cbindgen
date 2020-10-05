@@ -9,10 +9,10 @@ struct Foo {
 
 };
 
-extern const struct Bar BAR;
+extern const int32_t NUMBER;
 
 extern struct Foo FOO;
 
-extern const int32_t NUMBER;
+extern const struct Bar BAR;
 
 void root(void);

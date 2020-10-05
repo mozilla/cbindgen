@@ -10,9 +10,9 @@ struct Foo {
 
 extern "C" {
 
-void cbindgen();
-
 void extra_debug_fn();
+
+void cbindgen();
 
 void root(Foo a);
 
