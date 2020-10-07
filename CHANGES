@@ -1,3 +1,14 @@
+## 0.15.0
+
+     * Allow customizing mangling of generic parameters in C (#575)
+     * Box<T> simplifies to T* in C (4ce324c)
+     * ManuallyDrop<T> and MaubeUninit<T> simplify to T in C, and are opaque in C++ (0076a17)
+     * C++ supports a derive-ostream annotation to derive serialization of structs, unions and enums (#582)
+     * Large character constants have been fixed on Windows (#586)
+     * Constants are now generated for typedefs, etc (#589)
+     * The `sort_by` configuration option has been made to work for constants (#587)
+     * Default sort order is source order now (sort_by = "None"), and can be changed by the above option (#587)
+
 ## 0.14.6
 
      * Fixed the builds with older versions of rustc.
