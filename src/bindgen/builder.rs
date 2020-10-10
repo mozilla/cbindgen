@@ -6,7 +6,7 @@ use std::path;
 
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::cargo::Cargo;
-use crate::bindgen::config::{Braces, Config, Language};
+use crate::bindgen::config::{Braces, Config, Language, Style};
 use crate::bindgen::error::Error;
 use crate::bindgen::library::Library;
 use crate::bindgen::parser::{self, Parse};
@@ -135,6 +135,12 @@ impl Builder {
     #[allow(unused)]
     pub fn with_language(mut self, language: Language) -> Builder {
         self.config.language = language;
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_style(mut self, style: Style) -> Builder {
+        self.config.style = style;
         self
     }
 
@@ -340,5 +346,18 @@ impl Builder {
             result.functions,
         )
         .generate()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn with_style() {
+        assert_eq!(
+            Style::Tag,
+            Builder::new().with_style(Style::Tag).config.style
+        );
     }
 }
