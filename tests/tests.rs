@@ -1,6 +1,7 @@
 extern crate cbindgen;
 
 use cbindgen::*;
+use std::collections::HashSet;
 use std::path::Path;
 use std::process::Command;
 use std::{env, fs, str};
@@ -20,7 +21,7 @@ fn run_cbindgen(
     language: Language,
     cpp_compat: bool,
     style: Option<Style>,
-) {
+) -> Vec<u8> {
     let program = Path::new(cbindgen_path);
     let mut command = Command::new(&program);
     match language {
@@ -36,12 +37,6 @@ fn run_cbindgen(
 
     if let Some(style) = style {
         command.arg("--style").arg(style_str(style));
-    }
-
-    command.arg("-o").arg(output);
-
-    if env::var("CBINDGEN_TEST_VERIFY").is_ok() {
-        command.arg("--verify");
     }
 
     let mut config = path.clone().to_path_buf();
@@ -60,6 +55,7 @@ fn run_cbindgen(
         output,
         str::from_utf8(&cbindgen_output.stderr).unwrap_or_default()
     );
+    cbindgen_output.stdout
 }
 
 fn compile(
@@ -140,10 +136,12 @@ fn run_compile_test(
     language: Language,
     cpp_compat: bool,
     style: Option<Style>,
+    cbindgen_outputs: &mut HashSet<Vec<u8>>,
 ) {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let tests_path = Path::new(&crate_dir).join("tests");
     let mut generated_file = tests_path.join("expectations");
+    fs::create_dir_all(&generated_file).unwrap();
 
     let style_ext = style
         .map(|style| match style {
@@ -165,7 +163,7 @@ fn run_compile_test(
 
     generated_file.push(source_file);
 
-    run_cbindgen(
+    let cbindgen_output = run_cbindgen(
         cbindgen_path,
         path,
         &generated_file,
@@ -174,24 +172,44 @@ fn run_compile_test(
         style,
     );
 
-    compile(
-        &generated_file,
-        &tests_path,
-        tmp_dir,
-        language,
-        style,
-        skip_warning_as_error,
-    );
+    if cbindgen_outputs.contains(&cbindgen_output) {
+        // We already generated an identical file previously.
+        if env::var_os("CBINDGEN_TEST_VERIFY").is_some() {
+            assert!(!generated_file.exists());
+        } else {
+            if generated_file.exists() {
+                fs::remove_file(&generated_file).unwrap();
+            }
+        }
+    } else {
+        if env::var_os("CBINDGEN_TEST_VERIFY").is_some() {
+            let prev_cbindgen_output = fs::read(&generated_file).unwrap();
+            assert_eq!(cbindgen_output, prev_cbindgen_output);
+        } else {
+            fs::write(&generated_file, &cbindgen_output).unwrap();
+        }
 
-    if language == Language::C && cpp_compat {
+        cbindgen_outputs.insert(cbindgen_output);
+
         compile(
             &generated_file,
             &tests_path,
             tmp_dir,
-            Language::Cxx,
+            language,
             style,
             skip_warning_as_error,
         );
+
+        if language == Language::C && cpp_compat {
+            compile(
+                &generated_file,
+                &tests_path,
+                tmp_dir,
+                Language::Cxx,
+                style,
+                skip_warning_as_error,
+            );
+        }
     }
 }
 
@@ -202,8 +220,11 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
         .tempdir()
         .expect("Creating tmp dir failed");
     let tmp_dir = tmp_dir.path();
-    for style in &[Style::Type, Style::Tag, Style::Both] {
-        for cpp_compat in &[true, false] {
+    // Run tests in deduplication priority order. C++ compatibility tests are run first,
+    // otherwise we would lose the C++ compiler run if they were deduplicated.
+    let mut cbindgen_outputs = HashSet::new();
+    for cpp_compat in &[true, false] {
+        for style in &[Style::Type, Style::Tag, Style::Both] {
             run_compile_test(
                 cbindgen_path,
                 name,
@@ -212,6 +233,7 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
                 Language::C,
                 *cpp_compat,
                 Some(*style),
+                &mut cbindgen_outputs,
             );
         }
     }
@@ -224,6 +246,7 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
         Language::Cxx,
         /* cpp_compat = */ false,
         None,
+        &mut HashSet::new(),
     );
 }
 
