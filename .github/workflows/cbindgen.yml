@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  rustfmt-clippy:
+  rustfmt:
 
     runs-on: ubuntu-latest
 
@@ -22,19 +22,13 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-        components: clippy, rustfmt
+        components: rustfmt
 
     - name: Run rustfmt
       uses: actions-rs/cargo@v1
       with:
         command: fmt
         args: -- --check
-
-    - name: Run clippy
-      uses: actions-rs/clippy-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --workspace -- -D warnings
 
   build:
 
