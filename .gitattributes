@@ -1,3 +1,4 @@
 # Running test suite will update test expectations to use LF line endings,
 # so they need to be checked out using LF as well.
 * text=auto eol=lf
+linestyle_crlf* -text
