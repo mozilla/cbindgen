@@ -144,32 +144,24 @@ fn run_compile_test(
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let tests_path = Path::new(&crate_dir).join("tests");
     let mut generated_file = tests_path.join("expectations");
-    if let Some(style) = style {
-        match style {
-            Style::Both => {
-                generated_file.push("both");
-            }
-            Style::Tag => {
-                generated_file.push("tag");
-            }
-            Style::Type => {}
-        }
-    }
 
-    let ext = match language {
-        Language::Cxx => "cpp",
-        Language::C => {
-            if cpp_compat {
-                "compat.c"
-            } else {
-                "c"
-            }
-        }
+    let style_ext = style
+        .map(|style| match style {
+            Style::Both => ".both",
+            Style::Tag => ".tag",
+            Style::Type => "",
+        })
+        .unwrap_or_default();
+    let lang_ext = match language {
+        Language::Cxx => ".cpp",
+        Language::C if cpp_compat => ".compat.c",
+        Language::C => ".c",
     };
 
     let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();
 
-    let source_file = format!("{}.{}", &name, &ext).replace(SKIP_WARNING_AS_ERROR_SUFFIX, "");
+    let source_file =
+        format!("{}{}{}", name, style_ext, lang_ext).replace(SKIP_WARNING_AS_ERROR_SUFFIX, "");
 
     generated_file.push(source_file);
 
