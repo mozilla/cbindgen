@@ -906,14 +906,6 @@ impl Parse {
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemEnum,
     ) {
-        if item.generics.lifetimes().count() > 0 {
-            info!(
-                "Skip {}::{} - (has generics or lifetimes or where bounds).",
-                crate_name, &item.ident
-            );
-            return;
-        }
-
         match Enum::load(item, mod_cfg, config) {
             Ok(en) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
