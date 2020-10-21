@@ -840,6 +840,9 @@ pub struct Config {
     pub style: Style,
     /// Default sort key for functions and constants.
     pub sort_by: SortKey,
+    /// If this option is true `usize` and `isize` will be converted into `size_t` and `ptrdiff_t`
+    /// instead of `uintptr_t` and `intptr_t` respectively.
+    pub usize_is_size_t: bool,
     /// The configuration options for parsing
     pub parse: ParseConfig,
     /// The configuration options for exporting
@@ -894,6 +897,7 @@ impl Default for Config {
             language: Language::Cxx,
             cpp_compat: false,
             style: Style::Type,
+            usize_is_size_t: false,
             sort_by: SortKey::None,
             macro_expansion: Default::default(),
             parse: ParseConfig::default(),

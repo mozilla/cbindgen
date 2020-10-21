@@ -9,7 +9,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, AnnotationValue, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath,
-    Item, ItemContainer, Path, Repr, ReprStyle, ReprType, Struct, ToCondition, Type,
+    Item, ItemContainer, Path, Repr, ReprStyle, Struct, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -595,18 +595,7 @@ impl Item for Enum {
 
 impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        let size = self.repr.ty.map(|ty| match ty {
-            ReprType::USize => "uintptr_t",
-            ReprType::U64 => "uint64_t",
-            ReprType::U32 => "uint32_t",
-            ReprType::U16 => "uint16_t",
-            ReprType::U8 => "uint8_t",
-            ReprType::ISize => "intptr_t",
-            ReprType::I64 => "int64_t",
-            ReprType::I32 => "int32_t",
-            ReprType::I16 => "int16_t",
-            ReprType::I8 => "int8_t",
-        });
+        let size = self.repr.ty.map(|ty| ty.to_primitive().to_repr_c(config));
 
         let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);

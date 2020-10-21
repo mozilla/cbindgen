@@ -169,6 +169,10 @@ impl Bindings {
                 out.new_line();
                 out.write("#include <stdbool.h>");
                 out.new_line();
+                if self.config.usize_is_size_t {
+                    out.write("#include <stddef.h>");
+                    out.new_line();
+                }
                 out.write("#include <stdint.h>");
                 out.new_line();
                 out.write("#include <stdlib.h>");
@@ -176,6 +180,10 @@ impl Bindings {
             } else {
                 out.write("#include <cstdarg>");
                 out.new_line();
+                if self.config.usize_is_size_t {
+                    out.write("#include <cstddef>");
+                    out.new_line();
+                }
                 out.write("#include <cstdint>");
                 out.new_line();
                 out.write("#include <cstdlib>");
