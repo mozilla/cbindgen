@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::fmt;
 use std::io::Write;
 
 use crate::bindgen::cdecl;
@@ -123,7 +122,7 @@ impl PrimitiveType {
         }
     }
 
-    pub fn to_repr_c(&self) -> &'static str {
+    pub fn to_repr_c(&self, config: &Config) -> &'static str {
         match *self {
             PrimitiveType::Void => "void",
             PrimitiveType::Bool => "bool",
@@ -147,11 +146,13 @@ impl PrimitiveType {
             PrimitiveType::UInt => "unsigned int",
             PrimitiveType::ULong => "unsigned long",
             PrimitiveType::ULongLong => "unsigned long long",
+            PrimitiveType::USize if config.usize_is_size_t => "size_t",
             PrimitiveType::USize => "uintptr_t",
             PrimitiveType::UInt8 => "uint8_t",
             PrimitiveType::UInt16 => "uint16_t",
             PrimitiveType::UInt32 => "uint32_t",
             PrimitiveType::UInt64 => "uint64_t",
+            PrimitiveType::ISize if config.usize_is_size_t => "ptrdiff_t",
             PrimitiveType::ISize => "intptr_t",
             PrimitiveType::Int8 => "int8_t",
             PrimitiveType::Int16 => "int16_t",
@@ -175,12 +176,6 @@ impl PrimitiveType {
 
     fn can_cmp_eq(&self) -> bool {
         true
-    }
-}
-
-impl fmt::Display for PrimitiveType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_repr_c())
     }
 }
 

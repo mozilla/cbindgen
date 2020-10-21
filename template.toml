@@ -44,6 +44,7 @@ line-endings = "LF" # also "CR", "CRLF", "Native"
 
 style = "both"
 sort_by = "Name" # default for `fn.sort_by` and `const.sort_by`
+usize_is_size_t = true
 
 
 

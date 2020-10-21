@@ -51,17 +51,17 @@ impl CDecl {
         }
     }
 
-    fn from_type(t: &Type) -> CDecl {
+    fn from_type(t: &Type, config: &Config) -> CDecl {
         let mut cdecl = CDecl::new();
-        cdecl.build_type(t, false);
+        cdecl.build_type(t, false, config);
         cdecl
     }
 
-    fn from_func_arg(t: &Type, array_length: Option<&str>) -> CDecl {
+    fn from_func_arg(t: &Type, array_length: Option<&str>, config: &Config) -> CDecl {
         let mut cdecl = CDecl::new();
         let length = match array_length {
             Some(l) => l,
-            None => return CDecl::from_type(t),
+            None => return CDecl::from_type(t, config),
         };
         let (ty, is_const) = match t {
             Type::Ptr { ty, is_const, .. } => (ty, is_const),
@@ -71,33 +71,33 @@ impl CDecl {
             ),
         };
         let ptr_as_array = Type::Array(ty.clone(), ArrayLength::Value(length.to_string()));
-        cdecl.build_type(&ptr_as_array, *is_const);
+        cdecl.build_type(&ptr_as_array, *is_const, config);
         cdecl
     }
 
-    fn from_func(f: &Function, layout_vertical: bool) -> CDecl {
+    fn from_func(f: &Function, layout_vertical: bool, config: &Config) -> CDecl {
         let mut cdecl = CDecl::new();
-        cdecl.build_func(f, layout_vertical);
+        cdecl.build_func(f, layout_vertical, config);
         cdecl
     }
 
-    fn build_func(&mut self, f: &Function, layout_vertical: bool) {
+    fn build_func(&mut self, f: &Function, layout_vertical: bool, config: &Config) {
         let args = f
             .args
             .iter()
             .map(|arg| {
                 (
                     arg.name.clone(),
-                    CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref()),
+                    CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref(), config),
                 )
             })
             .collect();
         self.declarators
             .push(CDeclarator::Func(args, layout_vertical));
-        self.build_type(&f.ret, false);
+        self.build_type(&f.ret, false, config);
     }
 
-    fn build_type(&mut self, t: &Type, is_const: bool) {
+    fn build_type(&mut self, t: &Type, is_const: bool, config: &Config) {
         match t {
             Type::Path(ref generic) => {
                 if is_const {
@@ -138,7 +138,7 @@ impl CDecl {
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_name = p.to_string();
+                self.type_name = p.to_repr_c(config).to_string();
             }
             Type::Ptr {
                 ref ty,
@@ -151,17 +151,17 @@ impl CDecl {
                     is_nullable: *is_nullable,
                     is_ref: *is_ref,
                 });
-                self.build_type(ty, *ptr_is_const);
+                self.build_type(ty, *ptr_is_const, config);
             }
             Type::Array(ref t, ref constant) => {
                 let len = constant.as_str().to_owned();
                 self.declarators.push(CDeclarator::Array(len));
-                self.build_type(t, is_const);
+                self.build_type(t, is_const, config);
             }
             Type::FuncPtr(ref ret, ref args) => {
                 let args = args
                     .iter()
-                    .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty)))
+                    .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty, config)))
                     .collect();
                 self.declarators.push(CDeclarator::Ptr {
                     is_const: false,
@@ -169,7 +169,7 @@ impl CDecl {
                     is_ref: false,
                 });
                 self.declarators.push(CDeclarator::Func(args, false));
-                self.build_type(ret, false);
+                self.build_type(ret, false, config);
             }
         }
     }
@@ -307,13 +307,13 @@ pub fn write_func<F: Write>(
     layout_vertical: bool,
     config: &Config,
 ) {
-    CDecl::from_func(f, layout_vertical).write(out, Some(f.path().name()), config);
+    CDecl::from_func(f, layout_vertical, config).write(out, Some(f.path().name()), config);
 }
 
 pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str, config: &Config) {
-    CDecl::from_type(t).write(out, Some(ident), config);
+    CDecl::from_type(t, config).write(out, Some(ident), config);
 }
 
 pub fn write_type<F: Write>(out: &mut SourceWriter<F>, t: &Type, config: &Config) {
-    CDecl::from_type(t).write(out, None, config);
+    CDecl::from_type(t, config).write(out, None, config);
 }

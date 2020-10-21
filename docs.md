@@ -691,6 +691,10 @@ rename_args = "PascalCase"
 # default: "None"
 sort_by = "Name"
 
+# If this option is true `usize` and `isize` will be converted into `size_t` and `ptrdiff_t`
+# instead of `uintptr_t` and `intptr_t` respectively.
+usize_is_size_t = true
+
 [struct]
 # A rule to use to rename struct field names. The renaming assumes the input is
 # the Rust standard snake_case, however it acccepts all the different rename_args

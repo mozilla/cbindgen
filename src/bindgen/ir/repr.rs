@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use crate::bindgen::ir::ty::PrimitiveType;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ReprStyle {
     Rust,
@@ -27,6 +29,23 @@ pub enum ReprType {
     I32,
     I64,
     ISize,
+}
+
+impl ReprType {
+    pub(crate) fn to_primitive(self) -> PrimitiveType {
+        match self {
+            ReprType::U8 => PrimitiveType::UInt8,
+            ReprType::U16 => PrimitiveType::UInt16,
+            ReprType::U32 => PrimitiveType::UInt32,
+            ReprType::U64 => PrimitiveType::UInt64,
+            ReprType::USize => PrimitiveType::USize,
+            ReprType::I8 => PrimitiveType::Int8,
+            ReprType::I16 => PrimitiveType::Int16,
+            ReprType::I32 => PrimitiveType::Int32,
+            ReprType::I64 => PrimitiveType::Int64,
+            ReprType::ISize => PrimitiveType::ISize,
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
