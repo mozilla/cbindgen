@@ -668,6 +668,27 @@ pub struct MacroExpansionConfig {
     pub bitflags: bool,
 }
 
+/// Controls which Cargo profile is used for macro expansion.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Profile {
+    Debug,
+    Release,
+}
+
+impl FromStr for Profile {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Profile, Self::Err> {
+        match s {
+            "debug" | "Debug" => Ok(Profile::Debug),
+            "release" | "Release" => Ok(Profile::Release),
+            _ => Err(format!("Unrecognized Profile: '{}'.", s)),
+        }
+    }
+}
+
+deserialize_enum_str!(Profile);
+
 /// Settings to apply when running `rustc --pretty=expanded`
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -683,6 +704,8 @@ pub struct ParseExpandConfig {
     /// List of features to use when expanding. Combines with `default_features` like in
     /// `Cargo.toml`.
     pub features: Option<Vec<String>>,
+    /// Controls whether or not to pass `--release` when expanding.
+    pub profile: Profile,
 }
 
 impl Default for ParseExpandConfig {
@@ -692,6 +715,7 @@ impl Default for ParseExpandConfig {
             all_features: false,
             default_features: true,
             features: None,
+            profile: Profile::Debug,
         }
     }
 }
@@ -723,6 +747,7 @@ fn retrocomp_parse_expand_config_deserialize<'de, D: Deserializer<'de>>(
                 all_features: true,
                 default_features: true,
                 features: None,
+                profile: Profile::Debug,
             })
         }
 

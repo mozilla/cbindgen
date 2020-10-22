@@ -9,8 +9,9 @@ use std::io::Read;
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
 use crate::bindgen::bitflags;
+use crate::bindgen::cargo;
 use crate::bindgen::cargo::{Cargo, PackageRef};
-use crate::bindgen::config::{Config, ParseConfig};
+use crate::bindgen::config::{Config, ParseConfig, Profile};
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
@@ -191,6 +192,10 @@ impl<'a> Parser<'a> {
                         self.config.parse.expand.all_features,
                         self.config.parse.expand.default_features,
                         &self.config.parse.expand.features,
+                        match self.config.parse.expand.profile {
+                            Profile::Debug => cargo::Profile::Debug,
+                            Profile::Release => cargo::Profile::Release,
+                        },
                     )
                     .map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {

@@ -5,6 +5,7 @@
 use std::env;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 extern crate clap;
 #[macro_use]
@@ -24,7 +25,7 @@ use clap::{App, Arg, ArgMatches};
 mod bindgen;
 mod logging;
 
-use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Language, Style};
+use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Language, Profile, Style};
 
 fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     // We allow specifying a language to override the config default. This is
@@ -56,6 +57,16 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
             "type" => Style::Type,
             _ => {
                 error!("Unknown style specified.");
+                return;
+            }
+        }
+    }
+
+    if let Some(profile) = matches.value_of("profile") {
+        config.parse.expand.profile = match Profile::from_str(profile) {
+            Ok(p) => p,
+            Err(e) => {
+                error!("{}", e);
                 return;
             }
         }
@@ -225,6 +236,16 @@ fn main() {
                       --manifest-path <path/to/crate/Cargo.toml>"
                 )
                 .required(false),
+        )
+        .arg(
+            Arg::with_name("profile")
+                .long("profile")
+                .value_name("PROFILE")
+                .help(
+                    "Specify the profile to use when expanding macros. \
+                     Has no effect otherwise."
+                )
+                .possible_values(&["Debug", "debug", "Release", "release"]),
         )
         .arg(
             Arg::with_name("quiet")

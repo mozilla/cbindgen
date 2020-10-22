@@ -24,6 +24,14 @@ pub enum Error {
     Compile(String),
 }
 
+/// Which Cargo profile (group) to use when expanding macros.
+pub enum Profile {
+    /// Do not pass `--release` when expanding macros
+    Debug,
+    /// Pass `--release` when expanding macros
+    Release,
+}
+
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         Error::Io(err)
@@ -65,6 +73,7 @@ pub fn expand(
     expand_all_features: bool,
     expand_default_features: bool,
     expand_features: &Option<Vec<String>>,
+    profile: Profile,
 ) -> Result<String, Error> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
     let mut cmd = Command::new(cargo);
@@ -107,6 +116,12 @@ pub fn expand(
     }
     if !expand_default_features {
         cmd.arg("--no-default-features");
+    }
+    match profile {
+        Profile::Debug => {}
+        Profile::Release => {
+            cmd.arg("--release");
+        }
     }
     cmd.arg("-p");
     let mut package = crate_name.to_owned();
