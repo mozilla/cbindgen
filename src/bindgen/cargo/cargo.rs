@@ -11,6 +11,7 @@ use crate::bindgen::cargo::cargo_metadata::{self, Metadata};
 use crate::bindgen::cargo::cargo_toml;
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::Cfg;
+pub(crate) use cargo_expand::Profile;
 
 /// Parse a dependency string used in Cargo.lock
 fn parse_dep_string(dep_string: &str) -> (&str, Option<&str>) {
@@ -233,6 +234,7 @@ impl Cargo {
         expand_all_features: bool,
         expand_default_features: bool,
         expand_features: &Option<Vec<String>>,
+        profile: Profile,
     ) -> Result<String, cargo_expand::Error> {
         cargo_expand::expand(
             &self.manifest_path,
@@ -242,6 +244,7 @@ impl Cargo {
             expand_all_features,
             expand_default_features,
             expand_features,
+            profile,
         )
     }
 }

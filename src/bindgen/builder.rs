@@ -6,7 +6,7 @@ use std::path;
 
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::cargo::Cargo;
-use crate::bindgen::config::{Braces, Config, Language, Style};
+use crate::bindgen::config::{Braces, Config, Language, Profile, Style};
 use crate::bindgen::error::Error;
 use crate::bindgen::library::Library;
 use crate::bindgen::parser::{self, Parse};
@@ -222,6 +222,12 @@ impl Builder {
                 .map(|x| String::from(x.as_ref()))
                 .collect(),
         );
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_parse_expand_profile(mut self, profile: Profile) -> Builder {
+        self.config.parse.expand.profile = profile;
         self
     }
 
