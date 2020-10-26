@@ -7,10 +7,9 @@ use std::io::Write;
 use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::SynFieldHelpers;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Repr, ReprAlign, ReprStyle, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, Field, GenericParams, Item, ItemContainer,
+    Path, Repr, ReprAlign, ReprStyle, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -24,7 +23,7 @@ pub struct Union {
     pub path: Path,
     pub export_name: String,
     pub generic_params: GenericParams,
-    pub fields: Vec<(String, Type, Documentation)>,
+    pub fields: Vec<Field>,
     pub tuple_union: bool,
     pub alignment: Option<ReprAlign>,
     pub cfg: Option<Cfg>,
@@ -55,7 +54,7 @@ impl Union {
                 .fields
                 .named
                 .iter()
-                .try_skip_map(|x| x.as_ident_and_type(&path))?;
+                .try_skip_map(|field| Field::load(field, &path))?;
             (out, false)
         };
 
@@ -75,7 +74,7 @@ impl Union {
     pub fn new(
         path: Path,
         generic_params: GenericParams,
-        fields: Vec<(String, Type, Documentation)>,
+        fields: Vec<Field>,
         alignment: Option<ReprAlign>,
         tuple_union: bool,
         cfg: Option<Cfg>,
@@ -97,8 +96,8 @@ impl Union {
     }
 
     pub fn simplify_standard_types(&mut self, config: &Config) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.simplify_standard_types(config);
+        for field in &mut self.fields {
+            field.ty.simplify_standard_types(config);
         }
     }
 
@@ -113,14 +112,14 @@ impl Union {
             return;
         }
 
-        for &(_, ref ty, _) in &self.fields {
-            ty.add_monomorphs(library, out);
+        for field in &self.fields {
+            field.ty.add_monomorphs(library, out);
         }
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.mangle_paths(monomorphs);
+        for field in &mut self.fields {
+            field.ty.mangle_paths(monomorphs);
         }
     }
 }
@@ -155,15 +154,15 @@ impl Item for Union {
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.resolve_declaration_types(resolver);
+        for field in &mut self.fields {
+            field.ty.resolve_declaration_types(resolver);
         }
     }
 
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.export_name);
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.rename_for_config(config, &self.generic_params);
+        for field in &mut self.fields {
+            field.ty.rename_for_config(config, &self.generic_params);
         }
 
         let rules = self
@@ -174,11 +173,15 @@ impl Item for Union {
         if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();
 
-            for (i, &(ref name, ref ty, ref doc)) in self.fields.iter().enumerate() {
+            for (i, field) in self.fields.iter().enumerate() {
                 if i >= o.len() {
-                    overriden_fields.push((name.clone(), ty.clone(), doc.clone()));
+                    overriden_fields.push(field.clone());
                 } else {
-                    overriden_fields.push((o[i].clone(), ty.clone(), doc.clone()));
+                    overriden_fields.push(Field {
+                        name: o[i].clone(),
+                        ty: field.ty.clone(),
+                        documentation: field.documentation.clone(),
+                    });
                 }
             }
 
@@ -187,26 +190,28 @@ impl Item for Union {
             self.fields = self
                 .fields
                 .iter()
-                .map(|x| {
-                    (
-                        r.apply(&x.0, IdentifierType::StructMember).into_owned(),
-                        x.1.clone(),
-                        x.2.clone(),
-                    )
+                .map(|field| Field {
+                    name: r
+                        .apply(&field.name, IdentifierType::StructMember)
+                        .into_owned(),
+                    ty: field.ty.clone(),
+                    documentation: field.documentation.clone(),
                 })
                 .collect();
         } else if self.tuple_union {
             // If we don't have any rules for a tuple union, prefix them with
             // an underscore so it still compiles
-            for &mut (ref mut name, ..) in &mut self.fields {
-                name.insert(0, '_');
+            for field in &mut self.fields {
+                field.name.insert(0, '_');
             }
         }
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        for &(_, ref ty, _) in &self.fields {
-            ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
+        for field in &self.fields {
+            field
+                .ty
+                .add_dependencies_ignoring_generics(&self.generic_params, library, out);
         }
     }
 
@@ -246,7 +251,11 @@ impl Item for Union {
             GenericParams::default(),
             self.fields
                 .iter()
-                .map(|x| (x.0.clone(), x.1.specialize(&mappings), x.2.clone()))
+                .map(|field| Field {
+                    name: field.name.clone(),
+                    ty: field.ty.specialize(&mappings),
+                    documentation: field.documentation.clone(),
+                })
                 .collect(),
             self.alignment,
             self.tuple_union,
@@ -311,16 +320,7 @@ impl Source for Union {
             out.new_line();
         }
 
-        if config.documentation {
-            out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
-        } else {
-            let vec: Vec<_> = self
-                .fields
-                .iter()
-                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
-                .collect();
-            out.write_vertical_source_list(&vec[..], ListType::Cap(";"));
-        }
+        out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
 
         // Emit the post_body section, if relevant
         if let Some(body) = config.export.post_body(&self.path) {

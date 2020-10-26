@@ -8,7 +8,7 @@ use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{Documentation, GenericParams, GenericPath, Path};
+use crate::bindgen::ir::{GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::utilities::IterHelpers;
@@ -718,18 +718,5 @@ impl Source for String {
 impl Source for Type {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         cdecl::write_type(out, self, config);
-    }
-}
-
-impl Source for (String, Type) {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_field(out, &self.1, &self.0, config);
-    }
-}
-
-impl Source for (String, Type, Documentation) {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.2.write(config, out);
-        cdecl::write_field(out, &self.1, &self.0, config);
     }
 }

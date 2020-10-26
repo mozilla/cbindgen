@@ -8,8 +8,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath,
-    Item, ItemContainer, Literal, Path, Repr, ReprStyle, Struct, ToCondition, Type,
+    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, Documentation, Field, GenericParams,
+    GenericPath, Item, ItemContainer, Literal, Path, Repr, ReprStyle, Struct, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -93,28 +93,27 @@ impl EnumVariant {
             is_tagged: bool,
             fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
             self_path: &Path,
-        ) -> Result<Vec<(String, Type, Documentation)>, String> {
+        ) -> Result<Vec<Field>, String> {
             let mut res = Vec::new();
 
             if is_tagged {
-                res.push((
+                res.push(Field::from_name_and_type(
                     "tag".to_string(),
                     Type::Path(GenericPath::new(Path::new("Tag"), vec![])),
-                    Documentation::none(),
                 ));
             }
 
             for (i, field) in fields.iter().enumerate() {
                 if let Some(mut ty) = Type::load(&field.ty)? {
                     ty.replace_self_with(self_path);
-                    res.push((
-                        match field.ident {
+                    res.push(Field {
+                        name: match field.ident {
                             Some(ref ident) => ident.to_string(),
                             None => i.to_string(),
                         },
                         ty,
-                        Documentation::load(&field.attrs),
-                    ));
+                        documentation: Documentation::load(&field.attrs),
+                    });
                 }
             }
 
@@ -450,7 +449,7 @@ impl Item for Enum {
                     if let VariantBody::Body { ref mut body, .. } = variant.body {
                         let path = Path::new(new_tag.clone());
                         let generic_path = GenericPath::new(path, vec![]);
-                        body.fields[0].1 = Type::Path(generic_path);
+                        body.fields[0].ty = Type::Path(generic_path);
                     }
                 }
             }
@@ -957,9 +956,12 @@ impl Source for Enum {
                             .fields
                             .iter()
                             .skip(skip_fields)
-                            .map(|&(ref name, ref ty, _)| {
-                                // const-ref args to constructor
-                                (arg_renamer(name), Type::const_ref_to(ty))
+                            .map(|field| {
+                                Field::from_name_and_type(
+                                    // const-ref args to constructor
+                                    arg_renamer(&field.name),
+                                    Type::const_ref_to(&field.ty),
+                                )
                             })
                             .collect();
                         out.write_vertical_source_list(&vec[..], ListType::Join(","));
@@ -975,9 +977,9 @@ impl Source for Enum {
                         ref body,
                     } = variant.body
                     {
-                        for &(ref field_name, ref ty, ..) in body.fields.iter().skip(skip_fields) {
+                        for field in body.fields.iter().skip(skip_fields) {
                             out.new_line();
-                            match ty {
+                            match field.ty {
                                 Type::Array(ref ty, ref length) => {
                                     // arrays are not assignable in C++ so we
                                     // need to manually copy the elements
@@ -986,20 +988,20 @@ impl Source for Enum {
                                     write!(
                                         out,
                                         "::new (&result.{}.{}[i]) (",
-                                        variant_name, field_name
+                                        variant_name, field.name
                                     );
                                     ty.write(config, out);
-                                    write!(out, ")({}[i]);", arg_renamer(field_name));
+                                    write!(out, ")({}[i]);", arg_renamer(&field.name));
                                     out.close_brace(false);
                                 }
                                 ref ty => {
                                     write!(
                                         out,
                                         "::new (&result.{}.{}) (",
-                                        variant_name, field_name
+                                        variant_name, field.name
                                     );
                                     ty.write(config, out);
-                                    write!(out, ")({});", arg_renamer(field_name));
+                                    write!(out, ")({});", arg_renamer(&field.name));
                                 }
                             }
                         }
@@ -1048,7 +1050,7 @@ impl Source for Enum {
                         }
                         if dig {
                             let field = body.fields.get(skip_fields).unwrap();
-                            let return_type = field.1.clone();
+                            let return_type = field.ty.clone();
                             let return_type = Type::Ptr {
                                 ty: Box::new(return_type),
                                 is_const: const_casts,
