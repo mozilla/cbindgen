@@ -88,6 +88,7 @@ impl Struct {
                         out.push(Field {
                             name: format!("{}", current),
                             ty,
+                            annotations: AnnotationSet::load(&field.attrs)?,
                             documentation: Documentation::load(&field.attrs),
                         });
                         current += 1;
@@ -190,6 +191,7 @@ impl Struct {
                 .map(|field| Field {
                     name: field.name.clone(),
                     ty: field.ty.specialize(mappings),
+                    annotations: field.annotations.clone(),
                     documentation: field.documentation.clone(),
                 })
                 .collect(),
