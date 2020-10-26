@@ -46,5 +46,8 @@ impl Source for Field {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         self.documentation.write(config, out);
         cdecl::write_field(out, &self.ty, &self.name, config);
+        if let Some(bitfield) = self.annotations.atom("bitfield") {
+            write!(out, ": {}", bitfield.unwrap_or_default());
+        }
     }
 }

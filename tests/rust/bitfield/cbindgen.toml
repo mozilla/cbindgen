@@ -1,0 +1,3 @@
+[parse.expand]
+crates = ["bitfield"]
+features = ["cbindgen"]
