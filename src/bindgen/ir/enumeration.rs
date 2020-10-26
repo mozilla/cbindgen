@@ -112,6 +112,7 @@ impl EnumVariant {
                             None => i.to_string(),
                         },
                         ty,
+                        annotations: AnnotationSet::load(&field.attrs)?,
                         documentation: Documentation::load(&field.attrs),
                     });
                 }

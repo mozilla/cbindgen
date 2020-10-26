@@ -2,13 +2,14 @@ use std::io::Write;
 
 use crate::bindgen::cdecl;
 use crate::bindgen::config::Config;
-use crate::bindgen::ir::{Documentation, Path, Type};
+use crate::bindgen::ir::{AnnotationSet, Documentation, Path, Type};
 use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Field {
     pub name: String,
     pub ty: Type,
+    pub annotations: AnnotationSet,
     pub documentation: Documentation,
 }
 
@@ -17,6 +18,7 @@ impl Field {
         Field {
             name,
             ty,
+            annotations: AnnotationSet::new(),
             documentation: Documentation::none(),
         }
     }
@@ -31,6 +33,7 @@ impl Field {
                     .ok_or_else(|| "field is missing identifier".to_string())?
                     .to_string(),
                 ty,
+                annotations: AnnotationSet::load(&field.attrs)?,
                 documentation: Documentation::load(&field.attrs),
             })
         } else {
