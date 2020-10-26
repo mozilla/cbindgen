@@ -78,10 +78,10 @@ impl Bindings {
         self.struct_map.for_items(path, |st| {
             let mut pos: usize = 0;
             for field in &st.fields {
-                if let Some(found_pos) = fields.iter().position(|v| *v == field.0) {
+                if let Some(found_pos) = fields.iter().position(|v| *v == field.name) {
                     pos = found_pos + 1;
                 } else {
-                    fields.insert(pos, field.0.clone());
+                    fields.insert(pos, field.name.clone());
                     pos += 1;
                 }
             }

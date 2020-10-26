@@ -8,7 +8,7 @@ use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, GenericParams, Item,
+    AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, Field, GenericParams, Item,
     ItemContainer, Path, Repr, ReprAlign, ReprStyle, ToCondition, Type, Typedef,
 };
 use crate::bindgen::library::Library;
@@ -24,7 +24,7 @@ pub struct Struct {
     pub path: Path,
     pub export_name: String,
     pub generic_params: GenericParams,
-    pub fields: Vec<(String, Type, Documentation)>,
+    pub fields: Vec<Field>,
     /// Whether there's a tag field on the body of this struct. When this is
     /// true, is_enum_variant_body is also guaranteed to be true.
     pub is_tagged: bool,
@@ -42,7 +42,7 @@ pub struct Struct {
 impl Struct {
     /// Whether this struct can derive operator== / operator!=.
     pub fn can_derive_eq(&self) -> bool {
-        !self.fields.is_empty() && self.fields.iter().all(|x| x.1.can_cmp_eq())
+        !self.fields.is_empty() && self.fields.iter().all(|x| x.ty.can_cmp_eq())
     }
 
     pub fn add_associated_constant(&mut self, c: Constant) {
@@ -76,16 +76,20 @@ impl Struct {
                 let out = fields
                     .named
                     .iter()
-                    .try_skip_map(|x| x.as_ident_and_type(&path))?;
+                    .try_skip_map(|field| Field::load(field, &path))?;
                 (out, false)
             }
             syn::Fields::Unnamed(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields.unnamed.iter() {
-                    if let Some(mut x) = Type::load(&field.ty)? {
-                        x.replace_self_with(&path);
-                        out.push((format!("{}", current), x, Documentation::load(&field.attrs)));
+                    if let Some(mut ty) = Type::load(&field.ty)? {
+                        ty.replace_self_with(&path);
+                        out.push(Field {
+                            name: format!("{}", current),
+                            ty,
+                            documentation: Documentation::load(&field.attrs),
+                        });
                         current += 1;
                     }
                 }
@@ -115,7 +119,7 @@ impl Struct {
     pub fn new(
         path: Path,
         generic_params: GenericParams,
-        fields: Vec<(String, Type, Documentation)>,
+        fields: Vec<Field>,
         is_tagged: bool,
         is_enum_variant_body: bool,
         alignment: Option<ReprAlign>,
@@ -144,8 +148,8 @@ impl Struct {
     }
 
     pub fn simplify_standard_types(&mut self, config: &Config) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.simplify_standard_types(config);
+        for field in &mut self.fields {
+            field.ty.simplify_standard_types(config);
         }
     }
 
@@ -160,14 +164,14 @@ impl Struct {
             return;
         }
 
-        for &(_, ref ty, _) in &self.fields {
-            ty.add_monomorphs(library, out);
+        for field in &self.fields {
+            field.ty.add_monomorphs(library, out);
         }
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.mangle_paths(monomorphs);
+        for field in &mut self.fields {
+            field.ty.mangle_paths(monomorphs);
         }
     }
 
@@ -183,7 +187,11 @@ impl Struct {
             GenericParams::default(),
             self.fields
                 .iter()
-                .map(|x| (x.0.clone(), x.1.specialize(mappings), x.2.clone()))
+                .map(|field| Field {
+                    name: field.name.clone(),
+                    ty: field.ty.specialize(mappings),
+                    documentation: field.documentation.clone(),
+                })
                 .collect(),
             self.is_tagged,
             self.is_enum_variant_body,
@@ -268,8 +276,8 @@ impl Item for Struct {
     }
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
-        for &mut (_, ref mut ty, _) in &mut self.fields {
-            ty.resolve_declaration_types(resolver);
+        for field in &mut self.fields {
+            field.ty.resolve_declaration_types(resolver);
         }
     }
 
@@ -285,8 +293,8 @@ impl Item for Struct {
                 .fields
                 .iter_mut()
                 .skip(if self.is_tagged { 1 } else { 0 });
-            for &mut (_, ref mut ty, _) in fields {
-                ty.rename_for_config(config, &self.generic_params);
+            for field in fields {
+                field.ty.rename_for_config(config, &self.generic_params);
             }
         }
 
@@ -301,7 +309,7 @@ impl Item for Struct {
 
         // Scope for mutable borrow of fields
         {
-            let mut names = self.fields.iter_mut().map(|field| &mut field.0);
+            let mut names = self.fields.iter_mut().map(|field| &mut field.name);
 
             let field_rules = self
                 .annotations
@@ -331,7 +339,7 @@ impl Item for Struct {
         }
 
         for field in &mut self.fields {
-            reserved::escape(&mut field.0);
+            reserved::escape(&mut field.name);
         }
 
         for c in self.associated_constants.iter_mut() {
@@ -347,8 +355,10 @@ impl Item for Struct {
             fields.next();
         }
 
-        for &(_, ref ty, _) in fields {
-            ty.add_dependencies_ignoring_generics(&self.generic_params, library, out);
+        for field in fields {
+            field
+                .ty
+                .add_dependencies_ignoring_generics(&self.generic_params, library, out);
         }
 
         for c in &self.associated_constants {
@@ -397,7 +407,7 @@ impl Source for Struct {
                 path: self.path.clone(),
                 export_name: self.export_name.to_owned(),
                 generic_params: self.generic_params.clone(),
-                aliased: self.fields[0].1.clone(),
+                aliased: self.fields[0].ty.clone(),
                 cfg: self.cfg.clone(),
                 annotations: self.annotations.clone(),
                 documentation: self.documentation.clone(),
@@ -465,16 +475,7 @@ impl Source for Struct {
             out.new_line();
         }
 
-        if config.documentation {
-            out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
-        } else {
-            let vec: Vec<_> = self
-                .fields
-                .iter()
-                .map(|&(ref name, ref ty, _)| (name.clone(), ty.clone()))
-                .collect();
-            out.write_vertical_source_list(&vec[..], ListType::Cap(";"));
-        }
+        out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
 
         if config.language == Language::Cxx {
             let mut wrote_start_newline = false;
@@ -498,9 +499,12 @@ impl Source for Struct {
                 let vec: Vec<_> = self
                     .fields
                     .iter()
-                    .map(|&(ref name, ref ty, _)| {
-                        // const-ref args to constructor
-                        (format!("const& {}", arg_renamer(name)), ty.clone())
+                    .map(|field| {
+                        Field::from_name_and_type(
+                            // const-ref args to constructor
+                            format!("const& {}", arg_renamer(&field.name)),
+                            field.ty.clone(),
+                        )
                     })
                     .collect();
                 out.write_vertical_source_list(&vec[..], ListType::Join(","));
@@ -510,7 +514,7 @@ impl Source for Struct {
                 let vec: Vec<_> = self
                     .fields
                     .iter()
-                    .map(|x| format!("{}({})", x.0, arg_renamer(&x.0)))
+                    .map(|field| format!("{}({})", field.name, arg_renamer(&field.name)))
                     .collect();
                 out.write_vertical_source_list(&vec[..], ListType::Join(","));
                 out.new_line();
@@ -580,7 +584,7 @@ impl Source for Struct {
                 let vec: Vec<_> = self
                     .fields
                     .iter()
-                    .map(|x| format!(" << \"{}=\" << {}.{}", x.0, instance, x.0))
+                    .map(|x| format!(" << \"{}=\" << {}.{}", x.name, instance, x.name))
                     .collect();
                 out.write_vertical_source_list(&vec[..], ListType::Join(" << \", \""));
                 out.write(" << \" }\";");
@@ -620,7 +624,7 @@ impl Source for Struct {
                         .fields
                         .iter()
                         .skip(skip_fields)
-                        .map(|x| format!("{} {} {}.{}", x.0, $op, other, x.0))
+                        .map(|field| format!("{} {} {}.{}", field.name, $op, other, field.name))
                         .collect();
                     out.write_vertical_source_list(
                         &vec[..],
@@ -639,25 +643,25 @@ impl Source for Struct {
             }
             if config.structure.derive_lt(&self.annotations)
                 && self.fields.len() == 1
-                && self.fields[0].1.can_cmp_order()
+                && self.fields[0].ty.can_cmp_order()
             {
                 emit_op!("lt", "<", "&&");
             }
             if config.structure.derive_lte(&self.annotations)
                 && self.fields.len() == 1
-                && self.fields[0].1.can_cmp_order()
+                && self.fields[0].ty.can_cmp_order()
             {
                 emit_op!("lte", "<=", "&&");
             }
             if config.structure.derive_gt(&self.annotations)
                 && self.fields.len() == 1
-                && self.fields[0].1.can_cmp_order()
+                && self.fields[0].ty.can_cmp_order()
             {
                 emit_op!("gt", ">", "&&");
             }
             if config.structure.derive_gte(&self.annotations)
                 && self.fields.len() == 1
-                && self.fields[0].1.can_cmp_order()
+                && self.fields[0].ty.can_cmp_order()
             {
                 emit_op!("gte", ">=", "&&");
             }
@@ -692,37 +696,5 @@ impl Source for Struct {
         }
 
         condition.write_after(config, out);
-    }
-}
-
-pub trait SynFieldHelpers {
-    fn as_ident_and_type(
-        &self,
-        self_path: &Path,
-    ) -> Result<Option<(String, Type, Documentation)>, String>;
-}
-
-impl SynFieldHelpers for syn::Field {
-    fn as_ident_and_type(
-        &self,
-        self_path: &Path,
-    ) -> Result<Option<(String, Type, Documentation)>, String> {
-        let ident = self
-            .ident
-            .as_ref()
-            .ok_or_else(|| "field is missing identifier".to_string())?
-            .clone();
-        let converted_ty = Type::load(&self.ty)?;
-
-        if let Some(mut x) = converted_ty {
-            x.replace_self_with(self_path);
-            Ok(Some((
-                ident.to_string(),
-                x,
-                Documentation::load(&self.attrs),
-            )))
-        } else {
-            Ok(None)
-        }
     }
 }

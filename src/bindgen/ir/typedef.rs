@@ -9,8 +9,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, Field, GenericParams, Item, ItemContainer,
+    Path, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -205,7 +205,8 @@ impl Source for Typedef {
 
         if config.language == Language::C {
             out.write("typedef ");
-            (self.export_name().to_owned(), self.aliased.clone()).write(config, out);
+            Field::from_name_and_type(self.export_name().to_owned(), self.aliased.clone())
+                .write(config, out);
         } else {
             write!(out, "using {} = ", self.export_name());
             self.aliased.write(config, out);
