@@ -941,6 +941,10 @@ impl Default for Config {
 }
 
 impl Config {
+    pub(crate) fn cpp_compatible_c(&self) -> bool {
+        self.language == Language::C && self.cpp_compat
+    }
+
     pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {
         let config_text = fs::read_to_string(file_name.as_ref()).map_err(|_| {
             format!(

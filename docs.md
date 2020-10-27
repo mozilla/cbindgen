@@ -452,6 +452,8 @@ no_includes = false
 # } // extern "C"
 # #endif // __cplusplus
 #
+# If the language is not C this option won't have any effect.
+#
 # default: false
 cpp_compat = false
 

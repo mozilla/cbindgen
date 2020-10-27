@@ -265,7 +265,7 @@ impl Bindings {
         }
 
         if !self.functions.is_empty() || !self.globals.is_empty() {
-            if self.config.language == Language::C && self.config.cpp_compat {
+            if self.config.cpp_compatible_c() {
                 out.new_line_if_not_start();
                 out.write("#ifdef __cplusplus");
             }
@@ -280,13 +280,13 @@ impl Bindings {
                 }
             }
 
-            if self.config.language == Language::Cxx || self.config.cpp_compat {
+            if self.config.language == Language::Cxx || self.config.cpp_compatible_c() {
                 out.new_line();
                 out.write("extern \"C\" {");
                 out.new_line();
             }
 
-            if self.config.language == Language::C && self.config.cpp_compat {
+            if self.config.cpp_compatible_c() {
                 out.write("#endif // __cplusplus");
                 out.new_line();
             }
@@ -303,18 +303,18 @@ impl Bindings {
                 out.new_line();
             }
 
-            if self.config.language == Language::C && self.config.cpp_compat {
+            if self.config.cpp_compatible_c() {
                 out.new_line();
                 out.write("#ifdef __cplusplus");
             }
 
-            if self.config.language == Language::Cxx || self.config.cpp_compat {
+            if self.config.language == Language::Cxx || self.config.cpp_compatible_c() {
                 out.new_line();
                 out.write("} // extern \"C\"");
                 out.new_line();
             }
 
-            if self.config.language == Language::C && self.config.cpp_compat {
+            if self.config.cpp_compatible_c() {
                 out.write("#endif // __cplusplus");
                 out.new_line();
             }
@@ -341,7 +341,7 @@ impl Bindings {
     }
 
     fn all_namespaces(&self) -> Vec<&str> {
-        if self.config.language != Language::Cxx && !self.config.cpp_compat {
+        if self.config.language != Language::Cxx && !self.config.cpp_compatible_c() {
             return vec![];
         }
         let mut ret = vec![];
@@ -366,8 +366,7 @@ impl Bindings {
             namespaces.reverse();
         }
 
-        let write_ifdefs = self.config.cpp_compat && self.config.language == Language::C;
-        if write_ifdefs {
+        if self.config.cpp_compatible_c() {
             out.new_line_if_not_start();
             out.write("#ifdef __cplusplus");
         }
@@ -381,7 +380,7 @@ impl Bindings {
         }
 
         out.new_line();
-        if write_ifdefs {
+        if self.config.cpp_compatible_c() {
             out.write("#endif // __cplusplus");
             out.new_line();
         }
