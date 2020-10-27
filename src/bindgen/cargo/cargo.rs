@@ -9,9 +9,9 @@ use crate::bindgen::cargo::cargo_lock::{self, Lock};
 pub(crate) use crate::bindgen::cargo::cargo_metadata::PackageRef;
 use crate::bindgen::cargo::cargo_metadata::{self, Metadata};
 use crate::bindgen::cargo::cargo_toml;
+use crate::bindgen::config::Profile;
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::Cfg;
-pub(crate) use cargo_expand::Profile;
 
 /// Parse a dependency string used in Cargo.lock
 fn parse_dep_string(dep_string: &str) -> (&str, Option<&str>) {

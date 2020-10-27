@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use crate::bindgen::config::Profile;
 use std::env;
 use std::error;
 use std::fmt;
@@ -22,14 +23,6 @@ pub enum Error {
     Utf8(Utf8Error),
     /// Error during execution of `cargo rustc --pretty=expanded`
     Compile(String),
-}
-
-/// Which Cargo profile (group) to use when expanding macros.
-pub enum Profile {
-    /// Do not pass `--release` when expanding macros
-    Debug,
-    /// Pass `--release` when expanding macros
-    Release,
 }
 
 impl From<io::Error> for Error {
