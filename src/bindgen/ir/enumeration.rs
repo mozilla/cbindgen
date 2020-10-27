@@ -636,18 +636,12 @@ impl Source for Enum {
 
         // Emit the actual enum
         if config.language == Language::C {
-            if size.is_none() && config.style.generate_typedef() {
-                out.write("typedef ");
-            }
+            if let Some(prim) = size {
+                // If we need to specify size, then we have no choice but to create a typedef,
+                // so `config.style` is not respected.
+                write!(out, "enum {}", enum_name);
 
-            out.write("enum");
-
-            if size.is_some() || config.style.generate_tag() {
-                write!(out, " {}", enum_name);
-            }
-
-            if config.cpp_compatible_c() {
-                if let Some(prim) = size {
+                if config.cpp_compatible_c() {
                     out.new_line();
                     out.write("#ifdef __cplusplus");
                     out.new_line();
@@ -655,6 +649,14 @@ impl Source for Enum {
                     out.new_line();
                     out.write("#endif // __cplusplus");
                     out.new_line();
+                }
+            } else {
+                if config.style.generate_typedef() {
+                    out.write("typedef ");
+                }
+                out.write("enum");
+                if config.style.generate_tag() {
+                    write!(out, " {}", enum_name);
                 }
             }
         } else {
@@ -690,22 +692,23 @@ impl Source for Enum {
             out.close_brace(true);
         }
 
-        if config.language == Language::C {
-            if let Some(prim) = size {
-                if config.cpp_compatible_c() {
-                    out.new_line_if_not_start();
-                    out.write("#ifndef __cplusplus");
-                }
+        if let Some(prim) = size {
+            if config.cpp_compatible_c() {
+                out.new_line_if_not_start();
+                out.write("#ifndef __cplusplus");
+            }
 
+            if config.language == Language::C {
                 out.new_line();
                 write!(out, "typedef {} {};", prim, enum_name);
+            }
 
-                if config.cpp_compatible_c() {
-                    out.new_line_if_not_start();
-                    out.write("#endif // __cplusplus");
-                }
+            if config.cpp_compatible_c() {
+                out.new_line_if_not_start();
+                out.write("#endif // __cplusplus");
             }
         }
+
         // Done emitting the enum
 
         // Emit an ostream function if required.
