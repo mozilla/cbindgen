@@ -9,7 +9,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, AnnotationValue, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath,
-    Item, ItemContainer, Path, Repr, ReprStyle, Struct, ToCondition, Type,
+    Item, ItemContainer, Literal, Path, Repr, ReprStyle, Struct, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -69,28 +69,10 @@ impl VariantBody {
 pub struct EnumVariant {
     pub name: String,
     pub export_name: String,
-    pub discriminant: Option<i64>,
+    pub discriminant: Option<Literal>,
     pub body: VariantBody,
     pub cfg: Option<Cfg>,
     pub documentation: Documentation,
-}
-
-fn value_from_expr(val: &syn::Expr) -> Option<i64> {
-    match *val {
-        syn::Expr::Lit(ref lit) => match lit.lit {
-            syn::Lit::Int(ref lit) => lit.base10_parse::<i64>().ok(),
-            _ => None,
-        },
-        syn::Expr::Unary(ref unary) => {
-            let v = value_from_expr(&unary.expr)?;
-            match unary.op {
-                syn::UnOp::Deref(..) => None,
-                syn::UnOp::Neg(..) => v.checked_mul(-1),
-                syn::UnOp::Not(..) => v.checked_neg(),
-            }
-        }
-        _ => None,
-    }
 }
 
 impl EnumVariant {
@@ -103,10 +85,7 @@ impl EnumVariant {
         enum_annotations: &AnnotationSet,
     ) -> Result<Self, String> {
         let discriminant = match variant.discriminant {
-            Some((_, ref expr)) => match value_from_expr(expr) {
-                Some(v) => Some(v),
-                None => return Err(format!("Unsupported discriminant {:?}.", expr)),
-            },
+            Some((_, ref expr)) => Some(Literal::load(expr)?),
             None => None,
         };
 
@@ -206,7 +185,7 @@ impl EnumVariant {
 
     pub fn new(
         name: String,
-        discriminant: Option<i64>,
+        discriminant: Option<Literal>,
         body: VariantBody,
         cfg: Option<Cfg>,
         documentation: Documentation,
@@ -242,7 +221,7 @@ impl EnumVariant {
     ) -> Self {
         Self::new(
             mangle::mangle_name(&self.name, generic_values, &config.export.mangle),
-            self.discriminant,
+            self.discriminant.clone(),
             self.body.specialize(generic_values, mappings, config),
             self.cfg.clone(),
             self.documentation.clone(),
@@ -268,8 +247,9 @@ impl Source for EnumVariant {
         condition.write_before(config, out);
         self.documentation.write(config, out);
         write!(out, "{}", self.export_name);
-        if let Some(discriminant) = self.discriminant {
-            write!(out, " = {}", discriminant);
+        if let Some(discriminant) = &self.discriminant {
+            out.write(" = ");
+            discriminant.write(config, out);
         }
         out.write(",");
         condition.write_after(config, out);
@@ -514,7 +494,7 @@ impl Item for Enum {
                     EnumVariant::new(
                         r.apply(&variant.export_name, IdentifierType::EnumVariant(self))
                             .into_owned(),
-                        variant.discriminant,
+                        variant.discriminant.clone(),
                         match variant.body {
                             VariantBody::Empty(..) => variant.body.clone(),
                             VariantBody::Body { ref name, ref body } => VariantBody::Body {

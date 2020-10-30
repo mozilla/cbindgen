@@ -287,7 +287,7 @@ impl Literal {
         }
     }
 
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+    pub(crate) fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         match self {
             Literal::Expr(v) => write!(out, "{}", v),
             Literal::Path(v) => write!(out, "{}", v),
