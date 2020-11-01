@@ -6,15 +6,15 @@
 typedef struct Opaque Opaque;
 
 typedef struct Foo {
-  const Opaque *x;
-  Opaque *y;
+  const struct Opaque *x;
+  struct Opaque *y;
   void (*z)(void);
 } Foo;
 
 typedef union Bar {
-  const Opaque *x;
-  Opaque *y;
+  const struct Opaque *x;
+  struct Opaque *y;
   void (*z)(void);
 } Bar;
 
-void root(const Opaque *a, Opaque *b, Foo c, Bar d);
+void root(const struct Opaque *a, struct Opaque *b, struct Foo c, union Bar d);

@@ -94,11 +94,11 @@ extern "C" {
 #endif // __cplusplus
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
-void root(FooHandle a, C c);
+void root(struct FooHandle a, union C c);
 #endif
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
-void root(BarHandle a, C c);
+void root(struct BarHandle a, union C c);
 #endif
 
 #ifdef __cplusplus

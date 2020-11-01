@@ -19,7 +19,7 @@ typedef union NormalWithZST {
 extern "C" {
 #endif // __cplusplus
 
-void root(Opaque *a, Normal b, NormalWithZST c);
+void root(struct Opaque *a, union Normal b, union NormalWithZST c);
 
 #ifdef __cplusplus
 } // extern "C"

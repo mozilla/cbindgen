@@ -5,10 +5,10 @@
 
 typedef struct NotReprC_RefCell_i32 NotReprC_RefCell_i32;
 
-typedef NotReprC_RefCell_i32 Foo;
+typedef struct NotReprC_RefCell_i32 Foo;
 
 typedef struct MyStruct {
   int32_t number;
 } MyStruct;
 
-void root(const Foo *a, const MyStruct *with_cell);
+void root(const Foo *a, const struct MyStruct *with_cell);

@@ -13,7 +13,7 @@ typedef struct ExportMe {
 extern "C" {
 #endif // __cplusplus
 
-void export_me(ExportMe *val);
+void export_me(struct ExportMe *val);
 
 #ifdef __cplusplus
 } // extern "C"

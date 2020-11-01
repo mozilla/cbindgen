@@ -34,11 +34,11 @@ extern "C" {
 #endif // __cplusplus
 
 #if defined(FOO)
-void foo(const Foo *foo);
+void foo(const struct Foo *foo);
 #endif
 
 #if defined(BAR)
-void bar(const Bar *bar);
+void bar(const struct Bar *bar);
 #endif
 
 #ifdef __cplusplus

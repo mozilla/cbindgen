@@ -18,7 +18,7 @@ typedef uint8_t Bar_Tag;
 
 typedef struct Bazz_Body {
   Bar_Tag tag;
-  Foo named;
+  struct Foo named;
 } Bazz_Body;
 
 typedef struct FooNamed_Body {
@@ -30,7 +30,7 @@ typedef struct FooNamed_Body {
 typedef struct FooParen_Body {
   Bar_Tag tag;
   int32_t _0;
-  Foo _1;
+  struct Foo _1;
 } FooParen_Body;
 
 typedef union Bar {
@@ -40,4 +40,4 @@ typedef union Bar {
   FooParen_Body foo_paren;
 } Bar;
 
-Foo root(Bar aBar);
+struct Foo root(union Bar aBar);

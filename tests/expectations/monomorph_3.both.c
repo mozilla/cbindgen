@@ -18,11 +18,11 @@ typedef union Foo_f32 {
 } Foo_f32;
 
 typedef union Foo_Bar_f32 {
-  const Bar_f32 *data;
+  const struct Bar_f32 *data;
 } Foo_Bar_f32;
 
 typedef union Tuple_Foo_f32_____f32 {
-  const Foo_f32 *a;
+  const union Foo_f32 *a;
   const float *b;
 } Tuple_Foo_f32_____f32;
 
@@ -31,13 +31,13 @@ typedef union Tuple_f32__f32 {
   const float *b;
 } Tuple_f32__f32;
 
-typedef Tuple_f32__f32 Indirection_f32;
+typedef union Tuple_f32__f32 Indirection_f32;
 
-void root(Foo_i32 a,
-          Foo_f32 b,
-          Bar_f32 c,
-          Foo_Bar_f32 d,
-          Bar_Foo_f32 e,
-          Bar_Bar_f32 f,
-          Tuple_Foo_f32_____f32 g,
+void root(union Foo_i32 a,
+          union Foo_f32 b,
+          struct Bar_f32 c,
+          union Foo_Bar_f32 d,
+          struct Bar_Foo_f32 e,
+          struct Bar_Bar_f32 f,
+          union Tuple_Foo_f32_____f32 g,
           Indirection_f32 h);

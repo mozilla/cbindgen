@@ -25,7 +25,7 @@ typedef struct BAC {
 extern "C" {
 #endif // __cplusplus
 
-void root(ABC a1, BAC a2);
+void root(struct ABC a1, struct BAC a2);
 
 #ifdef __cplusplus
 } // extern "C"

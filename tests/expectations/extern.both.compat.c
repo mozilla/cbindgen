@@ -14,7 +14,7 @@ extern "C" {
 
 extern int32_t foo(void);
 
-extern void bar(Normal a);
+extern void bar(struct Normal a);
 
 #ifdef __cplusplus
 } // extern "C"

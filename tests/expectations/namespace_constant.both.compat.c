@@ -19,7 +19,7 @@ typedef struct Foo {
 extern "C" {
 #endif // __cplusplus
 
-void root(Foo x);
+void root(struct Foo x);
 
 #ifdef __cplusplus
 } // extern "C"

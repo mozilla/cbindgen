@@ -251,23 +251,23 @@ typedef struct P {
 extern "C" {
 #endif // __cplusplus
 
-void root(Opaque *opaque,
+void root(struct Opaque *opaque,
           A a,
           B b,
           C c,
           D d,
           E e,
           F f,
-          G g,
-          H h,
-          I i,
-          J j,
-          K k,
-          L l,
+          union G g,
+          struct H h,
+          struct I i,
+          struct J j,
+          struct K k,
+          enum L l,
           M m,
-          N n,
+          enum N n,
           O o,
-          P p);
+          struct P p);
 
 #ifdef __cplusplus
 } // extern "C"

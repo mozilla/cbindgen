@@ -15,4 +15,4 @@ typedef union NormalWithZST {
   float y;
 } NormalWithZST;
 
-void root(Opaque *a, Normal b, NormalWithZST c);
+void root(struct Opaque *a, union Normal b, union NormalWithZST c);

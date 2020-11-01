@@ -29,7 +29,11 @@ typedef struct TupleNamed {
 extern "C" {
 #endif // __cplusplus
 
-void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
+void root(struct Opaque *a,
+          struct Normal b,
+          struct NormalWithZST c,
+          struct TupleRenamed d,
+          struct TupleNamed e);
 
 #ifdef __cplusplus
 } // extern "C"

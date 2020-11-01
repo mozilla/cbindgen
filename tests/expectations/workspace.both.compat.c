@@ -13,7 +13,7 @@ typedef struct ExtType {
 extern "C" {
 #endif // __cplusplus
 
-void consume_ext(ExtType _ext);
+void consume_ext(struct ExtType _ext);
 
 #ifdef __cplusplus
 } // extern "C"

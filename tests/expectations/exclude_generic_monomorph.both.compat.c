@@ -29,7 +29,7 @@ typedef struct Bar {
 extern "C" {
 #endif // __cplusplus
 
-void root(Bar f);
+void root(struct Bar f);
 
 #ifdef __cplusplus
 } // extern "C"

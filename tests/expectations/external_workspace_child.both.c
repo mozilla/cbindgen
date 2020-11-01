@@ -7,4 +7,4 @@ typedef struct ExtType {
   uint32_t data;
 } ExtType;
 
-void consume_ext(ExtType _ext);
+void consume_ext(struct ExtType _ext);

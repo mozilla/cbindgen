@@ -39,7 +39,7 @@ typedef struct MUST_USE_STRUCT OwnedPtr_i32 {
 extern "C" {
 #endif // __cplusplus
 
-MUST_USE_FUNC MaybeOwnedPtr_i32 maybe_consume(OwnedPtr_i32 input);
+MUST_USE_FUNC struct MaybeOwnedPtr_i32 maybe_consume(struct OwnedPtr_i32 input);
 
 #ifdef __cplusplus
 } // extern "C"

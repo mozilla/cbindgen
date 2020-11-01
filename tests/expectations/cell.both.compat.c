@@ -5,7 +5,7 @@
 
 typedef struct NotReprC_RefCell_i32 NotReprC_RefCell_i32;
 
-typedef NotReprC_RefCell_i32 Foo;
+typedef struct NotReprC_RefCell_i32 Foo;
 
 typedef struct MyStruct {
   int32_t number;
@@ -15,7 +15,7 @@ typedef struct MyStruct {
 extern "C" {
 #endif // __cplusplus
 
-void root(const Foo *a, const MyStruct *with_cell);
+void root(const Foo *a, const struct MyStruct *with_cell);
 
 #ifdef __cplusplus
 } // extern "C"

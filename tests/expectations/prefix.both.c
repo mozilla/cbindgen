@@ -32,4 +32,4 @@ typedef union PREFIX_AbsoluteFontWeight {
   PREFIX_Weight_Body weight;
 } PREFIX_AbsoluteFontWeight;
 
-void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, PREFIX_AbsoluteFontWeight z);
+void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, union PREFIX_AbsoluteFontWeight z);

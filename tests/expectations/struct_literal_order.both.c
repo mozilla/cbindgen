@@ -21,4 +21,4 @@ typedef struct BAC {
 #define BAC_bac (BAC){ .b = 1, .a = 2.0, .c = 3 }
 #define BAC_cba (BAC){ .b = 1, .a = 2.0, .c = 3 }
 
-void root(ABC a1, BAC a2);
+void root(struct ABC a1, struct BAC a2);

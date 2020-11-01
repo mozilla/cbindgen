@@ -12,7 +12,7 @@ typedef struct dep_struct {
 extern "C" {
 #endif // __cplusplus
 
-uint32_t get_x(const dep_struct *dep_struct);
+uint32_t get_x(const struct dep_struct *dep_struct);
 
 #ifdef __cplusplus
 } // extern "C"

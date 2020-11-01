@@ -27,7 +27,7 @@ typedef struct E {
 extern "C" {
 #endif // __cplusplus
 
-void root(A _a, E _e);
+void root(struct A _a, struct E _e);
 
 #ifdef __cplusplus
 } // extern "C"

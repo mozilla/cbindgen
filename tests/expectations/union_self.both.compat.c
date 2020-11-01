@@ -9,14 +9,14 @@ typedef struct Foo_Bar {
 
 typedef union Bar {
   int32_t something;
-  Foo_Bar subexpressions;
+  struct Foo_Bar subexpressions;
 } Bar;
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(Bar b);
+void root(union Bar b);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -44,7 +44,7 @@ typedef struct DebugFlags {
 extern "C" {
 #endif // __cplusplus
 
-void root(AlignFlags flags, DebugFlags bigger_flags);
+void root(struct AlignFlags flags, struct DebugFlags bigger_flags);
 
 #ifdef __cplusplus
 } // extern "C"

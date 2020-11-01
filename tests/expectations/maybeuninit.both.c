@@ -19,10 +19,10 @@ using MaybeUninit = T;
 
 typedef struct NotReprC_MaybeUninit______i32 NotReprC_MaybeUninit______i32;
 
-typedef NotReprC_MaybeUninit______i32 Foo;
+typedef struct NotReprC_MaybeUninit______i32 Foo;
 
 typedef struct MyStruct {
   const int32_t *number;
 } MyStruct;
 
-void root(const Foo *a, const MyStruct *with_maybe_uninit);
+void root(const Foo *a, const struct MyStruct *with_maybe_uninit);

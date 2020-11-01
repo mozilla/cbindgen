@@ -15,7 +15,7 @@ typedef struct PREFIXFoo {
 extern "C" {
 #endif // __cplusplus
 
-void root(PREFIXFoo x);
+void root(struct PREFIXFoo x);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -8,4 +8,4 @@ typedef struct Dummy {
   float y;
 } Dummy;
 
-void root(Dummy d);
+void root(struct Dummy d);

@@ -9,4 +9,4 @@ typedef struct ExportMe {
   uint64_t val;
 } ExportMe;
 
-void export_me(ExportMe *val);
+void export_me(struct ExportMe *val);

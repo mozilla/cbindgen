@@ -52,4 +52,4 @@ typedef union C {
   C_C2_Body c2;
 } C;
 
-void root(A a, B b, C c);
+void root(A a, B b, union C c);

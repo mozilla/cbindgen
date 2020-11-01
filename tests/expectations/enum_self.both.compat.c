@@ -22,12 +22,12 @@ typedef uint8_t Bar_Tag;
 
 typedef struct Min_Body {
   Bar_Tag tag;
-  Foo_Bar _0;
+  struct Foo_Bar _0;
 } Min_Body;
 
 typedef struct Max_Body {
   Bar_Tag tag;
-  Foo_Bar _0;
+  struct Foo_Bar _0;
 } Max_Body;
 
 typedef union Bar {
@@ -40,7 +40,7 @@ typedef union Bar {
 extern "C" {
 #endif // __cplusplus
 
-void root(Bar b);
+void root(union Bar b);
 
 #ifdef __cplusplus
 } // extern "C"

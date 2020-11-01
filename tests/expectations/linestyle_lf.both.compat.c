@@ -12,7 +12,7 @@ typedef struct Dummy {
 extern "C" {
 #endif // __cplusplus
 
-void root(Dummy d);
+void root(struct Dummy d);
 
 #ifdef __cplusplus
 } // extern "C"

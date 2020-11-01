@@ -21,7 +21,7 @@ typedef struct B {
 typedef struct D {
   uint8_t List;
   uintptr_t Of;
-  B Things;
+  struct B Things;
 } D;
 
 enum F_Tag {
@@ -90,4 +90,4 @@ typedef struct I {
   };
 } I;
 
-void root(A a, B b, C c, D d, F f, H h, I i);
+void root(struct A a, struct B b, C c, struct D d, union F f, struct H h, struct I i);

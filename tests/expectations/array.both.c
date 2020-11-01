@@ -18,4 +18,4 @@ typedef struct Foo {
   };
 } Foo;
 
-void root(Foo a);
+void root(struct Foo a);

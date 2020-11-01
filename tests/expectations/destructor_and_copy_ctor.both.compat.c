@@ -30,7 +30,7 @@ typedef struct OwnedSlice_u32 {
 
 typedef struct Polygon_u32 {
   FillRule fill;
-  OwnedSlice_u32 coordinates;
+  struct OwnedSlice_u32 coordinates;
 } Polygon_u32;
 
 /**
@@ -59,25 +59,25 @@ typedef uint8_t Foo_u32_Tag;
 #endif // __cplusplus
 
 typedef struct Polygon1_Body_u32 {
-  Polygon_u32 _0;
+  struct Polygon_u32 _0;
 } Polygon1_Body_u32;
 
 typedef struct Slice1_Body_u32 {
-  OwnedSlice_u32 _0;
+  struct OwnedSlice_u32 _0;
 } Slice1_Body_u32;
 
 typedef struct Slice2_Body_u32 {
-  OwnedSlice_i32 _0;
+  struct OwnedSlice_i32 _0;
 } Slice2_Body_u32;
 
 typedef struct Slice3_Body_u32 {
   FillRule fill;
-  OwnedSlice_u32 coords;
+  struct OwnedSlice_u32 coords;
 } Slice3_Body_u32;
 
 typedef struct Slice4_Body_u32 {
   FillRule fill;
-  OwnedSlice_i32 coords;
+  struct OwnedSlice_i32 coords;
 } Slice4_Body_u32;
 
 typedef struct Foo_u32 {
@@ -93,7 +93,7 @@ typedef struct Foo_u32 {
 
 typedef struct Polygon_i32 {
   FillRule fill;
-  OwnedSlice_i32 coordinates;
+  struct OwnedSlice_i32 coordinates;
 } Polygon_i32;
 
 enum Baz_i32_Tag
@@ -114,29 +114,29 @@ typedef uint8_t Baz_i32_Tag;
 
 typedef struct Polygon21_Body_i32 {
   Baz_i32_Tag tag;
-  Polygon_i32 _0;
+  struct Polygon_i32 _0;
 } Polygon21_Body_i32;
 
 typedef struct Slice21_Body_i32 {
   Baz_i32_Tag tag;
-  OwnedSlice_i32 _0;
+  struct OwnedSlice_i32 _0;
 } Slice21_Body_i32;
 
 typedef struct Slice22_Body_i32 {
   Baz_i32_Tag tag;
-  OwnedSlice_i32 _0;
+  struct OwnedSlice_i32 _0;
 } Slice22_Body_i32;
 
 typedef struct Slice23_Body_i32 {
   Baz_i32_Tag tag;
   FillRule fill;
-  OwnedSlice_i32 coords;
+  struct OwnedSlice_i32 coords;
 } Slice23_Body_i32;
 
 typedef struct Slice24_Body_i32 {
   Baz_i32_Tag tag;
   FillRule fill;
-  OwnedSlice_i32 coords;
+  struct OwnedSlice_i32 coords;
 } Slice24_Body_i32;
 
 typedef union Baz_i32 {
@@ -168,7 +168,7 @@ typedef struct Taz1_Body {
 
 typedef struct Taz3_Body {
   Taz_Tag tag;
-  OwnedSlice_i32 _0;
+  struct OwnedSlice_i32 _0;
 } Taz3_Body;
 
 typedef union Taz {
@@ -281,13 +281,13 @@ typedef union Qux {
 extern "C" {
 #endif // __cplusplus
 
-void root(const Foo_u32 *a,
-          const Baz_i32 *b,
-          const Taz *c,
-          Tazz d,
-          const Tazzz *e,
-          const Tazzzz *f,
-          const Qux *g);
+void root(const struct Foo_u32 *a,
+          const union Baz_i32 *b,
+          const union Taz *c,
+          union Tazz d,
+          const union Tazzz *e,
+          const union Tazzzz *f,
+          const union Qux *g);
 
 #ifdef __cplusplus
 } // extern "C"

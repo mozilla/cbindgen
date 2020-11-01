@@ -7,4 +7,4 @@ typedef struct Foo {
   uint32_t a;
 } Foo;
 
-void root(Foo a);
+void root(struct Foo a);

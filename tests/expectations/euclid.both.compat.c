@@ -11,9 +11,9 @@ typedef struct TypedLength_f32__LayoutUnit {
   float _0;
 } TypedLength_f32__LayoutUnit;
 
-typedef TypedLength_f32__UnknownUnit Length_f32;
+typedef struct TypedLength_f32__UnknownUnit Length_f32;
 
-typedef TypedLength_f32__LayoutUnit LayoutLength;
+typedef struct TypedLength_f32__LayoutUnit LayoutLength;
 
 typedef struct TypedSideOffsets2D_f32__UnknownUnit {
   float top;
@@ -29,9 +29,9 @@ typedef struct TypedSideOffsets2D_f32__LayoutUnit {
   float left;
 } TypedSideOffsets2D_f32__LayoutUnit;
 
-typedef TypedSideOffsets2D_f32__UnknownUnit SideOffsets2D_f32;
+typedef struct TypedSideOffsets2D_f32__UnknownUnit SideOffsets2D_f32;
 
-typedef TypedSideOffsets2D_f32__LayoutUnit LayoutSideOffsets2D;
+typedef struct TypedSideOffsets2D_f32__LayoutUnit LayoutSideOffsets2D;
 
 typedef struct TypedSize2D_f32__UnknownUnit {
   float width;
@@ -43,9 +43,9 @@ typedef struct TypedSize2D_f32__LayoutUnit {
   float height;
 } TypedSize2D_f32__LayoutUnit;
 
-typedef TypedSize2D_f32__UnknownUnit Size2D_f32;
+typedef struct TypedSize2D_f32__UnknownUnit Size2D_f32;
 
-typedef TypedSize2D_f32__LayoutUnit LayoutSize2D;
+typedef struct TypedSize2D_f32__LayoutUnit LayoutSize2D;
 
 typedef struct TypedPoint2D_f32__UnknownUnit {
   float x;
@@ -57,23 +57,23 @@ typedef struct TypedPoint2D_f32__LayoutUnit {
   float y;
 } TypedPoint2D_f32__LayoutUnit;
 
-typedef TypedPoint2D_f32__UnknownUnit Point2D_f32;
+typedef struct TypedPoint2D_f32__UnknownUnit Point2D_f32;
 
-typedef TypedPoint2D_f32__LayoutUnit LayoutPoint2D;
+typedef struct TypedPoint2D_f32__LayoutUnit LayoutPoint2D;
 
 typedef struct TypedRect_f32__UnknownUnit {
-  TypedPoint2D_f32__UnknownUnit origin;
-  TypedSize2D_f32__UnknownUnit size;
+  struct TypedPoint2D_f32__UnknownUnit origin;
+  struct TypedSize2D_f32__UnknownUnit size;
 } TypedRect_f32__UnknownUnit;
 
 typedef struct TypedRect_f32__LayoutUnit {
-  TypedPoint2D_f32__LayoutUnit origin;
-  TypedSize2D_f32__LayoutUnit size;
+  struct TypedPoint2D_f32__LayoutUnit origin;
+  struct TypedSize2D_f32__LayoutUnit size;
 } TypedRect_f32__LayoutUnit;
 
-typedef TypedRect_f32__UnknownUnit Rect_f32;
+typedef struct TypedRect_f32__UnknownUnit Rect_f32;
 
-typedef TypedRect_f32__LayoutUnit LayoutRect;
+typedef struct TypedRect_f32__LayoutUnit LayoutRect;
 
 typedef struct TypedTransform2D_f32__UnknownUnit__LayoutUnit {
   float m11;
@@ -97,28 +97,28 @@ typedef struct TypedTransform2D_f32__LayoutUnit__UnknownUnit {
 extern "C" {
 #endif // __cplusplus
 
-void root(TypedLength_f32__UnknownUnit length_a,
-          TypedLength_f32__LayoutUnit length_b,
+void root(struct TypedLength_f32__UnknownUnit length_a,
+          struct TypedLength_f32__LayoutUnit length_b,
           Length_f32 length_c,
           LayoutLength length_d,
-          TypedSideOffsets2D_f32__UnknownUnit side_offsets_a,
-          TypedSideOffsets2D_f32__LayoutUnit side_offsets_b,
+          struct TypedSideOffsets2D_f32__UnknownUnit side_offsets_a,
+          struct TypedSideOffsets2D_f32__LayoutUnit side_offsets_b,
           SideOffsets2D_f32 side_offsets_c,
           LayoutSideOffsets2D side_offsets_d,
-          TypedSize2D_f32__UnknownUnit size_a,
-          TypedSize2D_f32__LayoutUnit size_b,
+          struct TypedSize2D_f32__UnknownUnit size_a,
+          struct TypedSize2D_f32__LayoutUnit size_b,
           Size2D_f32 size_c,
           LayoutSize2D size_d,
-          TypedPoint2D_f32__UnknownUnit point_a,
-          TypedPoint2D_f32__LayoutUnit point_b,
+          struct TypedPoint2D_f32__UnknownUnit point_a,
+          struct TypedPoint2D_f32__LayoutUnit point_b,
           Point2D_f32 point_c,
           LayoutPoint2D point_d,
-          TypedRect_f32__UnknownUnit rect_a,
-          TypedRect_f32__LayoutUnit rect_b,
+          struct TypedRect_f32__UnknownUnit rect_a,
+          struct TypedRect_f32__LayoutUnit rect_b,
           Rect_f32 rect_c,
           LayoutRect rect_d,
-          TypedTransform2D_f32__UnknownUnit__LayoutUnit transform_a,
-          TypedTransform2D_f32__LayoutUnit__UnknownUnit transform_b);
+          struct TypedTransform2D_f32__UnknownUnit__LayoutUnit transform_a,
+          struct TypedTransform2D_f32__LayoutUnit__UnknownUnit transform_b);
 
 #ifdef __cplusplus
 } // extern "C"

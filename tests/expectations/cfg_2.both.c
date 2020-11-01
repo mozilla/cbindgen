@@ -25,18 +25,18 @@ typedef struct Foo {
 
 #if defined(NOT_DEFINED)
 typedef struct Bar {
-  Foo y;
+  struct Foo y;
 } Bar;
 #endif
 
 #if defined(DEFINED)
 typedef struct Bar {
-  Foo z;
+  struct Foo z;
 } Bar;
 #endif
 
 typedef struct Root {
-  Bar w;
+  struct Bar w;
 } Root;
 
-void root(Root a);
+void root(struct Root a);

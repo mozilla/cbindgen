@@ -8,4 +8,4 @@ typedef struct HasBitfields {
   uint64_t bar: 56;
 } HasBitfields;
 
-void root(const HasBitfields*);
+void root(const struct HasBitfields*);

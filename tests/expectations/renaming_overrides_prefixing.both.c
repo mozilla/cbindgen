@@ -10,4 +10,4 @@ typedef struct B {
   float y;
 } B;
 
-void root(const StyleA *a, B b);
+void root(const struct StyleA *a, struct B b);
