@@ -11,7 +11,7 @@ using ManuallyDrop = T;
 
 typedef struct NotReprC_ManuallyDrop_Point NotReprC_ManuallyDrop_Point;
 
-typedef NotReprC_ManuallyDrop_Point Foo;
+typedef struct NotReprC_ManuallyDrop_Point Foo;
 
 typedef struct Point {
   int32_t x;
@@ -19,9 +19,9 @@ typedef struct Point {
 } Point;
 
 typedef struct MyStruct {
-  Point point;
+  struct Point point;
 } MyStruct;
 
-void root(const Foo *a, const MyStruct *with_manual_drop);
+void root(const Foo *a, const struct MyStruct *with_manual_drop);
 
-void take(Point with_manual_drop);
+void take(struct Point with_manual_drop);

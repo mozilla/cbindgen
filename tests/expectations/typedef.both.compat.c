@@ -8,7 +8,7 @@ typedef struct Foo_i32__i32 {
   int32_t y;
 } Foo_i32__i32;
 
-typedef Foo_i32__i32 IntFoo_i32;
+typedef struct Foo_i32__i32 IntFoo_i32;
 
 #ifdef __cplusplus
 extern "C" {

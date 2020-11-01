@@ -11,8 +11,8 @@ typedef struct Foo {
 
 extern const int32_t NUMBER;
 
-extern Foo FOO;
+extern struct Foo FOO;
 
-extern const Bar BAR;
+extern const struct Bar BAR;
 
 void root(void);

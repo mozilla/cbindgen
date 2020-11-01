@@ -50,4 +50,4 @@ typedef struct Foo {
   int32_t x[FOO];
 } Foo;
 
-void root(Foo x);
+void root(struct Foo x);

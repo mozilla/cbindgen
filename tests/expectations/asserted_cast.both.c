@@ -81,4 +81,4 @@ typedef union K {
   K_Bar_Body bar;
 } K;
 
-void foo(H h, I i, J j, K k);
+void foo(struct H h, struct I i, struct J j, union K k);

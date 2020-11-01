@@ -40,4 +40,4 @@ typedef struct DebugFlags {
  */
 #define DebugFlags_BIGGEST_ALLOWED (DebugFlags){ .bits = (uint32_t)(1 << 31) }
 
-void root(AlignFlags flags, DebugFlags bigger_flags);
+void root(struct AlignFlags flags, struct DebugFlags bigger_flags);

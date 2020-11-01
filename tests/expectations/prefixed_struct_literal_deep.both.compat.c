@@ -10,7 +10,7 @@ typedef struct PREFIXBar {
 typedef struct PREFIXFoo {
   int32_t a;
   uint32_t b;
-  PREFIXBar bar;
+  struct PREFIXBar bar;
 } PREFIXFoo;
 
 #define PREFIXVAL (PREFIXFoo){ .a = 42, .b = 1337, .bar = (PREFIXBar){ .a = 323 } }
@@ -19,7 +19,7 @@ typedef struct PREFIXFoo {
 extern "C" {
 #endif // __cplusplus
 
-void root(PREFIXFoo x);
+void root(struct PREFIXFoo x);
 
 #ifdef __cplusplus
 } // extern "C"

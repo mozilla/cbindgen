@@ -32,4 +32,4 @@ typedef struct StyleAlignFlags {
  */
 #define StyleAlignFlags_FLEX_START (StyleAlignFlags){ .bits = (uint8_t)(1 << 3) }
 
-void root(StyleAlignFlags flags);
+void root(struct StyleAlignFlags flags);

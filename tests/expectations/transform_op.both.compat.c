@@ -30,8 +30,8 @@ typedef uint8_t StyleFoo_i32_Tag;
 typedef struct StyleFoo_Body_i32 {
   StyleFoo_i32_Tag tag;
   int32_t x;
-  StylePoint_i32 y;
-  StylePoint_f32 z;
+  struct StylePoint_i32 y;
+  struct StylePoint_f32 z;
 } StyleFoo_Body_i32;
 
 typedef struct StyleBar_Body_i32 {
@@ -41,7 +41,7 @@ typedef struct StyleBar_Body_i32 {
 
 typedef struct StyleBaz_Body_i32 {
   StyleFoo_i32_Tag tag;
-  StylePoint_i32 _0;
+  struct StylePoint_i32 _0;
 } StyleBaz_Body_i32;
 
 typedef union StyleFoo_i32 {
@@ -60,8 +60,8 @@ typedef enum StyleBar_i32_Tag {
 
 typedef struct StyleBar1_Body_i32 {
   int32_t x;
-  StylePoint_i32 y;
-  StylePoint_f32 z;
+  struct StylePoint_i32 y;
+  struct StylePoint_f32 z;
   int32_t (*u)(int32_t);
 } StyleBar1_Body_i32;
 
@@ -70,7 +70,7 @@ typedef struct StyleBar2_Body_i32 {
 } StyleBar2_Body_i32;
 
 typedef struct StyleBar3_Body_i32 {
-  StylePoint_i32 _0;
+  struct StylePoint_i32 _0;
 } StyleBar3_Body_i32;
 
 typedef struct StyleBar_i32 {
@@ -96,8 +96,8 @@ typedef enum StyleBar_u32_Tag {
 
 typedef struct StyleBar1_Body_u32 {
   int32_t x;
-  StylePoint_u32 y;
-  StylePoint_f32 z;
+  struct StylePoint_u32 y;
+  struct StylePoint_f32 z;
   int32_t (*u)(int32_t);
 } StyleBar1_Body_u32;
 
@@ -106,7 +106,7 @@ typedef struct StyleBar2_Body_u32 {
 } StyleBar2_Body_u32;
 
 typedef struct StyleBar3_Body_u32 {
-  StylePoint_u32 _0;
+  struct StylePoint_u32 _0;
 } StyleBar3_Body_u32;
 
 typedef struct StyleBar_u32 {
@@ -133,12 +133,12 @@ typedef uint8_t StyleBaz_Tag;
 
 typedef struct StyleBaz1_Body {
   StyleBaz_Tag tag;
-  StyleBar_u32 _0;
+  struct StyleBar_u32 _0;
 } StyleBaz1_Body;
 
 typedef struct StyleBaz2_Body {
   StyleBaz_Tag tag;
-  StylePoint_i32 _0;
+  struct StylePoint_i32 _0;
 } StyleBaz2_Body;
 
 typedef union StyleBaz {
@@ -161,11 +161,11 @@ typedef uint8_t StyleTaz_Tag;
 #endif // __cplusplus
 
 typedef struct StyleTaz1_Body {
-  StyleBar_u32 _0;
+  struct StyleBar_u32 _0;
 } StyleTaz1_Body;
 
 typedef struct StyleTaz2_Body {
-  StyleBaz _0;
+  union StyleBaz _0;
 } StyleTaz2_Body;
 
 typedef struct StyleTaz {
@@ -180,10 +180,10 @@ typedef struct StyleTaz {
 extern "C" {
 #endif // __cplusplus
 
-void foo(const StyleFoo_i32 *foo,
-         const StyleBar_i32 *bar,
-         const StyleBaz *baz,
-         const StyleTaz *taz);
+void foo(const union StyleFoo_i32 *foo,
+         const struct StyleBar_i32 *bar,
+         const union StyleBaz *baz,
+         const struct StyleTaz *taz);
 
 #ifdef __cplusplus
 } // extern "C"

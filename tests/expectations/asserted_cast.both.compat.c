@@ -103,7 +103,7 @@ typedef union K {
 extern "C" {
 #endif // __cplusplus
 
-void foo(H h, I i, J j, K k);
+void foo(struct H h, struct I i, struct J j, union K k);
 
 #ifdef __cplusplus
 } // extern "C"

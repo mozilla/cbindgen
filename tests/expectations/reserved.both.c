@@ -74,4 +74,10 @@ typedef struct F {
   };
 } F;
 
-void root(A a, B b, C c, E e, F f, int32_t namespace_, float float_);
+void root(struct A a,
+          struct B b,
+          struct C c,
+          struct E e,
+          struct F f,
+          int32_t namespace_,
+          float float_);

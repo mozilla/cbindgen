@@ -95,14 +95,14 @@ typedef union MyUnion_Prepended {
 extern "C" {
 #endif // __cplusplus
 
-void root(MyFancyStruct s,
-          MyFancyEnum e,
-          MyCLikeEnum c,
-          MyUnion u,
-          MyFancyStruct_Prepended sp,
-          MyFancyEnum_Prepended ep,
-          MyCLikeEnum_Prepended cp,
-          MyUnion_Prepended up);
+void root(struct MyFancyStruct s,
+          struct MyFancyEnum e,
+          enum MyCLikeEnum c,
+          union MyUnion u,
+          struct MyFancyStruct_Prepended sp,
+          struct MyFancyEnum_Prepended ep,
+          enum MyCLikeEnum_Prepended cp,
+          union MyUnion_Prepended up);
 
 #ifdef __cplusplus
 } // extern "C"

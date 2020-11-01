@@ -308,7 +308,7 @@ impl Library {
     }
 
     fn resolve_declaration_types(&mut self) {
-        if self.config.style.generate_typedef() {
+        if !self.config.style.generate_tag() {
             return;
         }
 

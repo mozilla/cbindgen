@@ -14,7 +14,7 @@ typedef struct B {
 extern "C" {
 #endif // __cplusplus
 
-void root(const StyleA *a, B b);
+void root(const struct StyleA *a, struct B b);
 
 #ifdef __cplusplus
 } // extern "C"

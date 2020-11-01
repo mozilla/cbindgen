@@ -15,7 +15,7 @@ void extra_debug_fn(void);
 
 void cbindgen(void);
 
-void root(Foo a);
+void root(struct Foo a);
 
 #ifdef __cplusplus
 } // extern "C"

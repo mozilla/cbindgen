@@ -26,14 +26,14 @@ typedef uint8_t DisplayItem_Tag;
 
 typedef struct Fill_Body {
   DisplayItem_Tag tag;
-  Rect _0;
-  Color _1;
+  struct Rect _0;
+  struct Color _1;
 } Fill_Body;
 
 typedef struct Image_Body {
   DisplayItem_Tag tag;
   uint32_t id;
-  Rect bounds;
+  struct Rect bounds;
 } Image_Body;
 
 typedef union DisplayItem {
@@ -42,4 +42,4 @@ typedef union DisplayItem {
   Image_Body image;
 } DisplayItem;
 
-bool push_item(DisplayItem item);
+bool push_item(union DisplayItem item);

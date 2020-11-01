@@ -9,7 +9,7 @@ typedef struct Foo_Bar {
 
 typedef union Bar {
   int32_t something;
-  Foo_Bar subexpressions;
+  struct Foo_Bar subexpressions;
 } Bar;
 
-void root(Bar b);
+void root(union Bar b);

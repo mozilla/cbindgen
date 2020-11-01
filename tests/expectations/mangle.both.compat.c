@@ -7,7 +7,7 @@ typedef struct FooU8 {
   uint8_t a;
 } FooU8;
 
-typedef FooU8 Boo;
+typedef struct FooU8 Boo;
 
 #ifdef __cplusplus
 extern "C" {

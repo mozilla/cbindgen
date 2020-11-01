@@ -74,7 +74,7 @@ typedef union C {
 extern "C" {
 #endif // __cplusplus
 
-void root(A a, B b, C c);
+void root(A a, B b, union C c);
 
 #ifdef __cplusplus
 } // extern "C"

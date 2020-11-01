@@ -23,4 +23,4 @@ typedef struct E {
   };
 } E;
 
-void root(A _a, E _e);
+void root(struct A _a, struct E _e);

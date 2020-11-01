@@ -19,7 +19,7 @@ typedef struct NoExternTy {
 
 #if !defined(DEFINE_FREEBSD)
 typedef struct ContainsNoExternTy {
-  NoExternTy field;
+  struct NoExternTy field;
 } ContainsNoExternTy;
 #endif
 
@@ -29,8 +29,8 @@ typedef struct ContainsNoExternTy {
 } ContainsNoExternTy;
 #endif
 
-void root(Foo a);
+void root(struct Foo a);
 
-void renamed_func(RenamedTy a);
+void renamed_func(struct RenamedTy a);
 
-void no_extern_func(ContainsNoExternTy a);
+void no_extern_func(struct ContainsNoExternTy a);

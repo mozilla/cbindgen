@@ -88,7 +88,7 @@ typedef struct H {
 extern "C" {
 #endif // __cplusplus
 
-void root(A x, B y, C z, F f, H h);
+void root(struct A x, struct B y, C z, union F f, struct H h);
 
 #ifdef __cplusplus
 } // extern "C"

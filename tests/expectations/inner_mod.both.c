@@ -7,4 +7,4 @@ typedef struct Foo {
   float x;
 } Foo;
 
-void root(Foo a);
+void root(struct Foo a);

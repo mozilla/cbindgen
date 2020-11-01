@@ -36,7 +36,7 @@ typedef struct StyleAlignFlags {
 extern "C" {
 #endif // __cplusplus
 
-void root(StyleAlignFlags flags);
+void root(struct StyleAlignFlags flags);
 
 #ifdef __cplusplus
 } // extern "C"

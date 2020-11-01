@@ -17,18 +17,18 @@ typedef struct Dep {
 typedef struct Foo_i32 {
   int32_t a;
   int32_t b;
-  Dep c;
+  struct Dep c;
 } Foo_i32;
 
-typedef Foo_i32 IntFoo;
+typedef struct Foo_i32 IntFoo;
 
 typedef struct Foo_f64 {
   double a;
   double b;
-  Dep c;
+  struct Dep c;
 } Foo_f64;
 
-typedef Foo_f64 DoubleFoo;
+typedef struct Foo_f64 DoubleFoo;
 
 typedef int32_t Unit;
 

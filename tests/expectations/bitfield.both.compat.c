@@ -12,7 +12,7 @@ typedef struct HasBitfields {
 extern "C" {
 #endif // __cplusplus
 
-void root(const HasBitfields*);
+void root(const struct HasBitfields*);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,0 +1,12 @@
+
+header = """
+#if defined(CBINDGEN_STYLE_TYPE)
+/* ANONYMOUS STRUCTS DO NOT SUPPORT FORWARD DECLARATIONS!
+#endif
+"""
+
+trailer = """
+#if defined(CBINDGEN_STYLE_TYPE)
+*/
+#endif
+"""

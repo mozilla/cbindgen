@@ -22,7 +22,7 @@ typedef struct Foo {
 extern "C" {
 #endif // __cplusplus
 
-void root(Foo x, Bar bar);
+void root(struct Foo x, struct Bar bar);
 
 #ifdef __cplusplus
 } // extern "C"

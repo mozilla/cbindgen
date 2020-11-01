@@ -11,7 +11,7 @@ using Box = T*;
 
 typedef struct NotReprC_Box_i32 NotReprC_Box_i32;
 
-typedef NotReprC_Box_i32 Foo;
+typedef struct NotReprC_Box_i32 Foo;
 
 typedef struct MyStruct {
   int32_t *number;
@@ -21,7 +21,7 @@ typedef struct MyStruct {
 extern "C" {
 #endif // __cplusplus
 
-void root(const Foo *a, const MyStruct *with_box);
+void root(const Foo *a, const struct MyStruct *with_box);
 
 void drop_box(int32_t *x);
 

@@ -7,6 +7,6 @@ typedef struct FooU8 {
   uint8_t a;
 } FooU8;
 
-typedef FooU8 Boo;
+typedef struct FooU8 Boo;
 
 void root(Boo x);

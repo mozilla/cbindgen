@@ -9,5 +9,5 @@ typedef struct A {
 } A;
 
 typedef struct B {
-  A data;
+  struct A data;
 } B;

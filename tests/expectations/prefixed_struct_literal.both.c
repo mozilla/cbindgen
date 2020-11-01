@@ -11,4 +11,4 @@ typedef struct PREFIXFoo {
 
 #define PREFIXBAR (PREFIXFoo){ .a = 42, .b = 1337 }
 
-void root(PREFIXFoo x);
+void root(struct PREFIXFoo x);

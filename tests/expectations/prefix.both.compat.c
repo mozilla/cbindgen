@@ -40,7 +40,7 @@ typedef union PREFIX_AbsoluteFontWeight {
 extern "C" {
 #endif // __cplusplus
 
-void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, PREFIX_AbsoluteFontWeight z);
+void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, union PREFIX_AbsoluteFontWeight z);
 
 #ifdef __cplusplus
 } // extern "C"

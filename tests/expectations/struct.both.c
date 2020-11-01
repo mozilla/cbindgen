@@ -25,4 +25,8 @@ typedef struct TupleNamed {
   float y;
 } TupleNamed;
 
-void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
+void root(struct Opaque *a,
+          struct Normal b,
+          struct NormalWithZST c,
+          struct TupleRenamed d,
+          struct TupleNamed e);
