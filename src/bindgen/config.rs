@@ -202,6 +202,12 @@ impl Style {
     }
 }
 
+impl Default for Style {
+    fn default() -> Self {
+        Style::Both
+    }
+}
+
 impl FromStr for Style {
     type Err = String;
 
@@ -921,7 +927,7 @@ impl Default for Config {
             line_endings: LineEndingStyle::default(),
             language: Language::Cxx,
             cpp_compat: false,
-            style: Style::Type,
+            style: Style::default(),
             usize_is_size_t: false,
             sort_by: SortKey::None,
             macro_expansion: Default::default(),
