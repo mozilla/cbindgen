@@ -21,8 +21,8 @@ ctypedef uint64_t Option_Foo
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct {
+typedef struct Bar {
   Option_Foo foo;
 } Bar;
 
-void root(Bar f);
+void root(struct Bar f);
