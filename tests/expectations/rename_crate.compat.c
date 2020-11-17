@@ -1,3 +1,8 @@
+#ifdef CBINDGEN_CYTHON
+DEF DEFINE_FREEBSD = 0
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

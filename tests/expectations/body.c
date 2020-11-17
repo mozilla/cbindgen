@@ -18,7 +18,7 @@ typedef enum {
 typedef struct {
   int32_t i;
 #ifdef __cplusplus
-  inline void foo();
+    inline void foo();
 #endif
 } MyFancyStruct;
 
@@ -43,14 +43,14 @@ typedef struct {
     Baz_Body baz;
   };
 #ifdef __cplusplus
-  inline void wohoo();
+    inline void wohoo();
 #endif
 } MyFancyEnum;
 
 typedef union {
   float f;
   uint32_t u;
-  int32_t extra_member; // yolo
+    int32_t extra_member;
 } MyUnion;
 
 typedef struct {
@@ -86,7 +86,7 @@ typedef struct {
 } MyFancyEnum_Prepended;
 
 typedef union {
-  int32_t extra_member; // yolo
+    int32_t extra_member;
   float f;
   uint32_t u;
 } MyUnion_Prepended;

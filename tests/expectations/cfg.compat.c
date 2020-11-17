@@ -1,3 +1,11 @@
+#ifdef CBINDGEN_CYTHON
+DEF PLATFORM_UNIX = 0
+DEF PLATFORM_WIN = 0
+DEF X11 = 0
+DEF M_32 = 0
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

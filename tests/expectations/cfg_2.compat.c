@@ -1,3 +1,9 @@
+#ifdef CBINDGEN_CYTHON
+DEF DEFINED = 1
+DEF NOT_DEFINED = 0
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

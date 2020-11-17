@@ -1,3 +1,9 @@
+header = """
+#ifdef CBINDGEN_CYTHON
+DEF DEFINE_FREEBSD = 0
+#endif
+"""
+
 [parse]
 parse_deps = true
 [defines]

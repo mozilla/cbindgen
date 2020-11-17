@@ -1,7 +1,9 @@
+#ifdef CBINDGEN_CYTHON
 DEF PLATFORM_UNIX = 0
 DEF PLATFORM_WIN = 0
 DEF X11 = 0
 DEF M_32 = 0
+#endif
 
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t

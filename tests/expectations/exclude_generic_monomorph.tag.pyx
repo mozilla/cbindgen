@@ -1,5 +1,10 @@
+#ifdef CBINDGEN_CYTHON
 from libc.stdint cimport uint64_t
 ctypedef uint64_t Option_Foo
+#else
+#include <stdint.h>
+typedef uint64_t Option_Foo;
+#endif
 
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t

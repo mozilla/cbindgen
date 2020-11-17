@@ -1,3 +1,10 @@
+header = """
+#ifdef CBINDGEN_CYTHON
+DEF FOO = 0
+DEF BAR = 0
+#endif
+"""
+
 [defines]
 "foo" = "FOO"
 "bar" = "BAR"

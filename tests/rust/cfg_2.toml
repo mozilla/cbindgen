@@ -1,3 +1,10 @@
+header = """
+#ifdef CBINDGEN_CYTHON
+DEF DEFINED = 1
+DEF NOT_DEFINED = 0
+#endif
+"""
+
 [defines]
 "unix" = "DEFINED"
 "macos" = "NOT_DEFINED"

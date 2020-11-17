@@ -1,9 +1,0 @@
-header = """
-from libc.stdint cimport uint64_t
-ctypedef uint64_t Option_Foo
-"""
-
-[export]
-exclude = [
-  "Option_Foo",
-]

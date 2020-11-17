@@ -1,4 +1,4 @@
-#define MY_ASSERT(...) do { } while (0)
+#define MY_ASSERT(expr) do { } while (0)
 #define MY_ATTRS __attribute((noinline))
 
 

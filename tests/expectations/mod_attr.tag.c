@@ -1,3 +1,9 @@
+#ifdef CBINDGEN_CYTHON
+DEF FOO = 0
+DEF BAR = 0
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

@@ -19,7 +19,7 @@ enum class MyCLikeEnum_Prepended {
 struct MyFancyStruct {
   int32_t i;
 #ifdef __cplusplus
-  inline void foo();
+    inline void foo();
 #endif
 };
 
@@ -44,14 +44,14 @@ struct MyFancyEnum {
     Baz_Body baz;
   };
 #ifdef __cplusplus
-  inline void wohoo();
+    inline void wohoo();
 #endif
 };
 
 union MyUnion {
   float f;
   uint32_t u;
-  int32_t extra_member; // yolo
+    int32_t extra_member;
 };
 
 struct MyFancyStruct_Prepended {
@@ -87,7 +87,7 @@ struct MyFancyEnum_Prepended {
 };
 
 union MyUnion_Prepended {
-  int32_t extra_member; // yolo
+    int32_t extra_member;
   float f;
   uint32_t u;
 };

@@ -52,3 +52,5 @@ cdef extern from *:
   void free_function_should_exist_annotated_mut_by_name(SelfTypeTestStruct test_struct);
 
   PointerToOpaque PointerToOpaque_create(uint8_t times);
+
+  void PointerToOpaque_sayHello(PointerToOpaque self) /*a comment!*/;

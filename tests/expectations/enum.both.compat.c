@@ -273,9 +273,11 @@ void root(Opaque *opaque,
 } // extern "C"
 #endif // __cplusplus
 
+#ifndef CBINDGEN_CYTHON
 #include <stddef.h>
 #include "testing-helpers.h"
 static_assert(offsetof(CBINDGEN_STRUCT(P), tag) == 0, "unexpected offset for tag");
 static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p0");
 static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p1");
 static_assert(sizeof(CBINDGEN_STRUCT(P)) == 4, "unexpected size for P");
+#endif

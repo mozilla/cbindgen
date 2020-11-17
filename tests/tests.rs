@@ -2,6 +2,7 @@ extern crate cbindgen;
 
 use cbindgen::*;
 use std::collections::HashSet;
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 use std::{env, fs, str};
@@ -16,6 +17,7 @@ fn style_str(style: Style) -> &'static str {
 
 fn run_cbindgen(
     cbindgen_path: &'static str,
+    tmp_dir: &Path,
     path: &Path,
     output: &Path,
     language: Language,
@@ -43,15 +45,39 @@ fn run_cbindgen(
     }
 
     let config_exts = match language {
-        Language::Cython => &["cython.toml", "toml"][..],
+        Language::Cython => &["toml", "cython.toml"][..],
         _ => &["toml"],
     };
+
+    let mut config_paths = vec![];
     for config_ext in config_exts {
         let config = path.with_extension(config_ext);
         if config.exists() {
-            command.arg("--config").arg(config);
-            break;
+            config_paths.push(config);
         }
+    }
+
+    if !config_paths.is_empty() {
+        let config_path = if config_paths.len() == 1 {
+            config_paths.pop().unwrap()
+        } else {
+            let config_file = tmp_dir.join(format!(
+                "{}-{:?}-{}.toml",
+                path.file_name().unwrap().to_string_lossy(),
+                language,
+                cpp_compat
+            ));
+            let mut file =
+                fs::File::create(&config_file).expect("couldn't create temporary config file");
+            let mut bytes = vec![];
+            for file in config_paths {
+                bytes.extend(fs::read(file).expect("failed to read config file"));
+            }
+            file.write_all(&bytes).expect("Failed to write to file");
+            config_file
+        };
+
+        command.arg("--config").arg(config_path);
     }
 
     command.arg(path);
@@ -130,13 +156,28 @@ fn compile(
             command.arg("-c").arg(cbindgen_output);
         }
         Language::Cython => {
+            // Preprocess the output file.
+            let mut processed_file_name = file_name.to_owned();
+            processed_file_name.push(".processed.pyx");
+            let processed_file = tmp_dir.join(processed_file_name);
+            let cpp = env::var("CPP").unwrap_or_else(|_| "cpp".to_owned());
+            let out = Command::new(&cpp)
+                .arg(cbindgen_output)
+                .arg("-o")
+                .arg(&processed_file)
+                .arg("-DCBINDGEN_CYTHON")
+                .arg("-traditional") // Ignore invalid directives and such
+                .output()
+                .expect("failed to process cython");
+            assert!(out.status.success(), "Failed to process cython: {:?}", out);
+
             command.arg("-Wextra");
             if !skip_warning_as_error {
                 command.arg("-Werror");
             }
             command.arg("-3");
             command.arg("-o").arg(&object);
-            command.arg(cbindgen_output);
+            command.arg(&processed_file);
         }
     }
 
@@ -192,6 +233,7 @@ fn run_compile_test(
 
     let cbindgen_output = run_cbindgen(
         cbindgen_path,
+        tmp_dir,
         path,
         &generated_file,
         language,
@@ -246,7 +288,6 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
         .prefix("cbindgen-test-output")
         .tempdir()
         .expect("Creating tmp dir failed");
-    let tmp_dir = tmp_dir.path();
     // Run tests in deduplication priority order. C++ compatibility tests are run first,
     // otherwise we would lose the C++ compiler run if they were deduplicated.
     let mut cbindgen_outputs = HashSet::new();
@@ -256,7 +297,7 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
                 cbindgen_path,
                 name,
                 &test,
-                tmp_dir,
+                tmp_dir.path(),
                 Language::C,
                 *cpp_compat,
                 Some(*style),
@@ -269,7 +310,7 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
         cbindgen_path,
         name,
         &test,
-        tmp_dir,
+        tmp_dir.path(),
         Language::Cxx,
         /* cpp_compat = */ false,
         None,
@@ -283,7 +324,7 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
             cbindgen_path,
             name,
             &test,
-            tmp_dir,
+            tmp_dir.path(),
             Language::Cython,
             /* cpp_compat = */ false,
             Some(*style),
