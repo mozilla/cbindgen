@@ -15,21 +15,11 @@ enum E
   C = (1 + 2),
   D = FOUR,
   F = 5,
-};
-#ifndef __cplusplus
-typedef int8_t E;
-#endif // __cplusplus
-
-enum E_NoCython
-#ifdef __cplusplus
-  : int8_t
-#endif // __cplusplus
- {
-  G = (int8_t)'6',
+  G = (int8_t)54,
   H = (int8_t)false,
 };
 #ifndef __cplusplus
-typedef int8_t E_NoCython;
+typedef int8_t E;
 #endif // __cplusplus
 
 #ifdef __cplusplus
@@ -37,8 +27,6 @@ extern "C" {
 #endif // __cplusplus
 
 void root(const E*);
-
-void root_no_cython(const E_NoCython*);
 
 #ifdef __cplusplus
 } // extern "C"

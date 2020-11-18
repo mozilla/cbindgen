@@ -55,8 +55,7 @@ void free_function_should_exist_annotated_mut_by_name(SelfTypeTestStruct test_st
 
 PointerToOpaque PointerToOpaque_create(uint8_t times) CF_SWIFT_NAME(PointerToOpaque.create(times:));
 
-void PointerToOpaque_sayHello(PointerToOpaque self)
-/*a comment!*/ CF_SWIFT_NAME(PointerToOpaque.sayHello(self:));
+void PointerToOpaque_sayHello(PointerToOpaque self) CF_SWIFT_NAME(PointerToOpaque.sayHello(self:));
 
 #ifdef __cplusplus
 } // extern "C"

@@ -122,7 +122,6 @@ impl PointerToOpaque {
     PointerToOpaque { ptr: Box::into_raw(Box::new(Opaque { times })) }
   }
 
-  /// cbindgen:postfix=/*a comment!*/
   #[export_name="PointerToOpaque_sayHello"]
   pub extern fn say_hello(self: PointerToOpaque) {
     if let Some(nonnull) = std::ptr::NonNull::new(self.ptr) {

@@ -289,7 +289,11 @@ impl Literal {
 
     pub(crate) fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         match self {
-            Literal::Expr(v) => write!(out, "{}", v),
+            Literal::Expr(v) => match (&**v, config.language) {
+                ("true", Language::Cython) => write!(out, "True"),
+                ("false", Language::Cython) => write!(out, "False"),
+                (v, _) => write!(out, "{}", v),
+            },
             Literal::Path(v) => write!(out, "{}", v),
             Literal::PostfixUnaryOp { op, ref value } => {
                 write!(out, "{}", op);

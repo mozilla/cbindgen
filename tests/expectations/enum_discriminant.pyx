@@ -14,6 +14,8 @@ cdef extern from *:
     C = (1 + 2),
     D = FOUR,
     F = 5,
+    G = <int8_t>54,
+    H = <int8_t>False,
   ctypedef int8_t E;
 
   void root(const E*);

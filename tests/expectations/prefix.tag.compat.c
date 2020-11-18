@@ -7,7 +7,9 @@
 
 #define PREFIX_X (22 << 22)
 
-#define PREFIX_Y (PREFIX_X + PREFIX_X)
+#define PREFIX_Y1 ((22 << 22) + (22 << 22))
+
+#define PREFIX_Y2 PREFIX_X
 
 typedef int32_t PREFIX_NamedLenArray[PREFIX_LEN];
 

@@ -244,7 +244,9 @@ impl EnumVariant {
 impl Source for EnumVariant {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         let condition = self.cfg.to_condition(config);
-        condition.write_before(config, out);
+        if config.language != Language::Cython {
+            condition.write_before(config, out);
+        }
         self.documentation.write(config, out);
         write!(out, "{}", self.export_name);
         if let Some(discriminant) = &self.discriminant {
@@ -252,7 +254,9 @@ impl Source for EnumVariant {
             discriminant.write(config, out);
         }
         out.write(",");
-        condition.write_after(config, out);
+        if config.language != Language::Cython {
+            condition.write_after(config, out);
+        }
     }
 }
 
@@ -842,9 +846,13 @@ impl Source for Enum {
                     out.new_line();
                     out.new_line();
                     let condition = variant.cfg.to_condition(config);
-                    condition.write_before(config, out);
+                    if config.language != Language::Cython {
+                        condition.write_before(config, out);
+                    }
                     body.write(config, out);
-                    condition.write_after(config, out);
+                    if config.language != Language::Cython {
+                        condition.write_after(config, out);
+                    }
                 }
             }
 
@@ -920,13 +928,17 @@ impl Source for Enum {
                     }
                     first = false;
                     let condition = variant.cfg.to_condition(config);
-                    condition.write_before(config, out);
+                    if config.language != Language::Cython {
+                        condition.write_before(config, out);
+                    }
                     if config.style.generate_typedef() || config.language == Language::Cython {
                         write!(out, "{} {};", body.export_name(), field_name);
                     } else {
                         write!(out, "struct {} {};", body.export_name(), field_name);
                     }
-                    condition.write_after(config, out);
+                    if config.language != Language::Cython {
+                        condition.write_after(config, out);
+                    }
                 }
             }
 

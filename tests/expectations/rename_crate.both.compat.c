@@ -1,3 +1,8 @@
+#if 0
+DEF DEFINE_FREEBSD = 0
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

@@ -1,8 +1,0 @@
-header = """
-DEF DEFINE_FREEBSD = 0
-"""
-
-[parse]
-parse_deps = true
-[defines]
-"target_os = freebsd" = "DEFINE_FREEBSD"
