@@ -1,6 +1,14 @@
+#if 0
+''' '
+#endif
+
 #ifdef __cplusplus
 template <typename T>
 using ManuallyDrop = T;
+#endif
+
+#if 0
+' '''
 #endif
 
 

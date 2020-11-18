@@ -1,7 +1,9 @@
+#if 0
 DEF PLATFORM_UNIX = 0
 DEF PLATFORM_WIN = 0
 DEF X11 = 0
 DEF M_32 = 0
+#endif
 
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
@@ -31,6 +33,21 @@ cdef extern from *:
       FooType ty;
       int32_t x;
       float y;
+
+  cdef enum:
+    C1,
+    C2,
+    C3,
+    C5,
+  ctypedef uint8_t C_Tag;
+
+  ctypedef struct C5_Body:
+    C_Tag tag;
+    int32_t int_;
+
+  ctypedef union C:
+    C_Tag tag;
+    C5_Body c5;
 
   IF (PLATFORM_WIN or M_32):
     ctypedef struct BarHandle:

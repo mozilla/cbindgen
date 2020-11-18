@@ -1,5 +1,7 @@
+#if 0
 DEF DEFINED = 1
 DEF NOT_DEFINED = 0
+#endif
 
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t

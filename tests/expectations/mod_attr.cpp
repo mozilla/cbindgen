@@ -1,3 +1,9 @@
+#if 0
+DEF FOO = 0
+DEF BAR = 0
+#endif
+
+
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>

@@ -35,9 +35,11 @@ static const int64_t SHIFT = 3;
 
 static const int64_t XBOOL = 1;
 
-static const int64_t XFALSE = ((0 << SHIFT) | XBOOL);
+static const int64_t XFALSE1 = ((0 << 3) | 1);
 
-static const int64_t XTRUE = (1 << (SHIFT | XBOOL));
+static const int64_t XTRUE1 = (1 << (3 | 1));
+
+static const int64_t XFALSE2 = (0 << SHIFT);
 
 static const uint8_t CAST = (uint8_t)'A';
 

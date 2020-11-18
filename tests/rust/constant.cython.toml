@@ -1,5 +1,0 @@
-[export]
-exclude = [
-  "XFALSE", # right hand side crashes Cython compiler
-  "XTRUE", # right hand side crashes Cython compiler
-]

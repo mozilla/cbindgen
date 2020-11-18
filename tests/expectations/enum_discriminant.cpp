@@ -12,17 +12,12 @@ enum class E : int8_t {
   C = (1 + 2),
   D = FOUR,
   F = 5,
-};
-
-enum class E_NoCython : int8_t {
-  G = (int8_t)'6',
+  G = (int8_t)54,
   H = (int8_t)false,
 };
 
 extern "C" {
 
 void root(const E*);
-
-void root_no_cython(const E_NoCython*);
 
 } // extern "C"

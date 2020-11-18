@@ -1,5 +1,7 @@
+#if 0
 DEF FOO = 0
 DEF BAR = 0
+#endif
 
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t

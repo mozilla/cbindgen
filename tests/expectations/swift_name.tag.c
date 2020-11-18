@@ -51,5 +51,4 @@ void free_function_should_exist_annotated_mut_by_name(struct SelfTypeTestStruct 
 
 struct PointerToOpaque PointerToOpaque_create(uint8_t times) CF_SWIFT_NAME(PointerToOpaque.create(times:));
 
-void PointerToOpaque_sayHello(struct PointerToOpaque self)
-/*a comment!*/ CF_SWIFT_NAME(PointerToOpaque.sayHello(self:));
+void PointerToOpaque_sayHello(struct PointerToOpaque self) CF_SWIFT_NAME(PointerToOpaque.sayHello(self:));

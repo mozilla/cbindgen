@@ -18,7 +18,7 @@ enum MyCLikeEnum_Prepended {
 struct MyFancyStruct {
   int32_t i;
 #ifdef __cplusplus
-  inline void foo();
+    inline void foo();
 #endif
 };
 
@@ -43,19 +43,19 @@ struct MyFancyEnum {
     struct Baz_Body baz;
   };
 #ifdef __cplusplus
-  inline void wohoo();
+    inline void wohoo();
 #endif
 };
 
 union MyUnion {
   float f;
   uint32_t u;
-  int32_t extra_member; // yolo
+  int32_t extra_member;
 };
 
 struct MyFancyStruct_Prepended {
 #ifdef __cplusplus
-  inline void prepended_wohoo();
+    inline void prepended_wohoo();
 #endif
   int32_t i;
 };
@@ -75,9 +75,9 @@ struct Baz_Prepended_Body {
 };
 
 struct MyFancyEnum_Prepended {
-  #ifdef __cplusplus
+#ifdef __cplusplus
     inline void wohoo();
-  #endif
+#endif
   enum MyFancyEnum_Prepended_Tag tag;
   union {
     struct Bar_Prepended_Body bar_prepended;
@@ -86,7 +86,7 @@ struct MyFancyEnum_Prepended {
 };
 
 union MyUnion_Prepended {
-  int32_t extra_member; // yolo
+    int32_t extra_member;
   float f;
   uint32_t u;
 };

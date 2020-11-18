@@ -42,16 +42,9 @@ fn run_cbindgen(
         command.arg("--style").arg(style_str(style));
     }
 
-    let config_exts = match language {
-        Language::Cython => &["cython.toml", "toml"][..],
-        _ => &["toml"],
-    };
-    for config_ext in config_exts {
-        let config = path.with_extension(config_ext);
-        if config.exists() {
-            command.arg("--config").arg(config);
-            break;
-        }
+    let config = path.with_extension("toml");
+    if config.exists() {
+        command.arg("--config").arg(config);
     }
 
     command.arg(path);

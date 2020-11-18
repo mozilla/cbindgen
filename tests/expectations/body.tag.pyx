@@ -18,6 +18,9 @@ cdef extern from *:
 
   cdef struct MyFancyStruct:
     int32_t i;
+#ifdef __cplusplus
+    inline void foo();
+#endif
 
   cdef enum MyFancyEnum_Tag:
     Foo,
@@ -34,13 +37,19 @@ cdef extern from *:
     MyFancyEnum_Tag tag;
     Bar_Body bar;
     Baz_Body baz;
+#ifdef __cplusplus
+    inline void wohoo();
+#endif
 
   cdef union MyUnion:
     float f;
     uint32_t u;
-    int32_t extra_member; # yolo
+  int32_t extra_member;
 
   cdef struct MyFancyStruct_Prepended:
+#ifdef __cplusplus
+    inline void prepended_wohoo();
+#endif
     int32_t i;
 
   cdef enum MyFancyEnum_Prepended_Tag:
@@ -55,12 +64,15 @@ cdef extern from *:
     int32_t _0;
 
   cdef struct MyFancyEnum_Prepended:
+#ifdef __cplusplus
+    inline void wohoo();
+#endif
     MyFancyEnum_Prepended_Tag tag;
     Bar_Prepended_Body bar_prepended;
     Baz_Prepended_Body baz_prepended;
 
   cdef union MyUnion_Prepended:
-    int32_t extra_member; # yolo
+    int32_t extra_member;
     float f;
     uint32_t u;
 

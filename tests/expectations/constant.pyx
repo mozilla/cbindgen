@@ -37,6 +37,12 @@ cdef extern from *:
 
   const int64_t XBOOL = 1;
 
+  const int64_t XFALSE1 = ((0 << 3) | 1);
+
+  const int64_t XTRUE1 = (1 << (3 | 1));
+
+  const int64_t XFALSE2 = (0 << SHIFT);
+
   const uint8_t CAST = <uint8_t>'A';
 
   const uint32_t DOUBLE_CAST = <uint32_t><float>1;
