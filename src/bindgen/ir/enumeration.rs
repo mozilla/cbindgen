@@ -280,6 +280,11 @@ pub struct Enum {
 }
 
 impl Enum {
+    /// Name of the generated enum.
+    fn enum_name(&self) -> &str {
+        self.tag.as_deref().unwrap_or_else(|| self.export_name())
+    }
+
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         if self.generic_params.len() > 0 {
             return;
@@ -586,14 +591,14 @@ impl Item for Enum {
 impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         let size = self.repr.ty.map(|ty| ty.to_primitive().to_repr_c(config));
+        let is_tagged = self.tag.is_some();
+        let separate_tag = self.repr.style == ReprStyle::C;
+        let enum_name = self.enum_name();
 
         let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);
 
         self.documentation.write(config, out);
-
-        let is_tagged = self.tag.is_some();
-        let separate_tag = self.repr.style == ReprStyle::C;
 
         // If tagged, we need to emit a proper struct/union wrapper around our enum
         self.generic_params.write(config, out);
@@ -610,19 +615,14 @@ impl Source for Enum {
             out.open_brace();
 
             // Emit the pre_body section, if relevant
-            // Only do this here if we're writing C++, since the struct that wraps everything is starting here.
-            // If we're writing C, we aren't wrapping the enum and variant structs definitions, so the actual enum struct willstart down below
+            // Only do this here if we're writing C++, since the struct that wraps everything
+            // is starting here. If we're writing C, we aren't wrapping the enum and variant
+            // structs definitions, so the actual enum struct will start down below.
             if let Some(body) = config.export.pre_body(&self.path) {
                 out.write_raw_block(body);
                 out.new_line();
             }
         }
-
-        let enum_name = if let Some(ref tag) = self.tag {
-            tag
-        } else {
-            self.export_name()
-        };
 
         // Emit the actual enum
         match config.language {
@@ -714,9 +714,154 @@ impl Source for Enum {
 
         // Done emitting the enum
 
+        self.write_derived_functions_enum(config, out);
+
+        // If tagged, we need to emit structs for the cases and union them together
+        if is_tagged {
+            // Emit the cases for the structs
+            for variant in &self.variants {
+                if let VariantBody::Body { ref body, .. } = variant.body {
+                    out.new_line();
+                    out.new_line();
+                    let condition = variant.cfg.to_condition(config);
+                    // Cython doesn't support conditional enum variants.
+                    if config.language != Language::Cython {
+                        condition.write_before(config, out);
+                    }
+                    body.write(config, out);
+                    if config.language != Language::Cython {
+                        condition.write_after(config, out);
+                    }
+                }
+            }
+
+            out.new_line();
+            out.new_line();
+
+            // Emit the actual union (code here should mirror {struct,union}.rs).
+            if config.language != Language::Cxx {
+                match config.language {
+                    Language::C if config.style.generate_typedef() => out.write("typedef "),
+                    Language::C | Language::Cxx => {}
+                    Language::Cython => out.write(config.style.cython_def()),
+                }
+
+                out.write(if separate_tag { "struct" } else { "union" });
+
+                if config.language != Language::C || config.style.generate_tag() {
+                    write!(out, " {}", self.export_name());
+                }
+
+                out.open_brace();
+
+                // Emit the pre_body section, if relevant
+                // Only do this if we're writing C, since the struct is starting right here.
+                // For C++, the struct wraps all of the above variant structs too,
+                // and we write the pre_body section at the begining of that
+                if let Some(body) = config.export.pre_body(&self.path) {
+                    out.write_raw_block(body);
+                    out.new_line();
+                }
+            }
+
+            // C++ allows accessing only common initial sequence of union
+            // branches so we need to wrap tag into an anonymous struct
+            let wrap_tag = config.language == Language::Cxx && !separate_tag;
+
+            if wrap_tag {
+                out.write("struct");
+                out.open_brace();
+            }
+
+            if config.language == Language::C && size.is_none() && !config.style.generate_typedef()
+            {
+                out.write("enum ");
+            }
+
+            write!(out, "{} tag;", enum_name);
+
+            if wrap_tag {
+                out.close_brace(true);
+            }
+
+            out.new_line();
+
+            // Cython extern declarations don't manage layouts, layouts are defined entierly by the
+            // corresponding C code. So we can inline the unnamed union into the struct and get the
+            // same observable result. Moreother we have to do it because Cython doesn't support
+            // unnamed unions.
+            if separate_tag && config.language != Language::Cython {
+                out.write("union");
+                out.open_brace();
+            }
+
+            {
+                let mut first = true;
+                for variant in &self.variants {
+                    let (field_name, body) = match variant.body {
+                        VariantBody::Body { ref name, ref body } => (name, body),
+                        VariantBody::Empty(..) => continue,
+                    };
+
+                    if !first {
+                        out.new_line();
+                    }
+                    first = false;
+                    let condition = variant.cfg.to_condition(config);
+                    // Cython doesn't support conditional enum variants.
+                    if config.language != Language::Cython {
+                        condition.write_before(config, out);
+                    }
+                    if config.style.generate_typedef() || config.language == Language::Cython {
+                        write!(out, "{} {};", body.export_name(), field_name);
+                    } else {
+                        write!(out, "struct {} {};", body.export_name(), field_name);
+                    }
+                    if config.language != Language::Cython {
+                        condition.write_after(config, out);
+                    }
+                }
+            }
+
+            // See the comment about Cython on `open_brace`.
+            if separate_tag && config.language != Language::Cython {
+                out.close_brace(true);
+            }
+
+            // Emit convenience methods
+            self.write_derived_functions_data(config, out);
+
+            // Emit the post_body section, if relevant
+            if let Some(body) = config.export.post_body(&self.path) {
+                out.new_line();
+                out.write_raw_block(body);
+            }
+
+            if config.language == Language::C && config.style.generate_typedef() {
+                out.close_brace(false);
+                write!(out, " {};", self.export_name);
+            } else {
+                out.close_brace(true);
+            }
+        }
+
+        condition.write_after(config, out);
+    }
+}
+
+impl Enum {
+    // Emit convenience methods for enums themselves.
+    fn write_derived_functions_enum<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if config.language != Language::Cxx {
+            return;
+        }
+
+        let is_tagged = self.tag.is_some();
+        let separate_tag = self.repr.style == ReprStyle::C;
+        let enum_name = self.enum_name();
+
         // Emit an ostream function if required.
-        let derive_ostream = config.enumeration.derive_ostream(&self.annotations);
-        if config.language == Language::Cxx && derive_ostream {
+        if config.enumeration.derive_ostream(&self.annotations) {
             // For untagged enums, this emits the serializer function for the
             // enum. For tagged enums, this emits the serializer function for
             // the tag. In the latter case we need a couple of minor changes
@@ -843,515 +988,380 @@ impl Source for Enum {
                 out.close_brace(false);
             }
         }
+    }
 
-        // If tagged, we need to emit structs for the cases and union them together
-        if is_tagged {
-            // Emit the cases for the structs
+    // Emit convenience methods for structs or unions produced for enums with data.
+    fn write_derived_functions_data<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if config.language != Language::Cxx {
+            return;
+        }
+
+        let separate_tag = self.repr.style == ReprStyle::C;
+        let skip_fields = if separate_tag { 0 } else { 1 };
+        let enum_name = self.enum_name();
+
+        if config.enumeration.derive_helper_methods(&self.annotations) {
             for variant in &self.variants {
+                out.new_line();
+                out.new_line();
+
+                let condition = variant.cfg.to_condition(config);
+                condition.write_before(config, out);
+
+                let arg_renamer = |name: &str| {
+                    config
+                        .function
+                        .rename_args
+                        .apply(name, IdentifierType::FunctionArg)
+                        .into_owned()
+                };
+
+                macro_rules! write_attrs {
+                    ($op:expr) => {{
+                        if let Some(Some(attrs)) =
+                            variant
+                                .body
+                                .annotations()
+                                .atom(concat!("variant-", $op, "-attributes"))
+                        {
+                            write!(out, "{} ", attrs);
+                        }
+                    }};
+                };
+
+                write_attrs!("constructor");
+                write!(out, "static {} {}(", self.export_name, variant.export_name);
+
                 if let VariantBody::Body { ref body, .. } = variant.body {
-                    out.new_line();
-                    out.new_line();
-                    let condition = variant.cfg.to_condition(config);
-                    // Cython doesn't support conditional enum variants.
-                    if config.language != Language::Cython {
-                        condition.write_before(config, out);
+                    let vec: Vec<_> = body
+                        .fields
+                        .iter()
+                        .skip(skip_fields)
+                        .map(|field| {
+                            Field::from_name_and_type(
+                                // const-ref args to constructor
+                                arg_renamer(&field.name),
+                                Type::const_ref_to(&field.ty),
+                            )
+                        })
+                        .collect();
+                    out.write_vertical_source_list(&vec[..], ListType::Join(","));
+                }
+
+                write!(out, ")");
+                out.open_brace();
+
+                write!(out, "{} result;", self.export_name);
+
+                if let VariantBody::Body {
+                    name: ref variant_name,
+                    ref body,
+                } = variant.body
+                {
+                    for field in body.fields.iter().skip(skip_fields) {
+                        out.new_line();
+                        match field.ty {
+                            Type::Array(ref ty, ref length) => {
+                                // arrays are not assignable in C++ so we
+                                // need to manually copy the elements
+                                write!(out, "for (int i = 0; i < {}; i++)", length.as_str());
+                                out.open_brace();
+                                write!(out, "::new (&result.{}.{}[i]) (", variant_name, field.name);
+                                ty.write(config, out);
+                                write!(out, ")({}[i]);", arg_renamer(&field.name));
+                                out.close_brace(false);
+                            }
+                            ref ty => {
+                                write!(out, "::new (&result.{}.{}) (", variant_name, field.name);
+                                ty.write(config, out);
+                                write!(out, ")({});", arg_renamer(&field.name));
+                            }
+                        }
                     }
-                    body.write(config, out);
-                    if config.language != Language::Cython {
-                        condition.write_after(config, out);
-                    }
-                }
-            }
-
-            out.new_line();
-            out.new_line();
-
-            // Emit the actual union (code here should mirror {struct,union}.rs).
-            if config.language != Language::Cxx {
-                match config.language {
-                    Language::C if config.style.generate_typedef() => out.write("typedef "),
-                    Language::C | Language::Cxx => {}
-                    Language::Cython => out.write(config.style.cython_def()),
                 }
 
-                out.write(if separate_tag { "struct" } else { "union" });
+                out.new_line();
+                write!(out, "result.tag = {}::{};", enum_name, variant.export_name);
+                out.new_line();
+                write!(out, "return result;");
+                out.close_brace(false);
 
-                if config.language != Language::C || config.style.generate_tag() {
-                    write!(out, " {}", self.export_name());
-                }
+                out.new_line();
+                out.new_line();
 
+                write_attrs!("is");
+                // FIXME: create a config for method case
+                write!(out, "bool Is{}() const", variant.export_name);
                 out.open_brace();
+                write!(out, "return tag == {}::{};", enum_name, variant.export_name);
+                out.close_brace(false);
 
-                // Emit the pre_body section, if relevant
-                // Only do this if we're writing C, since the struct is starting right here.
-                // For C++, the struct wraps all of the above variant structs too, and we write the pre_body section at the begining of that
-                if let Some(body) = config.export.pre_body(&self.path) {
-                    out.write_raw_block(body);
-                    out.new_line();
-                }
-            }
+                let assert_name = match config.enumeration.cast_assert_name {
+                    Some(ref n) => &**n,
+                    None => "assert",
+                };
 
-            // C++ allows accessing only common initial sequence of union
-            // branches so we need to wrap tag into an anonymous struct
-            let wrap_tag = config.language == Language::Cxx && !separate_tag;
-
-            if wrap_tag {
-                out.write("struct");
-                out.open_brace();
-            }
-
-            if config.language == Language::C && size.is_none() && !config.style.generate_typedef()
-            {
-                out.write("enum ");
-            }
-
-            write!(out, "{} tag;", enum_name);
-
-            if wrap_tag {
-                out.close_brace(true);
-            }
-
-            out.new_line();
-
-            // Cython extern declarations don't manage layouts, layouts are defined entierly by the
-            // corresponding C code. So we can inline the unnamed union into the struct and get the
-            // same observable result. Moreother we have to do it because Cython doesn't support
-            // unnamed unions.
-            if separate_tag && config.language != Language::Cython {
-                out.write("union");
-                out.open_brace();
-            }
-
-            {
-                let mut first = true;
-                for variant in &self.variants {
-                    let (field_name, body) = match variant.body {
+                let mut derive_casts = |const_casts: bool| {
+                    let (member_name, body) = match variant.body {
                         VariantBody::Body { ref name, ref body } => (name, body),
-                        VariantBody::Empty(..) => continue,
+                        VariantBody::Empty(..) => return,
                     };
 
-                    if !first {
-                        out.new_line();
+                    let field_count = body.fields.len() - skip_fields;
+                    if field_count == 0 {
+                        return;
                     }
-                    first = false;
-                    let condition = variant.cfg.to_condition(config);
-                    // Cython doesn't support conditional enum variants.
-                    if config.language != Language::Cython {
-                        condition.write_before(config, out);
-                    }
-                    if config.style.generate_typedef() || config.language == Language::Cython {
-                        write!(out, "{} {};", body.export_name(), field_name);
+
+                    out.new_line();
+                    out.new_line();
+
+                    let dig = field_count == 1 && body.tuple_struct;
+                    if const_casts {
+                        write_attrs!("const-cast");
                     } else {
-                        write!(out, "struct {} {};", body.export_name(), field_name);
+                        write_attrs!("mut-cast");
                     }
-                    if config.language != Language::Cython {
-                        condition.write_after(config, out);
+                    if dig {
+                        let field = body.fields.get(skip_fields).unwrap();
+                        let return_type = field.ty.clone();
+                        let return_type = Type::Ptr {
+                            ty: Box::new(return_type),
+                            is_const: const_casts,
+                            is_ref: true,
+                            is_nullable: false,
+                        };
+                        return_type.write(config, out);
+                    } else if const_casts {
+                        write!(out, "const {}&", body.export_name());
+                    } else {
+                        write!(out, "{}&", body.export_name());
                     }
+
+                    write!(out, " As{}()", variant.export_name);
+                    if const_casts {
+                        write!(out, " const");
+                    }
+                    out.open_brace();
+                    write!(out, "{}(Is{}());", assert_name, variant.export_name);
+                    out.new_line();
+                    if dig {
+                        write!(out, "return {}._0;", member_name);
+                    } else {
+                        write!(out, "return {};", member_name);
+                    }
+                    out.close_brace(false);
+                };
+
+                if config.enumeration.derive_const_casts(&self.annotations) {
+                    derive_casts(true)
                 }
+
+                if config.enumeration.derive_mut_casts(&self.annotations) {
+                    derive_casts(false)
+                }
+
+                condition.write_after(config, out);
             }
+        }
 
-            // See the comment about Cython on `open_brace`.
-            if separate_tag && config.language != Language::Cython {
-                out.close_brace(true);
-            }
+        let other = config
+            .function
+            .rename_args
+            .apply("other", IdentifierType::FunctionArg);
 
-            let skip_fields = if separate_tag { 0 } else { 1 };
+        macro_rules! write_attrs {
+            ($op:expr) => {{
+                if let Some(Some(attrs)) = self.annotations.atom(concat!($op, "-attributes")) {
+                    write!(out, "{} ", attrs);
+                }
+            }};
+        };
 
-            // Emit convenience methods
-            let derive_helper_methods = config.enumeration.derive_helper_methods(&self.annotations);
-            let derive_const_casts = config.enumeration.derive_const_casts(&self.annotations);
-            let derive_mut_casts = config.enumeration.derive_mut_casts(&self.annotations);
-            if config.language == Language::Cxx && derive_helper_methods {
-                for variant in &self.variants {
-                    out.new_line();
-                    out.new_line();
-
+        if self.can_derive_eq() && config.structure.derive_eq(&self.annotations) {
+            out.new_line();
+            out.new_line();
+            write_attrs!("eq");
+            write!(
+                out,
+                "bool operator==(const {}& {}) const",
+                self.export_name, other
+            );
+            out.open_brace();
+            write!(out, "if (tag != {}.tag)", other);
+            out.open_brace();
+            write!(out, "return false;");
+            out.close_brace(false);
+            out.new_line();
+            write!(out, "switch (tag)");
+            out.open_brace();
+            let mut exhaustive = true;
+            for variant in &self.variants {
+                if let VariantBody::Body {
+                    name: ref variant_name,
+                    ..
+                } = variant.body
+                {
                     let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
-
-                    let arg_renamer = |name: &str| {
-                        config
-                            .function
-                            .rename_args
-                            .apply(name, IdentifierType::FunctionArg)
-                            .into_owned()
-                    };
-
-                    macro_rules! write_attrs {
-                        ($op:expr) => {{
-                            if let Some(Some(attrs)) = variant.body.annotations().atom(concat!(
-                                "variant-",
-                                $op,
-                                "-attributes"
-                            )) {
-                                write!(out, "{} ", attrs);
-                            }
-                        }};
-                    };
-
-                    write_attrs!("constructor");
-                    write!(out, "static {} {}(", self.export_name, variant.export_name);
-
-                    if let VariantBody::Body { ref body, .. } = variant.body {
-                        let vec: Vec<_> = body
-                            .fields
-                            .iter()
-                            .skip(skip_fields)
-                            .map(|field| {
-                                Field::from_name_and_type(
-                                    // const-ref args to constructor
-                                    arg_renamer(&field.name),
-                                    Type::const_ref_to(&field.ty),
-                                )
-                            })
-                            .collect();
-                        out.write_vertical_source_list(&vec[..], ListType::Join(","));
-                    }
-
-                    write!(out, ")");
-                    out.open_brace();
-
-                    write!(out, "{} result;", self.export_name);
-
-                    if let VariantBody::Body {
-                        name: ref variant_name,
-                        ref body,
-                    } = variant.body
-                    {
-                        for field in body.fields.iter().skip(skip_fields) {
-                            out.new_line();
-                            match field.ty {
-                                Type::Array(ref ty, ref length) => {
-                                    // arrays are not assignable in C++ so we
-                                    // need to manually copy the elements
-                                    write!(out, "for (int i = 0; i < {}; i++)", length.as_str());
-                                    out.open_brace();
-                                    write!(
-                                        out,
-                                        "::new (&result.{}.{}[i]) (",
-                                        variant_name, field.name
-                                    );
-                                    ty.write(config, out);
-                                    write!(out, ")({}[i]);", arg_renamer(&field.name));
-                                    out.close_brace(false);
-                                }
-                                ref ty => {
-                                    write!(
-                                        out,
-                                        "::new (&result.{}.{}) (",
-                                        variant_name, field.name
-                                    );
-                                    ty.write(config, out);
-                                    write!(out, ")({});", arg_renamer(&field.name));
-                                }
-                            }
-                        }
-                    }
-
-                    out.new_line();
-                    write!(out, "result.tag = {}::{};", enum_name, variant.export_name);
-                    out.new_line();
-                    write!(out, "return result;");
-                    out.close_brace(false);
-
-                    out.new_line();
-                    out.new_line();
-
-                    write_attrs!("is");
-                    // FIXME: create a config for method case
-                    write!(out, "bool Is{}() const", variant.export_name);
-                    out.open_brace();
-                    write!(out, "return tag == {}::{};", enum_name, variant.export_name);
-                    out.close_brace(false);
-
-                    let assert_name = match config.enumeration.cast_assert_name {
-                        Some(ref n) => &**n,
-                        None => "assert",
-                    };
-
-                    let mut derive_casts = |const_casts: bool| {
-                        let (member_name, body) = match variant.body {
-                            VariantBody::Body { ref name, ref body } => (name, body),
-                            VariantBody::Empty(..) => return,
-                        };
-
-                        let field_count = body.fields.len() - skip_fields;
-                        if field_count == 0 {
-                            return;
-                        }
-
-                        out.new_line();
-                        out.new_line();
-
-                        let dig = field_count == 1 && body.tuple_struct;
-                        if const_casts {
-                            write_attrs!("const-cast");
-                        } else {
-                            write_attrs!("mut-cast");
-                        }
-                        if dig {
-                            let field = body.fields.get(skip_fields).unwrap();
-                            let return_type = field.ty.clone();
-                            let return_type = Type::Ptr {
-                                ty: Box::new(return_type),
-                                is_const: const_casts,
-                                is_ref: true,
-                                is_nullable: false,
-                            };
-                            return_type.write(config, out);
-                        } else if const_casts {
-                            write!(out, "const {}&", body.export_name());
-                        } else {
-                            write!(out, "{}&", body.export_name());
-                        }
-
-                        write!(out, " As{}()", variant.export_name);
-                        if const_casts {
-                            write!(out, " const");
-                        }
-                        out.open_brace();
-                        write!(out, "{}(Is{}());", assert_name, variant.export_name);
-                        out.new_line();
-                        if dig {
-                            write!(out, "return {}._0;", member_name);
-                        } else {
-                            write!(out, "return {};", member_name);
-                        }
-                        out.close_brace(false);
-                    };
-
-                    if derive_const_casts {
-                        derive_casts(true)
-                    }
-
-                    if derive_mut_casts {
-                        derive_casts(false)
-                    }
-
+                    write!(
+                        out,
+                        "case {}::{}: return {} == {}.{};",
+                        self.tag.as_ref().unwrap(),
+                        variant.export_name,
+                        variant_name,
+                        other,
+                        variant_name
+                    );
                     condition.write_after(config, out);
+                    out.new_line();
+                } else {
+                    exhaustive = false;
                 }
             }
+            if !exhaustive {
+                write!(out, "default: break;");
+            }
+            out.close_brace(false);
 
-            let other = config
-                .function
-                .rename_args
-                .apply("other", IdentifierType::FunctionArg);
+            out.new_line();
+            write!(out, "return true;");
 
-            macro_rules! write_attrs {
-                ($op:expr) => {{
-                    if let Some(Some(attrs)) = self.annotations.atom(concat!($op, "-attributes")) {
-                        write!(out, "{} ", attrs);
-                    }
-                }};
-            };
+            out.close_brace(false);
 
-            if config.language == Language::Cxx
-                && self.can_derive_eq()
-                && config.structure.derive_eq(&self.annotations)
-            {
+            if config.structure.derive_neq(&self.annotations) {
                 out.new_line();
                 out.new_line();
-                write_attrs!("eq");
+                write_attrs!("neq");
                 write!(
                     out,
-                    "bool operator==(const {}& {}) const",
+                    "bool operator!=(const {}& {}) const",
                     self.export_name, other
                 );
                 out.open_brace();
-                write!(out, "if (tag != {}.tag)", other);
-                out.open_brace();
-                write!(out, "return false;");
+                write!(out, "return !(*this == {});", other);
                 out.close_brace(false);
-                out.new_line();
-                write!(out, "switch (tag)");
-                out.open_brace();
-                let mut exhaustive = true;
-                for variant in &self.variants {
-                    if let VariantBody::Body {
-                        name: ref variant_name,
-                        ..
-                    } = variant.body
-                    {
-                        let condition = variant.cfg.to_condition(config);
-                        condition.write_before(config, out);
-                        write!(
-                            out,
-                            "case {}::{}: return {} == {}.{};",
-                            self.tag.as_ref().unwrap(),
-                            variant.export_name,
-                            variant_name,
-                            other,
-                            variant_name
-                        );
-                        condition.write_after(config, out);
-                        out.new_line();
-                    } else {
-                        exhaustive = false;
-                    }
-                }
-                if !exhaustive {
-                    write!(out, "default: break;");
-                }
-                out.close_brace(false);
-
-                out.new_line();
-                write!(out, "return true;");
-
-                out.close_brace(false);
-
-                if config.structure.derive_neq(&self.annotations) {
-                    out.new_line();
-                    out.new_line();
-                    write_attrs!("neq");
-                    write!(
-                        out,
-                        "bool operator!=(const {}& {}) const",
-                        self.export_name, other
-                    );
-                    out.open_brace();
-                    write!(out, "return !(*this == {});", other);
-                    out.close_brace(false);
-                }
-            }
-
-            if config.language == Language::Cxx
-                && config
-                    .enumeration
-                    .private_default_tagged_enum_constructor(&self.annotations)
-            {
-                out.new_line();
-                out.new_line();
-                write!(out, "private:");
-                out.new_line();
-                write!(out, "{}()", self.export_name);
-                out.open_brace();
-                out.close_brace(false);
-                out.new_line();
-                write!(out, "public:");
-                out.new_line();
-            }
-
-            if config.language == Language::Cxx
-                && config
-                    .enumeration
-                    .derive_tagged_enum_destructor(&self.annotations)
-            {
-                out.new_line();
-                out.new_line();
-                write_attrs!("destructor");
-                write!(out, "~{}()", self.export_name);
-                out.open_brace();
-                write!(out, "switch (tag)");
-                out.open_brace();
-                let mut exhaustive = true;
-                for variant in &self.variants {
-                    if let VariantBody::Body { ref name, ref body } = variant.body {
-                        let condition = variant.cfg.to_condition(config);
-                        condition.write_before(config, out);
-                        write!(
-                            out,
-                            "case {}::{}: {}.~{}(); break;",
-                            self.tag.as_ref().unwrap(),
-                            variant.export_name,
-                            name,
-                            body.export_name(),
-                        );
-                        condition.write_after(config, out);
-                        out.new_line();
-                    } else {
-                        exhaustive = false;
-                    }
-                }
-                if !exhaustive {
-                    write!(out, "default: break;");
-                }
-                out.close_brace(false);
-                out.close_brace(false);
-            }
-
-            if config.language == Language::Cxx
-                && config
-                    .enumeration
-                    .derive_tagged_enum_copy_constructor(&self.annotations)
-            {
-                out.new_line();
-                out.new_line();
-                write_attrs!("copy-constructor");
-                write!(
-                    out,
-                    "{}(const {}& {})",
-                    self.export_name, self.export_name, other
-                );
-                out.new_line();
-                write!(out, " : tag({}.tag)", other);
-                out.open_brace();
-                write!(out, "switch (tag)");
-                out.open_brace();
-                let mut exhaustive = true;
-                for variant in &self.variants {
-                    if let VariantBody::Body { ref name, ref body } = variant.body {
-                        let condition = variant.cfg.to_condition(config);
-                        condition.write_before(config, out);
-                        write!(
-                            out,
-                            "case {}::{}: ::new (&{}) ({})({}.{}); break;",
-                            self.tag.as_ref().unwrap(),
-                            variant.export_name,
-                            name,
-                            body.export_name(),
-                            other,
-                            name,
-                        );
-                        condition.write_after(config, out);
-                        out.new_line();
-                    } else {
-                        exhaustive = false;
-                    }
-                }
-                if !exhaustive {
-                    write!(out, "default: break;");
-                }
-                out.close_brace(false);
-                out.close_brace(false);
-
-                if config.language == Language::Cxx
-                    && config
-                        .enumeration
-                        .derive_tagged_enum_copy_assignment(&self.annotations)
-                {
-                    out.new_line();
-                    write_attrs!("copy-assignment");
-                    write!(
-                        out,
-                        "{}& operator=(const {}& {})",
-                        self.export_name, self.export_name, other
-                    );
-                    out.open_brace();
-                    write!(out, "if (this != &{})", other);
-                    out.open_brace();
-                    write!(out, "this->~{}();", self.export_name);
-                    out.new_line();
-                    write!(out, "new (this) {}({});", self.export_name, other);
-                    out.close_brace(false);
-                    out.new_line();
-                    write!(out, "return *this;");
-                    out.close_brace(false);
-                }
-            }
-
-            // Emit the post_body section, if relevant
-            if let Some(body) = config.export.post_body(&self.path) {
-                out.new_line();
-                out.write_raw_block(body);
-            }
-
-            if config.language == Language::C && config.style.generate_typedef() {
-                out.close_brace(false);
-                write!(out, " {};", self.export_name);
-            } else {
-                out.close_brace(true);
             }
         }
-        condition.write_after(config, out);
+
+        if config
+            .enumeration
+            .private_default_tagged_enum_constructor(&self.annotations)
+        {
+            out.new_line();
+            out.new_line();
+            write!(out, "private:");
+            out.new_line();
+            write!(out, "{}()", self.export_name);
+            out.open_brace();
+            out.close_brace(false);
+            out.new_line();
+            write!(out, "public:");
+            out.new_line();
+        }
+
+        if config
+            .enumeration
+            .derive_tagged_enum_destructor(&self.annotations)
+        {
+            out.new_line();
+            out.new_line();
+            write_attrs!("destructor");
+            write!(out, "~{}()", self.export_name);
+            out.open_brace();
+            write!(out, "switch (tag)");
+            out.open_brace();
+            let mut exhaustive = true;
+            for variant in &self.variants {
+                if let VariantBody::Body { ref name, ref body } = variant.body {
+                    let condition = variant.cfg.to_condition(config);
+                    condition.write_before(config, out);
+                    write!(
+                        out,
+                        "case {}::{}: {}.~{}(); break;",
+                        self.tag.as_ref().unwrap(),
+                        variant.export_name,
+                        name,
+                        body.export_name(),
+                    );
+                    condition.write_after(config, out);
+                    out.new_line();
+                } else {
+                    exhaustive = false;
+                }
+            }
+            if !exhaustive {
+                write!(out, "default: break;");
+            }
+            out.close_brace(false);
+            out.close_brace(false);
+        }
+
+        if config
+            .enumeration
+            .derive_tagged_enum_copy_constructor(&self.annotations)
+        {
+            out.new_line();
+            out.new_line();
+            write_attrs!("copy-constructor");
+            write!(
+                out,
+                "{}(const {}& {})",
+                self.export_name, self.export_name, other
+            );
+            out.new_line();
+            write!(out, " : tag({}.tag)", other);
+            out.open_brace();
+            write!(out, "switch (tag)");
+            out.open_brace();
+            let mut exhaustive = true;
+            for variant in &self.variants {
+                if let VariantBody::Body { ref name, ref body } = variant.body {
+                    let condition = variant.cfg.to_condition(config);
+                    condition.write_before(config, out);
+                    write!(
+                        out,
+                        "case {}::{}: ::new (&{}) ({})({}.{}); break;",
+                        self.tag.as_ref().unwrap(),
+                        variant.export_name,
+                        name,
+                        body.export_name(),
+                        other,
+                        name,
+                    );
+                    condition.write_after(config, out);
+                    out.new_line();
+                } else {
+                    exhaustive = false;
+                }
+            }
+            if !exhaustive {
+                write!(out, "default: break;");
+            }
+            out.close_brace(false);
+            out.close_brace(false);
+
+            if config
+                .enumeration
+                .derive_tagged_enum_copy_assignment(&self.annotations)
+            {
+                out.new_line();
+                write_attrs!("copy-assignment");
+                write!(
+                    out,
+                    "{}& operator=(const {}& {})",
+                    self.export_name, self.export_name, other
+                );
+                out.open_brace();
+                write!(out, "if (this != &{})", other);
+                out.open_brace();
+                write!(out, "this->~{}();", self.export_name);
+                out.new_line();
+                write!(out, "new (this) {}({});", self.export_name, other);
+                out.close_brace(false);
+                out.new_line();
+                write!(out, "return *this;");
+                out.close_brace(false);
+            }
+        }
     }
 }
