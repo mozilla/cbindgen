@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
 use std::str::FromStr;
 use std::{fmt, fs, path::Path as StdPath};
@@ -851,7 +851,7 @@ pub struct CythonConfig {
     pub header: Option<String>,
     /// `from module cimport name1, name2, ...` declarations added in the same place
     /// where you'd get includes in C.
-    pub cimports: HashMap<String, Vec<String>>,
+    pub cimports: BTreeMap<String, Vec<String>>,
 }
 
 /// A collection of settings to customize the generated bindings.
