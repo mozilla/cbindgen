@@ -38,7 +38,7 @@ jobs:
 
     - name: Build with minimum supported Rust version
       run: |
-        cargo +1.40.0 build --verbose
+        cargo +1.40.0 test nonexistent-test --verbose
 
   build:
 
