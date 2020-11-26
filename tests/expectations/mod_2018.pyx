@@ -6,7 +6,7 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const uint8_t EXPORT_ME_TOO = 42;
+  const uint8_t EXPORT_ME_TOO # = 42
 
   ctypedef struct ExportMe:
     uint64_t val;

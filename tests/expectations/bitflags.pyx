@@ -12,19 +12,19 @@ cdef extern from *:
   ctypedef struct AlignFlags:
     uint8_t bits;
   # 'auto'
-  const AlignFlags AlignFlags_AUTO = <AlignFlags>{ <uint8_t>0 };
+  const AlignFlags AlignFlags_AUTO # = <AlignFlags>{ <uint8_t>0 }
   # 'normal'
-  const AlignFlags AlignFlags_NORMAL = <AlignFlags>{ <uint8_t>1 };
+  const AlignFlags AlignFlags_NORMAL # = <AlignFlags>{ <uint8_t>1 }
   # 'start'
-  const AlignFlags AlignFlags_START = <AlignFlags>{ <uint8_t>(1 << 1) };
+  const AlignFlags AlignFlags_START # = <AlignFlags>{ <uint8_t>(1 << 1) }
   # 'end'
-  const AlignFlags AlignFlags_END = <AlignFlags>{ <uint8_t>(1 << 2) };
+  const AlignFlags AlignFlags_END # = <AlignFlags>{ <uint8_t>(1 << 2) }
   # 'flex-start'
-  const AlignFlags AlignFlags_FLEX_START = <AlignFlags>{ <uint8_t>(1 << 3) };
+  const AlignFlags AlignFlags_FLEX_START # = <AlignFlags>{ <uint8_t>(1 << 3) }
 
   ctypedef struct DebugFlags:
     uint32_t bits;
   # Flag with the topmost bit set of the u32
-  const DebugFlags DebugFlags_BIGGEST_ALLOWED = <DebugFlags>{ <uint32_t>(1 << 31) };
+  const DebugFlags DebugFlags_BIGGEST_ALLOWED # = <DebugFlags>{ <uint32_t>(1 << 31) }
 
   void root(AlignFlags flags, DebugFlags bigger_flags);

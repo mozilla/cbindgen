@@ -6,16 +6,16 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const int8_t FOUR = 4;
+  const int8_t FOUR # = 4
 
   cdef enum:
-    A = 1,
-    B = -1,
-    C = (1 + 2),
-    D = FOUR,
-    F = 5,
-    G = <int8_t>54,
-    H = <int8_t>False,
+    A # = 1,
+    B # = -1,
+    C # = (1 + 2),
+    D # = FOUR,
+    F # = 5,
+    G # = <int8_t>54,
+    H # = <int8_t>False,
   ctypedef int8_t E;
 
   void root(const E*);

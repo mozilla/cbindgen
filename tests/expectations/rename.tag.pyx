@@ -6,11 +6,11 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const int32_t C_H = 10;
+  const int32_t C_H # = 10
 
   cdef enum:
-    x = 0,
-    y = 1,
+    x # = 0,
+    y # = 1,
   ctypedef uint8_t C_E;
 
   cdef struct C_A:
@@ -29,7 +29,7 @@ cdef extern from *:
 
   ctypedef C_A C_F;
 
-  const intptr_t C_I = <intptr_t><C_F*>10;
+  const intptr_t C_I # = <intptr_t><C_F*>10
 
   extern const int32_t G;
 

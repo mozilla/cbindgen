@@ -12,12 +12,12 @@ cdef extern from *:
   cdef struct Foo:
     int32_t a;
     uint32_t b;
-  const Foo Foo_FOO = <Foo>{ 42, 47 };
-  const Foo Foo_FOO2 = <Foo>{ 42, 47 };
-  const Foo Foo_FOO3 = <Foo>{ 42, 47 };
+  const Foo Foo_FOO # = <Foo>{ 42, 47 }
+  const Foo Foo_FOO2 # = <Foo>{ 42, 47 }
+  const Foo Foo_FOO3 # = <Foo>{ 42, 47 }
 
 
-  const Foo BAR = <Foo>{ 42, 1337 };
+  const Foo BAR # = <Foo>{ 42, 1337 }
 
 
 

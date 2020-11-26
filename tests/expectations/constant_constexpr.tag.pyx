@@ -6,16 +6,16 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const int64_t CONSTANT_I64 = 216;
+  const int64_t CONSTANT_I64 # = 216
 
-  const float CONSTANT_FLOAT32 = 312.292;
+  const float CONSTANT_FLOAT32 # = 312.292
 
-  const uint32_t DELIMITER = ':';
+  const uint32_t DELIMITER # = ':'
 
-  const uint32_t LEFTCURLY = '{';
+  const uint32_t LEFTCURLY # = '{'
 
   cdef struct Foo:
     int32_t x;
-  const int64_t Foo_CONSTANT_I64_BODY = 216;
+  const int64_t Foo_CONSTANT_I64_BODY # = 216
 
-  const Foo SomeFoo = <Foo>{ 99 };
+  const Foo SomeFoo # = <Foo>{ 99 }

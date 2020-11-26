@@ -6,13 +6,13 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const int32_t PREFIX_LEN = 22;
+  const int32_t PREFIX_LEN # = 22
 
-  const int64_t PREFIX_X = (22 << 22);
+  const int64_t PREFIX_X # = (22 << 22)
 
-  const int64_t PREFIX_Y1 = ((22 << 22) + (22 << 22));
+  const int64_t PREFIX_Y1 # = ((22 << 22) + (22 << 22))
 
-  const int64_t PREFIX_Y2 = PREFIX_X;
+  const int64_t PREFIX_Y2 # = PREFIX_X
 
   ctypedef int32_t PREFIX_NamedLenArray[PREFIX_LEN];
 

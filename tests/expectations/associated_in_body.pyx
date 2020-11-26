@@ -12,14 +12,14 @@ cdef extern from *:
   ctypedef struct StyleAlignFlags:
     uint8_t bits;
   # 'auto'
-  const StyleAlignFlags StyleAlignFlags_AUTO = <StyleAlignFlags>{ <uint8_t>0 };
+  const StyleAlignFlags StyleAlignFlags_AUTO # = <StyleAlignFlags>{ <uint8_t>0 }
   # 'normal'
-  const StyleAlignFlags StyleAlignFlags_NORMAL = <StyleAlignFlags>{ <uint8_t>1 };
+  const StyleAlignFlags StyleAlignFlags_NORMAL # = <StyleAlignFlags>{ <uint8_t>1 }
   # 'start'
-  const StyleAlignFlags StyleAlignFlags_START = <StyleAlignFlags>{ <uint8_t>(1 << 1) };
+  const StyleAlignFlags StyleAlignFlags_START # = <StyleAlignFlags>{ <uint8_t>(1 << 1) }
   # 'end'
-  const StyleAlignFlags StyleAlignFlags_END = <StyleAlignFlags>{ <uint8_t>(1 << 2) };
+  const StyleAlignFlags StyleAlignFlags_END # = <StyleAlignFlags>{ <uint8_t>(1 << 2) }
   # 'flex-start'
-  const StyleAlignFlags StyleAlignFlags_FLEX_START = <StyleAlignFlags>{ <uint8_t>(1 << 3) };
+  const StyleAlignFlags StyleAlignFlags_FLEX_START # = <StyleAlignFlags>{ <uint8_t>(1 << 3) }
 
   void root(StyleAlignFlags flags);

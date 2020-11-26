@@ -6,4 +6,4 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const uint32_t Foo_FOO = 42;
+  const uint32_t Foo_FOO # = 42

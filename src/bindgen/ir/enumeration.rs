@@ -251,6 +251,11 @@ impl Source for EnumVariant {
         self.documentation.write(config, out);
         write!(out, "{}", self.export_name);
         if let Some(discriminant) = &self.discriminant {
+            if config.language == Language::Cython {
+                // For extern Cython declarations the enumerator value is ignored,
+                // but still useful as documentation, so we write it as a comment.
+                out.write(" #")
+            }
             out.write(" = ");
             discriminant.write(config, out);
         }

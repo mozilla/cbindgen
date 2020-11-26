@@ -14,6 +14,6 @@ cdef extern from *:
     uint32_t b;
     PREFIXBar bar;
 
-  const PREFIXFoo PREFIXVAL = <PREFIXFoo>{ 42, 1337, <PREFIXBar>{ 323 } };
+  const PREFIXFoo PREFIXVAL # = <PREFIXFoo>{ 42, 1337, <PREFIXBar>{ 323 } }
 
   void root(PREFIXFoo x);

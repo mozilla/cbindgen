@@ -13,10 +13,10 @@ cdef extern from *:
 cdef extern from *:
 
   IF NOT_DEFINED:
-    const int32_t DEFAULT_X = 8;
+    const int32_t DEFAULT_X # = 8
 
   IF DEFINED:
-    const int32_t DEFAULT_X = 42;
+    const int32_t DEFAULT_X # = 42
 
   IF (NOT_DEFINED or DEFINED):
     cdef struct Foo:
