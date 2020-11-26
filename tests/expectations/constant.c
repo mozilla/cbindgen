@@ -38,11 +38,9 @@
 
 #define XBOOL 1
 
-#define XFALSE1 ((0 << 3) | 1)
+#define XFALSE ((0 << SHIFT) | XBOOL)
 
-#define XTRUE1 (1 << (3 | 1))
-
-#define XFALSE2 (0 << SHIFT)
+#define XTRUE (1 << (SHIFT | XBOOL))
 
 #define CAST (uint8_t)'A'
 

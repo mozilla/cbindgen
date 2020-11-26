@@ -11,14 +11,10 @@ pub enum AbsoluteFontWeight {
 }
 
 #[no_mangle]
-pub extern "C" fn root(x: NamedLenArray, y: ValuedLenArray, z: AbsoluteFontWeight) { }
+pub extern "C" fn root(x: NamedLenArray, y: ValuedLenArray, z: AbsoluteFontWeight) {}
 
 #[no_mangle]
 pub const X: i64 = 22 << 22;
 
-// #[no_mangle]
-// pub const Y: i64 = X + X; // Crashes Cython compiler
 #[no_mangle]
-pub const Y1: i64 = (22 << 22) + (22 << 22);
-#[no_mangle]
-pub const Y2: i64 = X;
+pub const Y: i64 = X + X;
