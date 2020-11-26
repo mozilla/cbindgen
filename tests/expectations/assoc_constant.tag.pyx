@@ -8,7 +8,7 @@ cdef extern from *:
 
   cdef struct Foo:
     pass
-  const int32_t Foo_GA = 10;
-  const float Foo_ZO = 3.14;
+  const int32_t Foo_GA # = 10
+  const float Foo_ZO # = 3.14
 
   void root(Foo x);

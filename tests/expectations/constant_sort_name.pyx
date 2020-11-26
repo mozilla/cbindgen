@@ -6,9 +6,9 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const uint8_t A = 0;
+  const uint8_t A # = 0
 
-  const uint8_t B = 0;
+  const uint8_t B # = 0
 
   extern const uint8_t C;
 

@@ -6,7 +6,7 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const int32_t EXT_CONST = 0;
+  const int32_t EXT_CONST # = 0
 
   ctypedef struct ExtType:
     uint32_t data;

@@ -563,11 +563,8 @@ impl Constant {
             false
         };
 
-        if config.language == Language::Cython
-            || (config.language == Language::Cxx
-                && (config.constant.allow_static_const || allow_constexpr))
-        {
-            if config.language == Language::Cxx {
+        match config.language {
+            Language::Cxx if config.constant.allow_static_const || allow_constexpr => {
                 if allow_constexpr {
                     out.write("constexpr ")
                 }
@@ -581,18 +578,26 @@ impl Constant {
                 } else {
                     out.write("const ");
                 }
-            } else {
-                out.write("const ");
-            }
 
-            self.ty.write(config, out);
-            write!(out, " {} = ", name);
-            value.write(config, out);
-            write!(out, ";");
-        } else {
-            write!(out, "#define {} ", name);
-            value.write(config, out);
+                self.ty.write(config, out);
+                write!(out, " {} = ", name);
+                value.write(config, out);
+                write!(out, ";");
+            }
+            Language::Cxx | Language::C => {
+                write!(out, "#define {} ", name);
+                value.write(config, out);
+            }
+            Language::Cython => {
+                out.write("const ");
+                self.ty.write(config, out);
+                // For extern Cython declarations the initializer is ignored,
+                // but still useful as documentation, so we write it as a comment.
+                write!(out, " {} # = ", name);
+                value.write(config, out);
+            }
         }
+
         condition.write_after(config, out);
     }
 }

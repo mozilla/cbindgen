@@ -13,10 +13,10 @@ cdef extern from *:
 cdef extern from *:
 
   IF FOO:
-    const int32_t FOO = 1;
+    const int32_t FOO # = 1
 
   IF BAR:
-    const int32_t BAR = 2;
+    const int32_t BAR # = 2
 
   IF FOO:
     ctypedef struct Foo:

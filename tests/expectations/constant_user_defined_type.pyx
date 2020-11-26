@@ -14,8 +14,8 @@ cdef extern from *:
 
   ctypedef uint8_t A;
 
-  const S C1 = <S>{ 0 };
+  const S C1 # = <S>{ 0 }
 
-  const E C2 = V;
+  const E C2 # = V
 
-  const A C3 = 0;
+  const A C3 # = 0

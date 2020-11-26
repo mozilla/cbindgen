@@ -10,16 +10,16 @@ cdef extern from *:
     float a;
     uint32_t b;
     uint32_t c;
-  const ABC ABC_abc = <ABC>{ 1.0, 2, 3 };
-  const ABC ABC_bac = <ABC>{ 1.0, 2, 3 };
-  const ABC ABC_cba = <ABC>{ 1.0, 2, 3 };
+  const ABC ABC_abc # = <ABC>{ 1.0, 2, 3 }
+  const ABC ABC_bac # = <ABC>{ 1.0, 2, 3 }
+  const ABC ABC_cba # = <ABC>{ 1.0, 2, 3 }
 
   ctypedef struct BAC:
     uint32_t b;
     float a;
     int32_t c;
-  const BAC BAC_abc = <BAC>{ 1, 2.0, 3 };
-  const BAC BAC_bac = <BAC>{ 1, 2.0, 3 };
-  const BAC BAC_cba = <BAC>{ 1, 2.0, 3 };
+  const BAC BAC_abc # = <BAC>{ 1, 2.0, 3 }
+  const BAC BAC_bac # = <BAC>{ 1, 2.0, 3 }
+  const BAC BAC_cba # = <BAC>{ 1, 2.0, 3 }
 
   void root(ABC a1, BAC a2);

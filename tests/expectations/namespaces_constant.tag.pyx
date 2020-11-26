@@ -6,9 +6,9 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const int32_t FOO = 10;
+  const int32_t FOO # = 10
 
-  const float ZOM = 3.14;
+  const float ZOM # = 3.14
 
   cdef struct Foo:
     int32_t x[FOO];

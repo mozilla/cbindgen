@@ -6,46 +6,46 @@ cdef extern from *:
 
 cdef extern from *:
 
-  const int32_t FOO = 10;
+  const int32_t FOO # = 10
 
-  const uint32_t DELIMITER = ':';
+  const uint32_t DELIMITER # = ':'
 
-  const uint32_t LEFTCURLY = '{';
+  const uint32_t LEFTCURLY # = '{'
 
-  const uint32_t QUOTE = '\'';
+  const uint32_t QUOTE # = '\''
 
-  const uint32_t TAB = '\t';
+  const uint32_t TAB # = '\t'
 
-  const uint32_t NEWLINE = '\n';
+  const uint32_t NEWLINE # = '\n'
 
-  const uint32_t HEART = U'\U00002764';
+  const uint32_t HEART # = U'\U00002764'
 
-  const uint32_t EQUID = U'\U00010083';
+  const uint32_t EQUID # = U'\U00010083'
 
-  const float ZOM = 3.14;
+  const float ZOM # = 3.14
 
   # A single-line doc comment.
-  const int8_t POS_ONE = 1;
+  const int8_t POS_ONE # = 1
 
   # A
   # multi-line
   # doc
   # comment.
-  const int8_t NEG_ONE = -1;
+  const int8_t NEG_ONE # = -1
 
-  const int64_t SHIFT = 3;
+  const int64_t SHIFT # = 3
 
-  const int64_t XBOOL = 1;
+  const int64_t XBOOL # = 1
 
-  const int64_t XFALSE1 = ((0 << 3) | 1);
+  const int64_t XFALSE1 # = ((0 << 3) | 1)
 
-  const int64_t XTRUE1 = (1 << (3 | 1));
+  const int64_t XTRUE1 # = (1 << (3 | 1))
 
-  const int64_t XFALSE2 = (0 << SHIFT);
+  const int64_t XFALSE2 # = (0 << SHIFT)
 
-  const uint8_t CAST = <uint8_t>'A';
+  const uint8_t CAST # = <uint8_t>'A'
 
-  const uint32_t DOUBLE_CAST = <uint32_t><float>1;
+  const uint32_t DOUBLE_CAST # = <uint32_t><float>1
 
   ctypedef struct Foo:
     int32_t x[FOO];

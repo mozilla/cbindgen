@@ -8,4 +8,4 @@ cdef extern from *:
 
   ctypedef uint8_t Transparent;
 
-  const Transparent FOO = 0;
+  const Transparent FOO # = 0

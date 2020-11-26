@@ -7,7 +7,7 @@ cdef extern from *:
 cdef extern from *:
 
   cdef enum:
-    X = 2,
+    X # = 2,
     Y,
   ctypedef uint32_t C;
 

@@ -9,8 +9,8 @@ cdef extern from *:
   ctypedef struct PREFIXFoo:
     int32_t a;
     uint32_t b;
-  const PREFIXFoo PREFIXFoo_FOO = <PREFIXFoo>{ 42, 47 };
+  const PREFIXFoo PREFIXFoo_FOO # = <PREFIXFoo>{ 42, 47 }
 
-  const PREFIXFoo PREFIXBAR = <PREFIXFoo>{ 42, 1337 };
+  const PREFIXFoo PREFIXBAR # = <PREFIXFoo>{ 42, 1337 }
 
   void root(PREFIXFoo x);

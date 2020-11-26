@@ -7,45 +7,45 @@ cdef extern from *:
 cdef extern from *:
 
   cdef enum:
-    a1 = 0,
-    a2 = 2,
+    a1 # = 0,
+    a2 # = 2,
     a3,
-    a4 = 5,
+    a4 # = 5,
   ctypedef uint64_t A;
 
   cdef enum:
-    b1 = 0,
-    b2 = 2,
+    b1 # = 0,
+    b2 # = 2,
     b3,
-    b4 = 5,
+    b4 # = 5,
   ctypedef uint32_t B;
 
   cdef enum:
-    c1 = 0,
-    c2 = 2,
+    c1 # = 0,
+    c2 # = 2,
     c3,
-    c4 = 5,
+    c4 # = 5,
   ctypedef uint16_t C;
 
   cdef enum:
-    d1 = 0,
-    d2 = 2,
+    d1 # = 0,
+    d2 # = 2,
     d3,
-    d4 = 5,
+    d4 # = 5,
   ctypedef uint8_t D;
 
   cdef enum:
-    e1 = 0,
-    e2 = 2,
+    e1 # = 0,
+    e2 # = 2,
     e3,
-    e4 = 5,
+    e4 # = 5,
   ctypedef uintptr_t E;
 
   cdef enum:
-    f1 = 0,
-    f2 = 2,
+    f1 # = 0,
+    f2 # = 2,
     f3,
-    f4 = 5,
+    f4 # = 5,
   ctypedef intptr_t F;
 
   ctypedef enum L:
@@ -55,9 +55,9 @@ cdef extern from *:
     l4,
 
   cdef enum:
-    m1 = -1,
-    m2 = 0,
-    m3 = 1,
+    m1 # = -1,
+    m2 # = 0,
+    m3 # = 1,
   ctypedef int8_t M;
 
   ctypedef enum N:
