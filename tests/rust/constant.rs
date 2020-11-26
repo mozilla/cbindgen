@@ -23,11 +23,8 @@ pub const NEG_ONE: i8 = -1;
 // Some doc for shifting //
 pub const SHIFT: i64 = 3;
 pub const XBOOL: i64 = 1;
-// pub const XFALSE: i64 = (0 << SHIFT) | XBOOL; // Crashes Cython compiler
-// pub const XTRUE: i64 = 1 << (SHIFT | XBOOL); // Crashes Cython compiler
-pub const XFALSE1: i64 = (0 << 3) | 1;
-pub const XTRUE1: i64 = 1 << (3 | 1);
-pub const XFALSE2: i64 = 0 << SHIFT;
+pub const XFALSE: i64 = (0 << SHIFT) | XBOOL;
+pub const XTRUE: i64 = 1 << (SHIFT | XBOOL);
 
 pub const CAST: u8 = 'A' as u8;
 pub const DOUBLE_CAST: u32 = 1 as f32 as u32;

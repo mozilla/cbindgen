@@ -37,11 +37,9 @@ cdef extern from *:
 
   const int64_t XBOOL # = 1
 
-  const int64_t XFALSE1 # = ((0 << 3) | 1)
+  const int64_t XFALSE # = ((0 << SHIFT) | XBOOL)
 
-  const int64_t XTRUE1 # = (1 << (3 | 1))
-
-  const int64_t XFALSE2 # = (0 << SHIFT)
+  const int64_t XTRUE # = (1 << (SHIFT | XBOOL))
 
   const uint8_t CAST # = <uint8_t>'A'
 
