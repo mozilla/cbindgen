@@ -606,7 +606,10 @@ impl Source for Enum {
         self.documentation.write(config, out);
         self.generic_params.write(config, out);
 
-        // If the enum has data, we need to emit a proper struct/union wrapper around it.
+        // If the enum has data, we need to emit a struct or union for the data
+        // and enum for the tag. C++ supports nested type definitions, so we open
+        // the struct or union here and define the tag enum inside it (*).
+        // (The code here should mirror `{struct,union}.rs`.)
         if has_data && config.language == Language::Cxx {
             out.write(if inline_tag_field { "union" } else { "struct" });
 
@@ -619,17 +622,14 @@ impl Source for Enum {
             write!(out, " {}", self.export_name());
             out.open_brace();
 
-            // Emit the pre_body section, if relevant
-            // Only do this here if we're writing C++, since the struct that wraps everything
-            // is starting here. If we're writing C, we aren't wrapping the enum and variant
-            // structs definitions, so the actual enum struct will start down below.
+            // Emit the pre_body section, if relevant.
             if let Some(body) = config.export.pre_body(&self.path) {
                 out.write_raw_block(body);
                 out.new_line();
             }
         }
 
-        // Emit the actual enum
+        // Open the tag enum.
         match config.language {
             Language::C => {
                 if let Some(prim) = size {
@@ -684,8 +684,9 @@ impl Source for Enum {
                 }
             }
         }
-
         out.open_brace();
+
+        // Emit enumerators for the tag enum.
         for (i, variant) in self.variants.iter().enumerate() {
             if i != 0 {
                 out.new_line()
@@ -693,6 +694,7 @@ impl Source for Enum {
             variant.write(config, out);
         }
 
+        // Close the tag enum.
         if config.language == Language::C && size.is_none() && config.style.generate_typedef() {
             out.close_brace(false);
             write!(out, " {};", enum_name);
@@ -700,6 +702,9 @@ impl Source for Enum {
             out.close_brace(true);
         }
 
+        // Emit typedef specifying the tag enum's size if necessary.
+        // In C++ enums can "inherit" from numeric types (`enum E: uint8_t { ... }`),
+        // but in C `typedef uint8_t E` is the only way to give a fixed size to `E`.
         if let Some(prim) = size {
             if config.cpp_compatible_c() {
                 out.new_line_if_not_start();
@@ -717,13 +722,12 @@ impl Source for Enum {
             }
         }
 
-        // Done emitting the enum
-
+        // Emit convenience methods for the tag enum.
         self.write_derived_functions_enum(config, out);
 
-        // If the enum has data, we need to emit structs for the variants and union them together.
+        // If the enum has data, we need to emit structs for the variants and gather them together.
         if has_data {
-            // Emit the cases for the structs
+            // Emit struct definitions for variants having data.
             for variant in &self.variants {
                 if let VariantBody::Body { ref body, .. } = variant.body {
                     out.new_line();
@@ -743,7 +747,9 @@ impl Source for Enum {
             out.new_line();
             out.new_line();
 
-            // Emit the actual union (code here should mirror {struct,union}.rs).
+            // Open the struct or union for the data (**), gathering all the variants with data
+            // together, unless it's C++, then we have already opened that struct/union at (*) and
+            // are currently inside it. (The code here should mirror `{struct,union}.rs`.)
             if config.language != Language::Cxx {
                 match config.language {
                     Language::C if config.style.generate_typedef() => out.write("typedef "),
@@ -759,38 +765,45 @@ impl Source for Enum {
 
                 out.open_brace();
 
-                // Emit the pre_body section, if relevant
-                // Only do this if we're writing C, since the struct is starting right here.
-                // For C++, the struct wraps all of the above variant structs too,
-                // and we write the pre_body section at the begining of that
+                // Emit the pre_body section, if relevant.
                 if let Some(body) = config.export.pre_body(&self.path) {
                     out.write_raw_block(body);
                     out.new_line();
                 }
             }
 
-            // C++ allows accessing only common initial sequence of union
-            // branches so we need to wrap tag into an anonymous struct
-            let wrap_tag = config.language == Language::Cxx && inline_tag_field;
-
-            if wrap_tag {
-                out.write("struct");
-                out.open_brace();
-            }
-
-            if config.language == Language::C && size.is_none() && !config.style.generate_typedef()
+            // Emit tag field that is separate from all variants.
+            // For non-inline tag scenario this is *the* tag field,
+            // and it does not exist in the variants.
+            // For the inline tag scenario this is just a convenience and another way
+            // to refer to the same tag that exist in all the variants.
             {
-                out.write("enum ");
+                // C++ allows accessing only common initial sequence of union
+                // fields so we have to wrap the tag field into an anonymous struct.
+                let wrap_tag = inline_tag_field && config.language == Language::Cxx;
+
+                if wrap_tag {
+                    out.write("struct");
+                    out.open_brace();
+                }
+
+                if config.language == Language::C
+                    && size.is_none()
+                    && !config.style.generate_typedef()
+                {
+                    out.write("enum ");
+                }
+
+                write!(out, "{} tag;", enum_name);
+
+                if wrap_tag {
+                    out.close_brace(true);
+                }
+
+                out.new_line();
             }
 
-            write!(out, "{} tag;", enum_name);
-
-            if wrap_tag {
-                out.close_brace(true);
-            }
-
-            out.new_line();
-
+            // Open union of all variants with data, only in the non-inline tag scenario.
             // Cython extern declarations don't manage layouts, layouts are defined entierly by the
             // corresponding C code. So we can inline the unnamed union into the struct and get the
             // same observable result. Moreother we have to do it because Cython doesn't support
@@ -800,6 +813,7 @@ impl Source for Enum {
                 out.open_brace();
             }
 
+            // Emit fields for all variants with data.
             {
                 let mut first = true;
                 for variant in &self.variants {
@@ -828,20 +842,22 @@ impl Source for Enum {
                 }
             }
 
+            // Close union of all variants with data, only in the non-inline tag scenario.
             // See the comment about Cython on `open_brace`.
             if !inline_tag_field && config.language != Language::Cython {
                 out.close_brace(true);
             }
 
-            // Emit convenience methods
+            // Emit convenience methods for the struct or enum for the data.
             self.write_derived_functions_data(config, out);
 
-            // Emit the post_body section, if relevant
+            // Emit the post_body section, if relevant.
             if let Some(body) = config.export.post_body(&self.path) {
                 out.new_line();
                 out.write_raw_block(body);
             }
 
+            // Close the struct or union opened either at (*) or at (**).
             if config.language == Language::C && config.style.generate_typedef() {
                 out.close_brace(false);
                 write!(out, " {};", self.export_name);
