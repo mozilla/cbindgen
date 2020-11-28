@@ -27,7 +27,7 @@ pub struct Struct {
     pub fields: Vec<Field>,
     /// Whether there's a tag field on the body of this struct. When this is
     /// true, is_enum_variant_body is also guaranteed to be true.
-    pub is_tagged: bool,
+    pub has_tag_field: bool,
     /// Whether this is an enum variant body.
     pub is_enum_variant_body: bool,
     pub alignment: Option<ReprAlign>,
@@ -98,14 +98,14 @@ impl Struct {
             }
         };
 
-        let is_tagged = false;
+        let has_tag_field = false;
         let is_enum_variant_body = false;
 
         Ok(Struct::new(
             path,
             GenericParams::new(&item.generics),
             fields,
-            is_tagged,
+            has_tag_field,
             is_enum_variant_body,
             repr.align,
             is_transparent,
@@ -121,7 +121,7 @@ impl Struct {
         path: Path,
         generic_params: GenericParams,
         fields: Vec<Field>,
-        is_tagged: bool,
+        has_tag_field: bool,
         is_enum_variant_body: bool,
         alignment: Option<ReprAlign>,
         is_transparent: bool,
@@ -136,7 +136,7 @@ impl Struct {
             export_name,
             generic_params,
             fields,
-            is_tagged,
+            has_tag_field,
             is_enum_variant_body,
             alignment,
             is_transparent,
@@ -195,7 +195,7 @@ impl Struct {
                     documentation: field.documentation.clone(),
                 })
                 .collect(),
-            self.is_tagged,
+            self.has_tag_field,
             self.is_enum_variant_body,
             self.alignment,
             self.is_transparent,
@@ -285,7 +285,7 @@ impl Item for Struct {
 
     fn rename_for_config(&mut self, config: &Config) {
         // Rename the name of the struct
-        if !(self.is_tagged && config.language == Language::Cxx) {
+        if !(self.has_tag_field && config.language == Language::Cxx) {
             config.export.rename(&mut self.export_name);
         }
 
@@ -294,7 +294,7 @@ impl Item for Struct {
             let fields = self
                 .fields
                 .iter_mut()
-                .skip(if self.is_tagged { 1 } else { 0 });
+                .skip(if self.has_tag_field { 1 } else { 0 });
             for field in fields {
                 field.ty.rename_for_config(config, &self.generic_params);
             }
@@ -328,7 +328,7 @@ impl Item for Struct {
                 }
             } else if self.tuple_struct {
                 // If there is a tag field, skip it
-                if self.is_tagged {
+                if self.has_tag_field {
                     names.next();
                 }
 
@@ -353,7 +353,7 @@ impl Item for Struct {
         let mut fields = self.fields.iter();
 
         // If there is a tag field, skip it
-        if self.is_tagged {
+        if self.has_tag_field {
             fields.next();
         }
 
@@ -612,7 +612,7 @@ impl Source for Struct {
                 out.close_brace(false);
             }
 
-            let skip_fields = if self.is_tagged { 1 } else { 0 };
+            let skip_fields = if self.has_tag_field { 1 } else { 0 };
 
             macro_rules! emit_op {
                 ($op_name:expr, $op:expr, $conjuc:expr) => {{

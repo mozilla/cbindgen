@@ -77,7 +77,7 @@ pub struct EnumVariant {
 
 impl EnumVariant {
     fn load(
-        is_tagged: bool,
+        inline_tag_field: bool,
         variant: &syn::Variant,
         generic_params: GenericParams,
         mod_cfg: Option<&Cfg>,
@@ -90,13 +90,13 @@ impl EnumVariant {
         };
 
         fn parse_fields(
-            is_tagged: bool,
+            inline_tag_field: bool,
             fields: &syn::punctuated::Punctuated<syn::Field, syn::token::Comma>,
             self_path: &Path,
         ) -> Result<Vec<Field>, String> {
             let mut res = Vec::new();
 
-            if is_tagged {
+            if inline_tag_field {
                 res.push(Field::from_name_and_type(
                     "tag".to_string(),
                     Type::Path(GenericPath::new(Path::new("Tag"), vec![])),
@@ -138,8 +138,8 @@ impl EnumVariant {
                     body: Struct::new(
                         path,
                         generic_params,
-                        parse_fields(is_tagged, &fields.named, self_path)?,
-                        is_tagged,
+                        parse_fields(inline_tag_field, &fields.named, self_path)?,
+                        inline_tag_field,
                         true,
                         None,
                         false,
@@ -160,8 +160,8 @@ impl EnumVariant {
                     body: Struct::new(
                         path,
                         generic_params,
-                        parse_fields(is_tagged, &fields.unnamed, self_path)?,
-                        is_tagged,
+                        parse_fields(inline_tag_field, &fields.unnamed, self_path)?,
+                        inline_tag_field,
                         true,
                         None,
                         false,
@@ -285,6 +285,11 @@ impl Enum {
         self.tag.as_deref().unwrap_or_else(|| self.export_name())
     }
 
+    /// Enum with data turns into a union of structs with each struct having its own tag field.
+    fn inline_tag_field(repr: &Repr) -> bool {
+        repr.style != ReprStyle::C
+    }
+
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         if self.generic_params.len() > 0 {
             return;
@@ -330,20 +335,20 @@ impl Enum {
         let generic_params = GenericParams::new(&item.generics);
 
         let mut variants = Vec::new();
-        let mut is_tagged = false;
+        let mut has_data = false;
 
         let annotations = AnnotationSet::load(&item.attrs)?;
 
         for variant in item.variants.iter() {
             let variant = EnumVariant::load(
-                repr.style == ReprStyle::Rust,
+                Self::inline_tag_field(&repr),
                 variant,
                 generic_params.clone(),
                 mod_cfg,
                 &path,
                 &annotations,
             )?;
-            is_tagged = is_tagged || !variant.body.is_empty();
+            has_data = has_data || !variant.body.is_empty();
             variants.push(variant);
         }
 
@@ -369,7 +374,7 @@ impl Enum {
             ));
         }
 
-        let tag = if is_tagged {
+        let tag = if has_data {
             Some("Tag".to_string())
         } else {
             None
@@ -591,19 +596,19 @@ impl Item for Enum {
 impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         let size = self.repr.ty.map(|ty| ty.to_primitive().to_repr_c(config));
-        let is_tagged = self.tag.is_some();
-        let separate_tag = self.repr.style == ReprStyle::C;
+        let has_data = self.tag.is_some();
+        let inline_tag_field = Self::inline_tag_field(&self.repr);
         let enum_name = self.enum_name();
 
         let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);
 
         self.documentation.write(config, out);
-
-        // If tagged, we need to emit a proper struct/union wrapper around our enum
         self.generic_params.write(config, out);
-        if is_tagged && config.language == Language::Cxx {
-            out.write(if separate_tag { "struct" } else { "union" });
+
+        // If the enum has data, we need to emit a proper struct/union wrapper around it.
+        if has_data && config.language == Language::Cxx {
+            out.write(if inline_tag_field { "union" } else { "struct" });
 
             if self.annotations.must_use(config) {
                 if let Some(ref anno) = config.structure.must_use {
@@ -716,8 +721,8 @@ impl Source for Enum {
 
         self.write_derived_functions_enum(config, out);
 
-        // If tagged, we need to emit structs for the cases and union them together
-        if is_tagged {
+        // If the enum has data, we need to emit structs for the variants and union them together.
+        if has_data {
             // Emit the cases for the structs
             for variant in &self.variants {
                 if let VariantBody::Body { ref body, .. } = variant.body {
@@ -746,7 +751,7 @@ impl Source for Enum {
                     Language::Cython => out.write(config.style.cython_def()),
                 }
 
-                out.write(if separate_tag { "struct" } else { "union" });
+                out.write(if inline_tag_field { "union" } else { "struct" });
 
                 if config.language != Language::C || config.style.generate_tag() {
                     write!(out, " {}", self.export_name());
@@ -766,7 +771,7 @@ impl Source for Enum {
 
             // C++ allows accessing only common initial sequence of union
             // branches so we need to wrap tag into an anonymous struct
-            let wrap_tag = config.language == Language::Cxx && !separate_tag;
+            let wrap_tag = config.language == Language::Cxx && inline_tag_field;
 
             if wrap_tag {
                 out.write("struct");
@@ -790,7 +795,7 @@ impl Source for Enum {
             // corresponding C code. So we can inline the unnamed union into the struct and get the
             // same observable result. Moreother we have to do it because Cython doesn't support
             // unnamed unions.
-            if separate_tag && config.language != Language::Cython {
+            if !inline_tag_field && config.language != Language::Cython {
                 out.write("union");
                 out.open_brace();
             }
@@ -824,7 +829,7 @@ impl Source for Enum {
             }
 
             // See the comment about Cython on `open_brace`.
-            if separate_tag && config.language != Language::Cython {
+            if !inline_tag_field && config.language != Language::Cython {
                 out.close_brace(true);
             }
 
@@ -856,15 +861,15 @@ impl Enum {
             return;
         }
 
-        let is_tagged = self.tag.is_some();
-        let separate_tag = self.repr.style == ReprStyle::C;
+        let has_data = self.tag.is_some();
+        let inline_tag_field = Self::inline_tag_field(&self.repr);
         let enum_name = self.enum_name();
 
         // Emit an ostream function if required.
         if config.enumeration.derive_ostream(&self.annotations) {
-            // For untagged enums, this emits the serializer function for the
-            // enum. For tagged enums, this emits the serializer function for
-            // the tag. In the latter case we need a couple of minor changes
+            // For enums without data, this emits the serializer function for the
+            // enum. For enums with data, this emits the serializer function for
+            // the tag enum. In the latter case we need a couple of minor changes
             // due to the function living inside the top-level struct or enum.
             let stream = config
                 .function
@@ -877,29 +882,29 @@ impl Enum {
 
             out.new_line();
             out.new_line();
-            // For untagged enums, we mark the function inline because the
+            // For enums without data, we mark the function inline because the
             // header might get included into multiple compilation units that
             // get linked together, and not marking it inline would result in
-            // multiply-defined symbol errors. For tagged enums we don't have
+            // multiply-defined symbol errors. For enums with data we don't have
             // the same problem, but mark it as a friend function of the
             // containing union/struct.
-            // Note also that for tagged enums, the case labels for switch
+            // Note also that for enums with data, the case labels for switch
             // statements apparently need to be qualified to the top-level
             // generated struct or union. This is why the generated case labels
-            // below use the A::B::C format for tagged enums, with A being
+            // below use the A::B::C format for enums with data, with A being
             // self.export_name(). Failure to have that qualification results
             // in a surprising compilation failure for the generated header.
             write!(
                 out,
                 "{} std::ostream& operator<<(std::ostream& {}, const {}& {})",
-                if is_tagged { "friend" } else { "inline" },
+                if has_data { "friend" } else { "inline" },
                 stream,
                 enum_name,
                 instance,
             );
 
             out.open_brace();
-            if is_tagged {
+            if has_data {
                 // C++ name resolution rules are weird.
                 write!(
                     out,
@@ -929,9 +934,9 @@ impl Enum {
             write!(out, "return {};", stream);
             out.close_brace(false);
 
-            if is_tagged {
-                // For tagged enums, this emits the serializer function for
-                // the top-level enum or struct.
+            if has_data {
+                // For enums with data, this emits the serializer function for
+                // the top-level union or struct.
                 out.new_line();
                 out.new_line();
                 write!(
@@ -967,8 +972,8 @@ impl Enum {
                                 enum_name,
                                 x.export_name,
                                 stream,
-                                if separate_tag { &tag_str } else { "" },
-                                if separate_tag { " << " } else { "" },
+                                if inline_tag_field { "" } else { &tag_str },
+                                if inline_tag_field { "" } else { " << " },
                                 instance,
                                 name,
                             )
@@ -996,8 +1001,8 @@ impl Enum {
             return;
         }
 
-        let separate_tag = self.repr.style == ReprStyle::C;
-        let skip_fields = if separate_tag { 0 } else { 1 };
+        let inline_tag_field = Self::inline_tag_field(&self.repr);
+        let skip_fields = if inline_tag_field { 1 } else { 0 };
         let enum_name = self.enum_name();
 
         if config.enumeration.derive_helper_methods(&self.annotations) {
