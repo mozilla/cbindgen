@@ -280,7 +280,7 @@ pub struct Enum {
 }
 
 impl Enum {
-    /// Name of the generated enum.
+    /// Name of the generated tag enum.
     fn enum_name(&self) -> &str {
         self.tag.as_deref().unwrap_or_else(|| self.export_name())
     }
@@ -609,26 +609,84 @@ impl Source for Enum {
         // If the enum has data, we need to emit a struct or union for the data
         // and enum for the tag. C++ supports nested type definitions, so we open
         // the struct or union here and define the tag enum inside it (*).
-        // (The code here should mirror `{struct,union}.rs`.)
         if has_data && config.language == Language::Cxx {
-            out.write(if inline_tag_field { "union" } else { "struct" });
+            self.open_struct_or_union(config, out, inline_tag_field);
+        }
 
-            if self.annotations.must_use(config) {
-                if let Some(ref anno) = config.structure.must_use {
-                    write!(out, " {}", anno)
-                }
+        // Emit the tag enum and everything related to it.
+        self.write_tag_enum(config, out, size, has_data, inline_tag_field, enum_name);
+
+        // If the enum has data, we need to emit structs for the variants and gather them together.
+        if has_data {
+            self.write_variant_defs(config, out);
+            out.new_line();
+            out.new_line();
+
+            // Open the struct or union for the data (**), gathering all the variants with data
+            // together, unless it's C++, then we have already opened that struct/union at (*) and
+            // are currently inside it.
+            if config.language != Language::Cxx {
+                self.open_struct_or_union(config, out, inline_tag_field);
             }
 
-            write!(out, " {}", self.export_name());
-            out.open_brace();
+            // Emit tag field that is separate from all variants.
+            self.write_tag_field(config, out, size, inline_tag_field, enum_name);
+            out.new_line();
 
-            // Emit the pre_body section, if relevant.
-            if let Some(body) = config.export.pre_body(&self.path) {
-                out.write_raw_block(body);
+            // Open union of all variants with data, only in the non-inline tag scenario.
+            // Cython extern declarations don't manage layouts, layouts are defined entierly by the
+            // corresponding C code. So we can inline the unnamed union into the struct and get the
+            // same observable result. Moreother we have to do it because Cython doesn't support
+            // unnamed unions.
+            if !inline_tag_field && config.language != Language::Cython {
+                out.write("union");
+                out.open_brace();
+            }
+
+            // Emit fields for all variants with data.
+            self.write_variant_fields(config, out);
+
+            // Close union of all variants with data, only in the non-inline tag scenario.
+            // See the comment about Cython on `open_brace`.
+            if !inline_tag_field && config.language != Language::Cython {
+                out.close_brace(true);
+            }
+
+            // Emit convenience methods for the struct or enum for the data.
+            self.write_derived_functions_data(config, out, inline_tag_field, enum_name);
+
+            // Emit the post_body section, if relevant.
+            if let Some(body) = config.export.post_body(&self.path) {
                 out.new_line();
+                out.write_raw_block(body);
+            }
+
+            // Close the struct or union opened either at (*) or at (**).
+            if config.language == Language::C && config.style.generate_typedef() {
+                out.close_brace(false);
+                write!(out, " {};", self.export_name);
+            } else {
+                out.close_brace(true);
             }
         }
 
+        condition.write_after(config, out);
+    }
+}
+
+impl Enum {
+    /// Emit the tag enum and convenience methods for it.
+    /// For enums with data this is only a part of the output,
+    /// but for enums without data it's the whole output (modulo doc comments etc.).
+    fn write_tag_enum<F: Write>(
+        &self,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+        size: Option<&str>,
+        has_data: bool,
+        inline_tag_field: bool,
+        enum_name: &str,
+    ) {
         // Open the tag enum.
         match config.language {
             Language::C => {
@@ -723,163 +781,132 @@ impl Source for Enum {
         }
 
         // Emit convenience methods for the tag enum.
-        self.write_derived_functions_enum(config, out);
+        self.write_derived_functions_enum(config, out, has_data, inline_tag_field, enum_name);
+    }
 
-        // If the enum has data, we need to emit structs for the variants and gather them together.
-        if has_data {
-            // Emit struct definitions for variants having data.
-            for variant in &self.variants {
-                if let VariantBody::Body { ref body, .. } = variant.body {
-                    out.new_line();
-                    out.new_line();
-                    let condition = variant.cfg.to_condition(config);
-                    // Cython doesn't support conditional enum variants.
-                    if config.language != Language::Cython {
-                        condition.write_before(config, out);
-                    }
-                    body.write(config, out);
-                    if config.language != Language::Cython {
-                        condition.write_after(config, out);
-                    }
-                }
-            }
+    /// The code here mirrors the beginning of `Struct::write` and `Union::write`.
+    fn open_struct_or_union<F: Write>(
+        &self,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+        inline_tag_field: bool,
+    ) {
+        match config.language {
+            Language::C if config.style.generate_typedef() => out.write("typedef "),
+            Language::C | Language::Cxx => {}
+            Language::Cython => out.write(config.style.cython_def()),
+        }
 
-            out.new_line();
-            out.new_line();
+        out.write(if inline_tag_field { "union" } else { "struct" });
 
-            // Open the struct or union for the data (**), gathering all the variants with data
-            // together, unless it's C++, then we have already opened that struct/union at (*) and
-            // are currently inside it. (The code here should mirror `{struct,union}.rs`.)
-            if config.language != Language::Cxx {
-                match config.language {
-                    Language::C if config.style.generate_typedef() => out.write("typedef "),
-                    Language::C | Language::Cxx => {}
-                    Language::Cython => out.write(config.style.cython_def()),
-                }
-
-                out.write(if inline_tag_field { "union" } else { "struct" });
-
-                if config.language != Language::C || config.style.generate_tag() {
-                    write!(out, " {}", self.export_name());
-                }
-
-                out.open_brace();
-
-                // Emit the pre_body section, if relevant.
-                if let Some(body) = config.export.pre_body(&self.path) {
-                    out.write_raw_block(body);
-                    out.new_line();
-                }
-            }
-
-            // Emit tag field that is separate from all variants.
-            // For non-inline tag scenario this is *the* tag field,
-            // and it does not exist in the variants.
-            // For the inline tag scenario this is just a convenience and another way
-            // to refer to the same tag that exist in all the variants.
-            {
-                // C++ allows accessing only common initial sequence of union
-                // fields so we have to wrap the tag field into an anonymous struct.
-                let wrap_tag = inline_tag_field && config.language == Language::Cxx;
-
-                if wrap_tag {
-                    out.write("struct");
-                    out.open_brace();
-                }
-
-                if config.language == Language::C
-                    && size.is_none()
-                    && !config.style.generate_typedef()
-                {
-                    out.write("enum ");
-                }
-
-                write!(out, "{} tag;", enum_name);
-
-                if wrap_tag {
-                    out.close_brace(true);
-                }
-
-                out.new_line();
-            }
-
-            // Open union of all variants with data, only in the non-inline tag scenario.
-            // Cython extern declarations don't manage layouts, layouts are defined entierly by the
-            // corresponding C code. So we can inline the unnamed union into the struct and get the
-            // same observable result. Moreother we have to do it because Cython doesn't support
-            // unnamed unions.
-            if !inline_tag_field && config.language != Language::Cython {
-                out.write("union");
-                out.open_brace();
-            }
-
-            // Emit fields for all variants with data.
-            {
-                let mut first = true;
-                for variant in &self.variants {
-                    let (field_name, body) = match variant.body {
-                        VariantBody::Body { ref name, ref body } => (name, body),
-                        VariantBody::Empty(..) => continue,
-                    };
-
-                    if !first {
-                        out.new_line();
-                    }
-                    first = false;
-                    let condition = variant.cfg.to_condition(config);
-                    // Cython doesn't support conditional enum variants.
-                    if config.language != Language::Cython {
-                        condition.write_before(config, out);
-                    }
-                    if config.style.generate_typedef() || config.language == Language::Cython {
-                        write!(out, "{} {};", body.export_name(), field_name);
-                    } else {
-                        write!(out, "struct {} {};", body.export_name(), field_name);
-                    }
-                    if config.language != Language::Cython {
-                        condition.write_after(config, out);
-                    }
-                }
-            }
-
-            // Close union of all variants with data, only in the non-inline tag scenario.
-            // See the comment about Cython on `open_brace`.
-            if !inline_tag_field && config.language != Language::Cython {
-                out.close_brace(true);
-            }
-
-            // Emit convenience methods for the struct or enum for the data.
-            self.write_derived_functions_data(config, out);
-
-            // Emit the post_body section, if relevant.
-            if let Some(body) = config.export.post_body(&self.path) {
-                out.new_line();
-                out.write_raw_block(body);
-            }
-
-            // Close the struct or union opened either at (*) or at (**).
-            if config.language == Language::C && config.style.generate_typedef() {
-                out.close_brace(false);
-                write!(out, " {};", self.export_name);
-            } else {
-                out.close_brace(true);
+        if self.annotations.must_use(config) {
+            if let Some(ref anno) = config.structure.must_use {
+                write!(out, " {}", anno);
             }
         }
 
-        condition.write_after(config, out);
-    }
-}
+        if config.language != Language::C || config.style.generate_tag() {
+            write!(out, " {}", self.export_name());
+        }
 
-impl Enum {
+        out.open_brace();
+
+        // Emit the pre_body section, if relevant.
+        if let Some(body) = config.export.pre_body(&self.path) {
+            out.write_raw_block(body);
+            out.new_line();
+        }
+    }
+
+    /// Emit struct definitions for variants having data.
+    fn write_variant_defs<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        for variant in &self.variants {
+            if let VariantBody::Body { ref body, .. } = variant.body {
+                out.new_line();
+                out.new_line();
+                let condition = variant.cfg.to_condition(config);
+                // Cython doesn't support conditional enum variants.
+                if config.language != Language::Cython {
+                    condition.write_before(config, out);
+                }
+                body.write(config, out);
+                if config.language != Language::Cython {
+                    condition.write_after(config, out);
+                }
+            }
+        }
+    }
+
+    /// Emit tag field that is separate from all variants.
+    /// For non-inline tag scenario this is *the* tag field, and it does not exist in the variants.
+    /// For the inline tag scenario this is just a convenience and another way
+    /// to refer to the same tag that exist in all the variants.
+    fn write_tag_field<F: Write>(
+        &self,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+        size: Option<&str>,
+        inline_tag_field: bool,
+        enum_name: &str,
+    ) {
+        // C++ allows accessing only common initial sequence of union
+        // fields so we have to wrap the tag field into an anonymous struct.
+        let wrap_tag = inline_tag_field && config.language == Language::Cxx;
+
+        if wrap_tag {
+            out.write("struct");
+            out.open_brace();
+        }
+
+        if config.language == Language::C && size.is_none() && !config.style.generate_typedef() {
+            out.write("enum ");
+        }
+
+        write!(out, "{} tag;", enum_name);
+
+        if wrap_tag {
+            out.close_brace(true);
+        }
+    }
+
+    /// Emit fields for all variants with data.
+    fn write_variant_fields<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        let mut first = true;
+        for variant in &self.variants {
+            if let VariantBody::Body { name, body } = &variant.body {
+                if !first {
+                    out.new_line();
+                }
+                first = false;
+                let condition = variant.cfg.to_condition(config);
+                // Cython doesn't support conditional enum variants.
+                if config.language != Language::Cython {
+                    condition.write_before(config, out);
+                }
+                if config.style.generate_typedef() || config.language == Language::Cython {
+                    write!(out, "{} {};", body.export_name(), name);
+                } else {
+                    write!(out, "struct {} {};", body.export_name(), name);
+                }
+                if config.language != Language::Cython {
+                    condition.write_after(config, out);
+                }
+            }
+        }
+    }
+
     // Emit convenience methods for enums themselves.
-    fn write_derived_functions_enum<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+    fn write_derived_functions_enum<F: Write>(
+        &self,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+        has_data: bool,
+        inline_tag_field: bool,
+        enum_name: &str,
+    ) {
         if config.language != Language::Cxx {
             return;
         }
-
-        let has_data = self.tag.is_some();
-        let inline_tag_field = Self::inline_tag_field(&self.repr);
-        let enum_name = self.enum_name();
 
         // Emit an ostream function if required.
         if config.enumeration.derive_ostream(&self.annotations) {
@@ -1012,14 +1039,18 @@ impl Enum {
     }
 
     // Emit convenience methods for structs or unions produced for enums with data.
-    fn write_derived_functions_data<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+    fn write_derived_functions_data<F: Write>(
+        &self,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+        inline_tag_field: bool,
+        enum_name: &str,
+    ) {
         if config.language != Language::Cxx {
             return;
         }
 
-        let inline_tag_field = Self::inline_tag_field(&self.repr);
         let skip_fields = if inline_tag_field { 1 } else { 0 };
-        let enum_name = self.enum_name();
 
         if config.enumeration.derive_helper_methods(&self.annotations) {
             for variant in &self.variants {

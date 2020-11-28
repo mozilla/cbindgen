@@ -24,7 +24,7 @@ struct Owned_Body_i32 {
   int32_t *_0;
 };
 
-struct MaybeOwnedPtr_i32 {
+struct MUST_USE_STRUCT MaybeOwnedPtr_i32 {
   MaybeOwnedPtr_i32_Tag tag;
   union {
     struct Owned_Body_i32 owned;
