@@ -281,7 +281,7 @@ pub struct Enum {
 
 impl Enum {
     /// Name of the generated tag enum.
-    fn enum_name(&self) -> &str {
+    fn tag_name(&self) -> &str {
         self.tag.as_deref().unwrap_or_else(|| self.export_name())
     }
 
@@ -598,7 +598,7 @@ impl Source for Enum {
         let size = self.repr.ty.map(|ty| ty.to_primitive().to_repr_c(config));
         let has_data = self.tag.is_some();
         let inline_tag_field = Self::inline_tag_field(&self.repr);
-        let enum_name = self.enum_name();
+        let tag_name = self.tag_name();
 
         let condition = self.cfg.to_condition(config);
         condition.write_before(config, out);
@@ -614,7 +614,7 @@ impl Source for Enum {
         }
 
         // Emit the tag enum and everything related to it.
-        self.write_tag_enum(config, out, size, has_data, inline_tag_field, enum_name);
+        self.write_tag_enum(config, out, size, has_data, inline_tag_field, tag_name);
 
         // If the enum has data, we need to emit structs for the variants and gather them together.
         if has_data {
@@ -630,7 +630,7 @@ impl Source for Enum {
             }
 
             // Emit tag field that is separate from all variants.
-            self.write_tag_field(config, out, size, inline_tag_field, enum_name);
+            self.write_tag_field(config, out, size, inline_tag_field, tag_name);
             out.new_line();
 
             // Open union of all variants with data, only in the non-inline tag scenario.
@@ -653,7 +653,7 @@ impl Source for Enum {
             }
 
             // Emit convenience methods for the struct or enum for the data.
-            self.write_derived_functions_data(config, out, inline_tag_field, enum_name);
+            self.write_derived_functions_data(config, out, inline_tag_field, tag_name);
 
             // Emit the post_body section, if relevant.
             if let Some(body) = config.export.post_body(&self.path) {
@@ -685,7 +685,7 @@ impl Enum {
         size: Option<&str>,
         has_data: bool,
         inline_tag_field: bool,
-        enum_name: &str,
+        tag_name: &str,
     ) {
         // Open the tag enum.
         match config.language {
@@ -693,7 +693,7 @@ impl Enum {
                 if let Some(prim) = size {
                     // If we need to specify size, then we have no choice but to create a typedef,
                     // so `config.style` is not respected.
-                    write!(out, "enum {}", enum_name);
+                    write!(out, "enum {}", tag_name);
 
                     if config.cpp_compatible_c() {
                         out.new_line();
@@ -710,7 +710,7 @@ impl Enum {
                     }
                     out.write("enum");
                     if config.style.generate_tag() {
-                        write!(out, " {}", enum_name);
+                        write!(out, " {}", tag_name);
                     }
                 }
             }
@@ -727,7 +727,7 @@ impl Enum {
                     }
                 }
 
-                write!(out, " {}", enum_name);
+                write!(out, " {}", tag_name);
                 if let Some(prim) = size {
                     write!(out, " : {}", prim);
                 }
@@ -738,7 +738,7 @@ impl Enum {
                     // so `config.style` is not respected.
                     write!(out, "cdef enum");
                 } else {
-                    write!(out, "{}enum {}", config.style.cython_def(), enum_name);
+                    write!(out, "{}enum {}", config.style.cython_def(), tag_name);
                 }
             }
         }
@@ -755,7 +755,7 @@ impl Enum {
         // Close the tag enum.
         if config.language == Language::C && size.is_none() && config.style.generate_typedef() {
             out.close_brace(false);
-            write!(out, " {};", enum_name);
+            write!(out, " {};", tag_name);
         } else {
             out.close_brace(true);
         }
@@ -771,7 +771,7 @@ impl Enum {
 
             if config.language != Language::Cxx {
                 out.new_line();
-                write!(out, "{} {} {};", config.language.typedef(), prim, enum_name);
+                write!(out, "{} {} {};", config.language.typedef(), prim, tag_name);
             }
 
             if config.cpp_compatible_c() {
@@ -781,7 +781,7 @@ impl Enum {
         }
 
         // Emit convenience methods for the tag enum.
-        self.write_derived_functions_enum(config, out, has_data, inline_tag_field, enum_name);
+        self.write_derived_functions_enum(config, out, has_data, inline_tag_field, tag_name);
     }
 
     /// The code here mirrors the beginning of `Struct::write` and `Union::write`.
@@ -847,7 +847,7 @@ impl Enum {
         out: &mut SourceWriter<F>,
         size: Option<&str>,
         inline_tag_field: bool,
-        enum_name: &str,
+        tag_name: &str,
     ) {
         // C++ allows accessing only common initial sequence of union
         // fields so we have to wrap the tag field into an anonymous struct.
@@ -862,7 +862,7 @@ impl Enum {
             out.write("enum ");
         }
 
-        write!(out, "{} tag;", enum_name);
+        write!(out, "{} tag;", tag_name);
 
         if wrap_tag {
             out.close_brace(true);
@@ -902,7 +902,7 @@ impl Enum {
         out: &mut SourceWriter<F>,
         has_data: bool,
         inline_tag_field: bool,
-        enum_name: &str,
+        tag_name: &str,
     ) {
         if config.language != Language::Cxx {
             return;
@@ -942,7 +942,7 @@ impl Enum {
                 "{} std::ostream& operator<<(std::ostream& {}, const {}& {})",
                 if has_data { "friend" } else { "inline" },
                 stream,
-                enum_name,
+                tag_name,
                 instance,
             );
 
@@ -952,9 +952,9 @@ impl Enum {
                 write!(
                     out,
                     "using {} = {}::{};",
-                    enum_name,
+                    tag_name,
                     self.export_name(),
-                    enum_name
+                    tag_name
                 );
                 out.new_line();
             }
@@ -966,7 +966,7 @@ impl Enum {
                 .map(|x| {
                     format!(
                         "case {}::{}: {} << \"{}\"; break;",
-                        enum_name, x.export_name, stream, x.export_name
+                        tag_name, x.export_name, stream, x.export_name
                     )
                 })
                 .collect();
@@ -996,9 +996,9 @@ impl Enum {
                 write!(
                     out,
                     "using {} = {}::{};",
-                    enum_name,
+                    tag_name,
                     self.export_name(),
-                    enum_name
+                    tag_name
                 );
                 out.new_line();
 
@@ -1012,7 +1012,7 @@ impl Enum {
                         if let VariantBody::Body { ref name, .. } = x.body {
                             format!(
                                 "case {}::{}: {} << {}{}{}.{}; break;",
-                                enum_name,
+                                tag_name,
                                 x.export_name,
                                 stream,
                                 if inline_tag_field { "" } else { &tag_str },
@@ -1023,7 +1023,7 @@ impl Enum {
                         } else {
                             format!(
                                 "case {}::{}: {} << {}; break;",
-                                enum_name, x.export_name, stream, tag_str,
+                                tag_name, x.export_name, stream, tag_str,
                             )
                         }
                     })
@@ -1044,7 +1044,7 @@ impl Enum {
         config: &Config,
         out: &mut SourceWriter<F>,
         inline_tag_field: bool,
-        enum_name: &str,
+        tag_name: &str,
     ) {
         if config.language != Language::Cxx {
             return;
@@ -1133,7 +1133,7 @@ impl Enum {
                 }
 
                 out.new_line();
-                write!(out, "result.tag = {}::{};", enum_name, variant.export_name);
+                write!(out, "result.tag = {}::{};", tag_name, variant.export_name);
                 out.new_line();
                 write!(out, "return result;");
                 out.close_brace(false);
@@ -1145,7 +1145,7 @@ impl Enum {
                 // FIXME: create a config for method case
                 write!(out, "bool Is{}() const", variant.export_name);
                 out.open_brace();
-                write!(out, "return tag == {}::{};", enum_name, variant.export_name);
+                write!(out, "return tag == {}::{};", tag_name, variant.export_name);
                 out.close_brace(false);
 
                 let assert_name = match config.enumeration.cast_assert_name {
