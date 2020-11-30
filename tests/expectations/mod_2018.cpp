@@ -10,8 +10,14 @@ struct ExportMe {
   uint64_t val;
 };
 
+struct ExportMe2 {
+  uint64_t val;
+};
+
 extern "C" {
 
 void export_me(ExportMe *val);
+
+void export_me_2(ExportMe2*);
 
 } // extern "C"
