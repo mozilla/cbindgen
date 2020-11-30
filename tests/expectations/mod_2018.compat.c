@@ -9,11 +9,17 @@ typedef struct {
   uint64_t val;
 } ExportMe;
 
+typedef struct {
+  uint64_t val;
+} ExportMe2;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 void export_me(ExportMe *val);
+
+void export_me_2(ExportMe2*);
 
 #ifdef __cplusplus
 } // extern "C"

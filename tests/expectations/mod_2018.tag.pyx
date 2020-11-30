@@ -11,4 +11,9 @@ cdef extern from *:
   cdef struct ExportMe:
     uint64_t val;
 
+  cdef struct ExportMe2:
+    uint64_t val;
+
   void export_me(ExportMe *val);
+
+  void export_me_2(ExportMe2*);

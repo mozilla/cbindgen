@@ -205,7 +205,7 @@ impl<'a> Parser<'a> {
             self.cache_expanded_crate.get(&pkg.name).unwrap().clone()
         };
 
-        self.process_mod(pkg, None, &mod_items, 0)
+        self.process_mod(pkg, None, None, &mod_items, 0)
     }
 
     fn parse_mod(
@@ -240,30 +240,37 @@ impl<'a> Parser<'a> {
         };
 
         // Compute module directory according to Rust 2018 rules
-        let mod_dir_2018;
+        let submod_dir_2018;
 
-        let mod_dir = if depth == 0 || mod_path.ends_with("mod.rs") {
-            mod_path.parent().unwrap()
+        let mod_dir = mod_path.parent().unwrap();
+
+        let submod_dir = if depth == 0 || mod_path.ends_with("mod.rs") {
+            mod_dir
         } else {
-            mod_dir_2018 = mod_path
+            submod_dir_2018 = mod_path
                 .parent()
                 .unwrap()
                 .join(mod_path.file_stem().unwrap());
-            &mod_dir_2018
+            &submod_dir_2018
         };
 
-        self.process_mod(pkg, Some(&mod_dir), &mod_items, depth)
+        self.process_mod(pkg, Some(mod_dir), Some(submod_dir), &mod_items, depth)
     }
 
     /// `mod_dir` is the path to the current directory of the module. It may be
     /// `None` for pre-expanded modules.
+    ///
+    /// `submod_dir` is the path to search submodules in by default, which might
+    /// be different for rust 2018 for example.
     fn process_mod(
         &mut self,
         pkg: &PackageRef,
         mod_dir: Option<&FilePath>,
+        submod_dir: Option<&FilePath>,
         items: &[syn::Item],
         depth: usize,
     ) -> Result<(), Error> {
+        debug_assert_eq!(mod_dir.is_some(), submod_dir.is_some());
         // We process the items first then the nested modules.
         let nested_modules = self.out.load_syn_crate_mod(
             &self.config,
@@ -275,18 +282,24 @@ impl<'a> Parser<'a> {
 
         for item in nested_modules {
             let next_mod_name = item.ident.to_string();
-
             let cfg = Cfg::load(&item.attrs);
             if let Some(ref cfg) = cfg {
                 self.cfg_stack.push(cfg.clone());
             }
 
             if let Some((_, ref inline_items)) = item.content {
-                let next_mod_dir = mod_dir.map(|dir| dir.join(&next_mod_name));
-                self.process_mod(pkg, next_mod_dir.as_deref(), inline_items, depth)?;
+                let next_submod_dir = submod_dir.map(|dir| dir.join(&next_mod_name));
+                self.process_mod(
+                    pkg,
+                    mod_dir,
+                    next_submod_dir.as_deref(),
+                    inline_items,
+                    depth,
+                )?;
             } else if let Some(mod_dir) = mod_dir {
-                let next_mod_path1 = mod_dir.join(next_mod_name.clone() + ".rs");
-                let next_mod_path2 = mod_dir.join(next_mod_name.clone()).join("mod.rs");
+                let submod_dir = submod_dir.unwrap();
+                let next_mod_path1 = submod_dir.join(next_mod_name.clone() + ".rs");
+                let next_mod_path2 = submod_dir.join(next_mod_name.clone()).join("mod.rs");
 
                 if next_mod_path1.exists() {
                     self.parse_mod(pkg, next_mod_path1.as_path(), depth + 1)?;

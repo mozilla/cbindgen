@@ -9,4 +9,10 @@ struct ExportMe {
   uint64_t val;
 };
 
+struct ExportMe2 {
+  uint64_t val;
+};
+
 void export_me(struct ExportMe *val);
+
+void export_me_2(struct ExportMe2*);
