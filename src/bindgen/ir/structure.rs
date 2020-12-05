@@ -32,7 +32,6 @@ pub struct Struct {
     pub is_enum_variant_body: bool,
     pub alignment: Option<ReprAlign>,
     pub is_transparent: bool,
-    pub tuple_struct: bool,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
@@ -70,15 +69,12 @@ impl Struct {
             layout_config.ensure_safe_to_represent(&align)?;
         }
 
-        let (fields, tuple_struct) = match item.fields {
-            syn::Fields::Unit => (Vec::new(), false),
-            syn::Fields::Named(ref fields) => {
-                let out = fields
-                    .named
-                    .iter()
-                    .try_skip_map(|field| Field::load(field, &path))?;
-                (out, false)
-            }
+        let fields = match item.fields {
+            syn::Fields::Unit => Vec::new(),
+            syn::Fields::Named(ref fields) => fields
+                .named
+                .iter()
+                .try_skip_map(|field| Field::load(field, &path))?,
             syn::Fields::Unnamed(ref fields) => {
                 let mut out = Vec::new();
                 let mut current = 0;
@@ -95,7 +91,7 @@ impl Struct {
                         current += 1;
                     }
                 }
-                (out, true)
+                out
             }
         };
 
@@ -110,7 +106,6 @@ impl Struct {
             is_enum_variant_body,
             repr.align,
             is_transparent,
-            tuple_struct,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,
             Documentation::load(&item.attrs),
@@ -126,7 +121,6 @@ impl Struct {
         is_enum_variant_body: bool,
         alignment: Option<ReprAlign>,
         is_transparent: bool,
-        tuple_struct: bool,
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
@@ -141,7 +135,6 @@ impl Struct {
             is_enum_variant_body,
             alignment,
             is_transparent,
-            tuple_struct,
             cfg,
             annotations,
             documentation,
@@ -201,7 +194,6 @@ impl Struct {
             self.is_enum_variant_body,
             self.alignment,
             self.is_transparent,
-            self.tuple_struct,
             self.cfg.clone(),
             self.annotations.clone(),
             self.documentation.clone(),
@@ -313,7 +305,7 @@ impl Item for Struct {
 
         // Scope for mutable borrow of fields
         {
-            let mut names = self.fields.iter_mut().map(|field| &mut field.name);
+            let names = self.fields.iter_mut().map(|field| &mut field.name);
 
             let field_rules = self
                 .annotations
@@ -328,16 +320,13 @@ impl Item for Struct {
                 for name in names {
                     *name = r.apply(name, IdentifierType::StructMember).into_owned();
                 }
-            } else if self.tuple_struct {
-                // If there is a tag field, skip it
-                if self.has_tag_field {
-                    names.next();
-                }
-
+            } else {
                 // If we don't have any rules for a tuple struct, prefix them with
-                // an underscore so it still compiles
+                // an underscore so it still compiles.
                 for name in names {
-                    name.insert(0, '_');
+                    if name.starts_with(|c: char| c.is_ascii_digit()) {
+                        name.insert(0, '_');
+                    }
                 }
             }
         }
