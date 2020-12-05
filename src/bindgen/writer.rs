@@ -176,9 +176,9 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn close_brace(&mut self, semicolon: bool) {
+        self.pop_tab();
         match self.bindings.config.language {
             Language::Cxx | Language::C => {
-                self.pop_tab();
                 self.new_line();
                 if semicolon {
                     self.write("};");
@@ -186,9 +186,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
                     self.write("}");
                 }
             }
-            Language::Cython => {
-                self.pop_tab();
-            }
+            Language::Cython => {}
         }
     }
 
