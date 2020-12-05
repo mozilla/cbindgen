@@ -27,6 +27,8 @@ pub enum VariantBody {
         name: String,
         /// The struct with all the items.
         body: Struct,
+        /// Generated cast methods return the variant's only field instead of the variant itself.
+        inline_casts: bool,
     },
 }
 
@@ -57,9 +59,14 @@ impl VariantBody {
     ) -> Self {
         match *self {
             Self::Empty(ref annos) => Self::Empty(annos.clone()),
-            Self::Body { ref name, ref body } => Self::Body {
+            Self::Body {
+                ref name,
+                ref body,
+                inline_casts,
+            } => Self::Body {
                 name: name.clone(),
                 body: body.specialize(generic_values, mappings, config),
+                inline_casts,
             },
         }
     }
@@ -144,11 +151,11 @@ impl EnumVariant {
                         true,
                         None,
                         false,
-                        false,
                         None,
                         annotations,
                         Documentation::none(),
                     ),
+                    inline_casts: false,
                 }
             }
             syn::Fields::Unnamed(ref fields) => {
@@ -166,11 +173,11 @@ impl EnumVariant {
                         true,
                         None,
                         false,
-                        true,
                         None,
                         annotations,
                         Documentation::none(),
                     ),
+                    inline_casts: fields.unnamed.len() == 1,
                 }
             }
         };
@@ -486,6 +493,7 @@ impl Item for Enum {
             if let VariantBody::Body {
                 ref mut name,
                 ref mut body,
+                ..
             } = variant.body
             {
                 body.rename_for_config(config);
@@ -520,9 +528,14 @@ impl Item for Enum {
                         variant.discriminant.clone(),
                         match variant.body {
                             VariantBody::Empty(..) => variant.body.clone(),
-                            VariantBody::Body { ref name, ref body } => VariantBody::Body {
+                            VariantBody::Body {
+                                ref name,
+                                ref body,
+                                inline_casts,
+                            } => VariantBody::Body {
                                 name: r.apply(&name, IdentifierType::StructMember).into_owned(),
                                 body: body.clone(),
+                                inline_casts,
                             },
                         },
                         variant.cfg.clone(),
@@ -876,7 +889,7 @@ impl Enum {
     fn write_variant_fields<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         let mut first = true;
         for variant in &self.variants {
-            if let VariantBody::Body { name, body } = &variant.body {
+            if let VariantBody::Body { name, body, .. } = &variant.body {
                 if !first {
                     out.new_line();
                 }
@@ -1111,6 +1124,7 @@ impl Enum {
                 if let VariantBody::Body {
                     name: ref variant_name,
                     ref body,
+                    ..
                 } = variant.body
                 {
                     for field in body.fields.iter().skip(skip_fields) {
@@ -1157,8 +1171,12 @@ impl Enum {
                 };
 
                 let mut derive_casts = |const_casts: bool| {
-                    let (member_name, body) = match variant.body {
-                        VariantBody::Body { ref name, ref body } => (name, body),
+                    let (member_name, body, inline_casts) = match variant.body {
+                        VariantBody::Body {
+                            ref name,
+                            ref body,
+                            inline_casts,
+                        } => (name, body, inline_casts),
                         VariantBody::Empty(..) => return,
                     };
 
@@ -1170,14 +1188,13 @@ impl Enum {
                     out.new_line();
                     out.new_line();
 
-                    let dig = field_count == 1 && body.tuple_struct;
                     if const_casts {
                         write_attrs!("const-cast");
                     } else {
                         write_attrs!("mut-cast");
                     }
-                    if dig {
-                        let field = body.fields.get(skip_fields).unwrap();
+                    if inline_casts {
+                        let field = body.fields.last().unwrap();
                         let return_type = field.ty.clone();
                         let return_type = Type::Ptr {
                             ty: Box::new(return_type),
@@ -1199,7 +1216,7 @@ impl Enum {
                     out.open_brace();
                     write!(out, "{}(Is{}());", assert_name, variant.export_name);
                     out.new_line();
-                    if dig {
+                    if inline_casts {
                         write!(out, "return {}._0;", member_name);
                     } else {
                         write!(out, "return {};", member_name);
@@ -1327,7 +1344,10 @@ impl Enum {
             out.open_brace();
             let mut exhaustive = true;
             for variant in &self.variants {
-                if let VariantBody::Body { ref name, ref body } = variant.body {
+                if let VariantBody::Body {
+                    ref name, ref body, ..
+                } = variant.body
+                {
                     let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
                     write!(
@@ -1370,7 +1390,10 @@ impl Enum {
             out.open_brace();
             let mut exhaustive = true;
             for variant in &self.variants {
-                if let VariantBody::Body { ref name, ref body } = variant.body {
+                if let VariantBody::Body {
+                    ref name, ref body, ..
+                } = variant.body
+                {
                     let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
                     write!(
