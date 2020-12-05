@@ -630,7 +630,7 @@ impl Source for Enum {
         }
 
         // Emit the tag enum and everything related to it.
-        self.write_tag_enum(config, out, size, has_data, inline_tag_field, tag_name);
+        self.write_tag_enum(config, out, size, has_data, tag_name);
 
         // If the enum has data, we need to emit structs for the variants and gather them together.
         if has_data {
@@ -669,7 +669,7 @@ impl Source for Enum {
             }
 
             // Emit convenience methods for the struct or enum for the data.
-            self.write_derived_functions_data(config, out, inline_tag_field, tag_name);
+            self.write_derived_functions_data(config, out, tag_name);
 
             // Emit the post_body section, if relevant.
             if let Some(body) = config.export.post_body(&self.path) {
@@ -700,7 +700,6 @@ impl Enum {
         out: &mut SourceWriter<F>,
         size: Option<&str>,
         has_data: bool,
-        inline_tag_field: bool,
         tag_name: &str,
     ) {
         // Open the tag enum.
@@ -797,7 +796,7 @@ impl Enum {
         }
 
         // Emit convenience methods for the tag enum.
-        self.write_derived_functions_enum(config, out, has_data, inline_tag_field, tag_name);
+        self.write_derived_functions_enum(config, out, has_data, tag_name);
     }
 
     /// The code here mirrors the beginning of `Struct::write` and `Union::write`.
@@ -917,7 +916,6 @@ impl Enum {
         config: &Config,
         out: &mut SourceWriter<F>,
         has_data: bool,
-        inline_tag_field: bool,
         tag_name: &str,
     ) {
         if config.language != Language::Cxx {
@@ -1025,14 +1023,17 @@ impl Enum {
                     .iter()
                     .map(|x| {
                         let tag_str = format!("\"{}\"", x.export_name);
-                        if let VariantBody::Body { ref name, .. } = x.body {
+                        if let VariantBody::Body {
+                            ref name, ref body, ..
+                        } = x.body
+                        {
                             format!(
                                 "case {}::{}: {} << {}{}{}.{}; break;",
                                 tag_name,
                                 x.export_name,
                                 stream,
-                                if inline_tag_field { "" } else { &tag_str },
-                                if inline_tag_field { "" } else { " << " },
+                                if body.has_tag_field { "" } else { &tag_str },
+                                if body.has_tag_field { "" } else { " << " },
                                 instance,
                                 name,
                             )
@@ -1059,14 +1060,11 @@ impl Enum {
         &self,
         config: &Config,
         out: &mut SourceWriter<F>,
-        inline_tag_field: bool,
         tag_name: &str,
     ) {
         if config.language != Language::Cxx {
             return;
         }
-
-        let skip_fields = if inline_tag_field { 1 } else { 0 };
 
         if config.enumeration.derive_helper_methods(&self.annotations) {
             for variant in &self.variants {
@@ -1101,6 +1099,7 @@ impl Enum {
                 write!(out, "static {} {}(", self.export_name, variant.export_name);
 
                 if let VariantBody::Body { ref body, .. } = variant.body {
+                    let skip_fields = if body.has_tag_field { 1 } else { 0 };
                     let vec: Vec<_> = body
                         .fields
                         .iter()
@@ -1127,6 +1126,7 @@ impl Enum {
                     ..
                 } = variant.body
                 {
+                    let skip_fields = if body.has_tag_field { 1 } else { 0 };
                     for field in body.fields.iter().skip(skip_fields) {
                         out.new_line();
                         match field.ty {
@@ -1180,6 +1180,7 @@ impl Enum {
                         VariantBody::Empty(..) => return,
                     };
 
+                    let skip_fields = if body.has_tag_field { 1 } else { 0 };
                     let field_count = body.fields.len() - skip_fields;
                     if field_count == 0 {
                         return;
