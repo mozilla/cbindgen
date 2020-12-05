@@ -30,18 +30,14 @@ struct MyFancyEnum {
     Baz,
   };
 
-  struct Bar_Body {
-    int32_t _0;
-  };
-
-  struct Baz_Body {
-    int32_t _0;
-  };
-
   Tag tag;
   union {
-    Bar_Body bar;
-    Baz_Body baz;
+    struct {
+      int32_t bar;
+    };
+    struct {
+      int32_t baz;
+    };
   };
 #ifdef __cplusplus
     inline void wohoo();
@@ -71,18 +67,14 @@ struct MyFancyEnum_Prepended {
     Baz_Prepended,
   };
 
-  struct Bar_Prepended_Body {
-    int32_t _0;
-  };
-
-  struct Baz_Prepended_Body {
-    int32_t _0;
-  };
-
   Tag tag;
   union {
-    Bar_Prepended_Body bar_prepended;
-    Baz_Prepended_Body baz_prepended;
+    struct {
+      int32_t bar_prepended;
+    };
+    struct {
+      int32_t baz_prepended;
+    };
   };
 };
 

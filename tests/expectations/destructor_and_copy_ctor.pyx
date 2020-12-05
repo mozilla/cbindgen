@@ -132,13 +132,10 @@ cdef extern from *:
     Taz2,
   ctypedef uint8_t Tazz_Tag;
 
-  ctypedef struct Taz2_Body:
-    Tazz_Tag tag;
-    int32_t _0;
-
   ctypedef union Tazz:
     Tazz_Tag tag;
-    Taz2_Body taz2;
+    Tazz_Tag taz2_tag;
+    int32_t taz2;
 
   cdef enum:
     Bar5,

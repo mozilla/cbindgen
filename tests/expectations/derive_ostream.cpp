@@ -74,16 +74,6 @@ union F {
     return stream;
   }
 
-  struct Foo_Body {
-    Tag tag;
-    int16_t _0;
-
-    friend std::ostream& operator<<(std::ostream& stream, const Foo_Body& instance) {
-      return stream << "{ " << "tag=" << instance.tag << ", "
-                            << "_0=" << instance._0 << " }";
-    }
-  };
-
   struct Bar_Body {
     Tag tag;
     uint8_t x;
@@ -99,7 +89,10 @@ union F {
   struct {
     Tag tag;
   };
-  Foo_Body foo;
+  struct {
+    Tag foo_tag;
+    int16_t foo;
+  };
   Bar_Body bar;
 };
 
@@ -130,14 +123,6 @@ struct H {
     return stream;
   }
 
-  struct Hello_Body {
-    int16_t _0;
-
-    friend std::ostream& operator<<(std::ostream& stream, const Hello_Body& instance) {
-      return stream << "{ " << "_0=" << instance._0 << " }";
-    }
-  };
-
   struct There_Body {
     uint8_t x;
     int16_t y;
@@ -150,7 +135,9 @@ struct H {
 
   Tag tag;
   union {
-    Hello_Body hello;
+    struct {
+      int16_t hello;
+    };
     There_Body there;
   };
 };

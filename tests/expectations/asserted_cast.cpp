@@ -17,10 +17,6 @@ struct H {
     H_Baz,
   };
 
-  struct H_Foo_Body {
-    int16_t _0;
-  };
-
   struct H_Bar_Body {
     uint8_t x;
     int16_t y;
@@ -28,13 +24,15 @@ struct H {
 
   Tag tag;
   union {
-    H_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     H_Bar_Body bar;
   };
 
-  static H H_Foo(const int16_t &_0) {
+  static H H_Foo(const int16_t &foo) {
     H result;
-    ::new (&result.foo._0) (int16_t)(_0);
+    ::new (&result.foo) (int16_t)(foo);
     result.tag = Tag::H_Foo;
     return result;
   }
@@ -45,12 +43,12 @@ struct H {
 
   const int16_t& AsH_Foo() const {
     MY_ASSERT(IsH_Foo());
-    return foo._0;
+    return foo;
   }
 
   MY_ATTRS int16_t& AsH_Foo() {
     MY_ASSERT(IsH_Foo());
-    return foo._0;
+    return foo;
   }
 
   static H H_Bar(const uint8_t &x,
@@ -94,10 +92,6 @@ struct J {
     J_Baz,
   };
 
-  struct J_Foo_Body {
-    int16_t _0;
-  };
-
   struct J_Bar_Body {
     uint8_t x;
     int16_t y;
@@ -105,13 +99,15 @@ struct J {
 
   Tag tag;
   union {
-    J_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     J_Bar_Body bar;
   };
 
-  static J J_Foo(const int16_t &_0) {
+  static J J_Foo(const int16_t &foo) {
     J result;
-    ::new (&result.foo._0) (int16_t)(_0);
+    ::new (&result.foo) (int16_t)(foo);
     result.tag = Tag::J_Foo;
     return result;
   }
@@ -122,12 +118,12 @@ struct J {
 
   const int16_t& AsJ_Foo() const {
     MY_ASSERT(IsJ_Foo());
-    return foo._0;
+    return foo;
   }
 
   int16_t& AsJ_Foo() {
     MY_ASSERT(IsJ_Foo());
-    return foo._0;
+    return foo;
   }
 
   static J J_Bar(const uint8_t &x,
@@ -171,11 +167,6 @@ union K {
     K_Baz,
   };
 
-  struct K_Foo_Body {
-    Tag tag;
-    int16_t _0;
-  };
-
   struct K_Bar_Body {
     Tag tag;
     uint8_t x;
@@ -185,12 +176,15 @@ union K {
   struct {
     Tag tag;
   };
-  K_Foo_Body foo;
+  struct {
+    Tag foo_tag;
+    int16_t foo;
+  };
   K_Bar_Body bar;
 
-  static K K_Foo(const int16_t &_0) {
+  static K K_Foo(const int16_t &foo) {
     K result;
-    ::new (&result.foo._0) (int16_t)(_0);
+    ::new (&result.foo) (int16_t)(foo);
     result.tag = Tag::K_Foo;
     return result;
   }
@@ -201,12 +195,12 @@ union K {
 
   const int16_t& AsK_Foo() const {
     MY_ASSERT(IsK_Foo());
-    return foo._0;
+    return foo;
   }
 
   int16_t& AsK_Foo() {
     MY_ASSERT(IsK_Foo());
-    return foo._0;
+    return foo;
   }
 
   static K K_Bar(const uint8_t &x,

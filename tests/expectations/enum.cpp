@@ -86,11 +86,6 @@ union G {
     Baz,
   };
 
-  struct Foo_Body {
-    Tag tag;
-    int16_t _0;
-  };
-
   struct Bar_Body {
     Tag tag;
     uint8_t x;
@@ -100,7 +95,10 @@ union G {
   struct {
     Tag tag;
   };
-  Foo_Body foo;
+  struct {
+    Tag foo_tag;
+    int16_t foo;
+  };
   Bar_Body bar;
 };
 
@@ -111,10 +109,6 @@ struct H {
     H_Baz,
   };
 
-  struct H_Foo_Body {
-    int16_t _0;
-  };
-
   struct H_Bar_Body {
     uint8_t x;
     int16_t y;
@@ -122,7 +116,9 @@ struct H {
 
   Tag tag;
   union {
-    H_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     H_Bar_Body bar;
   };
 };
@@ -134,10 +130,6 @@ struct I {
     I_Baz,
   };
 
-  struct I_Foo_Body {
-    int16_t _0;
-  };
-
   struct I_Bar_Body {
     uint8_t x;
     int16_t y;
@@ -145,7 +137,9 @@ struct I {
 
   Tag tag;
   union {
-    I_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     I_Bar_Body bar;
   };
 };
@@ -156,10 +150,6 @@ struct P {
     P1,
   };
 
-  struct P0_Body {
-    uint8_t _0;
-  };
-
   struct P1_Body {
     uint8_t _0;
     uint8_t _1;
@@ -168,7 +158,9 @@ struct P {
 
   Tag tag;
   union {
-    P0_Body p0;
+    struct {
+      uint8_t p0;
+    };
     P1_Body p1;
   };
 };

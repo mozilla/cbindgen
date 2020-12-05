@@ -26,13 +26,11 @@ struct TypeData {
     Struct,
   };
 
-  struct Struct_Body {
-    StructInfo _0;
-  };
-
   Tag tag;
   union {
-    Struct_Body struct_;
+    struct {
+      StructInfo struct_;
+    };
   };
 };
 

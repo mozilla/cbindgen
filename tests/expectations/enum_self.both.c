@@ -14,20 +14,16 @@ enum Bar_Tag {
 };
 typedef uint8_t Bar_Tag;
 
-typedef struct Min_Body {
-  Bar_Tag tag;
-  struct Foo_Bar _0;
-} Min_Body;
-
-typedef struct Max_Body {
-  Bar_Tag tag;
-  struct Foo_Bar _0;
-} Max_Body;
-
 typedef union Bar {
   Bar_Tag tag;
-  Min_Body min;
-  Max_Body max;
+  struct {
+    Bar_Tag min_tag;
+    struct Foo_Bar min;
+  };
+  struct {
+    Bar_Tag max_tag;
+    struct Foo_Bar max;
+  };
 } Bar;
 
 void root(union Bar b);

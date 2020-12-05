@@ -16,21 +16,17 @@ union Bar {
     Other,
   };
 
-  struct Min_Body {
-    Tag tag;
-    Foo<Bar> _0;
-  };
-
-  struct Max_Body {
-    Tag tag;
-    Foo<Bar> _0;
-  };
-
   struct {
     Tag tag;
   };
-  Min_Body min;
-  Max_Body max;
+  struct {
+    Tag min_tag;
+    Foo<Bar> min;
+  };
+  struct {
+    Tag max_tag;
+    Foo<Bar> max;
+  };
 };
 
 extern "C" {

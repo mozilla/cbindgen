@@ -16,13 +16,11 @@ struct MUST_USE_STRUCT MaybeOwnedPtr {
     None,
   };
 
-  struct Owned_Body {
-    T *_0;
-  };
-
   Tag tag;
   union {
-    Owned_Body owned;
+    struct {
+      T *owned;
+    };
   };
 };
 

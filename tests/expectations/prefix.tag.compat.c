@@ -26,14 +26,12 @@ enum PREFIX_AbsoluteFontWeight_Tag
 typedef uint8_t PREFIX_AbsoluteFontWeight_Tag;
 #endif // __cplusplus
 
-struct PREFIX_Weight_Body {
-  PREFIX_AbsoluteFontWeight_Tag tag;
-  float _0;
-};
-
 union PREFIX_AbsoluteFontWeight {
   PREFIX_AbsoluteFontWeight_Tag tag;
-  struct PREFIX_Weight_Body weight;
+  struct {
+    PREFIX_AbsoluteFontWeight_Tag weight_tag;
+    float weight;
+  };
 };
 
 #ifdef __cplusplus

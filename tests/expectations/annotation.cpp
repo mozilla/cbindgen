@@ -36,11 +36,6 @@ union F {
     Baz,
   };
 
-  struct Foo_Body {
-    Tag tag;
-    int16_t _0;
-  };
-
   struct Bar_Body {
     Tag tag;
     uint8_t x;
@@ -50,12 +45,15 @@ union F {
   struct {
     Tag tag;
   };
-  Foo_Body foo;
+  struct {
+    Tag foo_tag;
+    int16_t foo;
+  };
   Bar_Body bar;
 
-  static F Foo(const int16_t &_0) {
+  static F Foo(const int16_t &foo) {
     F result;
-    ::new (&result.foo._0) (int16_t)(_0);
+    ::new (&result.foo) (int16_t)(foo);
     result.tag = Tag::Foo;
     return result;
   }
@@ -95,10 +93,6 @@ struct H {
     Everyone,
   };
 
-  struct Hello_Body {
-    int16_t _0;
-  };
-
   struct There_Body {
     uint8_t x;
     int16_t y;
@@ -106,13 +100,15 @@ struct H {
 
   Tag tag;
   union {
-    Hello_Body hello;
+    struct {
+      int16_t hello;
+    };
     There_Body there;
   };
 
-  static H Hello(const int16_t &_0) {
+  static H Hello(const int16_t &hello) {
     H result;
-    ::new (&result.hello._0) (int16_t)(_0);
+    ::new (&result.hello) (int16_t)(hello);
     result.tag = Tag::Hello;
     return result;
   }

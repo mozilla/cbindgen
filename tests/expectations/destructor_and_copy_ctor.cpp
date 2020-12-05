@@ -424,15 +424,13 @@ union Tazz {
     Taz2,
   };
 
-  struct Taz2_Body {
-    Tag tag;
-    int32_t _0;
-  };
-
   struct {
     Tag tag;
   };
-  Taz2_Body taz2;
+  struct {
+    Tag taz2_tag;
+    int32_t taz2;
+  };
 
   static Tazz Bar4() {
     Tazz result;
@@ -444,9 +442,9 @@ union Tazz {
     return tag == Tag::Bar4;
   }
 
-  static Tazz Taz2(const int32_t &_0) {
+  static Tazz Taz2(const int32_t &taz2) {
     Tazz result;
-    ::new (&result.taz2._0) (int32_t)(_0);
+    ::new (&result.taz2) (int32_t)(taz2);
     result.tag = Tag::Taz2;
     return result;
   }

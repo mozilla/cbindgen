@@ -14,13 +14,11 @@ struct E {
     U,
   };
 
-  struct U_Body {
-    const uint8_t *_0;
-  };
-
   Tag tag;
   union {
-    U_Body u;
+    struct {
+      const uint8_t *u;
+    };
   };
 };
 

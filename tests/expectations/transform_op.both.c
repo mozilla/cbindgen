@@ -28,21 +28,17 @@ typedef struct StyleFoo_Body_i32 {
   struct StylePoint_f32 z;
 } StyleFoo_Body_i32;
 
-typedef struct StyleBar_Body_i32 {
-  StyleFoo_i32_Tag tag;
-  int32_t _0;
-} StyleBar_Body_i32;
-
-typedef struct StyleBaz_Body_i32 {
-  StyleFoo_i32_Tag tag;
-  struct StylePoint_i32 _0;
-} StyleBaz_Body_i32;
-
 typedef union StyleFoo_i32 {
   StyleFoo_i32_Tag tag;
   StyleFoo_Body_i32 foo;
-  StyleBar_Body_i32 bar;
-  StyleBaz_Body_i32 baz;
+  struct {
+    StyleFoo_i32_Tag bar_tag;
+    int32_t bar;
+  };
+  struct {
+    StyleFoo_i32_Tag baz_tag;
+    struct StylePoint_i32 baz;
+  };
 } StyleFoo_i32;
 
 typedef enum StyleBar_i32_Tag {
@@ -59,20 +55,16 @@ typedef struct StyleBar1_Body_i32 {
   int32_t (*u)(int32_t);
 } StyleBar1_Body_i32;
 
-typedef struct StyleBar2_Body_i32 {
-  int32_t _0;
-} StyleBar2_Body_i32;
-
-typedef struct StyleBar3_Body_i32 {
-  struct StylePoint_i32 _0;
-} StyleBar3_Body_i32;
-
 typedef struct StyleBar_i32 {
   StyleBar_i32_Tag tag;
   union {
     StyleBar1_Body_i32 bar1;
-    StyleBar2_Body_i32 bar2;
-    StyleBar3_Body_i32 bar3;
+    struct {
+      int32_t bar2;
+    };
+    struct {
+      struct StylePoint_i32 bar3;
+    };
   };
 } StyleBar_i32;
 
@@ -95,20 +87,16 @@ typedef struct StyleBar1_Body_u32 {
   int32_t (*u)(int32_t);
 } StyleBar1_Body_u32;
 
-typedef struct StyleBar2_Body_u32 {
-  uint32_t _0;
-} StyleBar2_Body_u32;
-
-typedef struct StyleBar3_Body_u32 {
-  struct StylePoint_u32 _0;
-} StyleBar3_Body_u32;
-
 typedef struct StyleBar_u32 {
   StyleBar_u32_Tag tag;
   union {
     StyleBar1_Body_u32 bar1;
-    StyleBar2_Body_u32 bar2;
-    StyleBar3_Body_u32 bar3;
+    struct {
+      uint32_t bar2;
+    };
+    struct {
+      struct StylePoint_u32 bar3;
+    };
   };
 } StyleBar_u32;
 
@@ -119,20 +107,16 @@ enum StyleBaz_Tag {
 };
 typedef uint8_t StyleBaz_Tag;
 
-typedef struct StyleBaz1_Body {
-  StyleBaz_Tag tag;
-  struct StyleBar_u32 _0;
-} StyleBaz1_Body;
-
-typedef struct StyleBaz2_Body {
-  StyleBaz_Tag tag;
-  struct StylePoint_i32 _0;
-} StyleBaz2_Body;
-
 typedef union StyleBaz {
   StyleBaz_Tag tag;
-  StyleBaz1_Body baz1;
-  StyleBaz2_Body baz2;
+  struct {
+    StyleBaz_Tag baz1_tag;
+    struct StyleBar_u32 baz1;
+  };
+  struct {
+    StyleBaz_Tag baz2_tag;
+    struct StylePoint_i32 baz2;
+  };
 } StyleBaz;
 
 enum StyleTaz_Tag {
@@ -142,19 +126,15 @@ enum StyleTaz_Tag {
 };
 typedef uint8_t StyleTaz_Tag;
 
-typedef struct StyleTaz1_Body {
-  struct StyleBar_u32 _0;
-} StyleTaz1_Body;
-
-typedef struct StyleTaz2_Body {
-  union StyleBaz _0;
-} StyleTaz2_Body;
-
 typedef struct StyleTaz {
   StyleTaz_Tag tag;
   union {
-    StyleTaz1_Body taz1;
-    StyleTaz2_Body taz2;
+    struct {
+      struct StyleBar_u32 taz1;
+    };
+    struct {
+      union StyleBaz taz2;
+    };
   };
 } StyleTaz;
 

@@ -189,14 +189,12 @@ enum Tazz_Tag
 typedef uint8_t Tazz_Tag;
 #endif // __cplusplus
 
-typedef struct {
-  Tazz_Tag tag;
-  int32_t _0;
-} Taz2_Body;
-
 typedef union {
   Tazz_Tag tag;
-  Taz2_Body taz2;
+  struct {
+    Tazz_Tag taz2_tag;
+    int32_t taz2;
+  };
 } Tazz;
 
 enum Tazzz_Tag

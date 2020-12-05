@@ -28,19 +28,15 @@ enum MyFancyEnum_Tag {
   Baz,
 };
 
-struct Bar_Body {
-  int32_t _0;
-};
-
-struct Baz_Body {
-  int32_t _0;
-};
-
 struct MyFancyEnum {
   enum MyFancyEnum_Tag tag;
   union {
-    struct Bar_Body bar;
-    struct Baz_Body baz;
+    struct {
+      int32_t bar;
+    };
+    struct {
+      int32_t baz;
+    };
   };
 #ifdef __cplusplus
     inline void wohoo();
@@ -66,22 +62,18 @@ enum MyFancyEnum_Prepended_Tag {
   Baz_Prepended,
 };
 
-struct Bar_Prepended_Body {
-  int32_t _0;
-};
-
-struct Baz_Prepended_Body {
-  int32_t _0;
-};
-
 struct MyFancyEnum_Prepended {
 #ifdef __cplusplus
     inline void wohoo();
 #endif
   enum MyFancyEnum_Prepended_Tag tag;
   union {
-    struct Bar_Prepended_Body bar_prepended;
-    struct Baz_Prepended_Body baz_prepended;
+    struct {
+      int32_t bar_prepended;
+    };
+    struct {
+      int32_t baz_prepended;
+    };
   };
 };
 

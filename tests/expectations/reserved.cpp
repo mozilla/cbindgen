@@ -36,18 +36,14 @@ struct E {
     Float,
   };
 
-  struct Double_Body {
-    double _0;
-  };
-
-  struct Float_Body {
-    float _0;
-  };
-
   Tag tag;
   union {
-    Double_Body double_;
-    Float_Body float_;
+    struct {
+      double double_;
+    };
+    struct {
+      float float_;
+    };
   };
 };
 
@@ -57,18 +53,14 @@ struct F {
     float_,
   };
 
-  struct double_Body {
-    double _0;
-  };
-
-  struct float_Body {
-    float _0;
-  };
-
   Tag tag;
   union {
-    double_Body double_;
-    float_Body float_;
+    struct {
+      double double_;
+    };
+    struct {
+      float float_;
+    };
   };
 };
 

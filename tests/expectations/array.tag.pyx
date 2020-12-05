@@ -9,11 +9,8 @@ cdef extern from *:
   cdef enum Foo_Tag:
     A,
 
-  cdef struct A_Body:
-    float _0[20];
-
   cdef struct Foo:
     Foo_Tag tag;
-    A_Body a;
+    float a[20];
 
   void root(Foo a);

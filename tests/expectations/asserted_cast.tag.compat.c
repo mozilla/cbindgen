@@ -22,10 +22,6 @@ enum H_Tag
 typedef uint8_t H_Tag;
 #endif // __cplusplus
 
-struct H_Foo_Body {
-  int16_t _0;
-};
-
 struct H_Bar_Body {
   uint8_t x;
   int16_t y;
@@ -34,7 +30,9 @@ struct H_Bar_Body {
 struct H {
   H_Tag tag;
   union {
-    struct H_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     struct H_Bar_Body bar;
   };
 };
@@ -52,10 +50,6 @@ enum J_Tag
 typedef uint8_t J_Tag;
 #endif // __cplusplus
 
-struct J_Foo_Body {
-  int16_t _0;
-};
-
 struct J_Bar_Body {
   uint8_t x;
   int16_t y;
@@ -64,7 +58,9 @@ struct J_Bar_Body {
 struct J {
   J_Tag tag;
   union {
-    struct J_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     struct J_Bar_Body bar;
   };
 };
@@ -82,11 +78,6 @@ enum K_Tag
 typedef uint8_t K_Tag;
 #endif // __cplusplus
 
-struct K_Foo_Body {
-  K_Tag tag;
-  int16_t _0;
-};
-
 struct K_Bar_Body {
   K_Tag tag;
   uint8_t x;
@@ -95,7 +86,10 @@ struct K_Bar_Body {
 
 union K {
   K_Tag tag;
-  struct K_Foo_Body foo;
+  struct {
+    K_Tag foo_tag;
+    int16_t foo;
+  };
   struct K_Bar_Body bar;
 };
 

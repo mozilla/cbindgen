@@ -21,15 +21,13 @@ union PREFIX_AbsoluteFontWeight {
     Bold,
   };
 
-  struct Weight_Body {
-    Tag tag;
-    float _0;
-  };
-
   struct {
     Tag tag;
   };
-  Weight_Body weight;
+  struct {
+    Tag weight_tag;
+    float weight;
+  };
 };
 
 extern "C" {

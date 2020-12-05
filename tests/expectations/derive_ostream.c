@@ -33,18 +33,16 @@ typedef uint8_t F_Tag;
 
 typedef struct {
   F_Tag tag;
-  int16_t _0;
-} Foo_Body;
-
-typedef struct {
-  F_Tag tag;
   uint8_t x;
   int16_t y;
 } Bar_Body;
 
 typedef union {
   F_Tag tag;
-  Foo_Body foo;
+  struct {
+    F_Tag foo_tag;
+    int16_t foo;
+  };
   Bar_Body bar;
 } F;
 
@@ -56,10 +54,6 @@ enum H_Tag {
 typedef uint8_t H_Tag;
 
 typedef struct {
-  int16_t _0;
-} Hello_Body;
-
-typedef struct {
   uint8_t x;
   int16_t y;
 } There_Body;
@@ -67,7 +61,9 @@ typedef struct {
 typedef struct {
   H_Tag tag;
   union {
-    Hello_Body hello;
+    struct {
+      int16_t hello;
+    };
     There_Body there;
   };
 } H;
