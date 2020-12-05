@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define FOUR 4
+#define FOURTY_FOUR 4
 
 enum E
 #ifdef __cplusplus
@@ -13,7 +13,7 @@ enum E
   A = 1,
   B = -1,
   C = (1 + 2),
-  D = FOUR,
+  D = FOURTY_FOUR,
   F = 5,
   G = (int8_t)54,
   H = (int8_t)false,

@@ -479,7 +479,9 @@ impl Item for Enum {
 
         for variant in &mut self.variants {
             reserved::escape(&mut variant.export_name);
-
+            if let Some(discriminant) = &mut variant.discriminant {
+                discriminant.rename_for_config(config);
+            }
             if let VariantBody::Body {
                 ref mut name,
                 ref mut body,
