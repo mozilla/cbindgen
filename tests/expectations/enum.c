@@ -95,18 +95,16 @@ typedef uint8_t G_Tag;
 
 typedef struct {
   G_Tag tag;
-  int16_t _0;
-} Foo_Body;
-
-typedef struct {
-  G_Tag tag;
   uint8_t x;
   int16_t y;
 } Bar_Body;
 
 typedef union {
   G_Tag tag;
-  Foo_Body foo;
+  struct {
+    G_Tag foo_tag;
+    int16_t foo;
+  };
   Bar_Body bar;
 } G;
 
@@ -117,10 +115,6 @@ typedef enum {
 } H_Tag;
 
 typedef struct {
-  int16_t _0;
-} H_Foo_Body;
-
-typedef struct {
   uint8_t x;
   int16_t y;
 } H_Bar_Body;
@@ -128,7 +122,9 @@ typedef struct {
 typedef struct {
   H_Tag tag;
   union {
-    H_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     H_Bar_Body bar;
   };
 } H;
@@ -141,10 +137,6 @@ enum I_Tag {
 typedef uint8_t I_Tag;
 
 typedef struct {
-  int16_t _0;
-} I_Foo_Body;
-
-typedef struct {
   uint8_t x;
   int16_t y;
 } I_Bar_Body;
@@ -152,7 +144,9 @@ typedef struct {
 typedef struct {
   I_Tag tag;
   union {
-    I_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     I_Bar_Body bar;
   };
 } I;
@@ -165,10 +159,6 @@ typedef uint8_t P_Tag;
 
 typedef struct {
   uint8_t _0;
-} P0_Body;
-
-typedef struct {
-  uint8_t _0;
   uint8_t _1;
   uint8_t _2;
 } P1_Body;
@@ -176,7 +166,9 @@ typedef struct {
 typedef struct {
   P_Tag tag;
   union {
-    P0_Body p0;
+    struct {
+      uint8_t p0;
+    };
     P1_Body p1;
   };
 } P;

@@ -13,11 +13,8 @@ cdef extern from *:
     V,
     U,
 
-  cdef struct U_Body:
-    const uint8_t *_0;
-
   cdef struct E:
     E_Tag tag;
-    U_Body u;
+    const uint8_t *u;
 
   void root(A _a, E _e);

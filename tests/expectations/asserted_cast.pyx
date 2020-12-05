@@ -19,16 +19,13 @@ cdef extern from *:
     H_Baz,
   ctypedef uint8_t H_Tag;
 
-  ctypedef struct H_Foo_Body:
-    int16_t _0;
-
   ctypedef struct H_Bar_Body:
     uint8_t x;
     int16_t y;
 
   ctypedef struct H:
     H_Tag tag;
-    H_Foo_Body foo;
+    int16_t foo;
     H_Bar_Body bar;
 
   cdef enum:
@@ -37,16 +34,13 @@ cdef extern from *:
     J_Baz,
   ctypedef uint8_t J_Tag;
 
-  ctypedef struct J_Foo_Body:
-    int16_t _0;
-
   ctypedef struct J_Bar_Body:
     uint8_t x;
     int16_t y;
 
   ctypedef struct J:
     J_Tag tag;
-    J_Foo_Body foo;
+    int16_t foo;
     J_Bar_Body bar;
 
   cdef enum:
@@ -55,10 +49,6 @@ cdef extern from *:
     K_Baz,
   ctypedef uint8_t K_Tag;
 
-  ctypedef struct K_Foo_Body:
-    K_Tag tag;
-    int16_t _0;
-
   ctypedef struct K_Bar_Body:
     K_Tag tag;
     uint8_t x;
@@ -66,7 +56,8 @@ cdef extern from *:
 
   ctypedef union K:
     K_Tag tag;
-    K_Foo_Body foo;
+    K_Tag foo_tag;
+    int16_t foo;
     K_Bar_Body bar;
 
   void foo(H h, I i, J j, K k);

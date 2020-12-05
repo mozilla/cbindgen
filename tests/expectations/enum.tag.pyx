@@ -88,10 +88,6 @@ cdef extern from *:
     Baz,
   ctypedef uint8_t G_Tag;
 
-  cdef struct Foo_Body:
-    G_Tag tag;
-    int16_t _0;
-
   cdef struct Bar_Body:
     G_Tag tag;
     uint8_t x;
@@ -99,7 +95,8 @@ cdef extern from *:
 
   cdef union G:
     G_Tag tag;
-    Foo_Body foo;
+    G_Tag foo_tag;
+    int16_t foo;
     Bar_Body bar;
 
   cdef enum H_Tag:
@@ -107,16 +104,13 @@ cdef extern from *:
     H_Bar,
     H_Baz,
 
-  cdef struct H_Foo_Body:
-    int16_t _0;
-
   cdef struct H_Bar_Body:
     uint8_t x;
     int16_t y;
 
   cdef struct H:
     H_Tag tag;
-    H_Foo_Body foo;
+    int16_t foo;
     H_Bar_Body bar;
 
   cdef enum:
@@ -125,25 +119,19 @@ cdef extern from *:
     I_Baz,
   ctypedef uint8_t I_Tag;
 
-  cdef struct I_Foo_Body:
-    int16_t _0;
-
   cdef struct I_Bar_Body:
     uint8_t x;
     int16_t y;
 
   cdef struct I:
     I_Tag tag;
-    I_Foo_Body foo;
+    int16_t foo;
     I_Bar_Body bar;
 
   cdef enum:
     P0,
     P1,
   ctypedef uint8_t P_Tag;
-
-  cdef struct P0_Body:
-    uint8_t _0;
 
   cdef struct P1_Body:
     uint8_t _0;
@@ -152,7 +140,7 @@ cdef extern from *:
 
   cdef struct P:
     P_Tag tag;
-    P0_Body p0;
+    uint8_t p0;
     P1_Body p1;
 
   void root(Opaque *opaque,

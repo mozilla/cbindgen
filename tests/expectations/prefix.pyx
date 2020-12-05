@@ -22,12 +22,9 @@ cdef extern from *:
     Bold,
   ctypedef uint8_t PREFIX_AbsoluteFontWeight_Tag;
 
-  ctypedef struct PREFIX_Weight_Body:
-    PREFIX_AbsoluteFontWeight_Tag tag;
-    float _0;
-
   ctypedef union PREFIX_AbsoluteFontWeight:
     PREFIX_AbsoluteFontWeight_Tag tag;
-    PREFIX_Weight_Body weight;
+    PREFIX_AbsoluteFontWeight_Tag weight_tag;
+    float weight;
 
   void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, PREFIX_AbsoluteFontWeight z);

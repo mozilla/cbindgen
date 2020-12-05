@@ -7,14 +7,12 @@ enum Foo_Tag {
   A,
 };
 
-struct A_Body {
-  float _0[20];
-};
-
 struct Foo {
   enum Foo_Tag tag;
   union {
-    struct A_Body a;
+    struct {
+      float a[20];
+    };
   };
 };
 

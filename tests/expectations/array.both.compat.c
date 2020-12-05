@@ -7,14 +7,12 @@ typedef enum Foo_Tag {
   A,
 } Foo_Tag;
 
-typedef struct A_Body {
-  float _0[20];
-} A_Body;
-
 typedef struct Foo {
   Foo_Tag tag;
   union {
-    A_Body a;
+    struct {
+      float a[20];
+    };
   };
 } Foo;
 

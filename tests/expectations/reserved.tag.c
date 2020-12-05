@@ -36,19 +36,15 @@ enum E_Tag {
 };
 typedef uint8_t E_Tag;
 
-struct Double_Body {
-  double _0;
-};
-
-struct Float_Body {
-  float _0;
-};
-
 struct E {
   E_Tag tag;
   union {
-    struct Double_Body double_;
-    struct Float_Body float_;
+    struct {
+      double double_;
+    };
+    struct {
+      float float_;
+    };
   };
 };
 
@@ -58,19 +54,15 @@ enum F_Tag {
 };
 typedef uint8_t F_Tag;
 
-struct double_Body {
-  double _0;
-};
-
-struct float_Body {
-  float _0;
-};
-
 struct F {
   F_Tag tag;
   union {
-    struct double_Body double_;
-    struct float_Body float_;
+    struct {
+      double double_;
+    };
+    struct {
+      float float_;
+    };
   };
 };
 

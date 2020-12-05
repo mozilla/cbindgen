@@ -12,14 +12,12 @@ enum E_Tag {
   U,
 };
 
-struct U_Body {
-  const uint8_t *_0;
-};
-
 struct E {
   enum E_Tag tag;
   union {
-    struct U_Body u;
+    struct {
+      const uint8_t *u;
+    };
   };
 };
 

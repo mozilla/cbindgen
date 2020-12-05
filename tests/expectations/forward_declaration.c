@@ -25,13 +25,11 @@ typedef enum {
 } TypeData_Tag;
 
 typedef struct {
-  StructInfo _0;
-} Struct_Body;
-
-typedef struct {
   TypeData_Tag tag;
   union {
-    Struct_Body struct_;
+    struct {
+      StructInfo struct_;
+    };
   };
 } TypeData;
 

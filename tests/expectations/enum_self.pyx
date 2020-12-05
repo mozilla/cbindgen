@@ -15,17 +15,11 @@ cdef extern from *:
     Other,
   ctypedef uint8_t Bar_Tag;
 
-  ctypedef struct Min_Body:
-    Bar_Tag tag;
-    Foo_Bar _0;
-
-  ctypedef struct Max_Body:
-    Bar_Tag tag;
-    Foo_Bar _0;
-
   ctypedef union Bar:
     Bar_Tag tag;
-    Min_Body min;
-    Max_Body max;
+    Bar_Tag min_tag;
+    Foo_Bar min;
+    Bar_Tag max_tag;
+    Foo_Bar max;
 
   void root(Bar b);

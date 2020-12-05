@@ -16,12 +16,9 @@ cdef extern from *:
     None_i32,
   ctypedef uint8_t MaybeOwnedPtr_i32_Tag;
 
-  cdef struct Owned_Body_i32:
-    int32_t *_0;
-
   cdef struct MaybeOwnedPtr_i32:
     MaybeOwnedPtr_i32_Tag tag;
-    Owned_Body_i32 owned;
+    int32_t *owned;
 
   cdef struct OwnedPtr_i32:
     int32_t *ptr;
