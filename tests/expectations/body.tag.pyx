@@ -27,16 +27,10 @@ cdef extern from *:
     Bar,
     Baz,
 
-  cdef struct Bar_Body:
-    int32_t _0;
-
-  cdef struct Baz_Body:
-    int32_t _0;
-
   cdef struct MyFancyEnum:
     MyFancyEnum_Tag tag;
-    Bar_Body bar;
-    Baz_Body baz;
+    int32_t bar;
+    int32_t baz;
 #ifdef __cplusplus
     inline void wohoo();
 #endif
@@ -57,19 +51,13 @@ cdef extern from *:
     Bar_Prepended,
     Baz_Prepended,
 
-  cdef struct Bar_Prepended_Body:
-    int32_t _0;
-
-  cdef struct Baz_Prepended_Body:
-    int32_t _0;
-
   cdef struct MyFancyEnum_Prepended:
 #ifdef __cplusplus
     inline void wohoo();
 #endif
     MyFancyEnum_Prepended_Tag tag;
-    Bar_Prepended_Body bar_prepended;
-    Baz_Prepended_Body baz_prepended;
+    int32_t bar_prepended;
+    int32_t baz_prepended;
 
   cdef union MyUnion_Prepended:
     int32_t extra_member;

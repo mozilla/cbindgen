@@ -31,31 +31,19 @@ cdef extern from *:
     Float,
   ctypedef uint8_t E_Tag;
 
-  ctypedef struct Double_Body:
-    double _0;
-
-  ctypedef struct Float_Body:
-    float _0;
-
   ctypedef struct E:
     E_Tag tag;
-    Double_Body double_;
-    Float_Body float_;
+    double double_;
+    float float_;
 
   cdef enum:
     double_,
     float_,
   ctypedef uint8_t F_Tag;
 
-  ctypedef struct double_Body:
-    double _0;
-
-  ctypedef struct float_Body:
-    float _0;
-
   ctypedef struct F:
     F_Tag tag;
-    double_Body double_;
-    float_Body float_;
+    double double_;
+    float float_;
 
   void root(A a, B b, C c, E e, F f, int32_t namespace_, float float_);

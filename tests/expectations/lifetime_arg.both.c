@@ -12,14 +12,12 @@ typedef enum E_Tag {
   U,
 } E_Tag;
 
-typedef struct U_Body {
-  const uint8_t *_0;
-} U_Body;
-
 typedef struct E {
   E_Tag tag;
   union {
-    U_Body u;
+    struct {
+      const uint8_t *u;
+    };
   };
 } E;
 

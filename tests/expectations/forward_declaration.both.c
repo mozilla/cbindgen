@@ -24,14 +24,12 @@ typedef enum TypeData_Tag {
   Struct,
 } TypeData_Tag;
 
-typedef struct Struct_Body {
-  struct StructInfo _0;
-} Struct_Body;
-
 typedef struct TypeData {
   TypeData_Tag tag;
   union {
-    Struct_Body struct_;
+    struct {
+      struct StructInfo struct_;
+    };
   };
 } TypeData;
 

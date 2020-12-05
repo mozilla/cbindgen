@@ -40,15 +40,6 @@ cdef extern from *:
     Slice4_u32,
   ctypedef uint8_t Foo_u32_Tag;
 
-  cdef struct Polygon1_Body_u32:
-    Polygon_u32 _0;
-
-  cdef struct Slice1_Body_u32:
-    OwnedSlice_u32 _0;
-
-  cdef struct Slice2_Body_u32:
-    OwnedSlice_i32 _0;
-
   cdef struct Slice3_Body_u32:
     FillRule fill;
     OwnedSlice_u32 coords;
@@ -59,9 +50,9 @@ cdef extern from *:
 
   cdef struct Foo_u32:
     Foo_u32_Tag tag;
-    Polygon1_Body_u32 polygon1;
-    Slice1_Body_u32 slice1;
-    Slice2_Body_u32 slice2;
+    Polygon_u32 polygon1;
+    OwnedSlice_u32 slice1;
+    OwnedSlice_i32 slice2;
     Slice3_Body_u32 slice3;
     Slice4_Body_u32 slice4;
 
@@ -78,18 +69,6 @@ cdef extern from *:
     Slice24_i32,
   ctypedef uint8_t Baz_i32_Tag;
 
-  cdef struct Polygon21_Body_i32:
-    Baz_i32_Tag tag;
-    Polygon_i32 _0;
-
-  cdef struct Slice21_Body_i32:
-    Baz_i32_Tag tag;
-    OwnedSlice_i32 _0;
-
-  cdef struct Slice22_Body_i32:
-    Baz_i32_Tag tag;
-    OwnedSlice_i32 _0;
-
   cdef struct Slice23_Body_i32:
     Baz_i32_Tag tag;
     FillRule fill;
@@ -102,9 +81,12 @@ cdef extern from *:
 
   cdef union Baz_i32:
     Baz_i32_Tag tag;
-    Polygon21_Body_i32 polygon21;
-    Slice21_Body_i32 slice21;
-    Slice22_Body_i32 slice22;
+    Baz_i32_Tag polygon21_tag;
+    Polygon_i32 polygon21;
+    Baz_i32_Tag slice21_tag;
+    OwnedSlice_i32 slice21;
+    Baz_i32_Tag slice22_tag;
+    OwnedSlice_i32 slice22;
     Slice23_Body_i32 slice23;
     Slice24_Body_i32 slice24;
 
@@ -114,80 +96,56 @@ cdef extern from *:
     Taz3,
   ctypedef uint8_t Taz_Tag;
 
-  cdef struct Taz1_Body:
-    Taz_Tag tag;
-    int32_t _0;
-
-  cdef struct Taz3_Body:
-    Taz_Tag tag;
-    OwnedSlice_i32 _0;
-
   cdef union Taz:
     Taz_Tag tag;
-    Taz1_Body taz1;
-    Taz3_Body taz3;
+    Taz_Tag taz1_tag;
+    int32_t taz1;
+    Taz_Tag taz3_tag;
+    OwnedSlice_i32 taz3;
 
   cdef enum:
     Bar4,
     Taz2,
   ctypedef uint8_t Tazz_Tag;
 
-  cdef struct Taz2_Body:
-    Tazz_Tag tag;
-    int32_t _0;
-
   cdef union Tazz:
     Tazz_Tag tag;
-    Taz2_Body taz2;
+    Tazz_Tag taz2_tag;
+    int32_t taz2;
 
   cdef enum:
     Bar5,
     Taz5,
   ctypedef uint8_t Tazzz_Tag;
 
-  cdef struct Taz5_Body:
-    Tazzz_Tag tag;
-    int32_t _0;
-
   cdef union Tazzz:
     Tazzz_Tag tag;
-    Taz5_Body taz5;
+    Tazzz_Tag taz5_tag;
+    int32_t taz5;
 
   cdef enum:
     Taz6,
     Taz7,
   ctypedef uint8_t Tazzzz_Tag;
 
-  cdef struct Taz6_Body:
-    Tazzzz_Tag tag;
-    int32_t _0;
-
-  cdef struct Taz7_Body:
-    Tazzzz_Tag tag;
-    uint32_t _0;
-
   cdef union Tazzzz:
     Tazzzz_Tag tag;
-    Taz6_Body taz6;
-    Taz7_Body taz7;
+    Tazzzz_Tag taz6_tag;
+    int32_t taz6;
+    Tazzzz_Tag taz7_tag;
+    uint32_t taz7;
 
   cdef enum:
     Qux1,
     Qux2,
   ctypedef uint8_t Qux_Tag;
 
-  cdef struct Qux1_Body:
-    Qux_Tag tag;
-    int32_t _0;
-
-  cdef struct Qux2_Body:
-    Qux_Tag tag;
-    uint32_t _0;
-
   cdef union Qux:
     Qux_Tag tag;
-    Qux1_Body qux1;
-    Qux2_Body qux2;
+    Qux_Tag qux1_tag;
+    int32_t qux1;
+    Qux_Tag qux2_tag;
+    uint32_t qux2;
 
   void root(const Foo_u32 *a,
             const Baz_i32 *b,

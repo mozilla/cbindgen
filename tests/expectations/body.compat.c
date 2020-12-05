@@ -29,18 +29,14 @@ typedef enum {
 } MyFancyEnum_Tag;
 
 typedef struct {
-  int32_t _0;
-} Bar_Body;
-
-typedef struct {
-  int32_t _0;
-} Baz_Body;
-
-typedef struct {
   MyFancyEnum_Tag tag;
   union {
-    Bar_Body bar;
-    Baz_Body baz;
+    struct {
+      int32_t bar;
+    };
+    struct {
+      int32_t baz;
+    };
   };
 #ifdef __cplusplus
     inline void wohoo();
@@ -67,21 +63,17 @@ typedef enum {
 } MyFancyEnum_Prepended_Tag;
 
 typedef struct {
-  int32_t _0;
-} Bar_Prepended_Body;
-
-typedef struct {
-  int32_t _0;
-} Baz_Prepended_Body;
-
-typedef struct {
 #ifdef __cplusplus
     inline void wohoo();
 #endif
   MyFancyEnum_Prepended_Tag tag;
   union {
-    Bar_Prepended_Body bar_prepended;
-    Baz_Prepended_Body baz_prepended;
+    struct {
+      int32_t bar_prepended;
+    };
+    struct {
+      int32_t baz_prepended;
+    };
   };
 } MyFancyEnum_Prepended;
 

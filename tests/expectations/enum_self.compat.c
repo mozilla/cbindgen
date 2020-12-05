@@ -20,20 +20,16 @@ enum Bar_Tag
 typedef uint8_t Bar_Tag;
 #endif // __cplusplus
 
-typedef struct {
-  Bar_Tag tag;
-  Foo_Bar _0;
-} Min_Body;
-
-typedef struct {
-  Bar_Tag tag;
-  Foo_Bar _0;
-} Max_Body;
-
 typedef union {
   Bar_Tag tag;
-  Min_Body min;
-  Max_Body max;
+  struct {
+    Bar_Tag min_tag;
+    Foo_Bar min;
+  };
+  struct {
+    Bar_Tag max_tag;
+    Foo_Bar max;
+  };
 } Bar;
 
 #ifdef __cplusplus

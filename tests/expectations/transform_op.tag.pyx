@@ -27,19 +27,13 @@ cdef extern from *:
     StylePoint_i32 y;
     StylePoint_f32 z;
 
-  cdef struct StyleBar_Body_i32:
-    StyleFoo_i32_Tag tag;
-    int32_t _0;
-
-  cdef struct StyleBaz_Body_i32:
-    StyleFoo_i32_Tag tag;
-    StylePoint_i32 _0;
-
   cdef union StyleFoo_i32:
     StyleFoo_i32_Tag tag;
     StyleFoo_Body_i32 foo;
-    StyleBar_Body_i32 bar;
-    StyleBaz_Body_i32 baz;
+    StyleFoo_i32_Tag bar_tag;
+    int32_t bar;
+    StyleFoo_i32_Tag baz_tag;
+    StylePoint_i32 baz;
 
   cdef enum StyleBar_i32_Tag:
     Bar1_i32,
@@ -53,17 +47,11 @@ cdef extern from *:
     StylePoint_f32 z;
     int32_t (*u)(int32_t);
 
-  cdef struct StyleBar2_Body_i32:
-    int32_t _0;
-
-  cdef struct StyleBar3_Body_i32:
-    StylePoint_i32 _0;
-
   cdef struct StyleBar_i32:
     StyleBar_i32_Tag tag;
     StyleBar1_Body_i32 bar1;
-    StyleBar2_Body_i32 bar2;
-    StyleBar3_Body_i32 bar3;
+    int32_t bar2;
+    StylePoint_i32 bar3;
 
   cdef struct StylePoint_u32:
     uint32_t x;
@@ -81,17 +69,11 @@ cdef extern from *:
     StylePoint_f32 z;
     int32_t (*u)(int32_t);
 
-  cdef struct StyleBar2_Body_u32:
-    uint32_t _0;
-
-  cdef struct StyleBar3_Body_u32:
-    StylePoint_u32 _0;
-
   cdef struct StyleBar_u32:
     StyleBar_u32_Tag tag;
     StyleBar1_Body_u32 bar1;
-    StyleBar2_Body_u32 bar2;
-    StyleBar3_Body_u32 bar3;
+    uint32_t bar2;
+    StylePoint_u32 bar3;
 
   cdef enum:
     Baz1,
@@ -99,18 +81,12 @@ cdef extern from *:
     Baz3,
   ctypedef uint8_t StyleBaz_Tag;
 
-  cdef struct StyleBaz1_Body:
-    StyleBaz_Tag tag;
-    StyleBar_u32 _0;
-
-  cdef struct StyleBaz2_Body:
-    StyleBaz_Tag tag;
-    StylePoint_i32 _0;
-
   cdef union StyleBaz:
     StyleBaz_Tag tag;
-    StyleBaz1_Body baz1;
-    StyleBaz2_Body baz2;
+    StyleBaz_Tag baz1_tag;
+    StyleBar_u32 baz1;
+    StyleBaz_Tag baz2_tag;
+    StylePoint_i32 baz2;
 
   cdef enum:
     Taz1,
@@ -118,16 +94,10 @@ cdef extern from *:
     Taz3,
   ctypedef uint8_t StyleTaz_Tag;
 
-  cdef struct StyleTaz1_Body:
-    StyleBar_u32 _0;
-
-  cdef struct StyleTaz2_Body:
-    StyleBaz _0;
-
   cdef struct StyleTaz:
     StyleTaz_Tag tag;
-    StyleTaz1_Body taz1;
-    StyleTaz2_Body taz2;
+    StyleBar_u32 taz1;
+    StyleBaz taz2;
 
   void foo(const StyleFoo_i32 *foo,
            const StyleBar_i32 *bar,

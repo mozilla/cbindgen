@@ -25,12 +25,9 @@ cdef extern from *:
     Primitive,
     Struct,
 
-  cdef struct Struct_Body:
-    StructInfo _0;
-
   cdef struct TypeData:
     TypeData_Tag tag;
-    Struct_Body struct_;
+    StructInfo struct_;
 
   cdef struct TypeInfo:
     TypeData data;

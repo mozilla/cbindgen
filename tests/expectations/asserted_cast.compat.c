@@ -23,10 +23,6 @@ typedef uint8_t H_Tag;
 #endif // __cplusplus
 
 typedef struct {
-  int16_t _0;
-} H_Foo_Body;
-
-typedef struct {
   uint8_t x;
   int16_t y;
 } H_Bar_Body;
@@ -34,7 +30,9 @@ typedef struct {
 typedef struct {
   H_Tag tag;
   union {
-    H_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     H_Bar_Body bar;
   };
 } H;
@@ -53,10 +51,6 @@ typedef uint8_t J_Tag;
 #endif // __cplusplus
 
 typedef struct {
-  int16_t _0;
-} J_Foo_Body;
-
-typedef struct {
   uint8_t x;
   int16_t y;
 } J_Bar_Body;
@@ -64,7 +58,9 @@ typedef struct {
 typedef struct {
   J_Tag tag;
   union {
-    J_Foo_Body foo;
+    struct {
+      int16_t foo;
+    };
     J_Bar_Body bar;
   };
 } J;
@@ -84,18 +80,16 @@ typedef uint8_t K_Tag;
 
 typedef struct {
   K_Tag tag;
-  int16_t _0;
-} K_Foo_Body;
-
-typedef struct {
-  K_Tag tag;
   uint8_t x;
   int16_t y;
 } K_Bar_Body;
 
 typedef union {
   K_Tag tag;
-  K_Foo_Body foo;
+  struct {
+    K_Tag foo_tag;
+    int16_t foo;
+  };
   K_Bar_Body bar;
 } K;
 
