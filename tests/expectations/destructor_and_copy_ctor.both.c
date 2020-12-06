@@ -46,18 +46,6 @@ enum Foo_u32_Tag {
 };
 typedef uint8_t Foo_u32_Tag;
 
-typedef struct Polygon1_Body_u32 {
-  struct Polygon_u32 _0;
-} Polygon1_Body_u32;
-
-typedef struct Slice1_Body_u32 {
-  struct OwnedSlice_u32 _0;
-} Slice1_Body_u32;
-
-typedef struct Slice2_Body_u32 {
-  struct OwnedSlice_i32 _0;
-} Slice2_Body_u32;
-
 typedef struct Slice3_Body_u32 {
   FillRule fill;
   struct OwnedSlice_u32 coords;
@@ -71,9 +59,15 @@ typedef struct Slice4_Body_u32 {
 typedef struct Foo_u32 {
   Foo_u32_Tag tag;
   union {
-    Polygon1_Body_u32 polygon1;
-    Slice1_Body_u32 slice1;
-    Slice2_Body_u32 slice2;
+    struct {
+      struct Polygon_u32 polygon1;
+    };
+    struct {
+      struct OwnedSlice_u32 slice1;
+    };
+    struct {
+      struct OwnedSlice_i32 slice2;
+    };
     Slice3_Body_u32 slice3;
     Slice4_Body_u32 slice4;
   };
@@ -94,21 +88,6 @@ enum Baz_i32_Tag {
 };
 typedef uint8_t Baz_i32_Tag;
 
-typedef struct Polygon21_Body_i32 {
-  Baz_i32_Tag tag;
-  struct Polygon_i32 _0;
-} Polygon21_Body_i32;
-
-typedef struct Slice21_Body_i32 {
-  Baz_i32_Tag tag;
-  struct OwnedSlice_i32 _0;
-} Slice21_Body_i32;
-
-typedef struct Slice22_Body_i32 {
-  Baz_i32_Tag tag;
-  struct OwnedSlice_i32 _0;
-} Slice22_Body_i32;
-
 typedef struct Slice23_Body_i32 {
   Baz_i32_Tag tag;
   FillRule fill;
@@ -123,9 +102,18 @@ typedef struct Slice24_Body_i32 {
 
 typedef union Baz_i32 {
   Baz_i32_Tag tag;
-  Polygon21_Body_i32 polygon21;
-  Slice21_Body_i32 slice21;
-  Slice22_Body_i32 slice22;
+  struct {
+    Baz_i32_Tag polygon21_tag;
+    struct Polygon_i32 polygon21;
+  };
+  struct {
+    Baz_i32_Tag slice21_tag;
+    struct OwnedSlice_i32 slice21;
+  };
+  struct {
+    Baz_i32_Tag slice22_tag;
+    struct OwnedSlice_i32 slice22;
+  };
   Slice23_Body_i32 slice23;
   Slice24_Body_i32 slice24;
 } Baz_i32;
@@ -137,20 +125,16 @@ enum Taz_Tag {
 };
 typedef uint8_t Taz_Tag;
 
-typedef struct Taz1_Body {
-  Taz_Tag tag;
-  int32_t _0;
-} Taz1_Body;
-
-typedef struct Taz3_Body {
-  Taz_Tag tag;
-  struct OwnedSlice_i32 _0;
-} Taz3_Body;
-
 typedef union Taz {
   Taz_Tag tag;
-  Taz1_Body taz1;
-  Taz3_Body taz3;
+  struct {
+    Taz_Tag taz1_tag;
+    int32_t taz1;
+  };
+  struct {
+    Taz_Tag taz3_tag;
+    struct OwnedSlice_i32 taz3;
+  };
 } Taz;
 
 enum Tazz_Tag {
@@ -173,14 +157,12 @@ enum Tazzz_Tag {
 };
 typedef uint8_t Tazzz_Tag;
 
-typedef struct Taz5_Body {
-  Tazzz_Tag tag;
-  int32_t _0;
-} Taz5_Body;
-
 typedef union Tazzz {
   Tazzz_Tag tag;
-  Taz5_Body taz5;
+  struct {
+    Tazzz_Tag taz5_tag;
+    int32_t taz5;
+  };
 } Tazzz;
 
 enum Tazzzz_Tag {
@@ -189,20 +171,16 @@ enum Tazzzz_Tag {
 };
 typedef uint8_t Tazzzz_Tag;
 
-typedef struct Taz6_Body {
-  Tazzzz_Tag tag;
-  int32_t _0;
-} Taz6_Body;
-
-typedef struct Taz7_Body {
-  Tazzzz_Tag tag;
-  uint32_t _0;
-} Taz7_Body;
-
 typedef union Tazzzz {
   Tazzzz_Tag tag;
-  Taz6_Body taz6;
-  Taz7_Body taz7;
+  struct {
+    Tazzzz_Tag taz6_tag;
+    int32_t taz6;
+  };
+  struct {
+    Tazzzz_Tag taz7_tag;
+    uint32_t taz7;
+  };
 } Tazzzz;
 
 enum Qux_Tag {
@@ -211,20 +189,16 @@ enum Qux_Tag {
 };
 typedef uint8_t Qux_Tag;
 
-typedef struct Qux1_Body {
-  Qux_Tag tag;
-  int32_t _0;
-} Qux1_Body;
-
-typedef struct Qux2_Body {
-  Qux_Tag tag;
-  uint32_t _0;
-} Qux2_Body;
-
 typedef union Qux {
   Qux_Tag tag;
-  Qux1_Body qux1;
-  Qux2_Body qux2;
+  struct {
+    Qux_Tag qux1_tag;
+    int32_t qux1;
+  };
+  struct {
+    Qux_Tag qux2_tag;
+    uint32_t qux2;
+  };
 } Qux;
 
 void root(const struct Foo_u32 *a,

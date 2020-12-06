@@ -152,7 +152,7 @@ union C {
   ~C() {
     switch (tag) {
 #if defined(PLATFORM_UNIX)
-      case Tag::C5: c5.~C5_Body(); break;
+      case Tag::C5: c5.~C5_Body();break;
 #endif
       default: break;
     }
@@ -162,7 +162,7 @@ union C {
    : tag(other.tag) {
     switch (tag) {
 #if defined(PLATFORM_UNIX)
-      case Tag::C5: ::new (&c5) (C5_Body)(other.c5); break;
+      case Tag::C5: new (&c5) (C5_Body)(other.c5); break;
 #endif
       default: break;
     }

@@ -31,10 +31,6 @@ pub enum VariantBody {
         /// an unnamed struct is inlined at the point of use instead.
         /// This is a reasonable thing to do only for tuple variants with a single field.
         inline: bool,
-        /// Generated cast methods return the variant's only field instead of the variant itself.
-        /// For backward compatibility casts are inlined in a slightly
-        /// larger set of cases than whole variants.
-        inline_casts: bool,
     },
 }
 
@@ -69,12 +65,10 @@ impl VariantBody {
                 ref name,
                 ref body,
                 inline,
-                inline_casts,
             } => Self::Body {
                 name: name.clone(),
                 body: body.specialize(generic_values, mappings, config),
                 inline,
-                inline_casts,
             },
         }
     }
@@ -98,7 +92,6 @@ impl EnumVariant {
         mod_cfg: Option<&Cfg>,
         self_path: &Path,
         enum_annotations: &AnnotationSet,
-        config: &Config,
     ) -> Result<Self, String> {
         let discriminant = match variant.discriminant {
             Some((_, ref expr)) => Some(Literal::load(expr)?),
@@ -169,7 +162,6 @@ impl EnumVariant {
                     ),
                     name,
                     inline: false,
-                    inline_casts: false,
                 }
             }
             syn::Fields::Unnamed(ref fields) => {
@@ -177,16 +169,7 @@ impl EnumVariant {
                 let name = RenameRule::SnakeCase
                     .apply(&variant.ident.to_string(), IdentifierType::StructMember)
                     .into_owned();
-                let inline_casts = fields.unnamed.len() == 1;
-                // FIXME: It should be possible to support destructors and copy constructors
-                // with inlined variants, but they are not supported yet.
-                let inline = inline_casts
-                    && !config
-                        .enumeration
-                        .derive_tagged_enum_destructor(enum_annotations)
-                    && !config
-                        .enumeration
-                        .derive_tagged_enum_copy_constructor(enum_annotations);
+                let inline = fields.unnamed.len() == 1;
                 let inline_name = if inline { Some(&*name) } else { None };
                 VariantBody::Body {
                     body: Struct::new(
@@ -203,7 +186,6 @@ impl EnumVariant {
                     ),
                     name,
                     inline,
-                    inline_casts,
                 }
             }
         };
@@ -381,7 +363,6 @@ impl Enum {
                 mod_cfg,
                 &path,
                 &annotations,
-                config,
             )?;
             has_data = has_data || !variant.body.is_empty();
             variants.push(variant);
@@ -559,12 +540,10 @@ impl Item for Enum {
                                 ref name,
                                 ref body,
                                 inline,
-                                inline_casts,
                             } => VariantBody::Body {
                                 name: r.apply(&name, IdentifierType::StructMember).into_owned(),
                                 body: body.clone(),
                                 inline,
-                                inline_casts,
                             },
                         },
                         variant.cfg.clone(),
@@ -1231,13 +1210,12 @@ impl Enum {
                 };
 
                 let mut derive_casts = |const_casts: bool| {
-                    let (member_name, body, inline, inline_casts) = match variant.body {
+                    let (member_name, body, inline) = match variant.body {
                         VariantBody::Body {
                             ref name,
                             ref body,
                             inline,
-                            inline_casts,
-                        } => (name, body, inline, inline_casts),
+                        } => (name, body, inline),
                         VariantBody::Empty(..) => return,
                     };
 
@@ -1255,7 +1233,7 @@ impl Enum {
                     } else {
                         write_attrs!("mut-cast");
                     }
-                    if inline_casts {
+                    if inline {
                         let field = body.fields.last().unwrap();
                         let return_type = field.ty.clone();
                         let return_type = Type::Ptr {
@@ -1278,11 +1256,7 @@ impl Enum {
                     out.open_brace();
                     write!(out, "{}(Is{}());", assert_name, variant.export_name);
                     out.new_line();
-                    write!(out, "return {}", member_name);
-                    if inline_casts && !inline {
-                        write!(out, "._0");
-                    }
-                    write!(out, ";");
+                    write!(out, "return {};", member_name);
                     out.close_brace(false);
                 };
 
@@ -1407,19 +1381,28 @@ impl Enum {
             let mut exhaustive = true;
             for variant in &self.variants {
                 if let VariantBody::Body {
-                    ref name, ref body, ..
+                    ref name,
+                    ref body,
+                    inline,
                 } = variant.body
                 {
                     let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
                     write!(
                         out,
-                        "case {}::{}: {}.~{}(); break;",
+                        "case {}::{}: ",
                         self.tag.as_ref().unwrap(),
                         variant.export_name,
-                        name,
-                        body.export_name(),
                     );
+                    if inline {
+                        let field = body.fields.last().unwrap();
+                        write!(out, "{}.~", field.name);
+                        field.ty.write(config, out);
+                        write!(out, "();");
+                    } else {
+                        write!(out, "{}.~{}();", name, body.export_name());
+                    }
+                    write!(out, "break;");
                     condition.write_after(config, out);
                     out.new_line();
                 } else {
@@ -1453,21 +1436,53 @@ impl Enum {
             let mut exhaustive = true;
             for variant in &self.variants {
                 if let VariantBody::Body {
-                    ref name, ref body, ..
+                    ref name,
+                    ref body,
+                    inline,
                 } = variant.body
                 {
                     let condition = variant.cfg.to_condition(config);
                     condition.write_before(config, out);
                     write!(
                         out,
-                        "case {}::{}: ::new (&{}) ({})({}.{}); break;",
+                        "case {}::{}:",
                         self.tag.as_ref().unwrap(),
                         variant.export_name,
-                        name,
-                        body.export_name(),
-                        other,
-                        name,
                     );
+                    if inline {
+                        let new_line = body.fields.len() > 1;
+                        if new_line {
+                            out.new_line();
+                            out.push_tab();
+                        } else {
+                            write!(out, " ");
+                        }
+                        for field in body.fields.iter() {
+                            write!(
+                                out,
+                                "new (&{}) (decltype({}))({}.{});",
+                                field.name, field.name, other, field.name,
+                            );
+                            if new_line {
+                                out.new_line();
+                            }
+                        }
+                        if new_line {
+                            out.pop_tab();
+                        } else {
+                            write!(out, " ");
+                        }
+                    } else {
+                        write!(
+                            out,
+                            " new (&{}) ({})({}.{}); ",
+                            name,
+                            body.export_name(),
+                            other,
+                            name,
+                        );
+                    }
+                    write!(out, "break;");
                     condition.write_after(config, out);
                     out.new_line();
                 } else {

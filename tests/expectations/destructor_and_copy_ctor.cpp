@@ -39,18 +39,6 @@ struct Foo {
     Slice4,
   };
 
-  struct Polygon1_Body {
-    Polygon<T> _0;
-  };
-
-  struct Slice1_Body {
-    OwnedSlice<T> _0;
-  };
-
-  struct Slice2_Body {
-    OwnedSlice<int32_t> _0;
-  };
-
   struct Slice3_Body {
     FillRule fill;
     OwnedSlice<T> coords;
@@ -63,9 +51,15 @@ struct Foo {
 
   Tag tag;
   union {
-    Polygon1_Body polygon1;
-    Slice1_Body slice1;
-    Slice2_Body slice2;
+    struct {
+      Polygon<T> polygon1;
+    };
+    struct {
+      OwnedSlice<T> slice1;
+    };
+    struct {
+      OwnedSlice<int32_t> slice2;
+    };
     Slice3_Body slice3;
     Slice4_Body slice4;
   };
@@ -80,9 +74,9 @@ struct Foo {
     return tag == Tag::Bar;
   }
 
-  static Foo Polygon1(const Polygon<T> &_0) {
+  static Foo Polygon1(const Polygon<T> &polygon1) {
     Foo result;
-    ::new (&result.polygon1._0) (Polygon<T>)(_0);
+    ::new (&result.polygon1) (Polygon<T>)(polygon1);
     result.tag = Tag::Polygon1;
     return result;
   }
@@ -91,9 +85,9 @@ struct Foo {
     return tag == Tag::Polygon1;
   }
 
-  static Foo Slice1(const OwnedSlice<T> &_0) {
+  static Foo Slice1(const OwnedSlice<T> &slice1) {
     Foo result;
-    ::new (&result.slice1._0) (OwnedSlice<T>)(_0);
+    ::new (&result.slice1) (OwnedSlice<T>)(slice1);
     result.tag = Tag::Slice1;
     return result;
   }
@@ -102,9 +96,9 @@ struct Foo {
     return tag == Tag::Slice1;
   }
 
-  static Foo Slice2(const OwnedSlice<int32_t> &_0) {
+  static Foo Slice2(const OwnedSlice<int32_t> &slice2) {
     Foo result;
-    ::new (&result.slice2._0) (OwnedSlice<int32_t>)(_0);
+    ::new (&result.slice2) (OwnedSlice<int32_t>)(slice2);
     result.tag = Tag::Slice2;
     return result;
   }
@@ -148,11 +142,11 @@ struct Foo {
 
   ~Foo() {
     switch (tag) {
-      case Tag::Polygon1: polygon1.~Polygon1_Body(); break;
-      case Tag::Slice1: slice1.~Slice1_Body(); break;
-      case Tag::Slice2: slice2.~Slice2_Body(); break;
-      case Tag::Slice3: slice3.~Slice3_Body(); break;
-      case Tag::Slice4: slice4.~Slice4_Body(); break;
+      case Tag::Polygon1: polygon1.~Polygon<T>();break;
+      case Tag::Slice1: slice1.~OwnedSlice<T>();break;
+      case Tag::Slice2: slice2.~OwnedSlice<int32_t>();break;
+      case Tag::Slice3: slice3.~Slice3_Body();break;
+      case Tag::Slice4: slice4.~Slice4_Body();break;
       default: break;
     }
   }
@@ -160,11 +154,11 @@ struct Foo {
   Foo(const Foo& other)
    : tag(other.tag) {
     switch (tag) {
-      case Tag::Polygon1: ::new (&polygon1) (Polygon1_Body)(other.polygon1); break;
-      case Tag::Slice1: ::new (&slice1) (Slice1_Body)(other.slice1); break;
-      case Tag::Slice2: ::new (&slice2) (Slice2_Body)(other.slice2); break;
-      case Tag::Slice3: ::new (&slice3) (Slice3_Body)(other.slice3); break;
-      case Tag::Slice4: ::new (&slice4) (Slice4_Body)(other.slice4); break;
+      case Tag::Polygon1: new (&polygon1) (decltype(polygon1))(other.polygon1); break;
+      case Tag::Slice1: new (&slice1) (decltype(slice1))(other.slice1); break;
+      case Tag::Slice2: new (&slice2) (decltype(slice2))(other.slice2); break;
+      case Tag::Slice3: new (&slice3) (Slice3_Body)(other.slice3); break;
+      case Tag::Slice4: new (&slice4) (Slice4_Body)(other.slice4); break;
       default: break;
     }
   }
@@ -188,21 +182,6 @@ union Baz {
     Slice24,
   };
 
-  struct Polygon21_Body {
-    Tag tag;
-    Polygon<T> _0;
-  };
-
-  struct Slice21_Body {
-    Tag tag;
-    OwnedSlice<T> _0;
-  };
-
-  struct Slice22_Body {
-    Tag tag;
-    OwnedSlice<int32_t> _0;
-  };
-
   struct Slice23_Body {
     Tag tag;
     FillRule fill;
@@ -218,9 +197,18 @@ union Baz {
   struct {
     Tag tag;
   };
-  Polygon21_Body polygon21;
-  Slice21_Body slice21;
-  Slice22_Body slice22;
+  struct {
+    Tag polygon21_tag;
+    Polygon<T> polygon21;
+  };
+  struct {
+    Tag slice21_tag;
+    OwnedSlice<T> slice21;
+  };
+  struct {
+    Tag slice22_tag;
+    OwnedSlice<int32_t> slice22;
+  };
   Slice23_Body slice23;
   Slice24_Body slice24;
 
@@ -234,9 +222,9 @@ union Baz {
     return tag == Tag::Bar2;
   }
 
-  static Baz Polygon21(const Polygon<T> &_0) {
+  static Baz Polygon21(const Polygon<T> &polygon21) {
     Baz result;
-    ::new (&result.polygon21._0) (Polygon<T>)(_0);
+    ::new (&result.polygon21) (Polygon<T>)(polygon21);
     result.tag = Tag::Polygon21;
     return result;
   }
@@ -245,9 +233,9 @@ union Baz {
     return tag == Tag::Polygon21;
   }
 
-  static Baz Slice21(const OwnedSlice<T> &_0) {
+  static Baz Slice21(const OwnedSlice<T> &slice21) {
     Baz result;
-    ::new (&result.slice21._0) (OwnedSlice<T>)(_0);
+    ::new (&result.slice21) (OwnedSlice<T>)(slice21);
     result.tag = Tag::Slice21;
     return result;
   }
@@ -256,9 +244,9 @@ union Baz {
     return tag == Tag::Slice21;
   }
 
-  static Baz Slice22(const OwnedSlice<int32_t> &_0) {
+  static Baz Slice22(const OwnedSlice<int32_t> &slice22) {
     Baz result;
-    ::new (&result.slice22._0) (OwnedSlice<int32_t>)(_0);
+    ::new (&result.slice22) (OwnedSlice<int32_t>)(slice22);
     result.tag = Tag::Slice22;
     return result;
   }
@@ -302,11 +290,11 @@ union Baz {
 
   ~Baz() {
     switch (tag) {
-      case Tag::Polygon21: polygon21.~Polygon21_Body(); break;
-      case Tag::Slice21: slice21.~Slice21_Body(); break;
-      case Tag::Slice22: slice22.~Slice22_Body(); break;
-      case Tag::Slice23: slice23.~Slice23_Body(); break;
-      case Tag::Slice24: slice24.~Slice24_Body(); break;
+      case Tag::Polygon21: polygon21.~Polygon<T>();break;
+      case Tag::Slice21: slice21.~OwnedSlice<T>();break;
+      case Tag::Slice22: slice22.~OwnedSlice<int32_t>();break;
+      case Tag::Slice23: slice23.~Slice23_Body();break;
+      case Tag::Slice24: slice24.~Slice24_Body();break;
       default: break;
     }
   }
@@ -314,11 +302,20 @@ union Baz {
   Baz(const Baz& other)
    : tag(other.tag) {
     switch (tag) {
-      case Tag::Polygon21: ::new (&polygon21) (Polygon21_Body)(other.polygon21); break;
-      case Tag::Slice21: ::new (&slice21) (Slice21_Body)(other.slice21); break;
-      case Tag::Slice22: ::new (&slice22) (Slice22_Body)(other.slice22); break;
-      case Tag::Slice23: ::new (&slice23) (Slice23_Body)(other.slice23); break;
-      case Tag::Slice24: ::new (&slice24) (Slice24_Body)(other.slice24); break;
+      case Tag::Polygon21:
+        new (&polygon21_tag) (decltype(polygon21_tag))(other.polygon21_tag);
+        new (&polygon21) (decltype(polygon21))(other.polygon21);
+      break;
+      case Tag::Slice21:
+        new (&slice21_tag) (decltype(slice21_tag))(other.slice21_tag);
+        new (&slice21) (decltype(slice21))(other.slice21);
+      break;
+      case Tag::Slice22:
+        new (&slice22_tag) (decltype(slice22_tag))(other.slice22_tag);
+        new (&slice22) (decltype(slice22))(other.slice22);
+      break;
+      case Tag::Slice23: new (&slice23) (Slice23_Body)(other.slice23); break;
+      case Tag::Slice24: new (&slice24) (Slice24_Body)(other.slice24); break;
       default: break;
     }
   }
@@ -338,21 +335,17 @@ union Taz {
     Taz3,
   };
 
-  struct Taz1_Body {
-    Tag tag;
-    int32_t _0;
-  };
-
-  struct Taz3_Body {
-    Tag tag;
-    OwnedSlice<int32_t> _0;
-  };
-
   struct {
     Tag tag;
   };
-  Taz1_Body taz1;
-  Taz3_Body taz3;
+  struct {
+    Tag taz1_tag;
+    int32_t taz1;
+  };
+  struct {
+    Tag taz3_tag;
+    OwnedSlice<int32_t> taz3;
+  };
 
   static Taz Bar3() {
     Taz result;
@@ -364,9 +357,9 @@ union Taz {
     return tag == Tag::Bar3;
   }
 
-  static Taz Taz1(const int32_t &_0) {
+  static Taz Taz1(const int32_t &taz1) {
     Taz result;
-    ::new (&result.taz1._0) (int32_t)(_0);
+    ::new (&result.taz1) (int32_t)(taz1);
     result.tag = Tag::Taz1;
     return result;
   }
@@ -375,9 +368,9 @@ union Taz {
     return tag == Tag::Taz1;
   }
 
-  static Taz Taz3(const OwnedSlice<int32_t> &_0) {
+  static Taz Taz3(const OwnedSlice<int32_t> &taz3) {
     Taz result;
-    ::new (&result.taz3._0) (OwnedSlice<int32_t>)(_0);
+    ::new (&result.taz3) (OwnedSlice<int32_t>)(taz3);
     result.tag = Tag::Taz3;
     return result;
   }
@@ -395,8 +388,8 @@ union Taz {
 
   ~Taz() {
     switch (tag) {
-      case Tag::Taz1: taz1.~Taz1_Body(); break;
-      case Tag::Taz3: taz3.~Taz3_Body(); break;
+      case Tag::Taz1: taz1.~int32_t();break;
+      case Tag::Taz3: taz3.~OwnedSlice<int32_t>();break;
       default: break;
     }
   }
@@ -404,8 +397,14 @@ union Taz {
   Taz(const Taz& other)
    : tag(other.tag) {
     switch (tag) {
-      case Tag::Taz1: ::new (&taz1) (Taz1_Body)(other.taz1); break;
-      case Tag::Taz3: ::new (&taz3) (Taz3_Body)(other.taz3); break;
+      case Tag::Taz1:
+        new (&taz1_tag) (decltype(taz1_tag))(other.taz1_tag);
+        new (&taz1) (decltype(taz1))(other.taz1);
+      break;
+      case Tag::Taz3:
+        new (&taz3_tag) (decltype(taz3_tag))(other.taz3_tag);
+        new (&taz3) (decltype(taz3))(other.taz3);
+      break;
       default: break;
     }
   }
@@ -467,15 +466,13 @@ union Tazzz {
     Taz5,
   };
 
-  struct Taz5_Body {
-    Tag tag;
-    int32_t _0;
-  };
-
   struct {
     Tag tag;
   };
-  Taz5_Body taz5;
+  struct {
+    Tag taz5_tag;
+    int32_t taz5;
+  };
 
   static Tazzz Bar5() {
     Tazzz result;
@@ -487,9 +484,9 @@ union Tazzz {
     return tag == Tag::Bar5;
   }
 
-  static Tazzz Taz5(const int32_t &_0) {
+  static Tazzz Taz5(const int32_t &taz5) {
     Tazzz result;
-    ::new (&result.taz5._0) (int32_t)(_0);
+    ::new (&result.taz5) (int32_t)(taz5);
     result.tag = Tag::Taz5;
     return result;
   }
@@ -507,7 +504,7 @@ union Tazzz {
 
   ~Tazzz() {
     switch (tag) {
-      case Tag::Taz5: taz5.~Taz5_Body(); break;
+      case Tag::Taz5: taz5.~int32_t();break;
       default: break;
     }
   }
@@ -515,7 +512,10 @@ union Tazzz {
   Tazzz(const Tazzz& other)
    : tag(other.tag) {
     switch (tag) {
-      case Tag::Taz5: ::new (&taz5) (Taz5_Body)(other.taz5); break;
+      case Tag::Taz5:
+        new (&taz5_tag) (decltype(taz5_tag))(other.taz5_tag);
+        new (&taz5) (decltype(taz5))(other.taz5);
+      break;
       default: break;
     }
   }
@@ -527,25 +527,21 @@ union Tazzzz {
     Taz7,
   };
 
-  struct Taz6_Body {
-    Tag tag;
-    int32_t _0;
-  };
-
-  struct Taz7_Body {
-    Tag tag;
-    uint32_t _0;
-  };
-
   struct {
     Tag tag;
   };
-  Taz6_Body taz6;
-  Taz7_Body taz7;
+  struct {
+    Tag taz6_tag;
+    int32_t taz6;
+  };
+  struct {
+    Tag taz7_tag;
+    uint32_t taz7;
+  };
 
-  static Tazzzz Taz6(const int32_t &_0) {
+  static Tazzzz Taz6(const int32_t &taz6) {
     Tazzzz result;
-    ::new (&result.taz6._0) (int32_t)(_0);
+    ::new (&result.taz6) (int32_t)(taz6);
     result.tag = Tag::Taz6;
     return result;
   }
@@ -554,9 +550,9 @@ union Tazzzz {
     return tag == Tag::Taz6;
   }
 
-  static Tazzzz Taz7(const uint32_t &_0) {
+  static Tazzzz Taz7(const uint32_t &taz7) {
     Tazzzz result;
-    ::new (&result.taz7._0) (uint32_t)(_0);
+    ::new (&result.taz7) (uint32_t)(taz7);
     result.tag = Tag::Taz7;
     return result;
   }
@@ -574,8 +570,8 @@ union Tazzzz {
 
   ~Tazzzz() {
     switch (tag) {
-      case Tag::Taz6: taz6.~Taz6_Body(); break;
-      case Tag::Taz7: taz7.~Taz7_Body(); break;
+      case Tag::Taz6: taz6.~int32_t();break;
+      case Tag::Taz7: taz7.~uint32_t();break;
 
     }
   }
@@ -583,8 +579,14 @@ union Tazzzz {
   Tazzzz(const Tazzzz& other)
    : tag(other.tag) {
     switch (tag) {
-      case Tag::Taz6: ::new (&taz6) (Taz6_Body)(other.taz6); break;
-      case Tag::Taz7: ::new (&taz7) (Taz7_Body)(other.taz7); break;
+      case Tag::Taz6:
+        new (&taz6_tag) (decltype(taz6_tag))(other.taz6_tag);
+        new (&taz6) (decltype(taz6))(other.taz6);
+      break;
+      case Tag::Taz7:
+        new (&taz7_tag) (decltype(taz7_tag))(other.taz7_tag);
+        new (&taz7) (decltype(taz7))(other.taz7);
+      break;
 
     }
   }
@@ -603,33 +605,21 @@ union Qux {
     Qux2,
   };
 
-  struct Qux1_Body {
-    Tag tag;
-    int32_t _0;
-
-    bool operator==(const Qux1_Body& other) const {
-      return _0 == other._0;
-    }
-  };
-
-  struct Qux2_Body {
-    Tag tag;
-    uint32_t _0;
-
-    bool operator==(const Qux2_Body& other) const {
-      return _0 == other._0;
-    }
-  };
-
   struct {
     Tag tag;
   };
-  Qux1_Body qux1;
-  Qux2_Body qux2;
+  struct {
+    Tag qux1_tag;
+    int32_t qux1;
+  };
+  struct {
+    Tag qux2_tag;
+    uint32_t qux2;
+  };
 
-  static Qux Qux1(const int32_t &_0) {
+  static Qux Qux1(const int32_t &qux1) {
     Qux result;
-    ::new (&result.qux1._0) (int32_t)(_0);
+    ::new (&result.qux1) (int32_t)(qux1);
     result.tag = Tag::Qux1;
     return result;
   }
@@ -638,9 +628,9 @@ union Qux {
     return tag == Tag::Qux1;
   }
 
-  static Qux Qux2(const uint32_t &_0) {
+  static Qux Qux2(const uint32_t &qux2) {
     Qux result;
-    ::new (&result.qux2._0) (uint32_t)(_0);
+    ::new (&result.qux2) (uint32_t)(qux2);
     result.tag = Tag::Qux2;
     return result;
   }
@@ -674,8 +664,8 @@ union Qux {
 
   NOINLINE ~Qux() {
     switch (tag) {
-      case Tag::Qux1: qux1.~Qux1_Body(); break;
-      case Tag::Qux2: qux2.~Qux2_Body(); break;
+      case Tag::Qux1: qux1.~int32_t();break;
+      case Tag::Qux2: qux2.~uint32_t();break;
 
     }
   }
@@ -683,8 +673,14 @@ union Qux {
   NOINLINE Qux(const Qux& other)
    : tag(other.tag) {
     switch (tag) {
-      case Tag::Qux1: ::new (&qux1) (Qux1_Body)(other.qux1); break;
-      case Tag::Qux2: ::new (&qux2) (Qux2_Body)(other.qux2); break;
+      case Tag::Qux1:
+        new (&qux1_tag) (decltype(qux1_tag))(other.qux1_tag);
+        new (&qux1) (decltype(qux1))(other.qux1);
+      break;
+      case Tag::Qux2:
+        new (&qux2_tag) (decltype(qux2_tag))(other.qux2_tag);
+        new (&qux2) (decltype(qux2))(other.qux2);
+      break;
 
     }
   }
