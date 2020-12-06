@@ -25,7 +25,9 @@ struct H {
   Tag tag;
   union {
     struct {
-      int16_t foo;
+      union {
+        int16_t foo;
+      };
     };
     H_Bar_Body bar;
   };
@@ -100,7 +102,9 @@ struct J {
   Tag tag;
   union {
     struct {
-      int16_t foo;
+      union {
+        int16_t foo;
+      };
     };
     J_Bar_Body bar;
   };
@@ -177,8 +181,12 @@ union K {
     Tag tag;
   };
   struct {
-    Tag foo_tag;
-    int16_t foo;
+    union {
+      Tag foo_tag;
+    };
+    union {
+      int16_t foo;
+    };
   };
   K_Bar_Body bar;
 

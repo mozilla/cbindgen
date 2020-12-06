@@ -25,8 +25,12 @@ union PREFIX_AbsoluteFontWeight {
     Tag tag;
   };
   struct {
-    Tag weight_tag;
-    float weight;
+    union {
+      Tag weight_tag;
+    };
+    union {
+      float weight;
+    };
   };
 };
 

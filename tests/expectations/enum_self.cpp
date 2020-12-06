@@ -20,12 +20,20 @@ union Bar {
     Tag tag;
   };
   struct {
-    Tag min_tag;
-    Foo<Bar> min;
+    union {
+      Tag min_tag;
+    };
+    union {
+      Foo<Bar> min;
+    };
   };
   struct {
-    Tag max_tag;
-    Foo<Bar> max;
+    union {
+      Tag max_tag;
+    };
+    union {
+      Foo<Bar> max;
+    };
   };
 };
 

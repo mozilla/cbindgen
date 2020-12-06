@@ -33,10 +33,14 @@ struct MyFancyEnum {
   Tag tag;
   union {
     struct {
-      int32_t bar;
+      union {
+        int32_t bar;
+      };
     };
     struct {
-      int32_t baz;
+      union {
+        int32_t baz;
+      };
     };
   };
 #ifdef __cplusplus
@@ -70,10 +74,14 @@ struct MyFancyEnum_Prepended {
   Tag tag;
   union {
     struct {
-      int32_t bar_prepended;
+      union {
+        int32_t bar_prepended;
+      };
     };
     struct {
-      int32_t baz_prepended;
+      union {
+        int32_t baz_prepended;
+      };
     };
   };
 };

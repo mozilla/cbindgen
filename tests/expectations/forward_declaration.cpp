@@ -29,7 +29,9 @@ struct TypeData {
   Tag tag;
   union {
     struct {
-      StructInfo struct_;
+      union {
+        StructInfo struct_;
+      };
     };
   };
 };

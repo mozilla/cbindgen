@@ -96,8 +96,12 @@ union G {
     Tag tag;
   };
   struct {
-    Tag foo_tag;
-    int16_t foo;
+    union {
+      Tag foo_tag;
+    };
+    union {
+      int16_t foo;
+    };
   };
   Bar_Body bar;
 };
@@ -117,7 +121,9 @@ struct H {
   Tag tag;
   union {
     struct {
-      int16_t foo;
+      union {
+        int16_t foo;
+      };
     };
     H_Bar_Body bar;
   };
@@ -138,7 +144,9 @@ struct I {
   Tag tag;
   union {
     struct {
-      int16_t foo;
+      union {
+        int16_t foo;
+      };
     };
     I_Bar_Body bar;
   };
@@ -159,7 +167,9 @@ struct P {
   Tag tag;
   union {
     struct {
-      uint8_t p0;
+      union {
+        uint8_t p0;
+      };
     };
     P1_Body p1;
   };

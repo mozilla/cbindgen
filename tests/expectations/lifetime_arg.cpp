@@ -17,7 +17,9 @@ struct E {
   Tag tag;
   union {
     struct {
-      const uint8_t *u;
+      union {
+        const uint8_t *u;
+      };
     };
   };
 };

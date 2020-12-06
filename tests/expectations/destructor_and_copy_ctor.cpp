@@ -52,13 +52,19 @@ struct Foo {
   Tag tag;
   union {
     struct {
-      Polygon<T> polygon1;
+      union {
+        Polygon<T> polygon1;
+      };
     };
     struct {
-      OwnedSlice<T> slice1;
+      union {
+        OwnedSlice<T> slice1;
+      };
     };
     struct {
-      OwnedSlice<int32_t> slice2;
+      union {
+        OwnedSlice<int32_t> slice2;
+      };
     };
     Slice3_Body slice3;
     Slice4_Body slice4;
@@ -198,16 +204,28 @@ union Baz {
     Tag tag;
   };
   struct {
-    Tag polygon21_tag;
-    Polygon<T> polygon21;
+    union {
+      Tag polygon21_tag;
+    };
+    union {
+      Polygon<T> polygon21;
+    };
   };
   struct {
-    Tag slice21_tag;
-    OwnedSlice<T> slice21;
+    union {
+      Tag slice21_tag;
+    };
+    union {
+      OwnedSlice<T> slice21;
+    };
   };
   struct {
-    Tag slice22_tag;
-    OwnedSlice<int32_t> slice22;
+    union {
+      Tag slice22_tag;
+    };
+    union {
+      OwnedSlice<int32_t> slice22;
+    };
   };
   Slice23_Body slice23;
   Slice24_Body slice24;
@@ -339,12 +357,20 @@ union Taz {
     Tag tag;
   };
   struct {
-    Tag taz1_tag;
-    int32_t taz1;
+    union {
+      Tag taz1_tag;
+    };
+    union {
+      int32_t taz1;
+    };
   };
   struct {
-    Tag taz3_tag;
-    OwnedSlice<int32_t> taz3;
+    union {
+      Tag taz3_tag;
+    };
+    union {
+      OwnedSlice<int32_t> taz3;
+    };
   };
 
   static Taz Bar3() {
@@ -427,8 +453,12 @@ union Tazz {
     Tag tag;
   };
   struct {
-    Tag taz2_tag;
-    int32_t taz2;
+    union {
+      Tag taz2_tag;
+    };
+    union {
+      int32_t taz2;
+    };
   };
 
   static Tazz Bar4() {
@@ -470,8 +500,12 @@ union Tazzz {
     Tag tag;
   };
   struct {
-    Tag taz5_tag;
-    int32_t taz5;
+    union {
+      Tag taz5_tag;
+    };
+    union {
+      int32_t taz5;
+    };
   };
 
   static Tazzz Bar5() {
@@ -531,12 +565,20 @@ union Tazzzz {
     Tag tag;
   };
   struct {
-    Tag taz6_tag;
-    int32_t taz6;
+    union {
+      Tag taz6_tag;
+    };
+    union {
+      int32_t taz6;
+    };
   };
   struct {
-    Tag taz7_tag;
-    uint32_t taz7;
+    union {
+      Tag taz7_tag;
+    };
+    union {
+      uint32_t taz7;
+    };
   };
 
   static Tazzzz Taz6(const int32_t &taz6) {
@@ -609,12 +651,20 @@ union Qux {
     Tag tag;
   };
   struct {
-    Tag qux1_tag;
-    int32_t qux1;
+    union {
+      Tag qux1_tag;
+    };
+    union {
+      int32_t qux1;
+    };
   };
   struct {
-    Tag qux2_tag;
-    uint32_t qux2;
+    union {
+      Tag qux2_tag;
+    };
+    union {
+      uint32_t qux2;
+    };
   };
 
   static Qux Qux1(const int32_t &qux1) {

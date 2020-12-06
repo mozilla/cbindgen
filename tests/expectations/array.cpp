@@ -12,7 +12,9 @@ struct Foo {
   Tag tag;
   union {
     struct {
-      float a[20];
+      union {
+        float a[20];
+      };
     };
   };
 

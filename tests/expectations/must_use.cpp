@@ -19,7 +19,9 @@ struct MUST_USE_STRUCT MaybeOwnedPtr {
   Tag tag;
   union {
     struct {
-      T *owned;
+      union {
+        T *owned;
+      };
     };
   };
 };

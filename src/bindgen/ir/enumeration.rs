@@ -924,7 +924,22 @@ impl Enum {
                         out.write("struct");
                         out.open_brace();
                     }
-                    out.write_vertical_source_list(&body.fields, ListType::Cap(";"));
+                    let mut first = true;
+                    for field in body.fields.iter() {
+                        if !first {
+                            out.new_line();
+                        }
+                        first = false;
+                        if config.language == Language::Cxx {
+                            out.write("union");
+                            out.open_brace();
+                        }
+                        field.write(config, out);
+                        out.write(";");
+                        if config.language == Language::Cxx {
+                            out.close_brace(true);
+                        }
+                    }
                     if config.language != Language::Cython {
                         out.close_brace(true);
                     }

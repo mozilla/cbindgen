@@ -39,10 +39,14 @@ struct E {
   Tag tag;
   union {
     struct {
-      double double_;
+      union {
+        double double_;
+      };
     };
     struct {
-      float float_;
+      union {
+        float float_;
+      };
     };
   };
 };
@@ -56,10 +60,14 @@ struct F {
   Tag tag;
   union {
     struct {
-      double double_;
+      union {
+        double double_;
+      };
     };
     struct {
-      float float_;
+      union {
+        float float_;
+      };
     };
   };
 };

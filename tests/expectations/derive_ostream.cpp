@@ -90,8 +90,12 @@ union F {
     Tag tag;
   };
   struct {
-    Tag foo_tag;
-    int16_t foo;
+    union {
+      Tag foo_tag;
+    };
+    union {
+      int16_t foo;
+    };
   };
   Bar_Body bar;
 };
@@ -136,7 +140,9 @@ struct H {
   Tag tag;
   union {
     struct {
-      int16_t hello;
+      union {
+        int16_t hello;
+      };
     };
     There_Body there;
   };

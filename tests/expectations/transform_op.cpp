@@ -32,12 +32,20 @@ union StyleFoo {
   };
   Foo_Body foo;
   struct {
-    Tag bar_tag;
-    T bar;
+    union {
+      Tag bar_tag;
+    };
+    union {
+      T bar;
+    };
   };
   struct {
-    Tag baz_tag;
-    StylePoint<T> baz;
+    union {
+      Tag baz_tag;
+    };
+    union {
+      StylePoint<T> baz;
+    };
   };
 
   static StyleFoo Foo(const int32_t &x,
@@ -138,10 +146,14 @@ struct StyleBar {
   union {
     StyleBar1_Body bar1;
     struct {
-      T bar2;
+      union {
+        T bar2;
+      };
     };
     struct {
-      StylePoint<T> bar3;
+      union {
+        StylePoint<T> bar3;
+      };
     };
   };
 
@@ -236,12 +248,20 @@ union StyleBaz {
     Tag tag;
   };
   struct {
-    Tag baz1_tag;
-    StyleBar<uint32_t> baz1;
+    union {
+      Tag baz1_tag;
+    };
+    union {
+      StyleBar<uint32_t> baz1;
+    };
   };
   struct {
-    Tag baz2_tag;
-    StylePoint<int32_t> baz2;
+    union {
+      Tag baz2_tag;
+    };
+    union {
+      StylePoint<int32_t> baz2;
+    };
   };
 
   static StyleBaz Baz1(const StyleBar<uint32_t> &baz1) {
@@ -307,10 +327,14 @@ struct StyleTaz {
   Tag tag;
   union {
     struct {
-      StyleBar<uint32_t> taz1;
+      union {
+        StyleBar<uint32_t> taz1;
+      };
     };
     struct {
-      StyleBaz taz2;
+      union {
+        StyleBaz taz2;
+      };
     };
   };
 
