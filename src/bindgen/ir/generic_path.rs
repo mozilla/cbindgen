@@ -17,7 +17,8 @@ impl GenericParams {
                 .params
                 .iter()
                 .filter_map(|x| match *x {
-                    syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => {
+                    syn::GenericParam::Type(syn::TypeParam { ref ident, .. })
+                    | syn::GenericParam::Const(syn::ConstParam { ref ident, .. }) => {
                         Some(Path::new(ident.to_string()))
                     }
                     _ => None,

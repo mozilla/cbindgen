@@ -1,0 +1,16 @@
+#include <cstdarg>
+#include <cstdint>
+#include <cstdlib>
+#include <ostream>
+#include <new>
+
+static const uint8_t SOME_NUMBER2 = 20;
+
+template<typename u8 = void>
+struct StructWithConstGeneric;
+
+extern "C" {
+
+void root(const StructWithConstGeneric<uint8_t> *a);
+
+} // extern "C"
