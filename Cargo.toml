@@ -1,9 +1,12 @@
 [package]
 name = "cbindgen"
 version = "0.16.0"
-authors = ["Jeff Muizelaar <jmuizelaar@mozilla.com>",
-           "Kartikaya Gupta <kats@mozilla.com>",
-           "Ryan Hunt <rhunt@eqrion.net>"]
+authors = [
+  "Emilio Cobos Álvarez <emilio@crisal.io>",
+  "Jeff Muizelaar <jmuizelaar@mozilla.com>",
+  "Kartikaya Gupta <kats@mozilla.com>",
+  "Ryan Hunt <rhunt@eqrion.net>"
+]
 license = "MPL-2.0"
 description = "A tool for generating C bindings to Rust code."
 keywords = ["bindings", "ffi", "code-generation"]

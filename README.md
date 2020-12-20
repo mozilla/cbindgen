@@ -7,27 +7,37 @@
 [Api Rustdoc]: https://img.shields.io/badge/api-rustdoc-blue.svg
 [rustdoc]: https://docs.rs/cbindgen
 
-
-
-
 [Read the full user docs here!](docs.md)
-
-
-
 
 cbindgen creates C/C++11 headers for Rust libraries which expose a public C API.
 
-While you could do this by hand, it's not a particularly good use of your time. It's also much more likely to be error-prone than machine-generated headers that are based on your actual Rust code. The cbindgen developers have also worked closely with the developers of Rust to ensure that the headers we generate reflect actual guarantees about Rust's type layout and ABI.
+While you could do this by hand, it's not a particularly good use of your time.
+It's also much more likely to be error-prone than machine-generated headers that
+are based on your actual Rust code. The cbindgen developers have also worked
+closely with the developers of Rust to ensure that the headers we generate
+reflect actual guarantees about Rust's type layout and ABI.
 
-C++ headers are nice because we can use operator overloads, constructors, enum classes, and templates to make the API more ergonomic and Rust-like. C headers are nice because you can be more confident that whoever you're interoperating with can handle them. With cbindgen *you don't need to choose*! You can just tell it to emit both from the same Rust library.
+C++ headers are nice because we can use operator overloads, constructors, enum
+classes, and templates to make the API more ergonomic and Rust-like. C headers
+are nice because you can be more confident that whoever you're interoperating
+with can handle them. With cbindgen *you don't need to choose*! You can just
+tell it to emit both from the same Rust library.
 
-There are two ways to use cbindgen: as a standalone program, or as a library (presumably in your build.rs).
-There isn't really much practical difference, because cbindgen is a simple rust library with no interesting dependencies. Using it as a program means people building your software will need it installed. Using it in your library means people may have to build cbindgen more frequently (e.g. every time they update their rust compiler).
+There are two ways to use cbindgen: as a standalone program, or as a library
+(presumably in your build.rs). There isn't really much practical difference,
+because cbindgen is a simple rust library with no interesting dependencies.
 
-It's worth noting that the development of cbindgen has been largely adhoc, as features have been added to support the usecases of the maintainers. This means cbindgen may randomly fail to support some particular situation simply because no one has put in the effort to handle it yet. [Please file an issue if you run into such a situation](https://github.com/eqrion/cbindgen/issues/new). Although since we all have other jobs, you might need to do the implementation work too :)
+Using it as a program means people building your software will need it
+installed. Using it in your library means people may have to build cbindgen more
+frequently (e.g. every time they update their rust compiler).
 
-
-
+It's worth noting that the development of cbindgen has been largely adhoc, as
+features have been added to support the usecases of the maintainers. This means
+cbindgen may randomly fail to support some particular situation simply because
+no one has put in the effort to handle it yet. [Please file an issue if you run
+into such a situation](https://github.com/eqrion/cbindgen/issues/new). Although
+since we all have other jobs, you might need to do the implementation work too
+:)
 
 # Quick Start
 
@@ -58,13 +68,13 @@ See `cbindgen --help` for more options.
 
 [Get a template cbindgen.toml here.](template.toml)
 
-
-
 # Examples
 
-We don't currently have a nice tailored example application, but [the tests](tests/rust/) contain plenty of interesting examples of our features.
+We don't currently have a nice tailored example application, but [the
+tests](tests/rust/) contain plenty of interesting examples of our features.
 
-You may also find it interesting to browse the projects that are using cbindgen in production:
+You may also find it interesting to browse the projects that are using cbindgen
+in production:
 
 * [milksnake](https://github.com/getsentry/milksnake)
 * [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/gfx/webrender_bindings/webrender_ffi_generated.h))
@@ -72,4 +82,11 @@ You may also find it interesting to browse the projects that are using cbindgen 
 * [wgpu-native](https://github.com/gfx-rs/wgpu-native) ([generated header](https://github.com/gfx-rs/wgpu-native/blob/master/ffi/wgpu.h))
 * [etesync-rs](https://github.com/etesync/etesync-rs)
 
-If you're using `cbindgen` and would like to be added to this list, please open a pull request!
+If you're using `cbindgen` and would like to be added to this list, please open
+a pull request!
+
+# Releases
+
+cbindgen doesn't have a fixed release calendar, please file an issue requesting
+a release if there's something fixed in trunk that you need released. Ping
+`@emilio` for increased effect.
