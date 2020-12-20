@@ -1,3 +1,17 @@
+## 0.16.0
+
+     * Remove artificial restriction on lifetime parameters on enums (#604)
+     * Add an option for converting usize/isize into size_t/ptrdiff_t. (#606)
+     * Allow controlling the cargo profile used for expansion. (#607)
+     * Support wider range of expressions in enum discriminants (#614)
+     * Support generation of Cython bindings (#590)
+     * Fixed some issues with style=tag and recursive structs (#615)
+     * Default C style to Both (as specified in docs) (#615)
+     * Fix resolution of path dependencies from certain modules. (#629)
+     * Support inlined definitions for tuple variants with a single field in C (#631)
+
+Thanks to all the awesome contributors that contributed to this release.
+
 ## 0.15.0
 
      * Allow customizing mangling of generic parameters in C (#575)
