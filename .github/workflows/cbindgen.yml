@@ -78,10 +78,14 @@ jobs:
       run: |
         cargo test --verbose
 
-    - name: Cargo update minimal-versions
+    - name: Test package
+      env:
+        CBINDGEN_TEST_VERIFY: 1
       run: |
-        cargo update -Zminimal-versions
+        cargo package --verbose
+        (cd target/package/cbindgen-$(cargo run -- --version | cut -d ' ' -f 2) && cargo test --verbose)
 
     - name: Test minimal-versions
       run: |
+        cargo update -Zminimal-versions
         cargo test
