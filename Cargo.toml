@@ -13,6 +13,9 @@ keywords = ["bindings", "ffi", "code-generation"]
 categories = ["external-ffi-bindings", "development-tools::ffi"]
 repository = "https://github.com/eqrion/cbindgen/"
 edition = "2018"
+exclude = [
+  "tests/profile.rs", # Test relies in a sub-crate, see https://github.com/rust-lang/cargo/issues/9017
+]
 
 [badges]
 travis-ci = { repository = "eqrion/cbindgen" }
