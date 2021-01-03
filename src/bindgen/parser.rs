@@ -96,9 +96,6 @@ struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    // TODO: Change the Vec::contains calls to .iter().any() or something
-    // else that allows to use a &str instead of a &String
-    #[allow(clippy::ptr_arg)]
     fn should_parse_dependency(&self, pkg_name: &str) -> bool {
         if self.parsed_crates.contains(pkg_name) {
             return false;
