@@ -99,7 +99,7 @@ impl<'a> Parser<'a> {
     // TODO: Change the Vec::contains calls to .iter().any() or something
     // else that allows to use a &str instead of a &String
     #[allow(clippy::ptr_arg)]
-    fn should_parse_dependency(&self, pkg_name: &String) -> bool {
+    fn should_parse_dependency(&self, pkg_name: &str) -> bool {
         if self.parsed_crates.contains(pkg_name) {
             return false;
         }
@@ -109,20 +109,33 @@ impl<'a> Parser<'a> {
         }
 
         // Skip any whitelist or blacklist for expand
-        if self.config.parse.expand.crates.contains(&pkg_name) {
+        if self
+            .config
+            .parse
+            .expand
+            .crates
+            .iter()
+            .any(|name| name == pkg_name)
+        {
             return true;
         }
 
         // If we have a whitelist, check it
         if let Some(ref include) = self.config.parse.include {
-            if !include.contains(&pkg_name) {
+            if !include.iter().any(|name| name == pkg_name) {
                 debug!("Excluding crate {}", pkg_name);
                 return false;
             }
         }
 
         // Check the blacklist
-        !STD_CRATES.contains(&pkg_name.as_ref()) && !self.config.parse.exclude.contains(&pkg_name)
+        !STD_CRATES.contains(&pkg_name)
+            && !self
+                .config
+                .parse
+                .exclude
+                .iter()
+                .any(|name| name == pkg_name)
     }
 
     fn parse_crate(&mut self, pkg: &PackageRef) -> Result<(), Error> {
