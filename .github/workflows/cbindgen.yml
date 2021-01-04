@@ -9,7 +9,7 @@ on:
       - master
 
 jobs:
-  rustfmt:
+  rustfmt-clippy:
 
     runs-on: ubuntu-latest
 
@@ -29,6 +29,13 @@ jobs:
       with:
         command: fmt
         args: -- --check
+
+    - name: Install clippy
+      uses: dtolnay/rust-toolchain@clippy
+
+    - name: Run clippy
+      run: |
+        cargo clippy --workspace -- -D warnings
 
     - name: Install minimum supported Rust version
       uses: actions-rs/toolchain@v1
