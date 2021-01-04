@@ -61,7 +61,7 @@ impl Function {
                     never_return = true;
                     Type::Primitive(PrimitiveType::Void)
                 } else {
-                    Type::load(ty)?.unwrap_or_else(|| Type::Primitive(PrimitiveType::Void))
+                    Type::load(ty)?.unwrap_or(Type::Primitive(PrimitiveType::Void))
                 }
             }
         };
@@ -328,7 +328,7 @@ impl Source for Function {
             out.write(";");
 
             condition.write_after(config, out);
-        };
+        }
 
         let option_1 = out.measure(|out| write_1(self, config, out));
 
