@@ -35,7 +35,7 @@ braces = "SameLine"
 line_length = 100
 tab_width = 2
 documentation_style = "auto"
-line-endings = "LF" # also "CR", "CRLF", "Native"
+line_endings = "LF" # also "CR", "CRLF", "Native"
 
 
 
