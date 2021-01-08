@@ -232,6 +232,15 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_parse_extra_bindings<S: AsRef<str>>(mut self, extra_bindings: &[S]) -> Builder {
+        self.config.parse.extra_bindings = extra_bindings
+            .iter()
+            .map(|x| String::from(x.as_ref()))
+            .collect();
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_documentation(mut self, documentation: bool) -> Builder {
         self.config.documentation = documentation;
         self
