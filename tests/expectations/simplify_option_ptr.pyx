@@ -9,14 +9,22 @@ cdef extern from *:
   ctypedef struct Opaque:
     pass
 
+  ctypedef struct Option_____Opaque:
+    pass
+
+  ctypedef struct Option_______c_void:
+    pass
+
   ctypedef struct Foo:
     const Opaque *x;
     Opaque *y;
     void (*z)();
+    Option_______c_void *zz;
 
   ctypedef union Bar:
     const Opaque *x;
     Opaque *y;
     void (*z)();
+    Option_______c_void *zz;
 
-  void root(const Opaque *a, Opaque *b, Foo c, Bar d);
+  void root(const Opaque *a, Opaque *b, Foo c, Bar d, Option_____Opaque *e);

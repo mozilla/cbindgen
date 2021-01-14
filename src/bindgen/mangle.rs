@@ -20,6 +20,9 @@ enum Separator {
     ClosingAngleBracket,
     BeginMutPtr,
     BeginConstPtr,
+    BeginFn,
+    BetweenFnArg,
+    EndFn,
 }
 
 struct Mangler<'a> {
@@ -93,7 +96,21 @@ impl<'a> Mangler<'a> {
                 });
                 self.append_mangled_type(&**ty, last);
             }
-            Type::Array(..) | Type::FuncPtr(..) => {
+            Type::FuncPtr {
+                ref ret, ref args, ..
+            } => {
+                self.push(Separator::BeginFn);
+                self.append_mangled_type(&**ret, args.is_empty());
+                for (i, arg) in args.iter().enumerate() {
+                    self.push(Separator::BetweenFnArg);
+                    let last = last && i == args.len() - 1;
+                    self.append_mangled_type(&arg.1, last);
+                }
+                if !self.last {
+                    self.push(Separator::EndFn);
+                }
+            }
+            Type::Array(..) => {
                 unimplemented!(
                     "Unable to mangle generic parameter {:?} for '{}'",
                     ty,

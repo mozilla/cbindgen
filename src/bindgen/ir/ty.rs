@@ -343,7 +343,11 @@ pub enum Type {
     Path(GenericPath),
     Primitive(PrimitiveType),
     Array(Box<Type>, ArrayLength),
-    FuncPtr(Box<Type>, Vec<(Option<String>, Type)>),
+    FuncPtr {
+        ret: Box<Type>,
+        args: Vec<(Option<String>, Type)>,
+        is_nullable: bool,
+    },
 }
 
 impl Type {
@@ -484,7 +488,11 @@ impl Type {
                     }
                 };
 
-                Type::FuncPtr(Box::new(ret), args)
+                Type::FuncPtr {
+                    ret: Box::new(ret),
+                    args,
+                    is_nullable: false,
+                }
             }
             syn::Type::Tuple(ref tuple) => {
                 if tuple.elems.is_empty() {
@@ -515,14 +523,22 @@ impl Type {
                 ref ty,
                 is_const,
                 is_ref,
-                ..
+                is_nullable: false,
             } => Some(Type::Ptr {
                 ty: ty.clone(),
                 is_const,
                 is_ref,
                 is_nullable: true,
             }),
-            Type::FuncPtr(ref x, ref y) => Some(Type::FuncPtr(x.clone(), y.clone())),
+            Type::FuncPtr {
+                ref ret,
+                ref args,
+                is_nullable: false,
+            } => Some(Type::FuncPtr {
+                ret: ret.clone(),
+                args: args.clone(),
+                is_nullable: true,
+            }),
             _ => None,
         }
     }
@@ -543,7 +559,6 @@ impl Type {
             None => Cow::Borrowed(unsimplified_generic),
         };
         match path.name() {
-            // FIXME(#223): This is not quite right.
             "Option" => generic.make_nullable(),
             "NonNull" => Some(Type::Ptr {
                 ty: Box::new(generic.into_owned()),
@@ -580,7 +595,11 @@ impl Type {
                 generic_path.replace_self_with(self_ty);
             }
             Type::Primitive(..) => {}
-            Type::FuncPtr(ref mut ret, ref mut args) => {
+            Type::FuncPtr {
+                ref mut ret,
+                ref mut args,
+                ..
+            } => {
                 ret.replace_self_with(self_ty);
                 for arg in args {
                     arg.1.replace_self_with(self_ty);
@@ -603,7 +622,7 @@ impl Type {
                 Type::Array(..) => {
                     return None;
                 }
-                Type::FuncPtr(..) => {
+                Type::FuncPtr { .. } => {
                     return None;
                 }
             };
@@ -644,13 +663,19 @@ impl Type {
             Type::Array(ref ty, ref constant) => {
                 Type::Array(Box::new(ty.specialize(mappings)), constant.clone())
             }
-            Type::FuncPtr(ref ret, ref args) => Type::FuncPtr(
-                Box::new(ret.specialize(mappings)),
-                args.iter()
+            Type::FuncPtr {
+                ref ret,
+                ref args,
+                is_nullable,
+            } => Type::FuncPtr {
+                ret: Box::new(ret.specialize(mappings)),
+                args: args
+                    .iter()
                     .cloned()
                     .map(|(name, ty)| (name, ty.specialize(mappings)))
                     .collect(),
-            ),
+                is_nullable,
+            },
         }
     }
 
@@ -694,7 +719,9 @@ impl Type {
             Type::Array(ref ty, _) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
-            Type::FuncPtr(ref ret, ref args) => {
+            Type::FuncPtr {
+                ref ret, ref args, ..
+            } => {
                 ret.add_dependencies_ignoring_generics(generic_params, library, out);
                 for (_, ref arg) in args {
                     arg.add_dependencies_ignoring_generics(generic_params, library, out);
@@ -728,7 +755,9 @@ impl Type {
             Type::Array(ref ty, _) => {
                 ty.add_monomorphs(library, out);
             }
-            Type::FuncPtr(ref ret, ref args) => {
+            Type::FuncPtr {
+                ref ret, ref args, ..
+            } => {
                 ret.add_monomorphs(library, out);
                 for (_, ref arg) in args {
                     arg.add_monomorphs(library, out);
@@ -750,7 +779,11 @@ impl Type {
                 ty.rename_for_config(config, generic_params);
                 len.rename_for_config(config);
             }
-            Type::FuncPtr(ref mut ret, ref mut args) => {
+            Type::FuncPtr {
+                ref mut ret,
+                ref mut args,
+                ..
+            } => {
                 ret.rename_for_config(config, generic_params);
                 for (_, arg) in args {
                     arg.rename_for_config(config, generic_params);
@@ -771,7 +804,11 @@ impl Type {
             Type::Array(ref mut ty, _) => {
                 ty.resolve_declaration_types(resolver);
             }
-            Type::FuncPtr(ref mut ret, ref mut args) => {
+            Type::FuncPtr {
+                ref mut ret,
+                ref mut args,
+                ..
+            } => {
                 ret.resolve_declaration_types(resolver);
                 for (_, ref mut arg) in args {
                     arg.resolve_declaration_types(resolver);
@@ -804,7 +841,11 @@ impl Type {
             Type::Array(ref mut ty, _) => {
                 ty.mangle_paths(monomorphs);
             }
-            Type::FuncPtr(ref mut ret, ref mut args) => {
+            Type::FuncPtr {
+                ref mut ret,
+                ref mut args,
+                ..
+            } => {
                 ret.mangle_paths(monomorphs);
                 for (_, ref mut arg) in args {
                     arg.mangle_paths(monomorphs);
@@ -815,11 +856,12 @@ impl Type {
 
     pub fn can_cmp_order(&self) -> bool {
         match *self {
+            // FIXME: Shouldn't this look at ty.can_cmp_order() as well?
             Type::Ptr { is_ref, .. } => !is_ref,
             Type::Path(..) => true,
             Type::Primitive(ref p) => p.can_cmp_order(),
             Type::Array(..) => false,
-            Type::FuncPtr(..) => false,
+            Type::FuncPtr { .. } => false,
         }
     }
 
@@ -829,7 +871,7 @@ impl Type {
             Type::Path(..) => true,
             Type::Primitive(ref p) => p.can_cmp_eq(),
             Type::Array(..) => false,
-            Type::FuncPtr(..) => true,
+            Type::FuncPtr { .. } => true,
         }
     }
 }

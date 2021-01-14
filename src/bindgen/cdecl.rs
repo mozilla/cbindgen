@@ -158,7 +158,11 @@ impl CDecl {
                 self.declarators.push(CDeclarator::Array(len));
                 self.build_type(t, is_const, config);
             }
-            Type::FuncPtr(ref ret, ref args) => {
+            Type::FuncPtr {
+                ref ret,
+                ref args,
+                is_nullable: _,
+            } => {
                 let args = args
                     .iter()
                     .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty, config)))
