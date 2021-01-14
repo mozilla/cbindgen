@@ -517,6 +517,23 @@ impl Type {
         }
     }
 
+    pub fn make_zeroable(&self) -> Option<Self> {
+        let (kind, signed) = match *self {
+            Type::Primitive(PrimitiveType::Integer {
+                zeroable: false,
+                kind,
+                signed,
+            }) => (kind, signed),
+            _ => return None,
+        };
+
+        Some(Type::Primitive(PrimitiveType::Integer {
+            kind,
+            signed,
+            zeroable: true,
+        }))
+    }
+
     pub fn make_nullable(&self) -> Option<Self> {
         match *self {
             Type::Ptr {
@@ -543,11 +560,51 @@ impl Type {
         }
     }
 
+    fn nonzero_to_primitive(&self) -> Option<Self> {
+        let path = match *self {
+            Type::Path(ref p) => p,
+            _ => return None,
+        };
+
+        if !path.generics().is_empty() {
+            return None;
+        }
+
+        let name = path.name();
+        if !name.starts_with("NonZero") {
+            return None;
+        }
+
+        let (kind, signed) = match path.name() {
+            "NonZeroU8" => (IntKind::B8, false),
+            "NonZeroU16" => (IntKind::B16, false),
+            "NonZeroU32" => (IntKind::B32, false),
+            "NonZeroU64" => (IntKind::B64, false),
+            "NonZeroUSize" => (IntKind::Size, false),
+            "NonZeroI8" => (IntKind::B8, true),
+            "NonZeroI16" => (IntKind::B16, true),
+            "NonZeroI32" => (IntKind::B32, true),
+            "NonZeroI64" => (IntKind::B64, true),
+            "NonZeroISize" => (IntKind::Size, true),
+            _ => return None,
+        };
+
+        Some(Type::Primitive(PrimitiveType::Integer {
+            zeroable: false,
+            signed,
+            kind,
+        }))
+    }
+
     fn simplified_type(&self, config: &Config) -> Option<Self> {
         let path = match *self {
             Type::Path(ref p) => p,
             _ => return None,
         };
+
+        if path.generics().is_empty() {
+            return self.nonzero_to_primitive();
+        }
 
         if path.generics().len() != 1 {
             return None;
@@ -559,7 +616,15 @@ impl Type {
             None => Cow::Borrowed(unsimplified_generic),
         };
         match path.name() {
-            "Option" => generic.make_nullable(),
+            "Option" => {
+                if let Some(nullable) = generic.make_nullable() {
+                    return Some(nullable);
+                }
+                if let Some(zeroable) = generic.make_zeroable() {
+                    return Some(zeroable);
+                }
+                None
+            }
             "NonNull" => Some(Type::Ptr {
                 ty: Box::new(generic.into_owned()),
                 is_const: false,
