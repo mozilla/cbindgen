@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::io::Write;
 
 use crate::bindgen::cdecl;
@@ -508,28 +509,20 @@ impl Type {
         }
     }
 
-    pub fn is_repr_ptr(&self) -> bool {
-        match *self {
-            Type::Ptr { .. } => true,
-            Type::FuncPtr(..) => true,
-            _ => false,
-        }
-    }
-
     pub fn make_nullable(&self) -> Option<Self> {
-        match self.clone() {
+        match *self {
             Type::Ptr {
-                ty,
+                ref ty,
                 is_const,
                 is_ref,
                 ..
             } => Some(Type::Ptr {
-                ty,
+                ty: ty.clone(),
                 is_const,
                 is_ref,
                 is_nullable: true,
             }),
-            Type::FuncPtr(x, y) => Some(Type::FuncPtr(x, y)),
+            Type::FuncPtr(ref x, ref y) => Some(Type::FuncPtr(x.clone(), y.clone())),
             _ => None,
         }
     }
@@ -544,26 +537,30 @@ impl Type {
             return None;
         }
 
-        let mut generic = path.generics()[0].clone();
-        generic.simplify_standard_types(config);
-
+        let unsimplified_generic = &path.generics()[0];
+        let generic = match unsimplified_generic.simplified_type(config) {
+            Some(generic) => Cow::Owned(generic),
+            None => Cow::Borrowed(unsimplified_generic),
+        };
         match path.name() {
-            // FIXME(#223): This is not quite correct.
-            "Option" if generic.is_repr_ptr() => generic.make_nullable(),
+            // FIXME(#223): This is not quite right.
+            "Option" => generic.make_nullable(),
             "NonNull" => Some(Type::Ptr {
-                ty: Box::new(generic),
+                ty: Box::new(generic.into_owned()),
                 is_const: false,
                 is_nullable: false,
                 is_ref: false,
             }),
             "Box" if config.language != Language::Cxx => Some(Type::Ptr {
-                ty: Box::new(generic),
+                ty: Box::new(generic.into_owned()),
                 is_const: false,
                 is_nullable: false,
                 is_ref: false,
             }),
-            "Cell" => Some(generic),
-            "ManuallyDrop" | "MaybeUninit" if config.language != Language::Cxx => Some(generic),
+            "Cell" => Some(generic.into_owned()),
+            "ManuallyDrop" | "MaybeUninit" if config.language != Language::Cxx => {
+                Some(generic.into_owned())
+            }
             _ => None,
         }
     }
