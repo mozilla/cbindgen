@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::bindgen::ir::ty::PrimitiveType;
+use crate::bindgen::ir::ty::{IntKind, PrimitiveType};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ReprStyle {
@@ -18,32 +18,17 @@ impl Default for ReprStyle {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum ReprType {
-    U8,
-    U16,
-    U32,
-    U64,
-    USize,
-    I8,
-    I16,
-    I32,
-    I64,
-    ISize,
+pub struct ReprType {
+    kind: IntKind,
+    signed: bool,
 }
 
 impl ReprType {
     pub(crate) fn to_primitive(self) -> PrimitiveType {
-        match self {
-            ReprType::U8 => PrimitiveType::UInt8,
-            ReprType::U16 => PrimitiveType::UInt16,
-            ReprType::U32 => PrimitiveType::UInt32,
-            ReprType::U64 => PrimitiveType::UInt64,
-            ReprType::USize => PrimitiveType::USize,
-            ReprType::I8 => PrimitiveType::Int8,
-            ReprType::I16 => PrimitiveType::Int16,
-            ReprType::I32 => PrimitiveType::Int32,
-            ReprType::I64 => PrimitiveType::Int64,
-            ReprType::ISize => PrimitiveType::ISize,
+        PrimitiveType::Integer {
+            kind: self.kind,
+            signed: self.signed,
+            zeroable: true,
         }
     }
 }
@@ -103,17 +88,17 @@ impl Repr {
 
         let mut repr = Repr::default();
         for id in ids {
-            let new_ty = match (id.0.as_ref(), id.1) {
-                ("u8", None) => ReprType::U8,
-                ("u16", None) => ReprType::U16,
-                ("u32", None) => ReprType::U32,
-                ("u64", None) => ReprType::U64,
-                ("usize", None) => ReprType::USize,
-                ("i8", None) => ReprType::I8,
-                ("i16", None) => ReprType::I16,
-                ("i32", None) => ReprType::I32,
-                ("i64", None) => ReprType::I64,
-                ("isize", None) => ReprType::ISize,
+            let (int_kind, signed) = match (id.0.as_ref(), id.1) {
+                ("u8", None) => (IntKind::B8, false),
+                ("u16", None) => (IntKind::B16, false),
+                ("u32", None) => (IntKind::B32, false),
+                ("u64", None) => (IntKind::B64, false),
+                ("usize", None) => (IntKind::Size, false),
+                ("i8", None) => (IntKind::B8, true),
+                ("i16", None) => (IntKind::B16, true),
+                ("i32", None) => (IntKind::B32, true),
+                ("i64", None) => (IntKind::B64, true),
+                ("isize", None) => (IntKind::Size, true),
                 ("C", None) => {
                     repr.style = ReprStyle::C;
                     continue;
@@ -182,13 +167,17 @@ impl Repr {
                     }
                 },
             };
+            let ty = ReprType {
+                kind: int_kind,
+                signed,
+            };
             if let Some(old_ty) = repr.ty {
                 return Err(format!(
                     "Conflicting #[repr(...)] type hints {:?} and {:?}.",
-                    old_ty, new_ty
+                    old_ty, ty
                 ));
             }
-            repr.ty = Some(new_ty);
+            repr.ty = Some(ty);
         }
         Ok(repr)
     }
