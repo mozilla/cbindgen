@@ -645,7 +645,7 @@ impl Source for Struct {
                     out.write(";");
                     out.close_brace(false);
                 }};
-            };
+            }
 
             if config.structure.derive_eq(&self.annotations) && self.can_derive_eq() {
                 emit_op!("eq", "==", "&&");

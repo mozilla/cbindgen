@@ -58,6 +58,7 @@ impl error::Error for Error {
 
 /// Use rustc to expand and pretty print the crate into a single file,
 /// removing any macros in the process.
+#[allow(clippy::too_many_arguments)]
 pub fn expand(
     manifest_path: &Path,
     crate_name: &str,
