@@ -22,101 +22,169 @@ pub enum PrimitiveType {
     SChar,
     UChar,
     Char32,
+    Float,
+    Double,
+    VaList,
+    PtrDiffT,
+    Integer {
+        zeroable: bool,
+        signed: bool,
+        kind: IntKind,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum IntKind {
     Short,
     Int,
     Long,
     LongLong,
-    UShort,
-    UInt,
-    ULong,
-    ULongLong,
-    USize,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    ISize,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Float,
-    Double,
     SizeT,
-    SSizeT,
-    PtrDiffT,
-    VaList,
+    Size,
+    B8,
+    B16,
+    B32,
+    B64,
 }
 
 impl PrimitiveType {
     pub fn maybe(path: &str) -> Option<PrimitiveType> {
-        match path {
-            "c_void" => Some(PrimitiveType::Void),
-            "c_char" => Some(PrimitiveType::Char),
-            "c_schar" => Some(PrimitiveType::SChar),
-            "c_uchar" => Some(PrimitiveType::UChar),
-            "c_float" => Some(PrimitiveType::Float),
-            "c_double" => Some(PrimitiveType::Double),
-            "c_short" => Some(PrimitiveType::Short),
-            "c_int" => Some(PrimitiveType::Int),
-            "c_long" => Some(PrimitiveType::Long),
-            "c_longlong" => Some(PrimitiveType::LongLong),
-            "c_ushort" => Some(PrimitiveType::UShort),
-            "c_uint" => Some(PrimitiveType::UInt),
-            "c_ulong" => Some(PrimitiveType::ULong),
-            "c_ulonglong" => Some(PrimitiveType::ULongLong),
-            "bool" => Some(PrimitiveType::Bool),
-            "char" => Some(PrimitiveType::Char32),
-            "usize" | "uintptr_t" => Some(PrimitiveType::USize),
-            "u8" | "uint8_t" => Some(PrimitiveType::UInt8),
-            "u16" | "uint16_t" => Some(PrimitiveType::UInt16),
-            "u32" | "uint32_t" => Some(PrimitiveType::UInt32),
-            "u64" | "uint64_t" => Some(PrimitiveType::UInt64),
-            "isize" | "intptr_t" => Some(PrimitiveType::ISize),
-            "i8" | "int8_t" => Some(PrimitiveType::Int8),
-            "i16" | "int16_t" => Some(PrimitiveType::Int16),
-            "i32" | "int32_t" => Some(PrimitiveType::Int32),
-            "i64" | "int64_t" => Some(PrimitiveType::Int64),
-            "f32" => Some(PrimitiveType::Float),
-            "f64" => Some(PrimitiveType::Double),
-            "size_t" => Some(PrimitiveType::SizeT),
-            "ssize_t" => Some(PrimitiveType::SSizeT),
-            "ptrdiff_t" => Some(PrimitiveType::PtrDiffT),
-            "VaList" => Some(PrimitiveType::VaList),
-            _ => None,
-        }
+        Some(match path {
+            "c_void" => PrimitiveType::Void,
+            "c_char" => PrimitiveType::Char,
+            "c_schar" => PrimitiveType::SChar,
+            "c_uchar" => PrimitiveType::UChar,
+            "c_float" => PrimitiveType::Float,
+            "c_double" => PrimitiveType::Double,
+            "ptrdiff_t" => PrimitiveType::PtrDiffT,
+            "VaList" => PrimitiveType::VaList,
+            "bool" => PrimitiveType::Bool,
+            "char" => PrimitiveType::Char32,
+
+            "f32" => PrimitiveType::Float,
+            "f64" => PrimitiveType::Double,
+
+            _ => {
+                let (kind, signed) = match path {
+                    "c_short" => (IntKind::Short, true),
+                    "c_int" => (IntKind::Int, true),
+                    "c_long" => (IntKind::Long, true),
+                    "c_longlong" => (IntKind::LongLong, true),
+                    "ssize_t" => (IntKind::SizeT, true),
+                    "c_ushort" => (IntKind::Short, false),
+                    "c_uint" => (IntKind::Int, false),
+                    "c_ulong" => (IntKind::Long, false),
+                    "c_ulonglong" => (IntKind::LongLong, false),
+                    "size_t" => (IntKind::SizeT, false),
+
+                    "isize" | "intptr_t" => (IntKind::Size, true),
+                    "usize" | "uintptr_t" => (IntKind::Size, false),
+
+                    "u8" | "uint8_t" => (IntKind::B8, false),
+                    "u16" | "uint16_t" => (IntKind::B16, false),
+                    "u32" | "uint32_t" => (IntKind::B32, false),
+                    "u64" | "uint64_t" => (IntKind::B64, false),
+                    "i8" | "int8_t" => (IntKind::B8, true),
+                    "i16" | "int16_t" => (IntKind::B16, true),
+                    "i32" | "int32_t" => (IntKind::B32, true),
+                    "i64" | "int64_t" => (IntKind::B64, true),
+                    _ => return None,
+                };
+                PrimitiveType::Integer {
+                    zeroable: true,
+                    signed,
+                    kind,
+                }
+            }
+        })
     }
 
     pub fn to_repr_rust(&self) -> &'static str {
         match *self {
+            PrimitiveType::Bool => "bool",
             PrimitiveType::Void => "c_void",
             PrimitiveType::Char => "c_char",
             PrimitiveType::SChar => "c_schar",
             PrimitiveType::UChar => "c_uchar",
             PrimitiveType::Char32 => "char",
-            PrimitiveType::Short => "c_short",
-            PrimitiveType::Int => "c_int",
-            PrimitiveType::Long => "c_long",
-            PrimitiveType::LongLong => "c_longlong",
-            PrimitiveType::UShort => "c_ushort",
-            PrimitiveType::UInt => "c_uint",
-            PrimitiveType::ULong => "c_ulong",
-            PrimitiveType::ULongLong => "c_ulonglong",
-            PrimitiveType::Bool => "bool",
-            PrimitiveType::USize => "usize",
-            PrimitiveType::UInt8 => "u8",
-            PrimitiveType::UInt16 => "u16",
-            PrimitiveType::UInt32 => "u32",
-            PrimitiveType::UInt64 => "u64",
-            PrimitiveType::ISize => "isize",
-            PrimitiveType::Int8 => "i8",
-            PrimitiveType::Int16 => "i16",
-            PrimitiveType::Int32 => "i32",
-            PrimitiveType::Int64 => "i64",
+            PrimitiveType::Integer {
+                kind,
+                signed,
+                zeroable: _,
+            } => match kind {
+                IntKind::Short => {
+                    if signed {
+                        "c_short"
+                    } else {
+                        "c_ushort"
+                    }
+                }
+                IntKind::Int => {
+                    if signed {
+                        "c_int"
+                    } else {
+                        "c_uint"
+                    }
+                }
+                IntKind::Long => {
+                    if signed {
+                        "c_long"
+                    } else {
+                        "c_ulong"
+                    }
+                }
+                IntKind::LongLong => {
+                    if signed {
+                        "c_longlong"
+                    } else {
+                        "c_ulonglong"
+                    }
+                }
+                IntKind::SizeT => {
+                    if signed {
+                        "ssize_t"
+                    } else {
+                        "size_t"
+                    }
+                }
+                IntKind::Size => {
+                    if signed {
+                        "isize"
+                    } else {
+                        "usize"
+                    }
+                }
+                IntKind::B8 => {
+                    if signed {
+                        "i8"
+                    } else {
+                        "u8"
+                    }
+                }
+                IntKind::B16 => {
+                    if signed {
+                        "i16"
+                    } else {
+                        "u16"
+                    }
+                }
+                IntKind::B32 => {
+                    if signed {
+                        "i32"
+                    } else {
+                        "u32"
+                    }
+                }
+                IntKind::B64 => {
+                    if signed {
+                        "i64"
+                    } else {
+                        "u64"
+                    }
+                }
+            },
             PrimitiveType::Float => "f32",
             PrimitiveType::Double => "f64",
-            PrimitiveType::SizeT => "size_t",
-            PrimitiveType::SSizeT => "ssize_t",
             PrimitiveType::PtrDiffT => "ptrdiff_t",
             PrimitiveType::VaList => "va_list",
         }
@@ -138,30 +206,90 @@ impl PrimitiveType {
             //    uint_least32_t, which is _not_ guaranteed to be 4-bytes.
             //
             PrimitiveType::Char32 => "uint32_t",
-            PrimitiveType::Short => "short",
-            PrimitiveType::Int => "int",
-            PrimitiveType::Long => "long",
-            PrimitiveType::LongLong => "long long",
-            PrimitiveType::UShort => "unsigned short",
-            PrimitiveType::UInt => "unsigned int",
-            PrimitiveType::ULong => "unsigned long",
-            PrimitiveType::ULongLong => "unsigned long long",
-            PrimitiveType::USize if config.usize_is_size_t => "size_t",
-            PrimitiveType::USize => "uintptr_t",
-            PrimitiveType::UInt8 => "uint8_t",
-            PrimitiveType::UInt16 => "uint16_t",
-            PrimitiveType::UInt32 => "uint32_t",
-            PrimitiveType::UInt64 => "uint64_t",
-            PrimitiveType::ISize if config.usize_is_size_t => "ptrdiff_t",
-            PrimitiveType::ISize => "intptr_t",
-            PrimitiveType::Int8 => "int8_t",
-            PrimitiveType::Int16 => "int16_t",
-            PrimitiveType::Int32 => "int32_t",
-            PrimitiveType::Int64 => "int64_t",
+            PrimitiveType::Integer {
+                kind,
+                signed,
+                zeroable: _,
+            } => match kind {
+                IntKind::Short => {
+                    if signed {
+                        "short"
+                    } else {
+                        "unsigned short"
+                    }
+                }
+                IntKind::Int => {
+                    if signed {
+                        "int"
+                    } else {
+                        "unsigned int"
+                    }
+                }
+                IntKind::Long => {
+                    if signed {
+                        "long"
+                    } else {
+                        "unsigned long"
+                    }
+                }
+                IntKind::LongLong => {
+                    if signed {
+                        "long long"
+                    } else {
+                        "unsigned long long"
+                    }
+                }
+                IntKind::SizeT => {
+                    if signed {
+                        "ssize_t"
+                    } else {
+                        "size_t"
+                    }
+                }
+                IntKind::Size => {
+                    if config.usize_is_size_t {
+                        if signed {
+                            "ptrdiff_t"
+                        } else {
+                            "size_t"
+                        }
+                    } else if signed {
+                        "intptr_t"
+                    } else {
+                        "uintptr_t"
+                    }
+                }
+                IntKind::B8 => {
+                    if signed {
+                        "int8_t"
+                    } else {
+                        "uint8_t"
+                    }
+                }
+                IntKind::B16 => {
+                    if signed {
+                        "int16_t"
+                    } else {
+                        "uint16_t"
+                    }
+                }
+                IntKind::B32 => {
+                    if signed {
+                        "int32_t"
+                    } else {
+                        "uint32_t"
+                    }
+                }
+                IntKind::B64 => {
+                    if signed {
+                        "int64_t"
+                    } else {
+                        "uint64_t"
+                    }
+                }
+            },
             PrimitiveType::Float => "float",
             PrimitiveType::Double => "double",
-            PrimitiveType::SizeT => "size_t",
-            PrimitiveType::SSizeT => "ssize_t",
             PrimitiveType::PtrDiffT => "ptrdiff_t",
             PrimitiveType::VaList => "va_list",
         }
