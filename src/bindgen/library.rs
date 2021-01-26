@@ -318,15 +318,21 @@ impl Library {
             x.collect_declaration_types(&mut resolver);
         });
 
-        self.opaque_items.for_all_items(|x| {
-            x.collect_declaration_types(&mut resolver);
-        });
-
         self.enums.for_all_items(|x| {
             x.collect_declaration_types(&mut resolver);
         });
 
         self.unions.for_all_items(|x| {
+            x.collect_declaration_types(&mut resolver);
+        });
+
+        self.typedefs.for_all_items(|x| {
+            x.collect_declaration_types(&mut resolver);
+        });
+
+        // NOTE: Intentionally last, so that in case there's an opaque type
+        // which is conflicting with a non-opaque one, the later wins.
+        self.opaque_items.for_all_items(|x| {
             x.collect_declaration_types(&mut resolver);
         });
 
