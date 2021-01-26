@@ -653,7 +653,7 @@ impl Parse {
         }
 
         let loggable_item_name = || {
-            let mut items = vec![];
+            let mut items = Vec::with_capacity(3);
             items.push(crate_name.to_owned());
             if let Some(ref self_type) = self_type {
                 items.push(self_type.to_string());
