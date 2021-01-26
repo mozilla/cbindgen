@@ -138,6 +138,10 @@ impl Item for Typedef {
         self.aliased.rename_for_config(config, &self.generic_params);
     }
 
+    fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
+        resolver.add_none(&self.path);
+    }
+
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.aliased.resolve_declaration_types(resolver);
     }

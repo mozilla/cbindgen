@@ -476,12 +476,17 @@ impl Item for Enum {
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
-        if self.tag.is_some() && self.repr.style == ReprStyle::C {
-            resolver.add_struct(&self.path);
-        } else if self.tag.is_some() && self.repr.style != ReprStyle::C {
-            resolver.add_union(&self.path);
+        if self.tag.is_some() {
+            if self.repr.style == ReprStyle::C {
+                resolver.add_struct(&self.path);
+            } else {
+                resolver.add_union(&self.path);
+            }
         } else if self.repr.style == ReprStyle::C {
             resolver.add_enum(&self.path);
+        } else {
+            // This is important to handle conflicting names with opaque items.
+            resolver.add_none(&self.path);
         }
     }
 

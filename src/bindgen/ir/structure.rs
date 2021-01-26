@@ -266,7 +266,9 @@ impl Item for Struct {
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
-        if !self.is_transparent {
+        if self.is_transparent {
+            resolver.add_none(&self.path);
+        } else {
             resolver.add_struct(&self.path);
         }
     }
