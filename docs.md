@@ -484,6 +484,7 @@ tab_width = 3
 # How the generated documentation should be commented.
 #
 # possible values:
+# * "none": documentation is not generated
 # * "c": /* like this */
 # * "c99": // like this
 # * "c++": /// like this

@@ -39,7 +39,10 @@ impl Documentation {
 
 impl Source for Documentation {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if self.doc_comment.is_empty() || !config.documentation {
+        if self.doc_comment.is_empty()
+            || !config.documentation
+            || config.documentation_style == DocumentationStyle::None
+        {
             return;
         }
 
@@ -82,7 +85,7 @@ impl Source for Documentation {
                 DocumentationStyle::Doxy => out.write(" *"),
                 DocumentationStyle::C99 => out.write("//"),
                 DocumentationStyle::Cxx => out.write("///"),
-                DocumentationStyle::Auto => unreachable!(), // Auto case should always be covered
+                DocumentationStyle::Auto | DocumentationStyle::None => unreachable!(), // `Auto` and `None` cases should always be covered
             }
 
             write!(out, "{}", line);

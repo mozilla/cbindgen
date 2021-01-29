@@ -165,6 +165,7 @@ deserialize_enum_str!(Layout);
 /// How the comments containing documentation should be styled.
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum DocumentationStyle {
+    None,
     C,
     C99,
     Doxy,
@@ -177,6 +178,7 @@ impl FromStr for DocumentationStyle {
 
     fn from_str(s: &str) -> Result<DocumentationStyle, Self::Err> {
         match s.to_lowercase().as_ref() {
+            "none" => Ok(DocumentationStyle::None),
             "c" => Ok(DocumentationStyle::C),
             "c99" => Ok(DocumentationStyle::C99),
             "cxx" => Ok(DocumentationStyle::Cxx),
