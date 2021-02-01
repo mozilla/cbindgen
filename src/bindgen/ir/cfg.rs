@@ -153,15 +153,12 @@ impl Cfg {
             }
             syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
                 ref path,
-                ref lit,
+                lit: syn::Lit::Str(ref value),
                 ..
-            })) => match *lit {
-                syn::Lit::Str(ref value) => Cfg::Named(
-                    format!("{}", path.segments.first().unwrap().ident),
-                    value.value(),
-                ),
-                _ => return None,
-            },
+            })) => Cfg::Named(
+                format!("{}", path.segments.first().unwrap().ident),
+                value.value(),
+            ),
             syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList {
                 ref path,
                 ref nested,
