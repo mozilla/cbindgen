@@ -60,6 +60,7 @@ impl Language {
 
 /// Controls what type of line endings are used in the generated code.
 #[derive(Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum LineEndingStyle {
     /// Use Unix-style linefeed characters
     LF,
