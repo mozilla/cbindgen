@@ -930,7 +930,7 @@ pub struct Config {
     pub constant: ConstantConfig,
     /// Preprocessor defines to use when generating #ifdef's for #[cfg]
     pub defines: HashMap<String, String>,
-    /// Include doc comments from rust as documentation
+    /// Include doc comments from Rust as documentation
     pub documentation: bool,
     /// How documentation comments should be styled.
     pub documentation_style: DocumentationStyle,

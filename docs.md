@@ -481,6 +481,9 @@ line_length = 80
 # default: 2
 tab_width = 3
 
+# Include doc comments from Rust as documentation
+documentation = true
+
 # How the generated documentation should be commented.
 #
 # possible values:
