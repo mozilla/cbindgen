@@ -1,3 +1,10 @@
+## 0.17.0
+
+     * Add with_parse_extra_bindings to builder. (#645)
+     * Support NonZero and fix incorrect simplification of Option<ptr> into ptr. (#647)
+     * Deal with name conflicts correctly in declaration type resolution. (#651)
+     * Support pointers to ZSTs. (#656)
+
 ## 0.16.0
 
      * Remove artificial restriction on lifetime parameters on enums (#604)
