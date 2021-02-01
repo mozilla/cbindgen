@@ -34,6 +34,7 @@ after_includes = ""
 braces = "SameLine"
 line_length = 100
 tab_width = 2
+documentation = true
 documentation_style = "auto"
 line_endings = "LF" # also "CR", "CRLF", "Native"
 
