@@ -24,4 +24,5 @@ pub extern "C" fn root(
     c: Foo,
     d: Bar,
     e: *mut Option<*mut Opaque>,
+    f: extern "C" fn(Option<&Opaque>),
 ) { }

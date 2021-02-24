@@ -641,25 +641,29 @@ impl Type {
         if let Some(ty) = self.simplified_type(config) {
             *self = ty;
         }
+
+        self.visit_types(|ty| ty.simplify_standard_types(config))
     }
 
     pub fn replace_self_with(&mut self, self_ty: &Path) {
+        if let Type::Path(ref mut generic_path) = *self {
+            generic_path.replace_self_with(self_ty);
+        }
+        self.visit_types(|ty| ty.replace_self_with(self_ty))
+    }
+
+    fn visit_types(&mut self, mut visitor: impl FnMut(&mut Type)) {
         match *self {
-            Type::Array(ref mut ty, ..) | Type::Ptr { ref mut ty, .. } => {
-                ty.replace_self_with(self_ty)
-            }
-            Type::Path(ref mut generic_path) => {
-                generic_path.replace_self_with(self_ty);
-            }
-            Type::Primitive(..) => {}
+            Type::Array(ref mut ty, ..) | Type::Ptr { ref mut ty, .. } => visitor(ty),
+            Type::Path(..) | Type::Primitive(..) => {}
             Type::FuncPtr {
                 ref mut ret,
                 ref mut args,
                 ..
             } => {
-                ret.replace_self_with(self_ty);
+                visitor(ret);
                 for arg in args {
-                    arg.1.replace_self_with(self_ty);
+                    visitor(&mut arg.1)
                 }
             }
         }

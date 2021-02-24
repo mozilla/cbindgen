@@ -7,20 +7,18 @@ typedef struct Opaque Opaque;
 
 typedef struct Option_____Opaque Option_____Opaque;
 
-typedef struct Option_______c_void Option_______c_void;
-
 typedef struct Foo {
   const struct Opaque *x;
   struct Opaque *y;
   void (*z)(void);
-  struct Option_______c_void *zz;
+  void (**zz)(void);
 } Foo;
 
 typedef union Bar {
   const struct Opaque *x;
   struct Opaque *y;
   void (*z)(void);
-  struct Option_______c_void *zz;
+  void (**zz)(void);
 } Bar;
 
 #ifdef __cplusplus
@@ -31,7 +29,8 @@ void root(const struct Opaque *a,
           struct Opaque *b,
           struct Foo c,
           union Bar d,
-          struct Option_____Opaque *e);
+          struct Option_____Opaque *e,
+          void (*f)(const struct Opaque*));
 
 #ifdef __cplusplus
 } // extern "C"
