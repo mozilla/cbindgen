@@ -7,24 +7,23 @@ struct Opaque;
 
 struct Option_____Opaque;
 
-struct Option_______c_void;
-
 struct Foo {
   const struct Opaque *x;
   struct Opaque *y;
   void (*z)(void);
-  struct Option_______c_void *zz;
+  void (**zz)(void);
 };
 
 union Bar {
   const struct Opaque *x;
   struct Opaque *y;
   void (*z)(void);
-  struct Option_______c_void *zz;
+  void (**zz)(void);
 };
 
 void root(const struct Opaque *a,
           struct Opaque *b,
           struct Foo c,
           union Bar d,
-          struct Option_____Opaque *e);
+          struct Option_____Opaque *e,
+          void (*f)(const struct Opaque*));

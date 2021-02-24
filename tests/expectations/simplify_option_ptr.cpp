@@ -13,18 +13,18 @@ struct Foo {
   const Opaque *x;
   Opaque *y;
   void (*z)();
-  Option<void(*)()> *zz;
+  void (**zz)();
 };
 
 union Bar {
   const Opaque *x;
   Opaque *y;
   void (*z)();
-  Option<void(*)()> *zz;
+  void (**zz)();
 };
 
 extern "C" {
 
-void root(const Opaque *a, Opaque *b, Foo c, Bar d, Option<Opaque*> *e);
+void root(const Opaque *a, Opaque *b, Foo c, Bar d, Option<Opaque*> *e, void (*f)(const Opaque*));
 
 } // extern "C"
