@@ -1,3 +1,7 @@
+## 0.18.0
+
+     * Simplify types in nested types such as pointed-to types and function signatures (#661)
+
 ## 0.17.0
 
      * Add with_parse_extra_bindings to builder. (#645)
