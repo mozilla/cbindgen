@@ -638,11 +638,10 @@ impl Type {
     }
 
     pub fn simplify_standard_types(&mut self, config: &Config) {
+        self.visit_types(|ty| ty.simplify_standard_types(config));
         if let Some(ty) = self.simplified_type(config) {
             *self = ty;
         }
-
-        self.visit_types(|ty| ty.simplify_standard_types(config))
     }
 
     pub fn replace_self_with(&mut self, self_ty: &Path) {
