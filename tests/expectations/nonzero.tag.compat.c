@@ -16,7 +16,7 @@ struct NonZeroI64;
 #include <stdint.h>
 #include <stdlib.h>
 
-struct Option_Option_NonZeroI64;
+struct Option_i64;
 
 struct NonZeroTest {
   uint8_t a;
@@ -28,7 +28,7 @@ struct NonZeroTest {
   int32_t g;
   int64_t h;
   int64_t i;
-  const struct Option_Option_NonZeroI64 *j;
+  const struct Option_i64 *j;
 };
 
 #ifdef __cplusplus
@@ -45,7 +45,7 @@ void root(struct NonZeroTest test,
           int32_t g,
           int64_t h,
           int64_t i,
-          const struct Option_Option_NonZeroI64 *j);
+          const struct Option_i64 *j);
 
 #ifdef __cplusplus
 } // extern "C"

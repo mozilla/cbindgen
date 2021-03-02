@@ -20,10 +20,10 @@ cdef extern from *:
 
 cdef extern from *:
 
-  ctypedef struct NotReprC_MaybeUninit______i32:
+  ctypedef struct NotReprC______i32:
     pass
 
-  ctypedef NotReprC_MaybeUninit______i32 Foo;
+  ctypedef NotReprC______i32 Foo;
 
   ctypedef struct MyStruct:
     const int32_t *number;

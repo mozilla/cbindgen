@@ -19,7 +19,7 @@ cdef extern from *:
 
 cdef extern from *:
 
-  cdef struct Option_Option_NonZeroI64:
+  cdef struct Option_i64:
     pass
 
   cdef struct NonZeroTest:
@@ -32,7 +32,7 @@ cdef extern from *:
     int32_t g;
     int64_t h;
     int64_t i;
-    const Option_Option_NonZeroI64 *j;
+    const Option_i64 *j;
 
   void root(NonZeroTest test,
             uint8_t a,
@@ -44,4 +44,4 @@ cdef extern from *:
             int32_t g,
             int64_t h,
             int64_t i,
-            const Option_Option_NonZeroI64 *j);
+            const Option_i64 *j);

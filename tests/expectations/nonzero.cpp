@@ -30,7 +30,7 @@ struct NonZeroTest {
   int32_t g;
   int64_t h;
   int64_t i;
-  const Option<Option<NonZeroI64>> *j;
+  const Option<int64_t> *j;
 };
 
 extern "C" {
@@ -45,6 +45,6 @@ void root(NonZeroTest test,
           int32_t g,
           int64_t h,
           int64_t i,
-          const Option<Option<NonZeroI64>> *j);
+          const Option<int64_t> *j);
 
 } // extern "C"

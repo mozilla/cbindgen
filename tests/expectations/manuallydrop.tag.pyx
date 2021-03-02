@@ -20,10 +20,10 @@ cdef extern from *:
 
 cdef extern from *:
 
-  cdef struct NotReprC_ManuallyDrop_Point:
+  cdef struct NotReprC_Point:
     pass
 
-  ctypedef NotReprC_ManuallyDrop_Point Foo;
+  ctypedef NotReprC_Point Foo;
 
   cdef struct Point:
     int32_t x;

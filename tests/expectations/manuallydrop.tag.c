@@ -17,9 +17,9 @@ using ManuallyDrop = T;
 #include <stdint.h>
 #include <stdlib.h>
 
-struct NotReprC_ManuallyDrop_Point;
+struct NotReprC_Point;
 
-typedef struct NotReprC_ManuallyDrop_Point Foo;
+typedef struct NotReprC_Point Foo;
 
 struct Point {
   int32_t x;
