@@ -16,7 +16,7 @@ struct NonZeroI64;
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct Option_Option_NonZeroI64 Option_Option_NonZeroI64;
+typedef struct Option_i64 Option_i64;
 
 typedef struct {
   uint8_t a;
@@ -28,7 +28,7 @@ typedef struct {
   int32_t g;
   int64_t h;
   int64_t i;
-  const Option_Option_NonZeroI64 *j;
+  const Option_i64 *j;
 } NonZeroTest;
 
 void root(NonZeroTest test,
@@ -41,4 +41,4 @@ void root(NonZeroTest test,
           int32_t g,
           int64_t h,
           int64_t i,
-          const Option_Option_NonZeroI64 *j);
+          const Option_i64 *j);

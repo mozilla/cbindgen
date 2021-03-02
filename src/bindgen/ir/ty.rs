@@ -654,7 +654,12 @@ impl Type {
     fn visit_types(&mut self, mut visitor: impl FnMut(&mut Type)) {
         match *self {
             Type::Array(ref mut ty, ..) | Type::Ptr { ref mut ty, .. } => visitor(ty),
-            Type::Path(..) | Type::Primitive(..) => {}
+            Type::Path(ref mut path) => {
+                for generic in path.generics_mut() {
+                    visitor(generic);
+                }
+            }
+            Type::Primitive(..) => {}
             Type::FuncPtr {
                 ref mut ret,
                 ref mut args,

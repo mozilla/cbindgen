@@ -17,9 +17,9 @@ using MaybeUninit = T;
 #include <stdint.h>
 #include <stdlib.h>
 
-struct NotReprC_MaybeUninit______i32;
+struct NotReprC______i32;
 
-typedef struct NotReprC_MaybeUninit______i32 Foo;
+typedef struct NotReprC______i32 Foo;
 
 struct MyStruct {
   const int32_t *number;

@@ -94,9 +94,7 @@ impl GenericPath {
         if self.path.replace_self_with(self_ty) {
             self.export_name = self_ty.name().to_owned();
         }
-        for ty in &mut self.generics {
-            ty.replace_self_with(self_ty);
-        }
+        // Caller deals with generics.
     }
 
     pub fn path(&self) -> &Path {
@@ -105,6 +103,10 @@ impl GenericPath {
 
     pub fn generics(&self) -> &[Type] {
         &self.generics
+    }
+
+    pub fn generics_mut(&mut self) -> &mut [Type] {
+        &mut self.generics
     }
 
     pub fn ctype(&self) -> Option<&DeclarationType> {

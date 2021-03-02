@@ -20,10 +20,10 @@ cdef extern from *:
 
 cdef extern from *:
 
-  cdef struct NotReprC_Box_i32:
+  cdef struct NotReprC_____i32:
     pass
 
-  ctypedef NotReprC_Box_i32 Foo;
+  ctypedef NotReprC_____i32 Foo;
 
   cdef struct MyStruct:
     int32_t *number;
