@@ -1032,6 +1032,8 @@ pub struct Config {
     /// and creating a new InternalConfig struct would require more breaking
     /// changes to our public API.
     pub config_path: Option<StdPathBuf>,
+    /// Enable GObject generation
+    pub gobject: bool,
 }
 
 impl Default for Config {
@@ -1076,6 +1078,7 @@ impl Default for Config {
             only_target_dependencies: false,
             cython: CythonConfig::default(),
             config_path: None,
+            gobject: false,
         }
     }
 }
@@ -1109,6 +1112,7 @@ impl Config {
         }
     }
 
+    #[allow(unused)]
     pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {
         let config_text = fs::read_to_string(file_name.as_ref()).map_err(|_| {
             format!(
@@ -1123,6 +1127,7 @@ impl Config {
         Ok(config)
     }
 
+    #[allow(unused)]
     pub fn from_root_or_default<P: AsRef<StdPath>>(root: P) -> Config {
         let c = root.as_ref().join("cbindgen.toml");
 

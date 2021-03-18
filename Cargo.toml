@@ -17,6 +17,7 @@ rust-version = "1.74"
 exclude = [
   "tests/profile.rs", # Test relies in a sub-crate, see https://github.com/rust-lang/cargo/issues/9017
 ]
+default-run = "cbindgen"
 
 [dependencies]
 clap = { version = "4.3", optional = true }
@@ -42,12 +43,19 @@ pretty_assertions = "1.4.0"
 [features]
 default =  ["clap"]
 unstable_ir = []
+gobject = []
 
 [[bin]]
 name = "cbindgen"
 path = "src/main.rs"
 doc = false
 required-features = ["clap"]
+
+[[bin]]
+name = "gbindgen"
+path = "src/gmain.rs"
+doc = false
+required-features = ["clap", "gobject"]
 
 [lib]
 name = "cbindgen"

@@ -1,6 +1,7 @@
 use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type, Typedef, Union,
+    Field, GObject, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
+    Typedef, Union,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::writer::{ListType, SourceWriter};
@@ -417,5 +418,10 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         {
             out.write("pass");
         }
+    }
+
+    fn write_gobject<W: Write>(&mut self, _out: &mut SourceWriter<W>, _t: &GObject) {
+        // There is no Cython bindings for GObject, so, bail out.
+        unimplemented!()
     }
 }
