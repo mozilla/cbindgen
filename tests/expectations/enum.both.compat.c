@@ -183,33 +183,33 @@ typedef struct H {
   };
 } H;
 
-enum I_Tag
+enum ExI_Tag
 #ifdef __cplusplus
   : uint8_t
 #endif // __cplusplus
  {
-  I_Foo,
-  I_Bar,
-  I_Baz,
+  ExI_Foo,
+  ExI_Bar,
+  ExI_Baz,
 };
 #ifndef __cplusplus
-typedef uint8_t I_Tag;
+typedef uint8_t ExI_Tag;
 #endif // __cplusplus
 
-typedef struct I_Bar_Body {
+typedef struct ExI_Bar_Body {
   uint8_t x;
   int16_t y;
-} I_Bar_Body;
+} ExI_Bar_Body;
 
-typedef struct I {
-  I_Tag tag;
+typedef struct ExI {
+  ExI_Tag tag;
   union {
     struct {
       int16_t foo;
     };
-    I_Bar_Body bar;
+    ExI_Bar_Body bar;
   };
-} I;
+} ExI;
 
 enum P_Tag
 #ifdef __cplusplus
@@ -252,7 +252,7 @@ void root(struct Opaque *opaque,
           F f,
           union G g,
           struct H h,
-          struct I i,
+          struct ExI i,
           struct J j,
           struct K k,
           enum L l,

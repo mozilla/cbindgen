@@ -114,19 +114,19 @@ cdef extern from *:
     H_Bar_Body bar;
 
   cdef enum:
-    I_Foo,
-    I_Bar,
-    I_Baz,
-  ctypedef uint8_t I_Tag;
+    ExI_Foo,
+    ExI_Bar,
+    ExI_Baz,
+  ctypedef uint8_t ExI_Tag;
 
-  cdef struct I_Bar_Body:
+  cdef struct ExI_Bar_Body:
     uint8_t x;
     int16_t y;
 
-  cdef struct I:
-    I_Tag tag;
+  cdef struct ExI:
+    ExI_Tag tag;
     int16_t foo;
-    I_Bar_Body bar;
+    ExI_Bar_Body bar;
 
   cdef enum:
     P0,
@@ -152,7 +152,7 @@ cdef extern from *:
             F f,
             G g,
             H h,
-            I i,
+            ExI i,
             J j,
             K k,
             L l,

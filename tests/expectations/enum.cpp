@@ -127,26 +127,26 @@ struct H {
   };
 };
 
-struct I {
+struct ExI {
   enum class Tag : uint8_t {
-    I_Foo,
-    I_Bar,
-    I_Baz,
+    ExI_Foo,
+    ExI_Bar,
+    ExI_Baz,
   };
 
-  struct I_Foo_Body {
+  struct ExI_Foo_Body {
     int16_t _0;
   };
 
-  struct I_Bar_Body {
+  struct ExI_Bar_Body {
     uint8_t x;
     int16_t y;
   };
 
   Tag tag;
   union {
-    I_Foo_Body foo;
-    I_Bar_Body bar;
+    ExI_Foo_Body foo;
+    ExI_Bar_Body bar;
   };
 };
 
@@ -184,7 +184,7 @@ void root(Opaque *opaque,
           F f,
           G g,
           H h,
-          I i,
+          ExI i,
           J j,
           K k,
           L l,
