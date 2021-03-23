@@ -129,25 +129,25 @@ struct H {
   };
 };
 
-enum I_Tag {
-  I_Foo,
-  I_Bar,
-  I_Baz,
+enum ExI_Tag {
+  ExI_Foo,
+  ExI_Bar,
+  ExI_Baz,
 };
-typedef uint8_t I_Tag;
+typedef uint8_t ExI_Tag;
 
-struct I_Bar_Body {
+struct ExI_Bar_Body {
   uint8_t x;
   int16_t y;
 };
 
-struct I {
-  I_Tag tag;
+struct ExI {
+  ExI_Tag tag;
   union {
     struct {
       int16_t foo;
     };
-    struct I_Bar_Body bar;
+    struct ExI_Bar_Body bar;
   };
 };
 
@@ -182,7 +182,7 @@ void root(struct Opaque *opaque,
           F f,
           union G g,
           struct H h,
-          struct I i,
+          struct ExI i,
           struct J j,
           struct K k,
           enum L l,

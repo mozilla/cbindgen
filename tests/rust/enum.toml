@@ -14,3 +14,6 @@ static_assert(sizeof(CBINDGEN_STRUCT(P)) == 4, "unexpected size for P");
 ' '''
 #endif
 """
+
+[export.rename]
+"I" = "ExI"
