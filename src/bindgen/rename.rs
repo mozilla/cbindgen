@@ -5,13 +5,11 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use crate::bindgen::ir::{Enum, Item};
-
 /// The type of identifier to be renamed.
 #[derive(Debug, Clone, Copy)]
 pub enum IdentifierType<'a> {
     StructMember,
-    EnumVariant(&'a Enum),
+    EnumVariant { prefix: &'a str },
     FunctionArg,
     Type,
     Enum,
@@ -21,7 +19,7 @@ impl<'a> IdentifierType<'a> {
     fn to_str(&'a self) -> &'static str {
         match *self {
             IdentifierType::StructMember => "m",
-            IdentifierType::EnumVariant(..) => "",
+            IdentifierType::EnumVariant { .. } => "",
             IdentifierType::FunctionArg => "a",
             IdentifierType::Type => "",
             IdentifierType::Enum => "",
@@ -81,10 +79,9 @@ impl RenameRule {
             RenameRule::QualifiedScreamingSnakeCase => {
                 let mut result = String::new();
 
-                if let IdentifierType::EnumVariant(e) = context {
+                if let IdentifierType::EnumVariant { prefix } = context {
                     result.push_str(
-                        &RenameRule::ScreamingSnakeCase
-                            .apply(e.path().name(), IdentifierType::Enum),
+                        &RenameRule::ScreamingSnakeCase.apply(prefix, IdentifierType::Enum),
                     );
                     result.push('_');
                 }
