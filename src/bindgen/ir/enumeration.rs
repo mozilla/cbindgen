@@ -552,8 +552,13 @@ impl Item for Enum {
                 .iter()
                 .map(|variant| {
                     EnumVariant::new(
-                        r.apply(&variant.export_name, IdentifierType::EnumVariant(self))
-                            .into_owned(),
+                        r.apply(
+                            &variant.export_name,
+                            IdentifierType::EnumVariant {
+                                prefix: &self.export_name,
+                            },
+                        )
+                        .into_owned(),
                         variant.discriminant.clone(),
                         match variant.body {
                             VariantBody::Empty(..) => variant.body.clone(),
