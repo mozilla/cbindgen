@@ -204,7 +204,14 @@ pub fn metadata(
                 if let Ok(out) = rustc {
                     if let Ok(stdout) = std::str::from_utf8(&out.stdout) {
                         let field = "host: ";
-                        let value = stdout.lines().find_map(|l| l.strip_prefix(field));
+                        let value = stdout.lines().find_map(|l| {
+                            // XXX l.strip_prefix(field) re-implemented to preserve MSRV
+                            if l.starts_with(field) {
+                                Some(&l[field.len()..])
+                            } else {
+                                None
+                            }
+                        });
                         if let Some(value) = value {
                             target = Some(value.to_string());
                         }
