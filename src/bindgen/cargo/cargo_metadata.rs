@@ -180,7 +180,7 @@ impl Eq for Dependency {}
 pub fn metadata(
     manifest_path: &Path,
     existing_metadata_file: Option<&Path>,
-    all_platforms: bool,
+    only_host: bool,
 ) -> Result<Metadata, Error> {
     let output;
     let metadata = match existing_metadata_file {
@@ -188,7 +188,7 @@ pub fn metadata(
         None => {
             let mut target = None;
 
-            if !all_platforms {
+            if only_host {
                 // cargo metadata defaults to giving information for _all_ targets.
                 // We figure out the host platform through rustc and use that.
                 // We unfortunatelly cannot go through cargo, since cargo rustc _also_ builds.

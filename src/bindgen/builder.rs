@@ -241,8 +241,8 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_all_dependencies(mut self, fetch_all_dependencies: bool) -> Builder {
-        self.config.fetch_all_dependencies = fetch_all_dependencies;
+    pub fn with_only_host_dependencies(mut self, only_host_dependencies: bool) -> Builder {
+        self.config.only_host_dependencies = only_host_dependencies;
         self
     }
 
@@ -347,7 +347,7 @@ impl Builder {
                 binding_lib_name.as_deref(),
                 self.config.parse.parse_deps,
                 self.config.parse.clean,
-                self.config.fetch_all_dependencies,
+                self.config.only_host_dependencies,
                 /* existing_metadata = */ None,
             )?;
 

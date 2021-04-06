@@ -938,14 +938,13 @@ pub struct Config {
     /// Configuration options for pointers
     #[serde(rename = "ptr")]
     pub pointer: PtrConfig,
-    /// Download sources for dependencies on all platforms.
+    /// Download sources for dependencies only for the host platform.
     ///
-    /// By default, cbindgen will only fetch sources for dependencies that match the current target
-    /// platform. This means that if a type is defined in terms of a type from a dependency on
-    /// another target (probably behind a `#[cfg]`), cbindgen will be unable to generate the
-    /// appropriate binding as it cannot see the nested type's definition. By setting this option
-    /// to `true`, all dependencies will be downloaded, regardless of platform (the default prior
-    /// to cbindgen 0.19).
+    /// By default, cbindgen will fetch sources for dependencies on all platforms, so that if a
+    /// type is defined in terms of a type from a dependency on another target (probably behind a
+    /// `#[cfg]`), cbindgen will be able to generate the appropriate binding as it can see the
+    /// nested type's definition. However, this makes calling cbindgen slower, as it may have to
+    /// download a number of additional dependencies.
     ///
     /// As an example, consider this Cargo.toml:
     ///
@@ -962,14 +961,14 @@ pub struct Config {
     /// pub struct Error(windows::ErrorCode);
     /// ```
     ///
-    /// If this option is `false` and this code is run under cbindgen on a non-Windows platform,
-    /// the `windows` dependency will not be downloaded, and cbindgen will fail to generate a
-    /// binding for the `Error` type since it doesn't know the definition of the inner type.
+    /// With the default value (`false`), cbindgen will download the `windows` dependency even on
+    /// non-Windows platforms, and thus be able to generate the binding for `Error` (behind a
+    /// `#define`).
     ///
-    /// If this option is `true`, the `windows` dependency will be fetched no matter what platform
-    /// cbindgen is run on. This may increase runtime as more assets must be downloaded, but will
-    /// allow cbindgen to generate the bindings for `Error` even on a non-Windows platform.
-    pub fetch_all_dependencies: bool,
+    /// If this value is instead to `true`, cbindgen will _not_ download the `windows` dependency
+    /// if run on a non-Windows platform, but will also fail to generate a Windows binding for
+    /// `Error` as it does not know the definition for `ErrorCode`.
+    pub only_host_dependencies: bool,
     /// Configuration options specific to Cython.
     pub cython: CythonConfig,
 }
@@ -1011,7 +1010,7 @@ impl Default for Config {
             documentation: true,
             documentation_style: DocumentationStyle::Auto,
             pointer: PtrConfig::default(),
-            fetch_all_dependencies: false,
+            only_host_dependencies: false,
             cython: CythonConfig::default(),
         }
     }
