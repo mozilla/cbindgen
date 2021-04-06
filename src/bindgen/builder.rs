@@ -341,6 +341,7 @@ impl Builder {
                 binding_lib_name.as_deref(),
                 self.config.parse.parse_deps,
                 self.config.parse.clean,
+                self.config.fetch_all_dependencies,
                 /* existing_metadata = */ None,
             )?;
 

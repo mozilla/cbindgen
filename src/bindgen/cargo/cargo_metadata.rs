@@ -180,37 +180,41 @@ impl Eq for Dependency {}
 pub fn metadata(
     manifest_path: &Path,
     existing_metadata_file: Option<&Path>,
+    all_platforms: bool,
 ) -> Result<Metadata, Error> {
     let output;
     let metadata = match existing_metadata_file {
         Some(path) => Cow::Owned(std::fs::read_to_string(path)?),
         None => {
-            // cargo metadata defaults to giving information for _all_ targets.
-            // We figure out the host platform through rustc and use that.
-            // We unfortunatelly cannot go through cargo, since cargo rustc _also_ builds.
-            // If `rustc` fails to run, we just fall back to not passing --filter-platforms.
-            //
-            // NOTE: We set the current directory in case of rustup shenanigans.
-            let rustc = Command::new("rustc")
-                .current_dir(manifest_path.parent().unwrap())
-                .arg("-vV")
-                .output();
-            log::debug!("Discovering host platform by {:?}", rustc);
             let mut target = None;
-            if let Ok(out) = rustc {
-                if let Ok(stdout) = std::str::from_utf8(&out.stdout) {
-                    let field = "host: ";
-                    let value = stdout.lines().find_map(|l| l.strip_prefix(field));
-                    if let Some(value) = value {
-                        target = Some(value.to_string());
+
+            if !all_platforms {
+                // cargo metadata defaults to giving information for _all_ targets.
+                // We figure out the host platform through rustc and use that.
+                // We unfortunatelly cannot go through cargo, since cargo rustc _also_ builds.
+                // If `rustc` fails to run, we just fall back to not passing --filter-platforms.
+                //
+                // NOTE: We set the current directory in case of rustup shenanigans.
+                let rustc = Command::new("rustc")
+                    .current_dir(manifest_path.parent().unwrap())
+                    .arg("-vV")
+                    .output();
+                log::debug!("Discovering host platform by {:?}", rustc);
+                if let Ok(out) = rustc {
+                    if let Ok(stdout) = std::str::from_utf8(&out.stdout) {
+                        let field = "host: ";
+                        let value = stdout.lines().find_map(|l| l.strip_prefix(field));
+                        if let Some(value) = value {
+                            target = Some(value.to_string());
+                        }
                     }
                 }
-            }
-            if target.is_none() {
-                log::warn!(
-                    "Failed to discover host platform for cargo metadata; \
-                    will fetch dependencies for all platforms."
-                );
+                if target.is_none() {
+                    log::warn!(
+                        "Failed to discover host platform for cargo metadata; \
+                        will fetch dependencies for all platforms."
+                    );
+                }
             }
 
             let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));

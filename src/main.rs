@@ -44,6 +44,10 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
         config.cpp_compat = true;
     }
 
+    if matches.is_present("fetch-all-dependencies") {
+        config.fetch_all_dependencies = true;
+    }
+
     if let Some(style) = matches.value_of("style") {
         config.style = match style {
             "Both" => Style::Both,
@@ -98,6 +102,7 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
         matches.value_of("crate"),
         true,
         matches.is_present("clean"),
+        matches.is_present("fetch-all-dependencies"),
         matches.value_of("metadata").map(Path::new),
     )?;
 
@@ -158,6 +163,11 @@ fn main() {
             Arg::with_name("cpp-compat")
                 .long("cpp-compat")
                 .help("Whether to add C++ compatibility to generated C bindings")
+        )
+        .arg(
+            Arg::with_name("fetch-all-dependencies")
+                .long("fetch-all-dependencies")
+                .help("Whether to fetch all dependencies, including those for other target platforms")
         )
         .arg(
             Arg::with_name("style")

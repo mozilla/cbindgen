@@ -938,6 +938,38 @@ pub struct Config {
     /// Configuration options for pointers
     #[serde(rename = "ptr")]
     pub pointer: PtrConfig,
+    /// Download sources for dependencies on all platforms.
+    ///
+    /// By default, cbindgen will only fetch sources for dependencies that match the current target
+    /// platform. This means that if a type is defined in terms of a type from a dependency on
+    /// another target (probably behind a `#[cfg]`), cbindgen will be unable to generate the
+    /// appropriate binding as it cannot see the nested type's definition. By setting this option
+    /// to `true`, all dependencies will be downloaded, regardless of platform (the default prior
+    /// to cbindgen 0.19).
+    ///
+    /// As an example, consider this Cargo.toml:
+    ///
+    /// ```toml
+    /// [target.'cfg(windows)'.dependencies]
+    /// windows = "0.7"
+    /// ```
+    ///
+    /// with this declaration in one of the `.rs` files that cbindgen is asked to generate bindings
+    /// for:
+    ///
+    /// ```rust,ignore
+    /// #[cfg(windows)]
+    /// pub struct Error(windows::ErrorCode);
+    /// ```
+    ///
+    /// If this option is `false` and this code is run under cbindgen on a non-Windows platform,
+    /// the `windows` dependency will not be downloaded, and cbindgen will fail to generate a
+    /// binding for the `Error` type since it doesn't know the definition of the inner type.
+    ///
+    /// If this option is `true`, the `windows` dependency will be fetched no matter what platform
+    /// cbindgen is run on. This may increase runtime as more assets must be downloaded, but will
+    /// allow cbindgen to generate the bindings for `Error` even on a non-Windows platform.
+    pub fetch_all_dependencies: bool,
     /// Configuration options specific to Cython.
     pub cython: CythonConfig,
 }
@@ -979,6 +1011,7 @@ impl Default for Config {
             documentation: true,
             documentation_style: DocumentationStyle::Auto,
             pointer: PtrConfig::default(),
+            fetch_all_dependencies: false,
             cython: CythonConfig::default(),
         }
     }
