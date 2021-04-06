@@ -16,8 +16,8 @@ pub enum IdentifierType<'a> {
 }
 
 impl<'a> IdentifierType<'a> {
-    fn to_str(&'a self) -> &'static str {
-        match *self {
+    fn to_str(self) -> &'static str {
+        match self {
             IdentifierType::StructMember => "m",
             IdentifierType::EnumVariant { .. } => "",
             IdentifierType::FunctionArg => "a",
