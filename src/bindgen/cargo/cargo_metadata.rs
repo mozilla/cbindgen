@@ -195,7 +195,8 @@ pub fn metadata(
                 // If `rustc` fails to run, we just fall back to not passing --filter-platforms.
                 //
                 // NOTE: We set the current directory in case of rustup shenanigans.
-                let rustc = Command::new("rustc")
+                let rustc = env::var("RUSTC").unwrap_or_else(|_| String::from("rustc"));
+                let rustc = Command::new(rustc)
                     .current_dir(manifest_path.parent().unwrap())
                     .arg("-vV")
                     .output();
