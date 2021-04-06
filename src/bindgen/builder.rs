@@ -241,6 +241,12 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_all_dependencies(mut self, fetch_all_dependencies: bool) -> Builder {
+        self.config.fetch_all_dependencies = fetch_all_dependencies;
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_documentation(mut self, documentation: bool) -> Builder {
         self.config.documentation = documentation;
         self
