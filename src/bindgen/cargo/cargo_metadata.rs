@@ -180,7 +180,7 @@ impl Eq for Dependency {}
 pub fn metadata(
     manifest_path: &Path,
     existing_metadata_file: Option<&Path>,
-    only_host: bool,
+    only_target: bool,
 ) -> Result<Metadata, Error> {
     let output;
     let metadata = match existing_metadata_file {
@@ -188,8 +188,13 @@ pub fn metadata(
         None => {
             let mut target = None;
 
-            if only_host {
-                // cargo metadata defaults to giving information for _all_ targets.
+            if only_target {
+                target = std::env::var_os("TARGET");
+            }
+
+            if only_target && target.is_none() {
+                // We must be running as a standalone script, not under cargo.
+                // Let's use the host platform instead.
                 // We figure out the host platform through rustc and use that.
                 // We unfortunatelly cannot go through cargo, since cargo rustc _also_ builds.
                 // If `rustc` fails to run, we just fall back to not passing --filter-platforms.
@@ -213,7 +218,7 @@ pub fn metadata(
                             }
                         });
                         if let Some(value) = value {
-                            target = Some(value.to_string());
+                            target = Some(value.into());
                         }
                     }
                 }

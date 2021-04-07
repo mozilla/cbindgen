@@ -44,8 +44,8 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
         config.cpp_compat = true;
     }
 
-    if matches.is_present("only-host-dependencies") {
-        config.only_host_dependencies = true;
+    if matches.is_present("only-target-dependencies") {
+        config.only_target_dependencies = true;
     }
 
     if let Some(style) = matches.value_of("style") {
@@ -102,7 +102,7 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
         matches.value_of("crate"),
         true,
         matches.is_present("clean"),
-        matches.is_present("only-host-dependencies"),
+        matches.is_present("only-target-dependencies"),
         matches.value_of("metadata").map(Path::new),
     )?;
 
@@ -165,9 +165,10 @@ fn main() {
                 .help("Whether to add C++ compatibility to generated C bindings")
         )
         .arg(
-            Arg::with_name("only-host-dependencies")
-                .long("only-host-dependencies")
-                .help("Only fetch dependencies for the host platform")
+            Arg::with_name("only-target-dependencies")
+                .long("only-target-dependencies")
+                .help("Only fetch dependencies needed by the target platform. \
+                    The target platform defaults to the host platform; set TARGET to override.")
         )
         .arg(
             Arg::with_name("style")

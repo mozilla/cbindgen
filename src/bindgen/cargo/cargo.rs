@@ -40,12 +40,12 @@ impl Cargo {
         binding_crate_name: Option<&str>,
         use_cargo_lock: bool,
         clean: bool,
-        only_host_dependencies: bool,
+        only_target_dependencies: bool,
         existing_metadata_file: Option<&Path>,
     ) -> Result<Cargo, Error> {
         let toml_path = crate_dir.join("Cargo.toml");
         let metadata =
-            cargo_metadata::metadata(&toml_path, existing_metadata_file, only_host_dependencies)
+            cargo_metadata::metadata(&toml_path, existing_metadata_file, only_target_dependencies)
                 .map_err(|x| Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x))?;
         let lock_path = lock_file
             .map(PathBuf::from)
