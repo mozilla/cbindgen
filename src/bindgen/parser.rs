@@ -215,7 +215,10 @@ impl<'a> Parser<'a> {
             self.cache_expanded_crate.get(&pkg.name).unwrap().clone()
         };
 
-        self.process_mod(pkg, None, None, &mod_items, 0)
+        self.process_mod(
+            pkg, None, None, &mod_items, 0, /* is_mod_rs = */ true,
+            /* is_inline = */ false,
+        )
     }
 
     fn parse_mod(
@@ -254,7 +257,8 @@ impl<'a> Parser<'a> {
 
         let mod_dir = mod_path.parent().unwrap();
 
-        let submod_dir = if depth == 0 || mod_path.ends_with("mod.rs") {
+        let is_mod_rs = depth == 0 || mod_path.ends_with("mod.rs");
+        let submod_dir = if is_mod_rs {
             mod_dir
         } else {
             submod_dir_2018 = mod_path
@@ -264,7 +268,15 @@ impl<'a> Parser<'a> {
             &submod_dir_2018
         };
 
-        self.process_mod(pkg, Some(mod_dir), Some(submod_dir), &mod_items, depth)
+        self.process_mod(
+            pkg,
+            Some(mod_dir),
+            Some(submod_dir),
+            &mod_items,
+            depth,
+            /* is_inline = */ false,
+            is_mod_rs,
+        )
     }
 
     /// `mod_dir` is the path to the current directory of the module. It may be
@@ -272,6 +284,7 @@ impl<'a> Parser<'a> {
     ///
     /// `submod_dir` is the path to search submodules in by default, which might
     /// be different for rust 2018 for example.
+    #[allow(clippy::too_many_arguments)]
     fn process_mod(
         &mut self,
         pkg: &PackageRef,
@@ -279,6 +292,8 @@ impl<'a> Parser<'a> {
         submod_dir: Option<&FilePath>,
         items: &[syn::Item],
         depth: usize,
+        is_inline: bool,
+        is_in_mod_rs: bool,
     ) -> Result<(), Error> {
         debug_assert_eq!(mod_dir.is_some(), submod_dir.is_some());
         // We process the items first then the nested modules.
@@ -298,13 +313,18 @@ impl<'a> Parser<'a> {
             }
 
             if let Some((_, ref inline_items)) = item.content {
+                // TODO(emilio): This should use #[path] attribute if present,
+                // rather than next_mod_name.
                 let next_submod_dir = submod_dir.map(|dir| dir.join(&next_mod_name));
+                let next_mod_dir = mod_dir.map(|dir| dir.join(&next_mod_name));
                 self.process_mod(
                     pkg,
-                    mod_dir,
+                    next_mod_dir.as_deref(),
                     next_submod_dir.as_deref(),
                     inline_items,
                     depth,
+                    /* is_inline = */ true,
+                    is_in_mod_rs,
                 )?;
             } else if let Some(mod_dir) = mod_dir {
                 let submod_dir = submod_dir.unwrap();
@@ -325,11 +345,28 @@ impl<'a> Parser<'a> {
                             match lit {
                                 syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
                                     path_attr_found = true;
-                                    self.parse_mod(
-                                        pkg,
-                                        &mod_dir.join(path_lit.value()),
-                                        depth + 1,
-                                    )?;
+                                    // https://doc.rust-lang.org/reference/items/modules.html#the-path-attribute
+                                    //
+                                    //     For path attributes on modules not inside inline module blocks, the file path
+                                    //     is relative to the directory the source file is located.
+                                    //
+                                    //     For path attributes inside inline module blocks, the relative location of the
+                                    //     file path depends on the kind of source file the path attribute is located
+                                    //     in.  "mod-rs" source files are root modules (such as lib.rs or main.rs) and
+                                    //     modules with files named mod.rs. "non-mod-rs" source files are all other
+                                    //     module files.
+                                    //
+                                    //     Paths for path attributes inside inline module blocks in a mod-rs file are
+                                    //     relative to the directory of the mod-rs file including the inline module
+                                    //     components as directories. For non-mod-rs files, it is the same except the
+                                    //     path starts with a directory with the name of the non-mod-rs module.
+                                    //
+                                    let base = if is_inline && !is_in_mod_rs {
+                                        submod_dir
+                                    } else {
+                                        mod_dir
+                                    };
+                                    self.parse_mod(pkg, &base.join(path_lit.value()), depth + 1)?;
                                     break;
                                 }
                                 _ => (),

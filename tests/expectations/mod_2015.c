@@ -10,3 +10,5 @@ typedef struct {
 } ExportMe;
 
 void export_me(ExportMe *val);
+
+void from_really_nested_mod(void);

@@ -17,3 +17,5 @@ cdef extern from *:
   void export_me(ExportMe *val);
 
   void export_me_2(ExportMe2*);
+
+  void from_really_nested_mod();
