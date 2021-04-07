@@ -633,9 +633,7 @@ impl Item for Enum {
             self.documentation.clone(),
         );
 
-        monomorph.add_monomorphs(library, out);
-
-        out.insert_enum(self, monomorph, generic_values.to_owned());
+        out.insert_enum(library, self, monomorph, generic_values.to_owned());
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {

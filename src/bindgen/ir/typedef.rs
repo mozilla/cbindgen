@@ -191,10 +191,7 @@ impl Item for Typedef {
             self.documentation.clone(),
         );
 
-        // Instantiate any monomorphs for any generic paths we may have just created.
-        monomorph.add_monomorphs(library, out);
-
-        out.insert_typedef(self, monomorph, generic_values.to_owned());
+        out.insert_typedef(library, self, monomorph, generic_values.to_owned());
     }
 }
 

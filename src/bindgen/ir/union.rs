@@ -270,10 +270,7 @@ impl Item for Union {
             self.documentation.clone(),
         );
 
-        // Instantiate any monomorphs for any generic paths we may have just created.
-        monomorph.add_monomorphs(library, out);
-
-        out.insert_union(self, monomorph, generic_values.to_owned());
+        out.insert_union(library, self, monomorph, generic_values.to_owned());
     }
 }
 
