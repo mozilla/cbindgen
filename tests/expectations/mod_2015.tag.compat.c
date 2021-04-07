@@ -15,6 +15,8 @@ extern "C" {
 
 void export_me(struct ExportMe *val);
 
+void from_really_nested_mod(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif // __cplusplus

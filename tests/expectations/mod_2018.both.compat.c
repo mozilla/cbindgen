@@ -21,6 +21,8 @@ void export_me(struct ExportMe *val);
 
 void export_me_2(struct ExportMe2*);
 
+void from_really_nested_mod(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif // __cplusplus

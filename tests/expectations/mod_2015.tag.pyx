@@ -12,3 +12,5 @@ cdef extern from *:
     uint64_t val;
 
   void export_me(ExportMe *val);
+
+  void from_really_nested_mod();
