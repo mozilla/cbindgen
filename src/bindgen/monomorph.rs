@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::mem;
 
 use crate::bindgen::ir::{Enum, GenericPath, OpaqueItem, Path, Struct, Type, Typedef, Union};
+use crate::bindgen::library::Library;
 
 #[derive(Default, Clone, Debug)]
 pub struct Monomorphs {
@@ -22,7 +23,13 @@ impl Monomorphs {
         self.replacements.contains_key(path)
     }
 
-    pub fn insert_struct(&mut self, generic: &Struct, monomorph: Struct, parameters: Vec<Type>) {
+    pub fn insert_struct(
+        &mut self,
+        library: &Library,
+        generic: &Struct,
+        monomorph: Struct,
+        parameters: Vec<Type>,
+    ) {
         let replacement_path = GenericPath::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
@@ -30,10 +37,19 @@ impl Monomorphs {
 
         self.replacements
             .insert(replacement_path, monomorph.path.clone());
+
+        monomorph.add_monomorphs(library, self);
+
         self.structs.push(monomorph);
     }
 
-    pub fn insert_enum(&mut self, generic: &Enum, monomorph: Enum, parameters: Vec<Type>) {
+    pub fn insert_enum(
+        &mut self,
+        library: &Library,
+        generic: &Enum,
+        monomorph: Enum,
+        parameters: Vec<Type>,
+    ) {
         let replacement_path = GenericPath::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
@@ -41,10 +57,19 @@ impl Monomorphs {
 
         self.replacements
             .insert(replacement_path, monomorph.path.clone());
+
+        monomorph.add_monomorphs(library, self);
+
         self.enums.push(monomorph);
     }
 
-    pub fn insert_union(&mut self, generic: &Union, monomorph: Union, parameters: Vec<Type>) {
+    pub fn insert_union(
+        &mut self,
+        library: &Library,
+        generic: &Union,
+        monomorph: Union,
+        parameters: Vec<Type>,
+    ) {
         let replacement_path = GenericPath::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
@@ -52,6 +77,9 @@ impl Monomorphs {
 
         self.replacements
             .insert(replacement_path, monomorph.path.clone());
+
+        monomorph.add_monomorphs(library, self);
+
         self.unions.push(monomorph);
     }
 
@@ -71,7 +99,13 @@ impl Monomorphs {
         self.opaques.push(monomorph);
     }
 
-    pub fn insert_typedef(&mut self, generic: &Typedef, monomorph: Typedef, parameters: Vec<Type>) {
+    pub fn insert_typedef(
+        &mut self,
+        library: &Library,
+        generic: &Typedef,
+        monomorph: Typedef,
+        parameters: Vec<Type>,
+    ) {
         let replacement_path = GenericPath::new(generic.path.clone(), parameters);
 
         debug_assert!(generic.generic_params.len() > 0);
@@ -79,6 +113,9 @@ impl Monomorphs {
 
         self.replacements
             .insert(replacement_path, monomorph.path.clone());
+
+        monomorph.add_monomorphs(library, self);
+
         self.typedefs.push(monomorph);
     }
 

@@ -387,11 +387,7 @@ impl Item for Struct {
             .collect::<Vec<_>>();
 
         let monomorph = self.specialize(generic_values, &mappings, library.get_config());
-
-        // Instantiate any monomorphs for any generic paths we may have just created.
-        monomorph.add_monomorphs(library, out);
-
-        out.insert_struct(self, monomorph, generic_values.to_owned());
+        out.insert_struct(library, self, monomorph, generic_values.to_owned());
     }
 }
 
