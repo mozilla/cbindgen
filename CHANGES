@@ -1,3 +1,11 @@
+## 0.19.0
+
+     * Simplify types in generics (#663)
+     * Use --profile=check for macro expansion (#671)
+     * Use exported name to prefix enum variants (#672)
+     * Fix path attribute handling in inline submodules (#679)
+     * Fix a stack overflow with some recursive typedefs (#680)
+
 ## 0.18.0
 
      * Simplify types in nested types such as pointed-to types and function signatures (#661)
