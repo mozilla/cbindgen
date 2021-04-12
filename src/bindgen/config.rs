@@ -968,6 +968,10 @@ pub struct Config {
     /// If this value is instead to `true`, cbindgen will _not_ download the `windows` dependency
     /// if it's not compiling for Windows, but will also fail to generate a Windows binding for
     /// `Error` as it does not know the definition for `ErrorCode`.
+    ///
+    /// The target can be chosen via the `TARGET` environment variable (if used
+    /// via the CLI, when ran from a build script cargo sets this variable
+    /// appropriately).
     pub only_target_dependencies: bool,
     /// Configuration options specific to Cython.
     pub cython: CythonConfig,
