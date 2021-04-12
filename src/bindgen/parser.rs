@@ -154,7 +154,9 @@ impl<'a> Parser<'a> {
                 None => {
                     // This should be an error, but is common enough to just elicit a warning
                     warn!(
-                        "Parsing crate `{}`: can't find lib.rs with `cargo metadata`.",
+                        "Parsing crate `{}`: can't find lib.rs with `cargo metadata`. \
+                        The crate may be available only on a particular platform, \
+                        so consider setting `fetch_all_dependencies` in your cbindgen configuration.",
                         pkg.name
                     );
                 }

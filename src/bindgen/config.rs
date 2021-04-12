@@ -938,6 +938,37 @@ pub struct Config {
     /// Configuration options for pointers
     #[serde(rename = "ptr")]
     pub pointer: PtrConfig,
+    /// Only download sources for dependencies needed for the target platform.
+    ///
+    /// By default, cbindgen will fetch sources for dependencies used on any platform so that if a
+    /// type is defined in terms of a type from a dependency on another target (probably behind a
+    /// `#[cfg]`), cbindgen will be able to generate the appropriate binding as it can see the
+    /// nested type's definition. However, this makes calling cbindgen slower, as it may have to
+    /// download a number of additional dependencies.
+    ///
+    /// As an example, consider this Cargo.toml:
+    ///
+    /// ```toml
+    /// [target.'cfg(windows)'.dependencies]
+    /// windows = "0.7"
+    /// ```
+    ///
+    /// with this declaration in one of the `.rs` files that cbindgen is asked to generate bindings
+    /// for:
+    ///
+    /// ```rust,ignore
+    /// #[cfg(windows)]
+    /// pub struct Error(windows::ErrorCode);
+    /// ```
+    ///
+    /// With the default value (`false`), cbindgen will download the `windows` dependency even when
+    /// not compiling for Windows, and will thus be able to generate the binding for `Error`
+    /// (behind a `#define`).
+    ///
+    /// If this value is instead to `true`, cbindgen will _not_ download the `windows` dependency
+    /// if it's not compiling for Windows, but will also fail to generate a Windows binding for
+    /// `Error` as it does not know the definition for `ErrorCode`.
+    pub only_target_dependencies: bool,
     /// Configuration options specific to Cython.
     pub cython: CythonConfig,
 }
@@ -979,6 +1010,7 @@ impl Default for Config {
             documentation: true,
             documentation_style: DocumentationStyle::Auto,
             pointer: PtrConfig::default(),
+            only_target_dependencies: false,
             cython: CythonConfig::default(),
         }
     }

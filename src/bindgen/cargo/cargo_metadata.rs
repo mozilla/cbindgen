@@ -180,16 +180,64 @@ impl Eq for Dependency {}
 pub fn metadata(
     manifest_path: &Path,
     existing_metadata_file: Option<&Path>,
+    only_target: bool,
 ) -> Result<Metadata, Error> {
     let output;
     let metadata = match existing_metadata_file {
         Some(path) => Cow::Owned(std::fs::read_to_string(path)?),
         None => {
+            let mut target = None;
+
+            if only_target {
+                target = std::env::var_os("TARGET");
+            }
+
+            if only_target && target.is_none() {
+                // We must be running as a standalone script, not under cargo.
+                // Let's use the host platform instead.
+                // We figure out the host platform through rustc and use that.
+                // We unfortunatelly cannot go through cargo, since cargo rustc _also_ builds.
+                // If `rustc` fails to run, we just fall back to not passing --filter-platforms.
+                //
+                // NOTE: We set the current directory in case of rustup shenanigans.
+                let rustc = env::var("RUSTC").unwrap_or_else(|_| String::from("rustc"));
+                let rustc = Command::new(rustc)
+                    .current_dir(manifest_path.parent().unwrap())
+                    .arg("-vV")
+                    .output();
+                log::debug!("Discovering host platform by {:?}", rustc);
+                if let Ok(out) = rustc {
+                    if let Ok(stdout) = std::str::from_utf8(&out.stdout) {
+                        let field = "host: ";
+                        let value = stdout.lines().find_map(|l| {
+                            // XXX l.strip_prefix(field) re-implemented to preserve MSRV
+                            if l.starts_with(field) {
+                                Some(&l[field.len()..])
+                            } else {
+                                None
+                            }
+                        });
+                        if let Some(value) = value {
+                            target = Some(value.into());
+                        }
+                    }
+                }
+                if target.is_none() {
+                    log::warn!(
+                        "Failed to discover host platform for cargo metadata; \
+                        will fetch dependencies for all platforms."
+                    );
+                }
+            }
+
             let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
             let mut cmd = Command::new(cargo);
             cmd.arg("metadata");
             cmd.arg("--all-features");
             cmd.arg("--format-version").arg("1");
+            if let Some(target) = target {
+                cmd.arg("--filter-platform").arg(target);
+            }
             cmd.arg("--manifest-path");
             cmd.arg(manifest_path);
             output = cmd.output()?;
