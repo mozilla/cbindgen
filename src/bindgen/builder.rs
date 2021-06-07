@@ -115,6 +115,17 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_using_namespaces<S: AsRef<str>>(mut self, namespaces: &[S]) -> Builder {
+        self.config.using_namespaces = Some(
+            namespaces
+                .iter()
+                .map(|x| String::from(x.as_ref()))
+                .collect(),
+        );
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_braces(mut self, braces: Braces) -> Builder {
         self.config.braces = braces;
         self
