@@ -398,7 +398,8 @@ impl Type {
             syn::Type::Path(ref path) => {
                 let generic_path = GenericPath::load(&path.path)?;
 
-                if generic_path.name() == "PhantomData" {
+                if generic_path.name() == "PhantomData" ||
+                    generic_path.name() == "PhantomPinned" {
                     return Ok(None);
                 }
 
