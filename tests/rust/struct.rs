@@ -17,6 +17,7 @@ struct NormalWithZST {
     y: f32,
     z: (),
     w: PhantomData<i32>,
+    v: PhantomPinned,
 }
 
 /// cbindgen:rename-all=GeckoCase
