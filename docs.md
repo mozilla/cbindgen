@@ -161,6 +161,8 @@ cbindgen contains the following hardcoded mappings (again completely ignoring na
 * PhantomData => *evaporates*, can only appear as the field of a type
 * PhantomPinned => *evaporates*, can only appear as the field of a type  
 * () => *evaporates*, can only appear as the field of a type
+* MaybeUninit<T>, ManuallyDrop<T>, and Pin<T> => T
+
 
 
 

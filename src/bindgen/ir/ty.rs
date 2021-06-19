@@ -630,7 +630,7 @@ impl Type {
                 is_ref: false,
             }),
             "Cell" => Some(generic.into_owned()),
-            "ManuallyDrop" | "MaybeUninit" if config.language != Language::Cxx => {
+            "ManuallyDrop" | "MaybeUninit" | "Pin" if config.language != Language::Cxx => {
                 Some(generic.into_owned())
             }
             _ => None,
