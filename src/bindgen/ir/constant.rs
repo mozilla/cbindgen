@@ -340,7 +340,7 @@ impl Literal {
                 // In C++, same order as defined is required.
                 let ordered_fields = out.bindings().struct_field_names(path);
                 for ordered_key in ordered_fields.iter() {
-                    if let Some(ref lit) = fields.get(ordered_key) {
+                    if let Some(lit) = fields.get(ordered_key) {
                         if !is_first_field {
                             write!(out, ", ");
                         } else {
@@ -389,7 +389,7 @@ impl Constant {
             }
         };
 
-        let mut lit = Literal::load(&expr)?;
+        let mut lit = Literal::load(expr)?;
 
         if let Some(ref associated_to) = associated_to {
             ty.replace_self_with(associated_to);
@@ -551,7 +551,7 @@ impl Constant {
                 ref fields,
                 ref path,
                 ..
-            } if out.bindings().struct_is_transparent(path) => &fields.iter().next().unwrap().1,
+            } if out.bindings().struct_is_transparent(path) => fields.iter().next().unwrap().1,
             _ => &self.value,
         };
 

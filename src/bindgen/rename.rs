@@ -86,7 +86,7 @@ impl RenameRule {
                     result.push('_');
                 }
 
-                result.push_str(&RenameRule::ScreamingSnakeCase.apply(&text, context));
+                result.push_str(&RenameRule::ScreamingSnakeCase.apply(text, context));
                 result
             }
         })

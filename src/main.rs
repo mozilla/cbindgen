@@ -87,7 +87,7 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
             None => Config::from_root_or_default(input),
         };
 
-        apply_config_overrides(&mut config, &matches);
+        apply_config_overrides(&mut config, matches);
 
         return Builder::new()
             .with_config(config)
@@ -121,7 +121,7 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
         }
     };
 
-    apply_config_overrides(&mut config, &matches);
+    apply_config_overrides(&mut config, matches);
 
     Builder::new()
         .with_config(config)
