@@ -157,7 +157,7 @@ fn generics() {
     }
 
     fn path(path: &str) -> Type {
-        generic_path(path, &vec![])
+        generic_path(path, &[])
     }
 
     fn generic_path(path: &str, generics: &[Type]) -> Type {
@@ -168,7 +168,7 @@ fn generics() {
 
     // Foo<f32> => Foo_f32
     assert_eq!(
-        mangle_path(&Path::new("Foo"), &vec![float()], &MangleConfig::default()),
+        mangle_path(&Path::new("Foo"), &[float()], &MangleConfig::default()),
         Path::new("Foo_f32")
     );
 
@@ -176,7 +176,7 @@ fn generics() {
     assert_eq!(
         mangle_path(
             &Path::new("Foo"),
-            &vec![generic_path("Bar", &[float()])],
+            &[generic_path("Bar", &[float()])],
             &MangleConfig::default(),
         ),
         Path::new("Foo_Bar_f32")
@@ -205,7 +205,7 @@ fn generics() {
     assert_eq!(
         mangle_path(
             &Path::new("Foo"),
-            &vec![generic_path("Bar", &[float()])],
+            &[generic_path("Bar", &[float()])],
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
@@ -218,7 +218,7 @@ fn generics() {
     assert_eq!(
         mangle_path(
             &Path::new("Foo"),
-            &vec![generic_path("Bar", &[c_char()])],
+            &[generic_path("Bar", &[c_char()])],
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,

@@ -60,7 +60,7 @@ impl Repr {
                 }
                 None
             })
-            .flat_map(|nested| nested)
+            .flatten()
             .filter_map(|meta| match meta {
                 syn::NestedMeta::Meta(syn::Meta::Path(path)) => {
                     Some((path.segments.first().unwrap().ident.to_string(), None))

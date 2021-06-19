@@ -214,7 +214,7 @@ impl<'a> ToCondition for Cfg {
                 let define = config
                     .defines
                     .iter()
-                    .find(|(key, ..)| DefineKey::Boolean(&cfg_name) == DefineKey::load(key));
+                    .find(|(key, ..)| DefineKey::Boolean(cfg_name) == DefineKey::load(key));
                 if let Some((_, define)) = define {
                     Some(Condition::Define(define.to_owned()))
                 } else {
@@ -227,7 +227,7 @@ impl<'a> ToCondition for Cfg {
             }
             Cfg::Named(ref cfg_name, ref cfg_value) => {
                 let define = config.defines.iter().find(|(key, ..)| {
-                    DefineKey::Named(&cfg_name, &cfg_value) == DefineKey::load(key)
+                    DefineKey::Named(cfg_name, cfg_value) == DefineKey::load(key)
                 });
                 if let Some((_, define)) = define {
                     Some(Condition::Define(define.to_owned()))

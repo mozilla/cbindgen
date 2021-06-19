@@ -68,7 +68,7 @@ fn get_contents_of_dir(path: &Path) -> Vec<String> {
     path.read_dir()
         .unwrap()
         .map(|f| f.unwrap().file_name().to_str().unwrap().to_string())
-        .filter(|name| !name.starts_with("."))
+        .filter(|name| !name.starts_with('.'))
         .collect()
 }
 

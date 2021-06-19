@@ -11,6 +11,7 @@ pub use crate::bindgen::cargo::cargo_toml::Error as CargoTomlError;
 pub use syn::parse::Error as ParseError;
 
 #[derive(Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum Error {
     CargoMetadata(String, CargoMetadataError),
     CargoToml(String, CargoTomlError),

@@ -805,7 +805,7 @@ impl Type {
                 ty.add_monomorphs(library, out);
             }
             Type::Path(ref generic) => {
-                if generic.generics().is_empty() || out.contains(&generic) {
+                if generic.generics().is_empty() || out.contains(generic) {
                     return;
                 }
                 let path = generic.path();
@@ -892,7 +892,7 @@ impl Type {
                     return;
                 }
 
-                if let Some(mangled_path) = monomorphs.mangle_path(&generic_path) {
+                if let Some(mangled_path) = monomorphs.mangle_path(generic_path) {
                     *generic_path = GenericPath::new(mangled_path.clone(), vec![]);
                 } else {
                     warn!(

@@ -364,7 +364,7 @@ impl ExportConfig {
             }
         }
         if let Some(ref prefix) = self.prefix {
-            item_name.insert_str(0, &prefix);
+            item_name.insert_str(0, prefix);
         }
     }
 }

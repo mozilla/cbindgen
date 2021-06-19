@@ -568,7 +568,7 @@ impl Item for Enum {
                                 inline,
                                 inline_casts,
                             } => VariantBody::Body {
-                                name: r.apply(&name, IdentifierType::StructMember).into_owned(),
+                                name: r.apply(name, IdentifierType::StructMember).into_owned(),
                                 body: body.clone(),
                                 inline,
                                 inline_casts,

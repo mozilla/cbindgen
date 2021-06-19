@@ -82,7 +82,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 
     pub fn bindings(&self) -> &Bindings {
-        &self.bindings
+        self.bindings
     }
 
     /// Takes a function that writes source and returns the maximum line length
@@ -208,7 +208,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         items: &[S],
         list_type: ListType<'b>,
     ) {
-        for (i, ref item) in items.iter().enumerate() {
+        for (i, item) in items.iter().enumerate() {
             item.write(&self.bindings.config, self);
 
             match list_type {
@@ -231,7 +231,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     ) {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
-        for (i, ref item) in items.iter().enumerate() {
+        for (i, item) in items.iter().enumerate() {
             item.write(&self.bindings.config, self);
 
             match list_type {
