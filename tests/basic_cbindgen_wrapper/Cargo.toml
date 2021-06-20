@@ -1,0 +1,13 @@
+[package]
+name = "panic_abort"
+version = "0.1.0"
+edition = "2018"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[dependencies]
+cbindgen = { path = "../.." }

@@ -206,6 +206,7 @@ impl<'a> Parser<'a> {
                         self.config.parse.expand.profile,
                     )
                     .map_err(|x| Error::CargoExpand(pkg.name.clone(), x))?;
+                proc_macro2::fallback::force();
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
                     crate_name: pkg.name.clone(),
                     src_path: "".to_owned(),
@@ -243,6 +244,7 @@ impl<'a> Parser<'a> {
                         src_path: mod_path.to_str().unwrap().to_owned(),
                     })?;
 
+                proc_macro2::fallback::force();
                 let i = syn::parse_file(&s).map_err(|x| Error::ParseSyntaxError {
                     crate_name: pkg.name.clone(),
                     src_path: mod_path.to_string_lossy().into(),
