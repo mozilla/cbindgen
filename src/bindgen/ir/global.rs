@@ -10,6 +10,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Path, Type};
 use crate::bindgen::library::Library;
+use crate::bindgen::transparent_types::TransparentTypes;
 use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -61,8 +62,12 @@ impl Static {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.ty.simplify_standard_types(config);
+    pub fn simplify_standard_types(
+        &mut self,
+        config: &Config,
+        transparent_types: &TransparentTypes,
+    ) {
+        self.ty.simplify_standard_types(config, transparent_types);
     }
 }
 

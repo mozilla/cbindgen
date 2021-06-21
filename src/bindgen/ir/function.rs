@@ -17,6 +17,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
+use crate::bindgen::transparent_types::TransparentTypes;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -127,10 +128,14 @@ impl Function {
         &self.path
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.ret.simplify_standard_types(config);
+    pub fn simplify_standard_types(
+        &mut self,
+        config: &Config,
+        transparent_types: &TransparentTypes,
+    ) {
+        self.ret.simplify_standard_types(config, transparent_types);
         for arg in &mut self.args {
-            arg.ty.simplify_standard_types(config);
+            arg.ty.simplify_standard_types(config, transparent_types);
         }
     }
 

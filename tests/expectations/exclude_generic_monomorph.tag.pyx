@@ -25,6 +25,6 @@ cdef extern from *:
 cdef extern from *:
 
   cdef struct Bar:
-    Option_Foo foo;
+    uint64_t foo;
 
   void root(Bar f);

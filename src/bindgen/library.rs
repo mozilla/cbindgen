@@ -12,6 +12,7 @@ use crate::bindgen::error::Error;
 use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent_types::TransparentTypes;
 use crate::bindgen::ItemType;
 
 #[derive(Debug, Clone)]
@@ -358,21 +359,24 @@ impl Library {
 
     fn simplify_standard_types(&mut self) {
         let config = &self.config;
+        let mut transparent_types = TransparentTypes::default();
+        transparent_types.add_structs(&self.structs);
+        transparent_types.add_typedefs(&self.typedefs);
 
         self.structs.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
+            x.simplify_standard_types(config, &transparent_types);
         });
         self.unions.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
+            x.simplify_standard_types(config, &transparent_types);
         });
         self.globals.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
+            x.simplify_standard_types(config, &transparent_types);
         });
         self.typedefs.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
+            x.simplify_standard_types(config, &transparent_types);
         });
         for x in &mut self.functions {
-            x.simplify_standard_types(config);
+            x.simplify_standard_types(config, &transparent_types);
         }
     }
 

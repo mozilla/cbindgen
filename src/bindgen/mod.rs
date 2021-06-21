@@ -52,6 +52,7 @@ mod monomorph;
 mod parser;
 mod rename;
 mod reserved;
+mod transparent_types;
 mod utilities;
 mod writer;
 

@@ -1,21 +1,3 @@
-#include <stdint.h>
-
-#if 0
-''' '
-#endif
-
-typedef uint64_t Option_Foo;
-
-#if 0
-' '''
-#endif
-
-#if 0
-from libc.stdint cimport uint64_t
-ctypedef uint64_t Option_Foo
-#endif
-
-
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, uintptr_t
 cdef extern from *:
@@ -24,7 +6,10 @@ cdef extern from *:
 
 cdef extern from *:
 
-  ctypedef struct Bar:
-    uint64_t foo;
+  ctypedef uint32_t Handle_File;
 
-  void root(Bar f);
+  cdef struct Node:
+    Handle_File file;
+    uint32_t maybe_file;
+
+  void root(const Node *node);
