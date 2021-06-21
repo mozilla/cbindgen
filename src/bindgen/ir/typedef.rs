@@ -15,6 +15,7 @@ use crate::bindgen::ir::{
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent_types::TransparentTypes;
 use crate::bindgen::writer::{Source, SourceWriter};
 
 /// A type alias that is represented as a C typedef
@@ -66,8 +67,13 @@ impl Typedef {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.aliased.simplify_standard_types(config);
+    pub fn simplify_standard_types(
+        &mut self,
+        config: &Config,
+        transparent_types: &TransparentTypes,
+    ) {
+        self.aliased
+            .simplify_standard_types(config, transparent_types);
     }
 
     pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {

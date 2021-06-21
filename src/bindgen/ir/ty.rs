@@ -12,6 +12,7 @@ use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent_types::TransparentTypes;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -588,7 +589,11 @@ impl Type {
         }))
     }
 
-    fn simplified_type(&self, config: &Config) -> Option<Self> {
+    fn simplified_type(
+        &self,
+        config: &Config,
+        transparent_types: &TransparentTypes,
+    ) -> Option<Self> {
         let path = match *self {
             Type::Path(ref p) => p,
             _ => return None,
@@ -603,12 +608,25 @@ impl Type {
         }
 
         let unsimplified_generic = &path.generics()[0];
-        let generic = match unsimplified_generic.simplified_type(config) {
+        let mut generic = match unsimplified_generic.simplified_type(config, transparent_types) {
             Some(generic) => Cow::Owned(generic),
             None => Cow::Borrowed(unsimplified_generic),
         };
         match path.name() {
             "Option" => {
+                // Repeatedly follow any typedefs or transparent structs until we reach a type that
+                // has its own "real" type in C/C++.
+                while let Some(transparent) = transparent_types.is_transparent(&generic) {
+                    // Make sure to do another round of simplifying each time we follow a typedef
+                    // or transparent struct link.
+                    generic = match transparent.simplified_type(config, transparent_types) {
+                        Some(generic) => Cow::Owned(generic),
+                        None => Cow::Owned(transparent),
+                    };
+                }
+
+                // Once we've found the base type for the Option's generic, see if we can take
+                // advantage of any nullable/zeroable layout optimizations.
                 if let Some(nullable) = generic.make_nullable() {
                     return Some(nullable);
                 }
@@ -637,9 +655,13 @@ impl Type {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.visit_types(|ty| ty.simplify_standard_types(config));
-        if let Some(ty) = self.simplified_type(config) {
+    pub fn simplify_standard_types(
+        &mut self,
+        config: &Config,
+        transparent_types: &TransparentTypes,
+    ) {
+        self.visit_types(|ty| ty.simplify_standard_types(config, transparent_types));
+        if let Some(ty) = self.simplified_type(config, transparent_types) {
             *self = ty;
         }
     }

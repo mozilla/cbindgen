@@ -16,6 +16,7 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
+use crate::bindgen::transparent_types::TransparentTypes;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
@@ -142,9 +143,13 @@ impl Struct {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
+    pub fn simplify_standard_types(
+        &mut self,
+        config: &Config,
+        transparent_types: &TransparentTypes,
+    ) {
         for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
+            field.ty.simplify_standard_types(config, transparent_types);
         }
     }
 

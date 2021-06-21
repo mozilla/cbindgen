@@ -22,7 +22,7 @@ ctypedef uint64_t Option_Foo
 #include <stdlib.h>
 
 struct Bar {
-  Option_Foo foo;
+  uint64_t foo;
 };
 
 void root(struct Bar f);
