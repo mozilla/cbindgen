@@ -7,14 +7,14 @@ typedef int32_t (*DoFn)(int32_t x, int32_t y);
 
 typedef struct {
   DoFn func;
-  int32_t (*maybe_func)(int32_t x, int32_t y);
+  DoFn maybe_func;
 } StructWithOptionalFunctionPointer;
 
 typedef uint32_t *NonNullAlias_u32;
 
 typedef struct {
   NonNullAlias_u32 data;
-  uint32_t *maybe_data;
+  NonNullAlias_u32 maybe_data;
 } StructWithOptionalNonNullPointer;
 
 void root(StructWithOptionalFunctionPointer swofp, StructWithOptionalNonNullPointer swonnp);

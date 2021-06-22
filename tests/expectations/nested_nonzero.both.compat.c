@@ -7,7 +7,7 @@ typedef uint32_t Handle_File;
 
 typedef struct Node {
   Handle_File file;
-  uint32_t maybe_file;
+  Handle_File maybe_file;
 } Node;
 
 #ifdef __cplusplus

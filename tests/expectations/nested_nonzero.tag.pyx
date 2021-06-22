@@ -10,6 +10,6 @@ cdef extern from *:
 
   cdef struct Node:
     Handle_File file;
-    uint32_t maybe_file;
+    Handle_File maybe_file;
 
   void root(const Node *node);

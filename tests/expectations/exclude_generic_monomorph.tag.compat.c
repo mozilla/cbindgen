@@ -21,8 +21,10 @@ ctypedef uint64_t Option_Foo
 #include <stdint.h>
 #include <stdlib.h>
 
+typedef uint64_t Foo;
+
 struct Bar {
-  uint64_t foo;
+  Foo foo;
 };
 
 #ifdef __cplusplus

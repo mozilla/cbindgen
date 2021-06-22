@@ -36,7 +36,7 @@ impl TransparentTypes {
 
     pub fn is_transparent(&self, ty: &Type) -> Option<Type> {
         let generic_path = match ty {
-            Type::Path(p) => p,
+            Type::Path { path, .. } => path,
             _ => return None,
         };
         let (resolved, generic_params) = self.transparent.get(generic_path.path())?;

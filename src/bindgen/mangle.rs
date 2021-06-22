@@ -66,7 +66,9 @@ impl<'a> Mangler<'a> {
 
     fn append_mangled_type(&mut self, ty: &Type, last: bool) {
         match *ty {
-            Type::Path(ref generic) => {
+            Type::Path {
+                path: ref generic, ..
+            } => {
                 let sub_path =
                     Mangler::new(generic.export_name(), generic.generics(), last, self.config)
                         .mangle();
@@ -163,7 +165,7 @@ fn generics() {
     fn generic_path(path: &str, generics: &[Type]) -> Type {
         let path = Path::new(path);
         let generic_path = GenericPath::new(path, generics.to_owned());
-        Type::Path(generic_path)
+        Type::for_path(generic_path)
     }
 
     // Foo<f32> => Foo_f32

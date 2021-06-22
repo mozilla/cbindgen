@@ -10,12 +10,12 @@ cdef extern from *:
 
   cdef struct StructWithOptionalFunctionPointer:
     DoFn func;
-    int32_t (*maybe_func)(int32_t x, int32_t y);
+    DoFn maybe_func;
 
   ctypedef uint32_t *NonNullAlias_u32;
 
   cdef struct StructWithOptionalNonNullPointer:
     NonNullAlias_u32 data;
-    uint32_t *maybe_data;
+    NonNullAlias_u32 maybe_data;
 
   void root(StructWithOptionalFunctionPointer swofp, StructWithOptionalNonNullPointer swonnp);

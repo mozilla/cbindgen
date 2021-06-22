@@ -352,7 +352,7 @@ trait SynFnArgHelpers {
 }
 
 fn gen_self_type(receiver: &syn::Receiver) -> Type {
-    let self_ty = Type::Path(GenericPath::self_path());
+    let self_ty = Type::for_path(GenericPath::self_path());
     if receiver.reference.is_none() {
         return self_ty;
     }

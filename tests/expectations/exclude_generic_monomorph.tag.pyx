@@ -24,7 +24,9 @@ cdef extern from *:
 
 cdef extern from *:
 
+  ctypedef uint64_t Foo;
+
   cdef struct Bar:
-    uint64_t foo;
+    Foo foo;
 
   void root(Bar f);

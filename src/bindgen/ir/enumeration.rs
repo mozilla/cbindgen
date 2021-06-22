@@ -116,7 +116,7 @@ impl EnumVariant {
             if inline_tag_field {
                 res.push(Field::from_name_and_type(
                     inline_name.map_or_else(|| "tag".to_string(), |name| format!("{}_tag", name)),
-                    Type::Path(GenericPath::new(Path::new("Tag"), vec![])),
+                    Type::for_path(GenericPath::new(Path::new("Tag"), vec![])),
                 ));
             }
 
@@ -507,7 +507,7 @@ impl Item for Enum {
                     if let VariantBody::Body { ref mut body, .. } = variant.body {
                         let path = Path::new(new_tag.clone());
                         let generic_path = GenericPath::new(path, vec![]);
-                        body.fields[0].ty = Type::Path(generic_path);
+                        body.fields[0].ty = Type::for_path(generic_path);
                     }
                 }
             }

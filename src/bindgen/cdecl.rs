@@ -99,7 +99,9 @@ impl CDecl {
 
     fn build_type(&mut self, t: &Type, is_const: bool, config: &Config) {
         match t {
-            Type::Path(ref generic) => {
+            Type::Path {
+                path: ref generic, ..
+            } => {
                 if is_const {
                     assert!(
                         self.type_qualifers.is_empty(),

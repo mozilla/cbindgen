@@ -341,7 +341,11 @@ pub enum Type {
         // to code generation or something.
         is_ref: bool,
     },
-    Path(GenericPath),
+    Path {
+        path: GenericPath,
+        is_nullable: bool,
+        is_zeroable: bool,
+    },
     Primitive(PrimitiveType),
     Array(Box<Type>, ArrayLength),
     FuncPtr {
@@ -358,6 +362,16 @@ impl Type {
             is_const: true,
             is_nullable: false,
             is_ref: true,
+        }
+    }
+
+    pub fn for_path(path: GenericPath) -> Self {
+        Type::Path {
+            path,
+            // Assume that the type this name refers to is both nullable and zeroable, until we
+            // find otherwise.
+            is_nullable: true,
+            is_zeroable: true,
         }
     }
 
@@ -409,7 +423,7 @@ impl Type {
                     }
                     Type::Primitive(prim)
                 } else {
-                    Type::Path(generic_path)
+                    Type::for_path(generic_path)
                 }
             }
             syn::Type::Array(syn::TypeArray {
@@ -510,21 +524,45 @@ impl Type {
         }
     }
 
+    pub fn is_zeroable(&self) -> bool {
+        match *self {
+            Type::Primitive(PrimitiveType::Integer { zeroable, .. }) => zeroable,
+            Type::Path { is_zeroable, .. } => is_zeroable,
+            _ => true,
+        }
+    }
+
     pub fn make_zeroable(&self) -> Option<Self> {
-        let (kind, signed) = match *self {
+        match *self {
             Type::Primitive(PrimitiveType::Integer {
-                zeroable: false,
                 kind,
                 signed,
-            }) => (kind, signed),
-            _ => return None,
-        };
+                zeroable: false,
+            }) => Some(Type::Primitive(PrimitiveType::Integer {
+                kind,
+                signed,
+                zeroable: true,
+            })),
+            Type::Path {
+                ref path,
+                is_nullable,
+                is_zeroable: false,
+            } => Some(Type::Path {
+                path: path.clone(),
+                is_nullable,
+                is_zeroable: true,
+            }),
+            _ => None,
+        }
+    }
 
-        Some(Type::Primitive(PrimitiveType::Integer {
-            kind,
-            signed,
-            zeroable: true,
-        }))
+    pub fn is_nullable(&self) -> bool {
+        match *self {
+            Type::Ptr { is_nullable, .. } => is_nullable,
+            Type::FuncPtr { is_nullable, .. } => is_nullable,
+            Type::Path { is_nullable, .. } => is_nullable,
+            _ => true,
+        }
     }
 
     pub fn make_nullable(&self) -> Option<Self> {
@@ -549,13 +587,22 @@ impl Type {
                 args: args.clone(),
                 is_nullable: true,
             }),
+            Type::Path {
+                ref path,
+                is_nullable: false,
+                is_zeroable,
+            } => Some(Type::Path {
+                path: path.clone(),
+                is_nullable: true,
+                is_zeroable,
+            }),
             _ => None,
         }
     }
 
     fn nonzero_to_primitive(&self) -> Option<Self> {
         let path = match *self {
-            Type::Path(ref p) => p,
+            Type::Path { ref path, .. } => path,
             _ => return None,
         };
 
@@ -595,12 +642,38 @@ impl Type {
         transparent_types: &TransparentTypes,
     ) -> Option<Self> {
         let path = match *self {
-            Type::Path(ref p) => p,
+            Type::Path { ref path, .. } => path,
             _ => return None,
         };
 
         if path.generics().is_empty() {
-            return self.nonzero_to_primitive();
+            let primitive = self.nonzero_to_primitive();
+            if primitive.is_some() {
+                return primitive;
+            }
+        }
+
+        // Repeatedly follow any typedefs or transparent structs until we reach a "real" type, and
+        // look up whether it is nullable and/or zeroable, saving that information so that we can
+        // use it later.
+        if let Some(transparent) = transparent_types.is_transparent(self) {
+            // Make sure to do another round of simplifying each time we follow a typedef or
+            // transparent struct link.
+            let mut current = match transparent.simplified_type(config, transparent_types) {
+                Some(current) => current,
+                None => transparent,
+            };
+            while let Some(transparent) = transparent_types.is_transparent(&current) {
+                current = match transparent.simplified_type(config, transparent_types) {
+                    Some(current) => current,
+                    None => transparent,
+                };
+            }
+            return Some(Type::Path {
+                path: path.clone(),
+                is_nullable: current.is_nullable(),
+                is_zeroable: current.is_zeroable(),
+            });
         }
 
         if path.generics().len() != 1 {
@@ -608,25 +681,12 @@ impl Type {
         }
 
         let unsimplified_generic = &path.generics()[0];
-        let mut generic = match unsimplified_generic.simplified_type(config, transparent_types) {
+        let generic = match unsimplified_generic.simplified_type(config, transparent_types) {
             Some(generic) => Cow::Owned(generic),
             None => Cow::Borrowed(unsimplified_generic),
         };
         match path.name() {
             "Option" => {
-                // Repeatedly follow any typedefs or transparent structs until we reach a type that
-                // has its own "real" type in C/C++.
-                while let Some(transparent) = transparent_types.is_transparent(&generic) {
-                    // Make sure to do another round of simplifying each time we follow a typedef
-                    // or transparent struct link.
-                    generic = match transparent.simplified_type(config, transparent_types) {
-                        Some(generic) => Cow::Owned(generic),
-                        None => Cow::Owned(transparent),
-                    };
-                }
-
-                // Once we've found the base type for the Option's generic, see if we can take
-                // advantage of any nullable/zeroable layout optimizations.
                 if let Some(nullable) = generic.make_nullable() {
                     return Some(nullable);
                 }
@@ -667,7 +727,11 @@ impl Type {
     }
 
     pub fn replace_self_with(&mut self, self_ty: &Path) {
-        if let Type::Path(ref mut generic_path) = *self {
+        if let Type::Path {
+            path: ref mut generic_path,
+            ..
+        } = *self
+        {
             generic_path.replace_self_with(self_ty);
         }
         self.visit_types(|ty| ty.replace_self_with(self_ty))
@@ -676,7 +740,7 @@ impl Type {
     fn visit_types(&mut self, mut visitor: impl FnMut(&mut Type)) {
         match *self {
             Type::Array(ref mut ty, ..) | Type::Ptr { ref mut ty, .. } => visitor(ty),
-            Type::Path(ref mut path) => {
+            Type::Path { ref mut path, .. } => {
                 for generic in path.generics_mut() {
                     visitor(generic);
                 }
@@ -700,7 +764,9 @@ impl Type {
         loop {
             match *current {
                 Type::Ptr { ref ty, .. } => current = ty,
-                Type::Path(ref generic) => {
+                Type::Path {
+                    path: ref generic, ..
+                } => {
                     return Some(generic.path().clone());
                 }
                 Type::Primitive(..) => {
@@ -729,7 +795,10 @@ impl Type {
                 is_nullable,
                 is_ref,
             },
-            Type::Path(ref generic_path) => {
+            Type::Path {
+                path: ref generic_path,
+                ..
+            } => {
                 for &(param, value) in mappings {
                     if generic_path.path() == param {
                         return value.clone();
@@ -744,7 +813,7 @@ impl Type {
                         .map(|x| x.specialize(mappings))
                         .collect(),
                 );
-                Type::Path(specialized)
+                Type::for_path(specialized)
             }
             Type::Primitive(ref primitive) => Type::Primitive(primitive.clone()),
             Type::Array(ref ty, ref constant) => {
@@ -776,7 +845,9 @@ impl Type {
             Type::Ptr { ref ty, .. } => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
-            Type::Path(ref generic) => {
+            Type::Path {
+                path: ref generic, ..
+            } => {
                 for generic_value in generic.generics() {
                     generic_value.add_dependencies_ignoring_generics(generic_params, library, out);
                 }
@@ -826,7 +897,9 @@ impl Type {
             Type::Ptr { ref ty, .. } => {
                 ty.add_monomorphs(library, out);
             }
-            Type::Path(ref generic) => {
+            Type::Path {
+                path: ref generic, ..
+            } => {
                 if generic.generics().is_empty() || out.contains(&generic) {
                     return;
                 }
@@ -858,7 +931,9 @@ impl Type {
             Type::Ptr { ref mut ty, .. } => {
                 ty.rename_for_config(config, generic_params);
             }
-            Type::Path(ref mut ty) => {
+            Type::Path {
+                path: ref mut ty, ..
+            } => {
                 ty.rename_for_config(config, generic_params);
             }
             Type::Primitive(_) => {}
@@ -884,7 +959,10 @@ impl Type {
             Type::Ptr { ref mut ty, .. } => {
                 ty.resolve_declaration_types(resolver);
             }
-            Type::Path(ref mut generic_path) => {
+            Type::Path {
+                path: ref mut generic_path,
+                ..
+            } => {
                 generic_path.resolve_declaration_types(resolver);
             }
             Type::Primitive(_) => {}
@@ -909,7 +987,10 @@ impl Type {
             Type::Ptr { ref mut ty, .. } => {
                 ty.mangle_paths(monomorphs);
             }
-            Type::Path(ref mut generic_path) => {
+            Type::Path {
+                path: ref mut generic_path,
+                ..
+            } => {
                 if generic_path.generics().is_empty() {
                     return;
                 }
@@ -945,7 +1026,7 @@ impl Type {
         match *self {
             // FIXME: Shouldn't this look at ty.can_cmp_order() as well?
             Type::Ptr { is_ref, .. } => !is_ref,
-            Type::Path(..) => true,
+            Type::Path { .. } => true,
             Type::Primitive(ref p) => p.can_cmp_order(),
             Type::Array(..) => false,
             Type::FuncPtr { .. } => false,
@@ -955,7 +1036,7 @@ impl Type {
     pub fn can_cmp_eq(&self) -> bool {
         match *self {
             Type::Ptr { ref ty, is_ref, .. } => !is_ref || ty.can_cmp_eq(),
-            Type::Path(..) => true,
+            Type::Path { .. } => true,
             Type::Primitive(ref p) => p.can_cmp_eq(),
             Type::Array(..) => false,
             Type::FuncPtr { .. } => true,

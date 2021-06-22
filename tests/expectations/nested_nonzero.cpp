@@ -11,7 +11,7 @@ using Handle = uint32_t;
 
 struct Node {
   Handle<File> file;
-  uint32_t maybe_file;
+  Handle<File> maybe_file;
 };
 
 extern "C" {
