@@ -380,17 +380,27 @@ applies to the generated tags for tagged enums with data in them.
 
 [appledoc]: https://developer.apple.com/documentation/swift/objective-c_and_c_code_customization/grouping_related_objective-c_constants
 
-That way, you can import e.g. `#[repr(i32)] pub enum A { Abc, Def }` in Swift and
-use it as `.abc` as you would with a Swift enum.
+Normally, the ergonomics of C enums in Swift is very poor; you can't use the
+variants directly and pass them to function accepting the typedef name, because
+Swift sees the variants each as just raw integers and the typedef name as a
+newtype. So you essentially have to redefine the enum in Swift, get its
+`.rawValue` and convert it to the C enum type, and convert back in the other
+direction.
+
+With `NS_ENUM`/`CF_ENUM`, you can import e.g. `#[repr(i32)] pub enum A { Abc,
+Def }` in Swift and use it as `A.abc` as you would with a Swift enum. 
 
 ### Example configuration for Swift bindings
 
 ```toml
+language = "C"
 sys_includes = ["CoreFoundation/CoreFoundation.h"]
 [fn]
 swift_name_macro = "CF_SWIFT_NAME"
 [enum]
 swift_enum_macro = "CF_ENUM"
+rename_variants = "SnakeCase" # make the variants .abc/.def instead of .Abc/.Def
+prefix_with_name = true       # optional, but doesn't affect Swift names, only C
 ```
 
 ## cbindgen.toml
