@@ -301,6 +301,7 @@ impl Source for EnumVariant {
 pub struct Enum {
     pub path: Path,
     pub export_name: String,
+    pub swift_enum_macro: Option<String>,
     pub generic_params: GenericParams,
     pub repr: Repr,
     pub variants: Vec<EnumVariant>,
@@ -319,6 +320,22 @@ impl Enum {
     /// Enum with data turns into a union of structs with each struct having its own tag field.
     fn inline_tag_field(repr: &Repr) -> bool {
         repr.style != ReprStyle::C
+    }
+
+    fn typedef_inline_enum_macro(&self, config: &Config) -> Option<&str> {
+        let is_c = config.language == Language::C;
+        let is_fixed_type = self
+            .repr
+            .ty
+            .map(|ty| ty.to_primitive())
+            // technically you're not going to get #[repr(double)] because that's not valid rust,
+            // but let's check anyway
+            .map_or(false, |prim| prim.can_be_enum_fixed_type());
+        if is_c && is_fixed_type {
+            self.swift_enum_macro.as_ref().map(|x| x.as_str())
+        } else {
+            None
+        }
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -412,6 +429,8 @@ impl Enum {
             None
         };
 
+        let swift_enum_macro = config.enumeration.swift_enum_macro(&annotations);
+
         Ok(Enum::new(
             path,
             generic_params,
@@ -421,6 +440,7 @@ impl Enum {
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             annotations,
             Documentation::load(&item.attrs),
+            swift_enum_macro,
         ))
     }
 
@@ -434,6 +454,7 @@ impl Enum {
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
+        swift_enum_macro: Option<String>,
     ) -> Self {
         let export_name = path.name().to_owned();
         Self {
@@ -446,6 +467,7 @@ impl Enum {
             cfg,
             annotations,
             documentation,
+            swift_enum_macro,
         }
     }
 }
@@ -631,6 +653,7 @@ impl Item for Enum {
             self.cfg.clone(),
             self.annotations.clone(),
             self.documentation.clone(),
+            self.swift_enum_macro.clone(),
         );
 
         out.insert_enum(library, self, monomorph, generic_values.to_owned());
@@ -742,16 +765,26 @@ impl Enum {
                 if let Some(prim) = size {
                     // If we need to specify size, then we have no choice but to create a typedef,
                     // so `config.style` is not respected.
-                    write!(out, "enum {}", tag_name);
-
-                    if config.cpp_compatible_c() {
-                        out.new_line();
-                        out.write("#ifdef __cplusplus");
-                        out.new_line();
-                        write!(out, "  : {}", prim);
-                        out.new_line();
-                        out.write("#endif // __cplusplus");
-                        out.new_line();
+                    //
+                    // Secondly, the swift_enum_macro is only respected when there is a concrete
+                    // type to use.
+                    if let Some(mac) = self.typedef_inline_enum_macro(config) {
+                        // cpp_compatible_c is assumed to be handled by the macro.
+                        // NS_ENUM/CF_ENUM do handle C++ compatibility.
+                        write!(out, "typedef {}({}, {})", mac, prim, tag_name);
+                    } else {
+                        write!(out, "enum {}", tag_name);
+                        if config.cpp_compatible_c() {
+                            out.new_line();
+                            out.write("#if defined(__cplusplus) || __has_feature(objc_fixed_enum)");
+                            out.new_line();
+                            write!(out, "  : {}", prim);
+                            out.new_line();
+                            out.write(
+                                "#endif // defined(__cplusplus) || __has_feature(objc_fixed_enum)",
+                            );
+                            out.new_line();
+                        }
                     }
                 } else {
                     if config.style.generate_typedef() {
@@ -813,19 +846,23 @@ impl Enum {
         // In C++ enums can "inherit" from numeric types (`enum E: uint8_t { ... }`),
         // but in C `typedef uint8_t E` is the only way to give a fixed size to `E`.
         if let Some(prim) = size {
-            if config.cpp_compatible_c() {
-                out.new_line_if_not_start();
-                out.write("#ifndef __cplusplus");
-            }
+            if self.typedef_inline_enum_macro(config).is_none() {
+                if config.cpp_compatible_c() {
+                    out.new_line_if_not_start();
+                    out.write("#if !(defined(__cplusplus) || __has_feature(objc_fixed_enum))");
+                }
 
-            if config.language != Language::Cxx {
-                out.new_line();
-                write!(out, "{} {} {};", config.language.typedef(), prim, tag_name);
-            }
+                if config.language != Language::Cxx {
+                    out.new_line();
+                    write!(out, "{} {} {};", config.language.typedef(), prim, tag_name);
+                }
 
-            if config.cpp_compatible_c() {
-                out.new_line_if_not_start();
-                out.write("#endif // __cplusplus");
+                if config.cpp_compatible_c() {
+                    out.new_line_if_not_start();
+                    out.write(
+                        "#endif // !(defined(__cplusplus) || __has_feature(objc_fixed_enum))",
+                    );
+                }
             }
         }
 
@@ -841,7 +878,9 @@ impl Enum {
         inline_tag_field: bool,
     ) {
         match config.language {
-            Language::C if config.style.generate_typedef() => out.write("typedef "),
+            Language::C if config.style.generate_typedef() => {
+                out.write("typedef ");
+            }
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
         }

@@ -360,13 +360,38 @@ arg: *mut T --> T arg[]
 
 ## Generating Swift Bindings
 
+### Function names
+
 In addition to parsing function names in C/C++ header files, the Swift compiler can make use of the `swift_name` attribute on functions to generate more idiomatic names for imported functions and methods.
 
 This attribute is commonly used in Objective-C/C/C++ via the `NS_SWIFT_NAME` and `CF_SWIFT_NAME` macros.
 
 Given configuration in the cbindgen.toml, `cbindgen` can generate these attributes for you by guessing an appropriate method signature based on the existing function name (and type, if it is a method in an `impl` block).
 
-This is controlled by the `swift_name_macro` option in the cbindgen.toml.
+This is controlled by the `swift_name_macro` option in the `[fn]` section of cbindgen.toml.
+
+### Directly using enums
+
+Enums that have a `#[repr(<size>)]` representation can be imported and used
+directly in Swift code, if you supply a `swift_enum_macro` in the `[enum]`
+section of cbindgen.toml. This option lets you use the [`NS_ENUM`/`CF_ENUM`
+macros][appledoc] from Apple's Foundation/CoreFoundation headers. It also
+applies to the generated tags for tagged enums with data in them.
+
+[appledoc]: https://developer.apple.com/documentation/swift/objective-c_and_c_code_customization/grouping_related_objective-c_constants
+
+That way, you can import e.g. `#[repr(i32)] pub enum A { Abc, Def }` in Swift and
+use it as `.abc` as you would with a Swift enum.
+
+### Example configuration for Swift bindings
+
+```toml
+sys_includes = ["CoreFoundation/CoreFoundation.h"]
+[fn]
+swift_name_macro = "CF_SWIFT_NAME"
+[enum]
+swift_enum_macro = "CF_ENUM"
+```
 
 ## cbindgen.toml
 
@@ -882,6 +907,14 @@ derive_tagged_enum_copy_assignment = false
 #
 # default: false
 private_default_tagged_enum_constructor = false
+
+# An optional macro to use when generating enum typedefs, which must take two arguments
+# along the lines of `NS_ENUM` (`NS_ENUM(NSInteger, MyEnumTypedefName)`).
+#
+# Only relevant when targeting C; also disables the `cpp_compat` effect on enum definitions.
+#
+# default: no macro is used for typedefs
+swift_enum_macro = "CF_ENUM"
 
 
 

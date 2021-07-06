@@ -306,6 +306,24 @@ impl PrimitiveType {
     fn can_cmp_eq(&self) -> bool {
         true
     }
+
+    pub(crate) fn can_be_enum_fixed_type(&self) -> bool {
+        match self {
+            // integer types yes
+            PrimitiveType::Bool
+            | PrimitiveType::Char
+            | PrimitiveType::Char32
+            | PrimitiveType::PtrDiffT
+            | PrimitiveType::Integer { .. }
+            | PrimitiveType::SChar
+            | PrimitiveType::UChar => true,
+            // the rest, no
+            PrimitiveType::Void
+            | PrimitiveType::Double
+            | PrimitiveType::Float
+            | PrimitiveType::VaList => false,
+        }
+    }
 }
 
 // The `U` part of `[T; U]`

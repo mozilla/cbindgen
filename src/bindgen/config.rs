@@ -573,6 +573,14 @@ pub struct EnumConfig {
     /// Whether to generate empty, private default-constructors for tagged
     /// enums.
     pub private_default_tagged_enum_constructor: bool,
+    /// An optional macro to use when generating enum typedefs, which must take two arguments
+    /// along the lines of `NS_ENUM` (`NS_ENUM(NSInteger, MyEnumTypedefName)`).
+    /// See the [Apple documentation][appledoc] for details.
+    ///
+    /// Only relevant when targeting C; also disables the `cpp_compat` effect on enum definitions.
+    ///
+    /// [appledoc]: https://developer.apple.com/documentation/swift/objective-c_and_c_code_customization/grouping_related_objective-c_constants
+    pub swift_enum_macro: Option<String>,
 }
 
 impl Default for EnumConfig {
@@ -592,6 +600,7 @@ impl Default for EnumConfig {
             derive_ostream: false,
             enum_class: true,
             private_default_tagged_enum_constructor: false,
+            swift_enum_macro: None,
         }
     }
 }
@@ -659,6 +668,12 @@ impl EnumConfig {
             return x;
         }
         self.private_default_tagged_enum_constructor
+    }
+    pub(crate) fn swift_enum_macro(&self, annotations: &AnnotationSet) -> Option<String> {
+        if let Some(x) = annotations.atom("swift-enum-macro") {
+            return x;
+        }
+        self.swift_enum_macro.clone()
     }
 }
 

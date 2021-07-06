@@ -1,0 +1,12 @@
+header = """
+#import <CoreFoundation/CoreFoundation.h>
+"""
+
+# NS_ENUM is defined as passing through to CF_ENUM so you can use either but
+# CF_ENUM works already whereas #import <Foundation/Foundation.h> requires a
+# change to the test suite
+[enum]
+swift_enum_macro = "CF_ENUM"
+
+[export.rename]
+"I" = "ExI"
