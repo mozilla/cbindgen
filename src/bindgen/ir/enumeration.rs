@@ -776,12 +776,12 @@ impl Enum {
                         write!(out, "enum {}", tag_name);
                         if config.cpp_compatible_c() {
                             out.new_line();
-                            out.write("#if defined(__cplusplus) || __has_feature(objc_fixed_enum)");
+                            out.write("#ifdef __cplusplus");
                             out.new_line();
                             write!(out, "  : {}", prim);
                             out.new_line();
                             out.write(
-                                "#endif // defined(__cplusplus) || __has_feature(objc_fixed_enum)",
+                                "#endif // __cplusplus",
                             );
                             out.new_line();
                         }
@@ -849,7 +849,7 @@ impl Enum {
             if self.typedef_inline_enum_macro(config).is_none() {
                 if config.cpp_compatible_c() {
                     out.new_line_if_not_start();
-                    out.write("#if !(defined(__cplusplus) || __has_feature(objc_fixed_enum))");
+                    out.write("#ifndef __cplusplus");
                 }
 
                 if config.language != Language::Cxx {
@@ -859,9 +859,7 @@ impl Enum {
 
                 if config.cpp_compatible_c() {
                     out.new_line_if_not_start();
-                    out.write(
-                        "#endif // !(defined(__cplusplus) || __has_feature(objc_fixed_enum))",
-                    );
+                    out.write("#endif // __cplusplus");
                 }
             }
         }
