@@ -566,7 +566,7 @@ item_types = ["enums", "structs", "opaque", "functions"]
 #
 # [export]
 # prefix = "capi_"
-# rename_all = "snake_case"
+# rename_items = "snake_case"
 # [export.rename]
 # "MyType" = "my_cool_TYPE"
 #
@@ -599,7 +599,7 @@ renaming_overrides_prefixing = true
 # * "QualifiedScreamingSnakeCase" => same as ScreamingSnakeCase in this context
 #
 # default: "None"
-rename_all = "snake_case"
+rename_items = "snake_case"
 
 # Table of name conversions to apply to item names (lhs becomes rhs).
 # Does not apply to function names as they must be matched by a linker.

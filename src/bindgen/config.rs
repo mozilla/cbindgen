@@ -320,7 +320,7 @@ pub struct ExportConfig {
     /// Table of name conversions to apply to item names
     pub rename: HashMap<String, String>,
     /// A rename rule to apply to all type names
-    pub rename_all: RenameRule,
+    pub rename_items: RenameRule,
     /// Table of raw strings to prepend to the body of items.
     pub pre_body: HashMap<String, String>,
     /// Table of raw strings to append to the body of items.
@@ -367,7 +367,7 @@ impl ExportConfig {
                 return;
             }
         }
-        if let Some(rename_rule) = self.rename_all.not_none() {
+        if let Some(rename_rule) = self.rename_items.not_none() {
             let cow = rename_rule.apply(&item_name, ident_type);
             *item_name = cow.into_owned();
         }
