@@ -368,7 +368,7 @@ impl ExportConfig {
             }
         }
         if let Some(rename_rule) = self.rename_items.not_none() {
-            let cow = rename_rule.apply(&item_name, ident_type);
+            let cow = rename_rule.apply(item_name, ident_type);
             *item_name = cow.into_owned();
         }
         if let Some(ref prefix) = self.prefix {
