@@ -328,9 +328,7 @@ impl Enum {
             .repr
             .ty
             .map(|ty| ty.to_primitive())
-            // technically you're not going to get #[repr(double)] because that's not valid rust,
-            // but let's check anyway
-            .map_or(false, |prim| prim.can_be_enum_fixed_type());
+            .is_some();
         if is_c && is_fixed_type {
             self.swift_enum_macro.as_ref().map(|x| x.as_str())
         } else {
