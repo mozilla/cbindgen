@@ -1,6 +1,7 @@
-header = """
-#import <CoreFoundation/CoreFoundation.h>
-"""
+# The fallback definition of CF_ENUM from CoreFoundation/CFAvailability.h
+# CF_ENUM occurs after the typedef keyword. Results in a `typedef _type _name`
+# and an unnamed enum, which is just a list of integer constants.
+header = "#define CF_ENUM(_type, _name) _type _name; enum"
 
 # NS_ENUM is defined as passing through to CF_ENUM so you can use either but
 # CF_ENUM works already whereas #import <Foundation/Foundation.h> requires a

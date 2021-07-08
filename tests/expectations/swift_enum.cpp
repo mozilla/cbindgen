@@ -1,5 +1,4 @@
-#import <CoreFoundation/CoreFoundation.h>
-
+#define CF_ENUM(_type, _name) _type _name; enum
 
 #include <cstdarg>
 #include <cstdint>
