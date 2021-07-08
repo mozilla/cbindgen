@@ -367,12 +367,12 @@ impl ExportConfig {
                 return;
             }
         }
-        if let Some(ref prefix) = self.prefix {
-            item_name.insert_str(0, prefix);
-        }
         if let Some(rename_rule) = self.rename_all.not_none() {
             let cow = rename_rule.apply(&item_name, ident_type);
             *item_name = cow.into_owned();
+        }
+        if let Some(ref prefix) = self.prefix {
+            item_name.insert_str(0, prefix);
         }
     }
 }

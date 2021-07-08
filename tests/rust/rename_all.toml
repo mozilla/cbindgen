@@ -1,5 +1,5 @@
 [export]
-prefix = "Capi"
+prefix = "capi_"
 rename_all = "snake_case"
 
 [enum]
