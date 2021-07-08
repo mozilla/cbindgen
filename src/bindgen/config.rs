@@ -669,12 +669,6 @@ impl EnumConfig {
         }
         self.private_default_tagged_enum_constructor
     }
-    pub(crate) fn swift_enum_macro(&self, annotations: &AnnotationSet) -> Option<String> {
-        if let Some(x) = annotations.atom("swift-enum-macro") {
-            return x;
-        }
-        self.swift_enum_macro.clone()
-    }
 }
 
 /// Settings to apply to generated constants.

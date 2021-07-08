@@ -301,7 +301,6 @@ impl Source for EnumVariant {
 pub struct Enum {
     pub path: Path,
     pub export_name: String,
-    pub swift_enum_macro: Option<String>,
     pub generic_params: GenericParams,
     pub repr: Repr,
     pub variants: Vec<EnumVariant>,
@@ -322,15 +321,15 @@ impl Enum {
         repr.style != ReprStyle::C
     }
 
-    fn typedef_inline_enum_macro(&self, config: &Config) -> Option<&str> {
+    fn typedef_inline_enum_macro<'a>(&self, config: &'a Config) -> Option<&'a str> {
         let is_c = config.language == Language::C;
-        let is_fixed_type = self
-            .repr
-            .ty
-            .map(|ty| ty.to_primitive())
-            .is_some();
+        let is_fixed_type = self.repr.ty.map(|ty| ty.to_primitive()).is_some();
         if is_c && is_fixed_type {
-            self.swift_enum_macro.as_ref().map(|x| x.as_str())
+            config
+                .enumeration
+                .swift_enum_macro
+                .as_ref()
+                .map(|x| x.as_str())
         } else {
             None
         }
@@ -427,8 +426,6 @@ impl Enum {
             None
         };
 
-        let swift_enum_macro = config.enumeration.swift_enum_macro(&annotations);
-
         Ok(Enum::new(
             path,
             generic_params,
@@ -438,7 +435,6 @@ impl Enum {
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             annotations,
             Documentation::load(&item.attrs),
-            swift_enum_macro,
         ))
     }
 
@@ -452,7 +448,6 @@ impl Enum {
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
-        swift_enum_macro: Option<String>,
     ) -> Self {
         let export_name = path.name().to_owned();
         Self {
@@ -465,7 +460,6 @@ impl Enum {
             cfg,
             annotations,
             documentation,
-            swift_enum_macro,
         }
     }
 }
@@ -651,7 +645,6 @@ impl Item for Enum {
             self.cfg.clone(),
             self.annotations.clone(),
             self.documentation.clone(),
-            self.swift_enum_macro.clone(),
         );
 
         out.insert_enum(library, self, monomorph, generic_values.to_owned());
@@ -778,9 +771,7 @@ impl Enum {
                             out.new_line();
                             write!(out, "  : {}", prim);
                             out.new_line();
-                            out.write(
-                                "#endif // __cplusplus",
-                            );
+                            out.write("#endif // __cplusplus");
                             out.new_line();
                         }
                     }
