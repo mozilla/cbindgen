@@ -325,11 +325,7 @@ impl Enum {
         let is_c = config.language == Language::C;
         let is_fixed_type = self.repr.ty.map(|ty| ty.to_primitive()).is_some();
         if is_c && is_fixed_type {
-            config
-                .enumeration
-                .swift_enum_macro
-                .as_ref()
-                .map(|x| x.as_str())
+            config.enumeration.swift_enum_macro.as_deref()
         } else {
             None
         }
