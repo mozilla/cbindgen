@@ -13,6 +13,7 @@ pub enum IdentifierType<'a> {
     FunctionArg,
     Type,
     Enum,
+    Constant,
 }
 
 impl<'a> IdentifierType<'a> {
@@ -23,6 +24,7 @@ impl<'a> IdentifierType<'a> {
             IdentifierType::FunctionArg => "a",
             IdentifierType::Type => "",
             IdentifierType::Enum => "",
+            IdentifierType::Constant => "",
         }
     }
 }

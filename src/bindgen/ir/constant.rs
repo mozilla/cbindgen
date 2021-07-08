@@ -16,6 +16,7 @@ use crate::bindgen::ir::{
     Struct, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
+use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{Source, SourceWriter};
 use crate::bindgen::Bindings;
 
@@ -121,13 +122,13 @@ impl Literal {
                 fields,
                 ..
             } => {
-                config.export.rename(export_name);
+                config.export.rename(export_name, IdentifierType::Constant);
                 for lit in fields.values_mut() {
                     lit.rename_for_config(config);
                 }
             }
             Literal::Path(ref mut name) => {
-                config.export.rename(name);
+                config.export.rename(name, IdentifierType::Constant);
             }
             Literal::PostfixUnaryOp { ref mut value, .. } => {
                 value.rename_for_config(config);
@@ -465,7 +466,9 @@ impl Item for Constant {
 
     fn rename_for_config(&mut self, config: &Config) {
         if self.associated_to.is_none() {
-            config.export.rename(&mut self.export_name);
+            config
+                .export
+                .rename(&mut self.export_name, IdentifierType::Constant);
         }
         self.value.rename_for_config(config);
         self.ty.rename_for_config(config, &GenericParams::default()); // FIXME: should probably propagate something here
@@ -538,7 +541,7 @@ impl Constant {
                 Some(s) => Cow::Borrowed(s.export_name()),
                 None => {
                     let mut name = self.associated_to.as_ref().unwrap().name().to_owned();
-                    config.export.rename(&mut name);
+                    config.export.rename(&mut name, IdentifierType::Type);
                     Cow::Owned(name)
                 }
             };

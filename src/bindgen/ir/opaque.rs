@@ -14,6 +14,7 @@ use crate::bindgen::ir::{
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
@@ -91,7 +92,9 @@ impl Item for OpaqueItem {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.export_name);
+        config
+            .export
+            .rename(&mut self.export_name, IdentifierType::Type);
     }
 
     fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {}

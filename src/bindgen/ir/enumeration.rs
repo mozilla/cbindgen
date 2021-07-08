@@ -497,7 +497,9 @@ impl Item for Enum {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.export_name);
+        config
+            .export
+            .rename(&mut self.export_name, IdentifierType::Enum);
 
         if config.language != Language::Cxx && self.tag.is_some() {
             // it makes sense to always prefix Tag with type name in C

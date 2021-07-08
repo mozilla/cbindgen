@@ -1,0 +1,11 @@
+[export]
+prefix = "Capi"
+rename_all = "snake_case"
+
+[enum]
+# should result in "renamed_enum_name_renamed_variant_name"
+rename_variants = "snake_case"
+prefix_with_name = true
+
+[export.rename]
+"B" = "AwesomeB"

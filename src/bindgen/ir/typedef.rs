@@ -15,6 +15,7 @@ use crate::bindgen::ir::{
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{Source, SourceWriter};
 
 /// A type alias that is represented as a C typedef
@@ -134,7 +135,9 @@ impl Item for Typedef {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.export_name);
+        config
+            .export
+            .rename(&mut self.export_name, IdentifierType::Type);
         self.aliased.rename_for_config(config, &self.generic_params);
     }
 
