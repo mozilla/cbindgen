@@ -40,7 +40,7 @@ impl fmt::Display for Error {
             }
             Error::CargoExpand(ref crate_name, ref error) => write!(
                 f,
-                "Parsing crate `{}`: couldn't run `cargo rustc --pretty=expanded`: {:?}",
+                "Parsing crate `{}`: couldn't run `cargo rustc -Zunpretty=expanded`: {:?}",
                 crate_name, error
             ),
             Error::ParseSyntaxError {
