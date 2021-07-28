@@ -399,7 +399,7 @@ trailer = "/* Text to put at the end of the generated file */"
 # default: doesn't emit an include guard
 include_guard = "mozilla_wr_bindings_h"
 
-# Whether to add a `#pragma once` guard 
+# Whether to add a `#pragma once` guard
 # default: doesn't emit a `#pragma once`
 pragma_once = true
 
@@ -937,7 +937,7 @@ include = ["webrender", "webrender_traits"]
 # default: []
 exclude = ["libc"]
 
-# Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
+# Whether to use a new temporary target directory when running `rustc -Zunpretty=expanded`.
 # This may be required for some build processes.
 #
 # default: false
@@ -982,7 +982,7 @@ features = ["cbindgen"]
 [ptr]
 # An optional string to decorate all pointers that are
 # required to be non null. Nullability is inferred from the Rust type: `&T`,
-# `&mut T` and `NonNull<T>` all require a valid pointer value. 
+# `&mut T` and `NonNull<T>` all require a valid pointer value.
 non_null_attribute = "_Nonnull"
 
 # Options specific to Cython bindings.

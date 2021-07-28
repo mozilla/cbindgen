@@ -15,13 +15,13 @@ extern crate tempfile;
 use self::tempfile::Builder;
 
 #[derive(Debug)]
-/// Possible errors that can occur during `rustc --pretty=expanded`.
+/// Possible errors that can occur during `rustc -Zunpretty=expanded`.
 pub enum Error {
     /// Error during creation of temporary directory
     Io(io::Error),
     /// Output of `cargo metadata` was not valid utf8
     Utf8(Utf8Error),
-    /// Error during execution of `cargo rustc --pretty=expanded`
+    /// Error during execution of `cargo rustc -Zunpretty=expanded`
     Compile(String),
 }
 
@@ -127,9 +127,7 @@ pub fn expand(
     cmd.arg(&package);
     cmd.arg("--verbose");
     cmd.arg("--");
-    cmd.arg("-Z");
-    cmd.arg("unstable-options");
-    cmd.arg("--pretty=expanded");
+    cmd.arg("-Zunpretty=expanded");
     info!("Command: {:?}", cmd);
     let output = cmd.output()?;
 

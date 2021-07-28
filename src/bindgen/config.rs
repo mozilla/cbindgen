@@ -717,13 +717,13 @@ impl FromStr for Profile {
 
 deserialize_enum_str!(Profile);
 
-/// Settings to apply when running `rustc --pretty=expanded`
+/// Settings to apply when running `rustc -Zunpretty=expanded`
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(deny_unknown_fields)]
 #[serde(default)]
 pub struct ParseExpandConfig {
-    /// The names of crates to parse with `rustc --pretty=expanded`
+    /// The names of crates to parse with `rustc -Zunpretty=expanded`
     pub crates: Vec<String>,
     /// Whether to enable all the features when expanding.
     pub all_features: bool,
@@ -806,10 +806,10 @@ pub struct ParseConfig {
     pub include: Option<Vec<String>>,
     /// The names of crates to not parse
     pub exclude: Vec<String>,
-    /// The configuration options for `rustc --pretty=expanded`
+    /// The configuration options for `rustc -Zunpretty=expanded`
     #[serde(deserialize_with = "retrocomp_parse_expand_config_deserialize")]
     pub expand: ParseExpandConfig,
-    /// Whether to use a new temporary target directory when running `rustc --pretty=expanded`.
+    /// Whether to use a new temporary target directory when running `rustc -Zunpretty=expanded`.
     /// This may be required for some build processes.
     pub clean: bool,
     /// List of crate names which generate consts, statics, and fns. By default
