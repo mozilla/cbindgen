@@ -92,7 +92,10 @@ pub fn expand(
 
     cmd.arg("rustc");
     cmd.arg("--lib");
-    cmd.arg("--profile=check");
+    // When build with the release profile we can't choose the `check` profile.
+    if profile != Profile::Release {
+        cmd.arg("--profile=check");
+    }
     cmd.arg("--manifest-path");
     cmd.arg(manifest_path);
     if let Some(features) = expand_features {
