@@ -1,3 +1,10 @@
+## 0.20.0
+
+     * Add Builder::with_using_namespaces. (#688)
+     * Ignore PhantomPinned. (#695)
+     * Simplify Pin<T> to T. (#697)
+     * Update --pretty=expanded to -Zunpretty=expanded. (#706)
+
 ## 0.19.0
 
      * Simplify types in generics (#663)
