@@ -540,9 +540,11 @@ impl Item for Enum {
             };
 
             for variant in &mut self.variants {
-                variant.export_name = format!("{}{}{}", self.export_name, separator, variant.export_name);
+                variant.export_name =
+                    format!("{}{}{}", self.export_name, separator, variant.export_name);
                 if let VariantBody::Body { ref mut body, .. } = variant.body {
-                    body.export_name = format!("{}{}{}", self.export_name, separator, body.export_name());
+                    body.export_name =
+                        format!("{}{}{}", self.export_name, separator, body.export_name());
                 }
             }
         }
