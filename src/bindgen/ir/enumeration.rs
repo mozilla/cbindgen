@@ -533,10 +533,16 @@ impl Item for Enum {
         if config.enumeration.prefix_with_name
             || self.annotations.bool("prefix-with-name").unwrap_or(false)
         {
+            let separator = if config.export.mangle.remove_underscores {
+                ""
+            } else {
+                "_"
+            };
+
             for variant in &mut self.variants {
-                variant.export_name = format!("{}_{}", self.export_name, variant.export_name);
+                variant.export_name = format!("{}{}{}", self.export_name, separator, variant.export_name);
                 if let VariantBody::Body { ref mut body, .. } = variant.body {
-                    body.export_name = format!("{}_{}", self.export_name, body.export_name());
+                    body.export_name = format!("{}{}{}", self.export_name, separator, body.export_name());
                 }
             }
         }
