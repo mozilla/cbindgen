@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+enum Bar {
+  BarSome,
+  BarThing,
+};
+
 struct FooU8 {
   uint8_t a;
 };
@@ -13,7 +18,7 @@ typedef struct FooU8 Boo;
 extern "C" {
 #endif // __cplusplus
 
-void root(Boo x);
+void root(Boo x, enum Bar y);
 
 #ifdef __cplusplus
 } // extern "C"

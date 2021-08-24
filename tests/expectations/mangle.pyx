@@ -6,9 +6,13 @@ cdef extern from *:
 
 cdef extern from *:
 
+  ctypedef enum Bar:
+    BarSome,
+    BarThing,
+
   ctypedef struct FooU8:
     uint8_t a;
 
   ctypedef FooU8 Boo;
 
-  void root(Boo x);
+  void root(Boo x, Bar y);
