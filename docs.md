@@ -500,6 +500,15 @@ documentation = true
 # default: "auto"
 documentation_style = "doxy"
 
+# How much of the documentation for each item is output.
+#
+# possible values:
+# * "short": Only the first line.
+# * "full": The full documentation.
+#
+# default: "full"
+documentation_style = "short"
+
 
 
 

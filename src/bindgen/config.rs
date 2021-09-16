@@ -191,6 +191,27 @@ impl FromStr for DocumentationStyle {
 
 deserialize_enum_str!(DocumentationStyle);
 
+/// How much of the documentation to include in the header file.
+#[derive(Debug, Clone, Copy)]
+pub enum DocumentationLength {
+    Short,
+    Full,
+}
+
+impl FromStr for DocumentationLength {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<DocumentationLength, Self::Err> {
+        match s.to_lowercase().as_ref() {
+            "short" => Ok(DocumentationLength::Short),
+            "full" => Ok(DocumentationLength::Full),
+            _ => Err(format!("Unrecognized documentation style: '{}'.", s)),
+        }
+    }
+}
+
+deserialize_enum_str!(DocumentationLength);
+
 /// A style of Style to use when generating structs and enums.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Style {
@@ -935,6 +956,8 @@ pub struct Config {
     pub documentation: bool,
     /// How documentation comments should be styled.
     pub documentation_style: DocumentationStyle,
+    /// How much of the documentation should be output for each item.
+    pub documentation_length: DocumentationLength,
     /// Configuration options for pointers
     #[serde(rename = "ptr")]
     pub pointer: PtrConfig,
@@ -1013,6 +1036,7 @@ impl Default for Config {
             defines: HashMap::new(),
             documentation: true,
             documentation_style: DocumentationStyle::Auto,
+            documentation_length: DocumentationLength::Full,
             pointer: PtrConfig::default(),
             only_target_dependencies: false,
             cython: CythonConfig::default(),

@@ -4,7 +4,7 @@
 
 use std::io::Write;
 
-use crate::bindgen::config::{Config, DocumentationStyle, Language};
+use crate::bindgen::config::{Config, DocumentationLength, DocumentationStyle, Language};
 use crate::bindgen::utilities::SynAttributeHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -76,7 +76,12 @@ impl Source for Documentation {
             _ => (),
         }
 
-        for line in &self.doc_comment {
+        let end = match config.documentation_length {
+            DocumentationLength::Short => 1,
+            DocumentationLength::Full => self.doc_comment.len(),
+        };
+
+        for line in &self.doc_comment[..end] {
             match style {
                 DocumentationStyle::C => out.write(""),
                 DocumentationStyle::Doxy => out.write(" *"),
