@@ -14,11 +14,24 @@ typedef struct {
 
 typedef FooU8 Boo;
 
+typedef enum {
+  DogWoof,
+} Dog_Tag;
+
+typedef struct {
+  Dog_Tag tag;
+  union {
+    struct {
+      FooU8 woof;
+    };
+  };
+} Dog;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(Boo x, Bar y);
+void root(Boo x, Bar y, Dog z);
 
 #ifdef __cplusplus
 } // extern "C"

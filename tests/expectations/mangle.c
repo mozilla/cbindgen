@@ -14,4 +14,17 @@ typedef struct {
 
 typedef FooU8 Boo;
 
-void root(Boo x, Bar y);
+typedef enum {
+  DogWoof,
+} Dog_Tag;
+
+typedef struct {
+  Dog_Tag tag;
+  union {
+    struct {
+      FooU8 woof;
+    };
+  };
+} Dog;
+
+void root(Boo x, Bar y, Dog z);
