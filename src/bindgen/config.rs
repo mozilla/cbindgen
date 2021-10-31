@@ -341,7 +341,8 @@ pub struct MangleConfig {
     pub rename_types: RenameRule,
     /// Remove the underscores used for name mangling.
     pub remove_underscores: bool,
-    /// Replacement names for type parameters when name mangling
+    /// Table of replacement strings for substituting type parameters when name mangling.
+    /// The keys are processed type names, and the values are the replacement strings.
     pub type_replacements: HashMap<String, String>,
 }
 

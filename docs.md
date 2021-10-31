@@ -609,6 +609,14 @@ rename_types = "PascalCase"
 # Whether the underscores from the mangled name should be omitted.
 remove_underscores = false
 
+# Table of replacement strings for substituting type parameters when name mangling.
+# The keys are processed type names, and the values are the replacement strings.
+# This is useful for controlling the mangled names of generic types.
+[export.mangle.type_replacements]
+"U8" = "Char"
+"VecChar" = "Bytes" # This key corresponds to a mangled Vec<u8>
+"Empty" = ""
+
 [layout]
 # A string that should come before the name of any type which has been marked
 # as `#[repr(packed)]`. For instance, "__attribute__((packed))" would be a
