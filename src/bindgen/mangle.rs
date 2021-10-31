@@ -70,21 +70,32 @@ impl<'a> Mangler<'a> {
                 let sub_path =
                     Mangler::new(generic.export_name(), generic.generics(), last, self.config)
                         .mangle();
+                let mangled = self
+                    .config
+                    .rename_types
+                    .apply(&sub_path, IdentifierType::Type);
+                let type_str = self
+                    .config
+                    .type_replacements
+                    .get(mangled.as_ref())
+                    .map(String::as_str)
+                    .unwrap_or_else(|| mangled.as_ref());
 
-                self.output.push_str(
-                    &self
-                        .config
-                        .rename_types
-                        .apply(&sub_path, IdentifierType::Type),
-                );
+                self.output.push_str(type_str);
             }
             Type::Primitive(ref primitive) => {
-                self.output.push_str(
-                    &self
-                        .config
-                        .rename_types
-                        .apply(primitive.to_repr_rust(), IdentifierType::Type),
-                );
+                let mangled = self
+                    .config
+                    .rename_types
+                    .apply(primitive.to_repr_rust(), IdentifierType::Type);
+                let type_str = self
+                    .config
+                    .type_replacements
+                    .get(mangled.as_ref())
+                    .map(String::as_str)
+                    .unwrap_or_else(|| mangled.as_ref());
+
+                self.output.push_str(type_str);
             }
             Type::Ptr {
                 ref ty, is_const, ..
@@ -147,6 +158,7 @@ impl<'a> Mangler<'a> {
 fn generics() {
     use crate::bindgen::ir::{GenericPath, PrimitiveType};
     use crate::bindgen::rename::RenameRule::{self, PascalCase};
+    use std::collections::HashMap;
 
     fn float() -> Type {
         Type::Primitive(PrimitiveType::Float)
@@ -196,6 +208,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: RenameRule::None,
+                type_replacements: HashMap::new(),
             }
         ),
         Path::new("FooBar")
@@ -209,6 +222,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
+                type_replacements: HashMap::new(),
             },
         ),
         Path::new("FooBarF32")
@@ -222,6 +236,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
+                type_replacements: HashMap::new(),
             },
         ),
         Path::new("FooBarCChar")
@@ -268,6 +283,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
+                type_replacements: HashMap::new(),
             },
         ),
         Path::new("FooBarTE")
@@ -284,6 +300,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
+                type_replacements: HashMap::new(),
             },
         ),
         Path::new("FooBarTBarE")
