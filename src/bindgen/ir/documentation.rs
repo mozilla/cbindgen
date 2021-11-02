@@ -43,9 +43,14 @@ impl Source for Documentation {
             return;
         }
 
+        let end = match config.documentation_length {
+            DocumentationLength::Short => 1,
+            DocumentationLength::Full => self.doc_comment.len(),
+        };
+
         // Cython uses Python-style comments, so `documentation_style` is not relevant.
         if config.language == Language::Cython {
-            for line in &self.doc_comment {
+            for line in &self.doc_comment[..end] {
                 write!(out, "#{}", line);
                 out.new_line();
             }
@@ -75,11 +80,6 @@ impl Source for Documentation {
 
             _ => (),
         }
-
-        let end = match config.documentation_length {
-            DocumentationLength::Short => 1,
-            DocumentationLength::Full => self.doc_comment.len(),
-        };
 
         for line in &self.doc_comment[..end] {
             match style {
