@@ -158,6 +158,7 @@ cbindgen contains the following hardcoded mappings (again completely ignoring na
 * f32 => float
 * f64 => double
 * VaList => va_list
+* RawFd => int
 * PhantomData => *evaporates*, can only appear as the field of a type
 * PhantomPinned => *evaporates*, can only appear as the field of a type  
 * () => *evaporates*, can only appear as the field of a type

@@ -77,6 +77,7 @@ impl PrimitiveType {
                     "c_ulong" => (IntKind::Long, false),
                     "c_ulonglong" => (IntKind::LongLong, false),
                     "size_t" => (IntKind::SizeT, false),
+                    "RawFd" => (IntKind::Int, true),
 
                     "isize" | "intptr_t" => (IntKind::Size, true),
                     "usize" | "uintptr_t" => (IntKind::Size, false),
