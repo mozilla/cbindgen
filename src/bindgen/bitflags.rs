@@ -16,8 +16,10 @@ use syn::parse::{Parse, ParseStream, Parser, Result as ParseResult};
 pub struct Bitflags {
     attrs: Vec<syn::Attribute>,
     vis: syn::Visibility,
+    #[allow(dead_code)]
     struct_token: Token![struct],
     name: syn::Ident,
+    #[allow(dead_code)]
     colon_token: Token![:],
     repr: syn::Type,
     flags: Flags,
@@ -72,10 +74,13 @@ impl Parse for Bitflags {
 #[derive(Debug)]
 struct Flag {
     attrs: Vec<syn::Attribute>,
+    #[allow(dead_code)]
     const_token: Token![const],
     name: syn::Ident,
+    #[allow(dead_code)]
     equals_token: Token![=],
     value: syn::Expr,
+    #[allow(dead_code)]
     semicolon_token: Token![;],
 }
 

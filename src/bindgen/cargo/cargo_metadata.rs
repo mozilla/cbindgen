@@ -1,4 +1,5 @@
 #![deny(missing_docs)]
+#![allow(dead_code)]
 //! Structured access to the output of `cargo metadata`
 //! Usually used from within a `cargo-*` executable
 
