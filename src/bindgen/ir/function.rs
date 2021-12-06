@@ -5,6 +5,8 @@
 use std::collections::HashMap;
 use std::io::Write;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language, Layout};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
@@ -369,7 +371,9 @@ impl SynFnArgHelpers for syn::FnArg {
             }) => {
                 let name = match **pat {
                     syn::Pat::Wild(..) => None,
-                    syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => Some(ident.to_string()),
+                    syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
+                        Some(ident.unraw().to_string())
+                    }
                     _ => {
                         return Err(format!(
                             "Parameter has an unsupported argument name: {:?}",

@@ -1,6 +1,8 @@
 use std::io::Write;
 use std::ops::Deref;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use crate::bindgen::ir::{Path, Type};
@@ -18,7 +20,7 @@ impl GenericParams {
                 .iter()
                 .filter_map(|x| match *x {
                     syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => {
-                        Some(Path::new(ident.to_string()))
+                        Some(Path::new(ident.unraw().to_string()))
                     }
                     _ => None,
                 })
@@ -141,7 +143,7 @@ impl GenericPath {
             path
         );
         let last_segment = path.segments.last().unwrap();
-        let name = last_segment.ident.to_string();
+        let name = last_segment.ident.unraw().to_string();
 
         let path = Path::new(name);
         let phantom_data_path = Path::new("PhantomData");

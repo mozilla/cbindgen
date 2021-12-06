@@ -4,6 +4,8 @@
 
 use std::io::Write;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -47,7 +49,7 @@ impl Union {
             layout_config.ensure_safe_to_represent(&align)?;
         }
 
-        let path = Path::new(item.ident.to_string());
+        let path = Path::new(item.ident.unraw().to_string());
 
         let (fields, tuple_union) = {
             let out = item

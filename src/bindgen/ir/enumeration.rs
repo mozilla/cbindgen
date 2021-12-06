@@ -4,6 +4,8 @@
 
 use std::io::Write;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -126,7 +128,7 @@ impl EnumVariant {
                     res.push(Field {
                         name: inline_name.map_or_else(
                             || match field.ident {
-                                Some(ref ident) => ident.to_string(),
+                                Some(ref ident) => ident.unraw().to_string(),
                                 None => i.to_string(),
                             },
                             |name| name.to_string(),
@@ -152,7 +154,10 @@ impl EnumVariant {
             syn::Fields::Named(ref fields) => {
                 let path = Path::new(format!("{}_Body", variant.ident));
                 let name = RenameRule::SnakeCase
-                    .apply(&variant.ident.to_string(), IdentifierType::StructMember)
+                    .apply(
+                        &variant.ident.unraw().to_string(),
+                        IdentifierType::StructMember,
+                    )
                     .into_owned();
                 VariantBody::Body {
                     body: Struct::new(
@@ -175,7 +180,10 @@ impl EnumVariant {
             syn::Fields::Unnamed(ref fields) => {
                 let path = Path::new(format!("{}_Body", variant.ident));
                 let name = RenameRule::SnakeCase
-                    .apply(&variant.ident.to_string(), IdentifierType::StructMember)
+                    .apply(
+                        &variant.ident.unraw().to_string(),
+                        IdentifierType::StructMember,
+                    )
                     .into_owned();
                 let inline_casts = fields.unnamed.len() == 1;
                 // In C++ types with destructors cannot be put into unnamed structs like the
@@ -206,7 +214,7 @@ impl EnumVariant {
         };
 
         Ok(EnumVariant::new(
-            variant.ident.to_string(),
+            variant.ident.unraw().to_string(),
             discriminant,
             body,
             variant_cfg,
@@ -362,7 +370,7 @@ impl Enum {
             return Err("Enum is marked with #[repr(align(...))] or #[repr(packed)].".to_owned());
         }
 
-        let path = Path::new(item.ident.to_string());
+        let path = Path::new(item.ident.unraw().to_string());
         let generic_params = GenericParams::new(&item.generics);
 
         let mut variants = Vec::new();

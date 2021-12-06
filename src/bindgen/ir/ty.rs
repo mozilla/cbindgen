@@ -5,6 +5,8 @@
 use std::borrow::Cow;
 use std::io::Write;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
@@ -462,7 +464,7 @@ impl Type {
                                             format!("_{}", wildcard_counter - 1)
                                         }
                                     } else {
-                                        ident.to_string()
+                                        ident.unraw().to_string()
                                     }
                                 }),
                                 ty,

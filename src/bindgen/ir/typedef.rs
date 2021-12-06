@@ -5,6 +5,8 @@
 use std::collections::HashMap;
 use std::io::Write;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -32,7 +34,7 @@ pub struct Typedef {
 impl Typedef {
     pub fn load(item: &syn::ItemType, mod_cfg: Option<&Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(&item.ty)? {
-            let path = Path::new(item.ident.to_string());
+            let path = Path::new(item.ident.unraw().to_string());
             Ok(Typedef::new(
                 path,
                 GenericParams::new(&item.generics),

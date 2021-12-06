@@ -4,6 +4,8 @@
 
 use std::io::Write;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -62,7 +64,7 @@ impl Struct {
             }
         };
 
-        let path = Path::new(item.ident.to_string());
+        let path = Path::new(item.ident.unraw().to_string());
 
         // Ensure we can safely represent the struct given the configuration.
         if let Some(align) = repr.align {
