@@ -8,6 +8,8 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path as FilePath, PathBuf as FilePathBuf};
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::bitflags;
 use crate::bindgen::cargo::{Cargo, PackageRef};
 use crate::bindgen::config::{Config, ParseConfig};
@@ -308,7 +310,7 @@ impl<'a> Parser<'a> {
         );
 
         for item in nested_modules {
-            let next_mod_name = item.ident.to_string();
+            let next_mod_name = item.ident.unraw().to_string();
             let cfg = Cfg::load(&item.attrs);
             if let Some(ref cfg) = cfg {
                 self.cfg_stack.push(cfg.clone());
@@ -536,7 +538,7 @@ impl Parse {
                                     binding_crate_name,
                                     crate_name,
                                     mod_cfg,
-                                    &Path::new(type_name.to_string()),
+                                    &Path::new(type_name.unraw().to_string()),
                                     method,
                                 )
                             }
@@ -604,7 +606,7 @@ impl Parse {
                     );
                     return;
                 }
-                let path = Path::new(function.sig.ident.to_string());
+                let path = Path::new(function.sig.ident.unraw().to_string());
                 match Function::load(path, None, &function.sig, true, &function.attrs, mod_cfg) {
                     Ok(func) => {
                         info!("Take {}::{}.", crate_name, &function.sig.ident);
@@ -697,7 +699,7 @@ impl Parse {
             if let Some(ref self_type) = self_type {
                 items.push(self_type.to_string());
             }
-            items.push(sig.ident.to_string());
+            items.push(sig.ident.unraw().to_string());
             items.join("::")
         };
 
@@ -795,7 +797,7 @@ impl Parse {
                 return;
             }
 
-            let path = Path::new(item.ident.to_string());
+            let path = Path::new(item.ident.unraw().to_string());
             match Constant::load(
                 path,
                 mod_cfg,
@@ -853,7 +855,7 @@ impl Parse {
             return;
         }
 
-        let path = Path::new(item.ident.to_string());
+        let path = Path::new(item.ident.unraw().to_string());
         match Constant::load(path, mod_cfg, &item.ty, &item.expr, &item.attrs, None) {
             Ok(constant) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
@@ -929,7 +931,7 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                let path = Path::new(item.ident.to_string());
+                let path = Path::new(item.ident.unraw().to_string());
                 self.opaque_items.try_insert(
                     OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
                 );
@@ -953,7 +955,7 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                let path = Path::new(item.ident.to_string());
+                let path = Path::new(item.ident.unraw().to_string());
                 self.opaque_items.try_insert(
                     OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
                 );
@@ -976,7 +978,7 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                let path = Path::new(item.ident.to_string());
+                let path = Path::new(item.ident.unraw().to_string());
                 self.opaque_items.try_insert(
                     OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
                 );
@@ -994,7 +996,7 @@ impl Parse {
             }
             Err(msg) => {
                 info!("Take {}::{} - opaque ({}).", crate_name, &item.ident, msg);
-                let path = Path::new(item.ident.to_string());
+                let path = Path::new(item.ident.unraw().to_string());
                 self.opaque_items.try_insert(
                     OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
                 );
@@ -1010,7 +1012,7 @@ impl Parse {
         item: &syn::ItemMacro,
     ) {
         let name = match item.mac.path.segments.last() {
-            Some(n) => n.ident.to_string(),
+            Some(n) => n.ident.unraw().to_string(),
             None => return,
         };
 

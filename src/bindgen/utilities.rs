@@ -4,6 +4,8 @@
 
 #![allow(clippy::redundant_closure_call)]
 
+use syn::ext::IdentExt;
+
 pub trait IterHelpers: Iterator {
     fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
     where
@@ -38,7 +40,7 @@ impl SynItemFnHelpers for syn::ItemFn {
             .attr_name_value_lookup("export_name")
             .or_else(|| {
                 if self.is_no_mangle() {
-                    Some(self.sig.ident.to_string())
+                    Some(self.sig.ident.unraw().to_string())
                 } else {
                     None
                 }
@@ -52,7 +54,7 @@ impl SynItemFnHelpers for syn::ImplItemMethod {
             .attr_name_value_lookup("export_name")
             .or_else(|| {
                 if self.is_no_mangle() {
-                    Some(self.sig.ident.to_string())
+                    Some(self.sig.ident.unraw().to_string())
                 } else {
                     None
                 }

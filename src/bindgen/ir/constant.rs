@@ -6,6 +6,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::io::Write;
 
+use syn::ext::IdentExt;
 use syn::{self, UnOp};
 
 use crate::bindgen::config::{Config, Language};
@@ -224,11 +225,11 @@ impl Literal {
                 ref fields,
                 ..
             }) => {
-                let struct_name = path.segments[0].ident.to_string();
+                let struct_name = path.segments[0].ident.unraw().to_string();
                 let mut field_map = HashMap::<String, Literal>::default();
                 for field in fields {
                     let ident = match field.member {
-                        syn::Member::Named(ref name) => name.to_string(),
+                        syn::Member::Named(ref name) => name.unraw().to_string(),
                         syn::Member::Unnamed(ref index) => format!("_{}", index.index),
                     };
                     let key = ident.to_string();

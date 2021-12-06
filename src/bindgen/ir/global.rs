@@ -4,6 +4,8 @@
 
 use std::io::Write;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::cdecl;
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
@@ -32,7 +34,7 @@ impl Static {
         }
 
         Ok(Static::new(
-            Path::new(item.ident.to_string()),
+            Path::new(item.ident.unraw().to_string()),
             ty.unwrap(),
             item.mutability.is_some(),
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),

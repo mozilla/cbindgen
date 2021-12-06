@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::ir::ty::{IntKind, PrimitiveType};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -62,12 +64,13 @@ impl Repr {
             })
             .flatten()
             .filter_map(|meta| match meta {
-                syn::NestedMeta::Meta(syn::Meta::Path(path)) => {
-                    Some((path.segments.first().unwrap().ident.to_string(), None))
-                }
+                syn::NestedMeta::Meta(syn::Meta::Path(path)) => Some((
+                    path.segments.first().unwrap().ident.unraw().to_string(),
+                    None,
+                )),
                 syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList { path, nested, .. })) => {
                     Some((
-                        path.segments.first().unwrap().ident.to_string(),
+                        path.segments.first().unwrap().ident.unraw().to_string(),
                         Some(
                             nested
                                 .iter()

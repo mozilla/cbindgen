@@ -1,5 +1,7 @@
 use std::io::Write;
 
+use syn::ext::IdentExt;
+
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::ir::{AnnotationSet, Cfg, ConditionWrite};
@@ -34,6 +36,7 @@ impl Field {
                     .ident
                     .as_ref()
                     .ok_or_else(|| "field is missing identifier".to_string())?
+                    .unraw()
                     .to_string(),
                 ty,
                 cfg: Cfg::load(&field.attrs),
