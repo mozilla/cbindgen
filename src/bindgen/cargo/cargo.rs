@@ -168,7 +168,7 @@ impl Cargo {
                     .packages
                     .get(package)
                     .and_then(|meta_package| meta_package.dependencies.get(dep_name))
-                    .and_then(|meta_dep| Cfg::load_metadata(meta_dep));
+                    .and_then(Cfg::load_metadata);
 
                 let package_ref = PackageRef {
                     name: dep_name.to_owned(),
