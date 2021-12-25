@@ -79,7 +79,6 @@ in production:
 * [milksnake](https://github.com/getsentry/milksnake)
 * [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/gfx/webrender_bindings/webrender_ffi_generated.h))
 * [stylo](https://searchfox.org/mozilla-central/source/layout/style) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/layout/style/ServoStyleConsts.h))
-* [wgpu-native](https://github.com/gfx-rs/wgpu-native) ([generated header](https://github.com/gfx-rs/wgpu-native/blob/master/ffi/wgpu.h))
 * [etesync-rs](https://github.com/etesync/etesync-rs)
 
 If you're using `cbindgen` and would like to be added to this list, please open
