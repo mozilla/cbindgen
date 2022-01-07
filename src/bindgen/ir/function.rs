@@ -385,9 +385,9 @@ impl SynFnArgHelpers for syn::FnArg {
                     Some(x) => x,
                     None => return Ok(None),
                 };
-                if let Type::Array(..) = ty {
-                    return Err("Array as function arguments are not supported".to_owned());
-                }
+                // if let Type::Array(..) = ty {
+                //     return Err("Array as function arguments are not supported".to_owned());
+                // }
                 Ok(Some(FunctionArgument {
                     name,
                     ty,
