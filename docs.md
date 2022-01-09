@@ -68,6 +68,13 @@ fn main() {
 
 You can add configuration options using the [`Builder`](https://docs.rs/cbindgen/*/cbindgen/struct.Builder.html#methods) interface.
 
+Be sure to add the following section to your Cargo.toml:
+
+```
+[build-dependencies]
+cbindgen = "0.20.0"
+```
+
 If you'd like to use a `build.rs` script with a `cbindgen.toml`, consider using [`cbindgen::generate()`](https://docs.rs/cbindgen/*/cbindgen/fn.generate.html) instead.
 
 
