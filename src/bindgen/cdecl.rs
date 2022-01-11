@@ -206,6 +206,7 @@ impl CDecl {
         // Write the left part of declarators before the identifier
         let mut iter_rev = self.declarators.iter().rev().peekable();
 
+        let mut previous_item_was_sized_array = false;
         #[allow(clippy::while_let_on_iterator)]
         while let Some(declarator) = iter_rev.next() {
             let next_is_pointer = iter_rev.peek().map_or(false, |x| x.is_ptr());
@@ -216,7 +217,10 @@ impl CDecl {
                     is_nullable,
                     is_ref,
                 } => {
-                    out.write(if is_ref { "&" } else { "*" });
+                    if !previous_item_was_sized_array {
+                        out.write(if is_ref { "&" } else { "*" });
+                    }
+
                     if is_const {
                         out.write("const ");
                     }
@@ -227,9 +231,11 @@ impl CDecl {
                     }
                 }
                 CDeclarator::Array(..) => {
-                    if next_is_pointer {
-                        out.write("(");
-                    }
+                    previous_item_was_sized_array = true;
+                    // It is prettier and easier to represent sized arrays without parenthesis;
+                    // if next_is_pointer {
+                    //     out.write("(");
+                    // }
                 }
                 CDeclarator::Func(..) => {
                     if next_is_pointer {
@@ -255,9 +261,10 @@ impl CDecl {
                     last_was_pointer = true;
                 }
                 CDeclarator::Array(ref constant) => {
-                    if last_was_pointer {
-                        out.write(")");
-                    }
+                    // It is prettier and easier to represent sized arrays without parenthesis;
+                    // if last_was_pointer {
+                    //     out.write(")");
+                    // }
                     write!(out, "[{}]", constant);
 
                     last_was_pointer = false;

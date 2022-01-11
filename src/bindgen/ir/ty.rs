@@ -379,7 +379,7 @@ impl Type {
                     ty: Box::new(converted),
                     is_const,
                     is_nullable: false,
-                    is_ref: false,
+                    is_ref: true,
                 }
             }
             syn::Type::Ptr(ref pointer) => {
