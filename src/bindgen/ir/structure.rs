@@ -420,12 +420,13 @@ impl Source for Struct {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
+            Language::Zig => out.write(config.style.zig_def()),
         }
 
         // Cython extern declarations don't manage layouts, layouts are defined entierly by the
         // corresponding C code. So this `packed` is only for documentation, and missing
         // `aligned(n)` is also not a problem.
-        if config.language == Language::Cython {
+        if config.language == Language::Cython || config.language == Language::Zig {
             if let Some(align) = self.alignment {
                 match align {
                     ReprAlign::Packed => out.write("packed "),
@@ -434,7 +435,11 @@ impl Source for Struct {
             }
         }
 
-        out.write("struct");
+        if config.language == Language::Zig {
+            write!(out, "{} = extern struct", self.export_name());
+        } else {
+            out.write("struct");
+        } 
 
         if config.language != Language::Cython {
             if let Some(align) = self.alignment {
@@ -459,7 +464,7 @@ impl Source for Struct {
             }
         }
 
-        if config.language != Language::C || config.style.generate_tag() {
+        if config.language != Language::Zig && config.language != Language::C {
             write!(out, " {}", self.export_name());
         }
 
@@ -471,7 +476,7 @@ impl Source for Struct {
             out.new_line();
         }
 
-        out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
+        out.write_vertical_source_list(&self.fields, ListType::Cap(if config.language != Language::Zig {";"}else{","}));
         if config.language == Language::Cython && self.fields.is_empty() {
             out.write("pass");
         }

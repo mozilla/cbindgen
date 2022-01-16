@@ -36,6 +36,9 @@ fn run_cbindgen(
         Language::Cython => {
             command.arg("--lang").arg("cython");
         }
+        Language::Zig => {
+            command.arg("--lang").arg("zig");
+        }
     }
 
     if let Some(style) = style {
@@ -72,6 +75,7 @@ fn compile(
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
         Language::Cython => env::var("CYTHON").unwrap_or_else(|_| "cython".to_owned()),
+        Language::Zig => env::var("ZIG").unwrap_or_else(|_| "zig".to_owned()),
     };
 
     let file_name = cbindgen_output
@@ -129,6 +133,13 @@ fn compile(
             command.arg("-o").arg(&object);
             command.arg(cbindgen_output);
         }
+        Language::Zig => {
+            command.arg("build-obj");
+            command.arg("-O").arg("ReleaseSafe");
+            command.arg("-fsingle-threaded");
+            command.arg("-name").arg(&object);
+            command.arg("-femit-bin").arg(cbindgen_output);
+        }
     }
 
     println!("Running: {:?}", command);
@@ -173,6 +184,7 @@ fn run_compile_test(
         // is extension-sensitive and won't work on them, so we use implementation files (`.pyx`)
         // in the test suite.
         Language::Cython => ".pyx",
+        Language::Zig => ".zig",
     };
 
     let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();

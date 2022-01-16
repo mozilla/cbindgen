@@ -57,6 +57,14 @@ impl Source for Documentation {
             return;
         }
 
+        if config.language == Language::Zig {
+            for line in &self.doc_comment[..end] {
+                write!(out, "///{}", line);
+                out.new_line();
+            }
+            return;
+        }
+        
         let style = match config.documentation_style {
             DocumentationStyle::Auto if config.language == Language::C => DocumentationStyle::Doxy,
             DocumentationStyle::Auto if config.language == Language::Cxx => DocumentationStyle::Cxx,

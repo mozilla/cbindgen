@@ -279,6 +279,7 @@ impl Source for Union {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
+            Language::Zig => out.write(config.style.zig_def()),
         }
 
         out.write("union");

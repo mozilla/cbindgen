@@ -489,7 +489,7 @@ impl Literal {
                         return write!(out, "{}", known);
                     }
                     let path_separator = match config.language {
-                        Language::Cython | Language::C => "_",
+                        Language::Cython | Language::Zig | Language::C => "_",
                         Language::Cxx => {
                             if config.structure.associated_constants_in_body {
                                 "::"
@@ -548,6 +548,7 @@ impl Literal {
                     Language::C => write!(out, "({})", export_name),
                     Language::Cxx => write!(out, "{}", export_name),
                     Language::Cython => write!(out, "<{}>", export_name),
+                    Language::Zig => write!(out, ":{} = ", export_name),
                 }
 
                 write!(out, "{{ ");
@@ -565,6 +566,7 @@ impl Literal {
                             Language::Cxx => write!(out, "/* .{} = */ ", ordered_key),
                             Language::C => write!(out, ".{} = ", ordered_key),
                             Language::Cython => {}
+                            Language::Zig => write!(out, ".{} = ", ordered_key),
                         }
                         lit.write(config, out);
                     }
@@ -773,6 +775,7 @@ impl Constant {
         self.documentation.write(config, out);
 
         let allow_constexpr = config.constant.allow_constexpr && self.value.can_be_constexpr();
+        let allow_comptime = config.constant.allow_comptime;
         match config.language {
             Language::Cxx if config.constant.allow_static_const || allow_constexpr => {
                 if allow_constexpr {
@@ -805,6 +808,18 @@ impl Constant {
                 // but still useful as documentation, so we write it as a comment.
                 write!(out, " {} # = ", name);
                 value.write(config, out);
+            }
+            Language::Zig if allow_comptime => {
+                if allow_comptime {
+                    out.write("comptime ");
+                }
+            }
+            Language::Zig => {
+                out.write(config.style.zig_def());
+                self.ty.write(config, out);
+                write!(out, "{} = ", name);
+                value.write(config, out);
+                write!(out, ";");
             }
         }
 

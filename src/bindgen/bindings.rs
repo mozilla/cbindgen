@@ -177,7 +177,7 @@ impl Bindings {
             write!(out, "#define {}", f);
             out.new_line();
         }
-        if self.config.pragma_once && self.config.language != Language::Cython {
+        if self.config.pragma_once && self.config.language != Language::Cython && self.config.language != Language::Zig {
             out.new_line_if_not_start();
             write!(out, "#pragma once");
             out.new_line();
@@ -264,6 +264,10 @@ impl Bindings {
                     out.new_line();
                     out.close_brace(false);
                 }
+                Language::Zig => {
+                    out.write("const std = @import(\"std\");");
+                    out.new_line();
+                }
             }
         }
 
@@ -280,6 +284,13 @@ impl Bindings {
         if self.config.language == Language::Cython {
             for (module, names) in &self.config.cython.cimports {
                 write!(out, "from {} cimport {}", module, names.join(", "));
+                out.new_line();
+            }
+        }
+
+        if self.config.language == Language::Zig {
+            for (module, names) in &self.config.zig.cimports {
+                write!(out, "const {} = @cImport ({{ @cInclude(\"{}\")}});", names.join(""), module);
                 out.new_line();
             }
         }
@@ -351,6 +362,16 @@ impl Bindings {
                     for namespace in using_namespaces {
                         out.new_line();
                         write!(out, "using namespace {};", namespace);
+                    }
+                    out.new_line();
+                }
+            }
+
+            if self.config.language == Language::Zig {
+                if let Some(ref using_namespaces) = self.config.using_namespaces {
+                    for namespace in using_namespaces {
+                        out.new_line();
+                        write!(out, "usingnamespace {};", namespace);
                     }
                     out.new_line();
                 }
