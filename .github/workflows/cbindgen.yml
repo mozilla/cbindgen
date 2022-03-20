@@ -41,11 +41,11 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: 1.40.0
+        toolchain: 1.54.0
 
     - name: Build with minimum supported Rust version
       run: |
-        cargo +1.40.0 test nonexistent-test --verbose
+        cargo +1.54.0 test nonexistent-test --verbose
 
   build:
 
