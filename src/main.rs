@@ -20,14 +20,14 @@ extern crate quote;
 extern crate syn;
 extern crate toml;
 
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 
 mod bindgen;
 mod logging;
 
 use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Profile, Style};
 
-fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
+fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
     // We allow specifying a language to override the config default. This is
     // used by compile-tests.
     if let Some(lang) = matches.value_of("lang") {
@@ -78,7 +78,7 @@ fn apply_config_overrides<'a>(config: &mut Config, matches: &ArgMatches<'a>) {
     }
 }
 
-fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings, Error> {
+fn load_bindings(input: &Path, matches: &ArgMatches) -> Result<Bindings, Error> {
     // If a file is specified then we load it as a single source
     if !input.is_dir() {
         // Load any config specified or search in the input directory
@@ -130,62 +130,62 @@ fn load_bindings<'a>(input: &Path, matches: &ArgMatches<'a>) -> Result<Bindings,
 }
 
 fn main() {
-    let matches = App::new("cbindgen")
+    let matches = Command::new("cbindgen")
         .version(bindgen::VERSION)
         .about("Generate C bindings for a Rust library")
         .arg(
-            Arg::with_name("v")
-                .short("v")
-                .multiple(true)
+            Arg::new("v")
+                .short('v')
+                .multiple_occurrences(true)
                 .help("Enable verbose logging"),
         )
         .arg(
-            Arg::with_name("verify")
+            Arg::new("verify")
                 .long("verify")
                 .help("Generate bindings and compare it to the existing bindings file and error if they are different"),
         )
         .arg(
-            Arg::with_name("config")
-                .short("c")
+            Arg::new("config")
+                .short('c')
                 .long("config")
                 .value_name("PATH")
                 .help("Specify path to a `cbindgen.toml` config to use"),
         )
         .arg(
-            Arg::with_name("lang")
-                .short("l")
+            Arg::new("lang")
+                .short('l')
                 .long("lang")
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
                 .possible_values(&["c++", "C++", "c", "C", "cython", "Cython"]),
         )
         .arg(
-            Arg::with_name("cpp-compat")
+            Arg::new("cpp-compat")
                 .long("cpp-compat")
                 .help("Whether to add C++ compatibility to generated C bindings")
         )
         .arg(
-            Arg::with_name("only-target-dependencies")
+            Arg::new("only-target-dependencies")
                 .long("only-target-dependencies")
                 .help("Only fetch dependencies needed by the target platform. \
                     The target platform defaults to the host platform; set TARGET to override.")
         )
         .arg(
-            Arg::with_name("style")
-                .short("s")
+            Arg::new("style")
+                .short('s')
                 .long("style")
                 .value_name("STYLE")
                 .help("Specify the declaration style to use for bindings")
                 .possible_values(&["Both", "both", "Tag", "tag", "Type", "type"]),
         )
         .arg(
-            Arg::with_name("d")
-                .short("d")
+            Arg::new("d")
+                .short('d')
                 .long("parse-dependencies")
                 .help("Whether to parse dependencies when generating bindings"),
         )
         .arg(
-            Arg::with_name("clean")
+            Arg::new("clean")
                 .long("clean")
                 .help(
                     "Whether to use a new temporary directory for expanding macros. \
@@ -193,7 +193,7 @@ fn main() {
                 .required(false)
         )
         .arg(
-            Arg::with_name("INPUT")
+            Arg::new("INPUT")
                 .help(
                     "A crate directory or source file to generate bindings for. \
                     In general this is the folder where the Cargo.toml file of \
@@ -202,7 +202,7 @@ fn main() {
                 .index(1),
         )
         .arg(
-            Arg::with_name("crate")
+            Arg::new("crate")
                 .long("crate")
                 .value_name("CRATE_NAME")
                 .help(
@@ -212,15 +212,15 @@ fn main() {
                 .required(false),
         )
         .arg(
-            Arg::with_name("out")
-                .short("o")
+            Arg::new("out")
+                .short('o')
                 .long("output")
                 .value_name("PATH")
                 .help("The file to output the bindings to")
                 .required(false),
         )
         .arg(
-            Arg::with_name("lockfile")
+            Arg::new("lockfile")
                 .long("lockfile")
                 .value_name("PATH")
                 .help(
@@ -231,7 +231,7 @@ fn main() {
                 .required(false),
         )
         .arg(
-            Arg::with_name("metadata")
+            Arg::new("metadata")
                 .long("metadata")
                 .value_name("PATH")
                 .help(
@@ -246,7 +246,7 @@ fn main() {
                 .required(false),
         )
         .arg(
-            Arg::with_name("profile")
+            Arg::new("profile")
                 .long("profile")
                 .value_name("PROFILE")
                 .help(
@@ -256,8 +256,8 @@ fn main() {
                 .possible_values(&["Debug", "debug", "Release", "release"]),
         )
         .arg(
-            Arg::with_name("quiet")
-                .short("q")
+            Arg::new("quiet")
+                .short('q')
                 .long("quiet")
                 .help("Report errors only (overrides verbosity options).")
                 .required(false),

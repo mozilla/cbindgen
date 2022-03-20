@@ -21,7 +21,7 @@ exclude = [
 travis-ci = { repository = "eqrion/cbindgen" }
 
 [dependencies]
-clap = { version = "2", optional = true }
+clap = { version = "3.1", optional = true }
 indexmap = "1"
 log = "0.4"
 serde = { version = "1.0.103", default-features = false, features = ["derive"]}
