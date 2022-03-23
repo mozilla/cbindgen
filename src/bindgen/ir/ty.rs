@@ -491,9 +491,11 @@ impl Type {
             }
             syn::Type::Tuple(ref tuple) => {
                 if tuple.elems.is_empty() {
-                    return Ok(None);
+                    // The generic type is the Rust unit type, use C void to represent it.
+                    Type::Primitive(PrimitiveType::Void)
+                } else {
+                    return Err("Tuples are not supported types.".to_owned());
                 }
-                return Err("Tuples are not supported types.".to_owned());
             }
             _ => return Err(format!("Unsupported type: {:?}", ty)),
         };

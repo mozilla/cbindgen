@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, Field, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, ToCondition, Type, Typedef,
+    ItemContainer, Path, PrimitiveType, Repr, ReprAlign, ReprStyle, ToCondition, Type, Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -184,12 +184,18 @@ impl Struct {
             GenericParams::default(),
             self.fields
                 .iter()
-                .map(|field| Field {
-                    name: field.name.clone(),
-                    ty: field.ty.specialize(mappings),
-                    cfg: field.cfg.clone(),
-                    annotations: field.annotations.clone(),
-                    documentation: field.documentation.clone(),
+                .filter_map(|field| {
+                    // If the unit type is used as generic value, skip that field.
+                    match field.ty.specialize(mappings) {
+                        Type::Primitive(PrimitiveType::Void) => None,
+                        ty => Some(Field {
+                            name: field.name.clone(),
+                            ty,
+                            cfg: field.cfg.clone(),
+                            annotations: field.annotations.clone(),
+                            documentation: field.documentation.clone(),
+                        }),
+                    }
                 })
                 .collect(),
             self.has_tag_field,
