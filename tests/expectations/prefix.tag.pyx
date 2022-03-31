@@ -24,7 +24,6 @@ cdef extern from *:
 
   cdef union PREFIX_AbsoluteFontWeight:
     PREFIX_AbsoluteFontWeight_Tag tag;
-    PREFIX_AbsoluteFontWeight_Tag weight_tag;
     float weight;
 
   void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, PREFIX_AbsoluteFontWeight z);
