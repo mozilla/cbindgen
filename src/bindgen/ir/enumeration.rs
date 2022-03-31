@@ -240,6 +240,12 @@ impl EnumVariant {
         }
     }
 
+    fn simplify_standard_types(&mut self, config: &Config) {
+        if let VariantBody::Body { ref mut body, .. } = self.body {
+            body.simplify_standard_types(config);
+        }
+    }
+
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         if let VariantBody::Body { ref body, .. } = self.body {
             body.add_dependencies(library, out);
@@ -1523,6 +1529,12 @@ impl Enum {
                 write!(out, "return *this;");
                 out.close_brace(false);
             }
+        }
+    }
+
+    pub fn simplify_standard_types(&mut self, config: &Config) {
+        for variant in &mut self.variants {
+            variant.simplify_standard_types(config);
         }
     }
 }

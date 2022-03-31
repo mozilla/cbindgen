@@ -1,3 +1,18 @@
+header = """
+#if 0
+''' '
+#endif
+
+#ifdef __cplusplus
+template <typename T>
+using Box = T*;
+#endif
+
+#if 0
+' '''
+#endif
+"""
+
 trailer = """
 #if 0
 ''' '
@@ -14,6 +29,11 @@ static_assert(sizeof(CBINDGEN_STRUCT(P)) == 4, "unexpected size for P");
 ' '''
 #endif
 """
+
+[export]
+exclude = [
+  "Box",
+]
 
 [export.rename]
 "I" = "ExI"

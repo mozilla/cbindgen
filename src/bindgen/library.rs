@@ -380,6 +380,9 @@ impl Library {
         self.structs.for_all_items_mut(|x| {
             x.simplify_standard_types(config);
         });
+        self.enums.for_all_items_mut(|x| {
+            x.simplify_standard_types(config);
+        });
         self.unions.for_all_items_mut(|x| {
             x.simplify_standard_types(config);
         });
