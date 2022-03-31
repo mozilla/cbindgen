@@ -1,3 +1,17 @@
+#if 0
+''' '
+#endif
+
+#ifdef __cplusplus
+template <typename T>
+using Box = T*;
+#endif
+
+#if 0
+' '''
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -239,6 +253,23 @@ typedef struct {
   };
 } P;
 
+typedef enum {
+  Ok,
+  Err,
+} Q_Tag;
+
+typedef struct {
+  Q_Tag tag;
+  union {
+    struct {
+      uint32_t *ok;
+    };
+    struct {
+      uint32_t err;
+    };
+  };
+} Q;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -259,7 +290,8 @@ void root(Opaque *opaque,
           M m,
           N n,
           O o,
-          P p);
+          P p,
+          Q q);
 
 #ifdef __cplusplus
 } // extern "C"

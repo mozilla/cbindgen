@@ -1,3 +1,17 @@
+#if 0
+''' '
+#endif
+
+#ifdef __cplusplus
+template <typename T>
+using Box = T*;
+#endif
+
+#if 0
+' '''
+#endif
+
+
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, uintptr_t
 cdef extern from *:
@@ -142,6 +156,15 @@ cdef extern from *:
     uint8_t p0;
     P1_Body p1;
 
+  ctypedef enum Q_Tag:
+    Ok,
+    Err,
+
+  ctypedef struct Q:
+    Q_Tag tag;
+    uint32_t *ok;
+    uint32_t err;
+
   void root(Opaque *opaque,
             A a,
             B b,
@@ -158,7 +181,8 @@ cdef extern from *:
             M m,
             N n,
             O o,
-            P p);
+            P p,
+            Q q);
 
 #if 0
 ''' '
