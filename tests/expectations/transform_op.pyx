@@ -30,9 +30,7 @@ cdef extern from *:
   ctypedef union StyleFoo_i32:
     StyleFoo_i32_Tag tag;
     StyleFoo_Body_i32 foo;
-    StyleFoo_i32_Tag bar_tag;
     int32_t bar;
-    StyleFoo_i32_Tag baz_tag;
     StylePoint_i32 baz;
 
   ctypedef enum StyleBar_i32_Tag:
@@ -83,9 +81,7 @@ cdef extern from *:
 
   ctypedef union StyleBaz:
     StyleBaz_Tag tag;
-    StyleBaz_Tag baz1_tag;
     StyleBar_u32 baz1;
-    StyleBaz_Tag baz2_tag;
     StylePoint_i32 baz2;
 
   cdef enum:

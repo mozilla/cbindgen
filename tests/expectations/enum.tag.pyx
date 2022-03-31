@@ -95,7 +95,6 @@ cdef extern from *:
 
   cdef union G:
     G_Tag tag;
-    G_Tag foo_tag;
     int16_t foo;
     Bar_Body bar;
 

@@ -17,9 +17,7 @@ cdef extern from *:
 
   ctypedef union Bar:
     Bar_Tag tag;
-    Bar_Tag min_tag;
     Foo_Bar min;
-    Bar_Tag max_tag;
     Foo_Bar max;
 
   void root(Bar b);

@@ -81,11 +81,8 @@ cdef extern from *:
 
   ctypedef union Baz_i32:
     Baz_i32_Tag tag;
-    Baz_i32_Tag polygon21_tag;
     Polygon_i32 polygon21;
-    Baz_i32_Tag slice21_tag;
     OwnedSlice_i32 slice21;
-    Baz_i32_Tag slice22_tag;
     OwnedSlice_i32 slice22;
     Slice23_Body_i32 slice23;
     Slice24_Body_i32 slice24;
@@ -98,9 +95,7 @@ cdef extern from *:
 
   ctypedef union Taz:
     Taz_Tag tag;
-    Taz_Tag taz1_tag;
     int32_t taz1;
-    Taz_Tag taz3_tag;
     OwnedSlice_i32 taz3;
 
   cdef enum:
@@ -110,7 +105,6 @@ cdef extern from *:
 
   ctypedef union Tazz:
     Tazz_Tag tag;
-    Tazz_Tag taz2_tag;
     int32_t taz2;
 
   cdef enum:
@@ -120,7 +114,6 @@ cdef extern from *:
 
   ctypedef union Tazzz:
     Tazzz_Tag tag;
-    Tazzz_Tag taz5_tag;
     int32_t taz5;
 
   cdef enum:
@@ -130,9 +123,7 @@ cdef extern from *:
 
   ctypedef union Tazzzz:
     Tazzzz_Tag tag;
-    Tazzzz_Tag taz6_tag;
     int32_t taz6;
-    Tazzzz_Tag taz7_tag;
     uint32_t taz7;
 
   cdef enum:
@@ -142,9 +133,7 @@ cdef extern from *:
 
   ctypedef union Qux:
     Qux_Tag tag;
-    Qux_Tag qux1_tag;
     int32_t qux1;
-    Qux_Tag qux2_tag;
     uint32_t qux2;
 
   void root(const Foo_u32 *a,

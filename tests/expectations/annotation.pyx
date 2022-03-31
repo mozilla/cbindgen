@@ -31,7 +31,6 @@ cdef extern from *:
 
   ctypedef union F:
     F_Tag tag;
-    F_Tag foo_tag;
     int16_t foo;
     Bar_Body bar;
 
