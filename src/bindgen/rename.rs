@@ -73,7 +73,7 @@ impl RenameRule {
             RenameRule::LowerCase => text.to_lowercase(),
             RenameRule::UpperCase => text.to_uppercase(),
             RenameRule::PascalCase => text.to_pascal_case(),
-            RenameRule::CamelCase => text.to_upper_camel_case(),
+            RenameRule::CamelCase => text.to_lower_camel_case(),
             RenameRule::SnakeCase => text.to_snake_case(),
             RenameRule::ScreamingSnakeCase => text.to_shouty_snake_case(),
             RenameRule::QualifiedScreamingSnakeCase => {
