@@ -208,6 +208,29 @@ struct Q {
   };
 };
 
+struct R {
+  enum class Tag {
+    IRFoo,
+    IRBar,
+    IRBaz,
+  };
+
+  struct IRFoo_Body {
+    int16_t _0;
+  };
+
+  struct IRBar_Body {
+    uint8_t x;
+    int16_t y;
+  };
+
+  Tag tag;
+  union {
+    IRFoo_Body IRFoo;
+    IRBar_Body IRBar;
+  };
+};
+
 extern "C" {
 
 void root(Opaque *opaque,
@@ -227,7 +250,8 @@ void root(Opaque *opaque,
           N n,
           O o,
           P p,
-          Q q);
+          Q q,
+          R r);
 
 } // extern "C"
 

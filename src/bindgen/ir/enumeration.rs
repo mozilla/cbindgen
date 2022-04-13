@@ -149,11 +149,16 @@ impl EnumVariant {
         if let Some(b) = enum_annotations.bool("derive-ostream") {
             annotations.add_default("derive-ostream", AnnotationValue::Bool(b));
         }
+
+        let body_rule = enum_annotations
+            .parse_atom::<RenameRule>("rename-variant-name-fields")
+            .unwrap_or(config.enumeration.rename_variant_name_fields);
+
         let body = match variant.fields {
             syn::Fields::Unit => VariantBody::Empty(annotations),
             syn::Fields::Named(ref fields) => {
                 let path = Path::new(format!("{}_Body", variant.ident));
-                let name = RenameRule::SnakeCase
+                let name = body_rule
                     .apply(
                         &variant.ident.unraw().to_string(),
                         IdentifierType::StructMember,
@@ -179,7 +184,7 @@ impl EnumVariant {
             }
             syn::Fields::Unnamed(ref fields) => {
                 let path = Path::new(format!("{}_Body", variant.ident));
-                let name = RenameRule::SnakeCase
+                let name = body_rule
                     .apply(
                         &variant.ident.unraw().to_string(),
                         IdentifierType::StructMember,

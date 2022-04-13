@@ -204,6 +204,27 @@ struct Q {
   };
 };
 
+enum R_Tag {
+  IRFoo,
+  IRBar,
+  IRBaz,
+};
+
+struct IRBar_Body {
+  uint8_t x;
+  int16_t y;
+};
+
+struct R {
+  enum R_Tag tag;
+  union {
+    struct {
+      int16_t IRFoo;
+    };
+    struct IRBar_Body IRBar;
+  };
+};
+
 void root(struct Opaque *opaque,
           A a,
           B b,
@@ -221,7 +242,8 @@ void root(struct Opaque *opaque,
           enum N n,
           O o,
           struct P p,
-          struct Q q);
+          struct Q q,
+          struct R r);
 
 #if 0
 ''' '
