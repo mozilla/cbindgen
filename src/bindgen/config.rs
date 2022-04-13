@@ -15,6 +15,8 @@ use crate::bindgen::ir::path::Path;
 use crate::bindgen::ir::repr::ReprAlign;
 pub use crate::bindgen::rename::RenameRule;
 
+use super::rename::IdentifierType;
+
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// A language type to generate bindings for.
@@ -338,6 +340,8 @@ pub struct ExportConfig {
     pub exclude: Vec<String>,
     /// Table of name conversions to apply to item names
     pub rename: HashMap<String, String>,
+    /// A rename rule to apply to all type names
+    pub rename_items: RenameRule,
     /// Table of raw strings to prepend to the body of items.
     pub pre_body: HashMap<String, String>,
     /// Table of raw strings to append to the body of items.
@@ -377,12 +381,16 @@ impl ExportConfig {
         self.body.get(path.name()).map(|s| s.trim_matches('\n'))
     }
 
-    pub(crate) fn rename(&self, item_name: &mut String) {
+    pub(crate) fn rename(&self, item_name: &mut String, ident_type: IdentifierType<'_>) {
         if let Some(name) = self.rename.get(item_name) {
             *item_name = name.clone();
             if self.renaming_overrides_prefixing {
                 return;
             }
+        }
+        if let Some(rename_rule) = self.rename_items.not_none() {
+            let cow = rename_rule.apply(item_name, ident_type);
+            *item_name = cow.into_owned();
         }
         if let Some(ref prefix) = self.prefix {
             item_name.insert_str(0, prefix);

@@ -284,7 +284,9 @@ impl Item for Struct {
     fn rename_for_config(&mut self, config: &Config) {
         // Rename the name of the struct
         if !(self.has_tag_field && config.language == Language::Cxx) {
-            config.export.rename(&mut self.export_name);
+            config
+                .export
+                .rename(&mut self.export_name, IdentifierType::Type);
         }
 
         // Rename the types used in fields

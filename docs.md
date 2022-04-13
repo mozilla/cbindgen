@@ -583,13 +583,14 @@ item_types = ["enums", "structs", "opaque", "functions"]
 #
 # [export]
 # prefix = "capi_"
+# rename_items = "snake_case"
 # [export.rename]
-# "MyType" = "my_cool_type"
+# "MyType" = "my_cool_TYPE"
 #
 # You get the following results:
 #
 # renaming_overrides_prefixing = true:
-# "MyType" => "my_cool_type"
+# "MyType" => "my_cool_TYPE"
 #
 # renaming_overrides_prefixing = false:
 # "MyType => capi_my_cool_type"
@@ -597,10 +598,31 @@ item_types = ["enums", "structs", "opaque", "functions"]
 # default: false
 renaming_overrides_prefixing = true
 
-# Table of name conversions to apply to item names (lhs becomes rhs)
+# Rename rule to apply to all exported items. This includes constants,
+# structs, unions, enums, type aliases, etc. Does not apply to functions as they
+# must be matched by a linker.
+#
+# possible values (that actually do something):
+# * "ScreamingSnakeCase": MyType => MY_TYPE
+# * "SnakeCase":          MyType => my_type,
+# * "CamelCase":          MyType => myType,
+# * "UpperCase":          MyType => MYTYPE (not great, who uses this?)
+# * "LowerCase":          MyType => mytype (not great, who uses this?)
+# * "None":               apply no renaming
+#
+# technically possible values (that shouldn't have a purpose here):
+# * "GeckoCase":          MyType => MyType (only struct members & enum variants get a prefix)
+# * "PascalCase":         MyType => MyType (no-op for normal Rust PascalCase type names)
+# * "QualifiedScreamingSnakeCase" => same as ScreamingSnakeCase in this context
+#
+# default: "None"
+rename_items = "snake_case"
+
+# Table of name conversions to apply to item names (lhs becomes rhs).
+# Does not apply to function names as they must be matched by a linker.
 [export.rename]
 "MyType" = "my_cool_type"
-"my_function" = "BetterFunctionName"
+"MyOtherType" = "awesome_type"
 
 # Table of things to prepend to the body of any struct, union, or enum that has the
 # given name. This can be used to add things like methods which don't change ABI,

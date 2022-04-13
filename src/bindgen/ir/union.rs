@@ -162,7 +162,9 @@ impl Item for Union {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.export_name);
+        config
+            .export
+            .rename(&mut self.export_name, IdentifierType::Type);
         for field in &mut self.fields {
             field.ty.rename_for_config(config, &self.generic_params);
         }

@@ -6,6 +6,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use crate::bindgen::ir::{Path, Type};
+use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -128,7 +129,9 @@ impl GenericPath {
             generic.rename_for_config(config, generic_params);
         }
         if !generic_params.contains(&self.path) {
-            config.export.rename(&mut self.export_name);
+            config
+                .export
+                .rename(&mut self.export_name, IdentifierType::Type);
         }
     }
 

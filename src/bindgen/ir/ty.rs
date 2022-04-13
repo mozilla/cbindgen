@@ -14,6 +14,7 @@ use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -327,7 +328,7 @@ impl ArrayLength {
 
     fn rename_for_config(&mut self, config: &Config) {
         if let ArrayLength::Name(ref mut name) = self {
-            config.export.rename(name);
+            config.export.rename(name, IdentifierType::Constant);
         }
     }
 }
