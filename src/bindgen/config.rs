@@ -559,6 +559,10 @@ impl StructConfig {
 pub struct EnumConfig {
     /// The rename rule to apply to the name of enum variants
     pub rename_variants: RenameRule,
+    /// The rename rule to apply to the names of the union fields in C/C++
+    /// generated from the Rust enum. Applied before rename_variants
+    /// rename rule. Defaults to SnakeCase.
+    pub rename_variant_name_fields: RenameRule,
     /// Whether to add a `Sentinel` value at the end of every enum
     /// This is useful in Gecko for IPC serialization
     pub add_sentinel: bool,
@@ -600,6 +604,7 @@ impl Default for EnumConfig {
     fn default() -> EnumConfig {
         EnumConfig {
             rename_variants: RenameRule::None,
+            rename_variant_name_fields: RenameRule::SnakeCase,
             add_sentinel: false,
             prefix_with_name: false,
             derive_helper_methods: false,

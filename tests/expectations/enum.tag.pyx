@@ -165,6 +165,20 @@ cdef extern from *:
     uint32_t *ok;
     uint32_t err;
 
+  cdef enum R_Tag:
+    IRFoo,
+    IRBar,
+    IRBaz,
+
+  cdef struct IRBar_Body:
+    uint8_t x;
+    int16_t y;
+
+  cdef struct R:
+    R_Tag tag;
+    int16_t IRFoo;
+    IRBar_Body IRBar;
+
   void root(Opaque *opaque,
             A a,
             B b,
@@ -182,7 +196,8 @@ cdef extern from *:
             N n,
             O o,
             P p,
-            Q q);
+            Q q,
+            R r);
 
 #if 0
 ''' '

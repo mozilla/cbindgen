@@ -204,6 +204,27 @@ typedef struct {
   };
 } Q;
 
+typedef enum {
+  IRFoo,
+  IRBar,
+  IRBaz,
+} R_Tag;
+
+typedef struct {
+  uint8_t x;
+  int16_t y;
+} IRBar_Body;
+
+typedef struct {
+  R_Tag tag;
+  union {
+    struct {
+      int16_t IRFoo;
+    };
+    IRBar_Body IRBar;
+  };
+} R;
+
 void root(Opaque *opaque,
           A a,
           B b,
@@ -221,7 +242,8 @@ void root(Opaque *opaque,
           N n,
           O o,
           P p,
-          Q q);
+          Q q,
+          R r);
 
 #if 0
 ''' '
