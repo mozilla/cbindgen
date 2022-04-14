@@ -20,10 +20,20 @@ use crate::bindgen::library::Library;
 use crate::bindgen::writer::{Source, SourceWriter};
 use crate::bindgen::Bindings;
 
+fn member_to_ident(member: &syn::Member) -> String {
+    match member {
+        syn::Member::Named(ref name) => name.unraw().to_string(),
+        syn::Member::Unnamed(ref index) => format!("_{}", index.index),
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Literal {
     Expr(String),
-    Path(String),
+    Path {
+        associated_to: Option<(Path, String)>,
+        name: String,
+    },
     PostfixUnaryOp {
         op: &'static str,
         value: Box<Literal>,
@@ -32,6 +42,10 @@ pub enum Literal {
         left: Box<Literal>,
         op: &'static str,
         right: Box<Literal>,
+    },
+    FieldAccess {
+        base: Box<Literal>,
+        field: String,
     },
     Struct {
         path: Path,
@@ -58,6 +72,9 @@ impl Literal {
                 left.replace_self_with(self_ty);
                 right.replace_self_with(self_ty);
             }
+            Literal::FieldAccess { ref mut base, .. } => {
+                base.replace_self_with(self_ty);
+            }
             Literal::Struct {
                 ref mut path,
                 ref mut export_name,
@@ -77,20 +94,38 @@ impl Literal {
                 ty.replace_self_with(self_ty);
                 value.replace_self_with(self_ty);
             }
-            Literal::Expr(..) | Literal::Path(..) => {}
+            Literal::Path {
+                ref mut associated_to,
+                ..
+            } => {
+                if let Some((ref mut path, ref mut export_name)) = *associated_to {
+                    if path.replace_self_with(self_ty) {
+                        *export_name = self_ty.name().to_owned();
+                    }
+                }
+            }
+            Literal::Expr(..) => {}
         }
     }
 
     fn is_valid(&self, bindings: &Bindings) -> bool {
         match *self {
             Literal::Expr(..) => true,
-            Literal::Path(..) => true,
+            Literal::Path {
+                ref associated_to, ..
+            } => {
+                if let Some((ref path, _export_name)) = associated_to {
+                    return bindings.struct_exists(path);
+                }
+                true
+            }
             Literal::PostfixUnaryOp { ref value, .. } => value.is_valid(bindings),
             Literal::BinOp {
                 ref left,
                 ref right,
                 ..
             } => left.is_valid(bindings) && right.is_valid(bindings),
+            Literal::FieldAccess { ref base, .. } => base.is_valid(bindings),
             Literal::Struct { ref path, .. } => bindings.struct_exists(path),
             Literal::Cast { ref value, .. } => value.is_valid(bindings),
         }
@@ -98,14 +133,14 @@ impl Literal {
 
     pub fn uses_only_primitive_types(&self) -> bool {
         match self {
-            Literal::Expr(..) => true,
-            Literal::Path(..) => true,
+            Literal::Expr(..) | Literal::Path { .. } => true,
             Literal::PostfixUnaryOp { ref value, .. } => value.uses_only_primitive_types(),
             Literal::BinOp {
                 ref left,
                 ref right,
                 ..
             } => left.uses_only_primitive_types() & right.uses_only_primitive_types(),
+            Literal::FieldAccess { ref base, .. } => base.uses_only_primitive_types(),
             Literal::Struct { .. } => false,
             Literal::Cast { ref value, ref ty } => {
                 value.uses_only_primitive_types() && ty.is_primitive_or_ptr_primitive()
@@ -127,8 +162,18 @@ impl Literal {
                     lit.rename_for_config(config);
                 }
             }
-            Literal::Path(ref mut name) => {
-                config.export.rename(name);
+            Literal::FieldAccess { ref mut base, .. } => {
+                base.rename_for_config(config);
+            }
+            Literal::Path {
+                ref mut associated_to,
+                ref mut name,
+            } => {
+                if let Some((_path, ref mut export_name)) = associated_to {
+                    config.export.rename(export_name);
+                } else {
+                    config.export.rename(name);
+                }
             }
             Literal::PostfixUnaryOp { ref mut value, .. } => {
                 value.rename_for_config(config);
@@ -220,6 +265,15 @@ impl Literal {
                 }
             }
 
+            syn::Expr::Field(syn::ExprField {
+                ref base,
+                ref member,
+                ..
+            }) => Ok(Literal::FieldAccess {
+                base: Box::new(Literal::load(base)?),
+                field: member_to_ident(member),
+            }),
+
             syn::Expr::Struct(syn::ExprStruct {
                 ref path,
                 ref fields,
@@ -228,10 +282,7 @@ impl Literal {
                 let struct_name = path.segments[0].ident.unraw().to_string();
                 let mut field_map = HashMap::<String, Literal>::default();
                 for field in fields {
-                    let ident = match field.member {
-                        syn::Member::Named(ref name) => name.unraw().to_string(),
-                        syn::Member::Unnamed(ref index) => format!("_{}", index.index),
-                    };
+                    let ident = member_to_ident(&field.member);
                     let key = ident.to_string();
                     let value = Literal::load(&field.expr)?;
                     field_map.insert(key, value);
@@ -257,16 +308,23 @@ impl Literal {
             },
 
             // Match identifiers, like `5 << SHIFT`
-            syn::Expr::Path(syn::ExprPath {
-                path: syn::Path { ref segments, .. },
-                ..
-            }) => {
-                // Handle only the simplest identifiers and error for anything else.
-                if segments.len() == 1 {
-                    Ok(Literal::Path(format!("{}", segments.last().unwrap().ident)))
-                } else {
-                    Err(format!("Unsupported path expression. {:?}", *segments))
-                }
+            syn::Expr::Path(syn::ExprPath { ref path, .. }) => {
+                // Handle only the simplest identifiers and Associated::IDENT
+                // kind of syntax.
+                Ok(match path.segments.len() {
+                    1 => Literal::Path {
+                        associated_to: None,
+                        name: path.segments[0].ident.to_string(),
+                    },
+                    2 => {
+                        let struct_name = path.segments[0].ident.to_string();
+                        Literal::Path {
+                            associated_to: Some((Path::new(&struct_name), struct_name)),
+                            name: path.segments[1].ident.to_string(),
+                        }
+                    }
+                    _ => return Err(format!("Unsupported path expression. {:?}", path)),
+                })
             }
 
             syn::Expr::Paren(syn::ExprParen { ref expr, .. }) => Self::load(expr),
@@ -295,7 +353,33 @@ impl Literal {
                 ("false", Language::Cython) => write!(out, "False"),
                 (v, _) => write!(out, "{}", v),
             },
-            Literal::Path(v) => write!(out, "{}", v),
+            Literal::Path {
+                ref associated_to,
+                ref name,
+            } => {
+                if let Some((_, ref export_name)) = associated_to {
+                    let path_separator = match config.language {
+                        Language::Cython | Language::C => "_",
+                        Language::Cxx => {
+                            if config.structure.associated_constants_in_body {
+                                "::"
+                            } else {
+                                "_"
+                            }
+                        }
+                    };
+                    write!(out, "{}{}", export_name, path_separator)
+                }
+                write!(out, "{}", name)
+            }
+            Literal::FieldAccess {
+                ref base,
+                ref field,
+            } => {
+                write!(out, "(");
+                base.write(config, out);
+                write!(out, ").{}", field);
+            }
             Literal::PostfixUnaryOp { op, ref value } => {
                 write!(out, "{}", op);
                 value.write(config, out);

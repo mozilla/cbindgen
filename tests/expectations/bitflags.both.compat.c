@@ -27,10 +27,13 @@ typedef struct AlignFlags {
  * 'end'
  */
 #define AlignFlags_END (AlignFlags){ .bits = (uint8_t)(1 << 2) }
+#define AlignFlags_ALIAS (AlignFlags){ .bits = (uint8_t)(AlignFlags_END).bits }
 /**
  * 'flex-start'
  */
 #define AlignFlags_FLEX_START (AlignFlags){ .bits = (uint8_t)(1 << 3) }
+#define AlignFlags_MIXED (AlignFlags){ .bits = (uint8_t)(((1 << 4) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) }
+#define AlignFlags_MIXED_SELF (AlignFlags){ .bits = (uint8_t)(((1 << 5) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) }
 
 typedef struct DebugFlags {
   uint32_t bits;
