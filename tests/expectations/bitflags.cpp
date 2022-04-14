@@ -46,8 +46,11 @@ static const AlignFlags AlignFlags_NORMAL = AlignFlags{ /* .bits = */ (uint8_t)1
 static const AlignFlags AlignFlags_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 1) };
 /// 'end'
 static const AlignFlags AlignFlags_END = AlignFlags{ /* .bits = */ (uint8_t)(1 << 2) };
+static const AlignFlags AlignFlags_ALIAS = AlignFlags{ /* .bits = */ (uint8_t)(AlignFlags_END).bits };
 /// 'flex-start'
 static const AlignFlags AlignFlags_FLEX_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 3) };
+static const AlignFlags AlignFlags_MIXED = AlignFlags{ /* .bits = */ (uint8_t)(((1 << 4) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) };
+static const AlignFlags AlignFlags_MIXED_SELF = AlignFlags{ /* .bits = */ (uint8_t)(((1 << 5) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) };
 
 struct DebugFlags {
   uint32_t bits;

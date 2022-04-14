@@ -19,8 +19,11 @@ cdef extern from *:
   const AlignFlags AlignFlags_START # = <AlignFlags>{ <uint8_t>(1 << 1) }
   # 'end'
   const AlignFlags AlignFlags_END # = <AlignFlags>{ <uint8_t>(1 << 2) }
+  const AlignFlags AlignFlags_ALIAS # = <AlignFlags>{ <uint8_t>(AlignFlags_END).bits }
   # 'flex-start'
   const AlignFlags AlignFlags_FLEX_START # = <AlignFlags>{ <uint8_t>(1 << 3) }
+  const AlignFlags AlignFlags_MIXED # = <AlignFlags>{ <uint8_t>(((1 << 4) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) }
+  const AlignFlags AlignFlags_MIXED_SELF # = <AlignFlags>{ <uint8_t>(((1 << 5) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) }
 
   cdef struct DebugFlags:
     uint32_t bits;
