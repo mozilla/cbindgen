@@ -25,4 +25,17 @@ cdef extern from *:
   const StyleAlignFlags StyleAlignFlags_MIXED # = <StyleAlignFlags>{ <uint8_t>(((1 << 4) | (StyleAlignFlags_FLEX_START).bits) | (StyleAlignFlags_END).bits) }
   const StyleAlignFlags StyleAlignFlags_MIXED_SELF # = <StyleAlignFlags>{ <uint8_t>(((1 << 5) | (StyleAlignFlags_FLEX_START).bits) | (StyleAlignFlags_END).bits) }
 
-  void root(StyleAlignFlags flags);
+  # An arbitrary identifier for a native (OS compositor) surface
+  ctypedef struct StyleNativeSurfaceId:
+    uint64_t _0;
+  # A special id for the native surface that is used for debug / profiler overlays.
+  const StyleNativeSurfaceId StyleNativeSurfaceId_DEBUG_OVERLAY # = <StyleNativeSurfaceId>{ UINT64_MAX }
+
+  ctypedef struct StyleNativeTileId:
+    StyleNativeSurfaceId surface_id;
+    int32_t x;
+    int32_t y;
+  # A special id for the native surface that is used for debug / profiler overlays.
+  const StyleNativeTileId StyleNativeTileId_DEBUG_OVERLAY # = <StyleNativeTileId>{ StyleNativeSurfaceId_DEBUG_OVERLAY, 0, 0 }
+
+  void root(StyleAlignFlags flags, StyleNativeTileId tile);

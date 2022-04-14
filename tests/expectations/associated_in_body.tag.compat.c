@@ -35,11 +35,32 @@ struct StyleAlignFlags {
 #define StyleAlignFlags_MIXED (StyleAlignFlags){ .bits = (uint8_t)(((1 << 4) | (StyleAlignFlags_FLEX_START).bits) | (StyleAlignFlags_END).bits) }
 #define StyleAlignFlags_MIXED_SELF (StyleAlignFlags){ .bits = (uint8_t)(((1 << 5) | (StyleAlignFlags_FLEX_START).bits) | (StyleAlignFlags_END).bits) }
 
+/**
+ * An arbitrary identifier for a native (OS compositor) surface
+ */
+struct StyleNativeSurfaceId {
+  uint64_t _0;
+};
+/**
+ * A special id for the native surface that is used for debug / profiler overlays.
+ */
+#define StyleNativeSurfaceId_DEBUG_OVERLAY (StyleNativeSurfaceId){ ._0 = UINT64_MAX }
+
+struct StyleNativeTileId {
+  struct StyleNativeSurfaceId surface_id;
+  int32_t x;
+  int32_t y;
+};
+/**
+ * A special id for the native surface that is used for debug / profiler overlays.
+ */
+#define StyleNativeTileId_DEBUG_OVERLAY (StyleNativeTileId){ .surface_id = StyleNativeSurfaceId_DEBUG_OVERLAY, .x = 0, .y = 0 }
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(struct StyleAlignFlags flags);
+void root(struct StyleAlignFlags flags, struct StyleNativeTileId tile);
 
 #ifdef __cplusplus
 } // extern "C"

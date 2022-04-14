@@ -27,6 +27,56 @@ fn member_to_ident(member: &syn::Member) -> String {
     }
 }
 
+// TODO: Maybe add support to more std associated constants.
+fn to_known_assoc_constant(associated_to: &Path, name: &str) -> Option<String> {
+    use crate::bindgen::ir::{IntKind, PrimitiveType};
+
+    if name != "MAX" && name != "MIN" {
+        return None;
+    }
+
+    let prim = PrimitiveType::maybe(associated_to.name())?;
+    let prefix = match prim {
+        PrimitiveType::Integer {
+            kind,
+            signed,
+            zeroable: _,
+        } => match kind {
+            IntKind::B8 => {
+                if signed {
+                    "INT8"
+                } else {
+                    "UINT8"
+                }
+            }
+            IntKind::B16 => {
+                if signed {
+                    "INT16"
+                } else {
+                    "UINT16"
+                }
+            }
+            IntKind::B32 => {
+                if signed {
+                    "INT32"
+                } else {
+                    "UINT32"
+                }
+            }
+            IntKind::B64 => {
+                if signed {
+                    "INT64"
+                } else {
+                    "UINT64"
+                }
+            }
+            _ => return None,
+        },
+        _ => return None,
+    };
+    Some(format!("{}_{}", prefix, name))
+}
+
 #[derive(Debug, Clone)]
 pub enum Literal {
     Expr(String),
@@ -112,10 +162,12 @@ impl Literal {
         match *self {
             Literal::Expr(..) => true,
             Literal::Path {
-                ref associated_to, ..
+                ref associated_to,
+                ref name,
             } => {
                 if let Some((ref path, _export_name)) = associated_to {
-                    return bindings.struct_exists(path);
+                    return bindings.struct_exists(path)
+                        || to_known_assoc_constant(path, name).is_some();
                 }
                 true
             }
@@ -274,6 +326,30 @@ impl Literal {
                 field: member_to_ident(member),
             }),
 
+            syn::Expr::Call(syn::ExprCall {
+                ref func, ref args, ..
+            }) => {
+                let struct_name = match Literal::load(func)? {
+                    Literal::Path {
+                        associated_to: None,
+                        name,
+                    } => name,
+                    _ => return Err(format!("Unsupported call expression. {:?}", *expr)),
+                };
+                let mut fields = HashMap::<String, Literal>::default();
+                for (index, arg) in args.iter().enumerate() {
+                    let ident =
+                        member_to_ident(&syn::Member::Unnamed(syn::Index::from(index))).to_string();
+                    let value = Literal::load(arg)?;
+                    fields.insert(ident, value);
+                }
+                Ok(Literal::Struct {
+                    path: Path::new(struct_name.clone()),
+                    export_name: struct_name,
+                    fields,
+                })
+            }
+
             syn::Expr::Struct(syn::ExprStruct {
                 ref path,
                 ref fields,
@@ -282,10 +358,9 @@ impl Literal {
                 let struct_name = path.segments[0].ident.unraw().to_string();
                 let mut field_map = HashMap::<String, Literal>::default();
                 for field in fields {
-                    let ident = member_to_ident(&field.member);
-                    let key = ident.to_string();
+                    let ident = member_to_ident(&field.member).to_string();
                     let value = Literal::load(&field.expr)?;
-                    field_map.insert(key, value);
+                    field_map.insert(ident, value);
                 }
                 Ok(Literal::Struct {
                     path: Path::new(struct_name.clone()),
@@ -357,7 +432,10 @@ impl Literal {
                 ref associated_to,
                 ref name,
             } => {
-                if let Some((_, ref export_name)) = associated_to {
+                if let Some((ref path, ref export_name)) = associated_to {
+                    if let Some(known) = to_known_assoc_constant(path, name) {
+                        return write!(out, "{}", known);
+                    }
                     let path_separator = match config.language {
                         Language::Cython | Language::C => "_",
                         Language::Cxx => {
