@@ -1,3 +1,13 @@
+## 0.22.0
+
+      * Support rename rule for union body members (#751).
+      * constant: Add support for associated constant expressions (#752).
+      * Fix regression in CamelCase rename rule (should be lowerCamelCase) (#750).
+      * enumeration: simplify standard types in variants (#749).
+      * Avoid generating and writing bindings when called recursively (#747).
+      * Cython: Omit per-variant tags in unions generated for Rust enums (#748).
+      * Update various dependencies.
+
 ## 0.21.0
 
       * Update MSRV to 1.54.0
