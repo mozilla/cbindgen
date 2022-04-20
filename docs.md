@@ -532,6 +532,10 @@ documentation_style = "short"
 # default: "both"
 style = "both"
 
+# If this option is true `usize` and `isize` will be converted into `size_t` and `ptrdiff_t`
+# instead of `uintptr_t` and `intptr_t` respectively.
+usize_is_size_t = true
+
 # A list of substitutions for converting cfg's to ifdefs. cfgs which aren't
 # defined here will just be discarded.
 #
@@ -717,10 +721,6 @@ rename_args = "PascalCase"
 #
 # default: "None"
 sort_by = "Name"
-
-# If this option is true `usize` and `isize` will be converted into `size_t` and `ptrdiff_t`
-# instead of `uintptr_t` and `intptr_t` respectively.
-usize_is_size_t = true
 
 [struct]
 # A rule to use to rename struct field names. The renaming assumes the input is
