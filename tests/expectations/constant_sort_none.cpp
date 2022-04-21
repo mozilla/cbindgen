@@ -4,9 +4,9 @@
 #include <ostream>
 #include <new>
 
-static const uint8_t B = 0;
+constexpr static const uint8_t B = 0;
 
-static const uint8_t A = 0;
+constexpr static const uint8_t A = 0;
 
 extern "C" {
 

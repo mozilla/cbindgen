@@ -913,7 +913,7 @@ allow_static_const = true
 
 # Whether a generated constant can be constexpr in C++ mode.
 #
-# default: false
+# default: true
 allow_constexpr = false
 
 # This rule specifies the order in which constants will be sorted.

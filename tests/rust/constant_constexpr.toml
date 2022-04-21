@@ -1,5 +1,5 @@
 [const]
-allow_constexpr = true
+allow_constexpr = false
 
 [struct]
 associated_constants_in_body = true

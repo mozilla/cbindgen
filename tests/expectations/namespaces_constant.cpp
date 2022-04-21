@@ -7,9 +7,9 @@
 namespace constants {
 namespace test {
 
-static const int32_t FOO = 10;
+constexpr static const int32_t FOO = 10;
 
-static const float ZOM = 3.14;
+constexpr static const float ZOM = 3.14;
 
 struct Foo {
   int32_t x[FOO];

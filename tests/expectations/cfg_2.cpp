@@ -11,11 +11,11 @@ DEF NOT_DEFINED = 0
 #include <new>
 
 #if defined(NOT_DEFINED)
-static const int32_t DEFAULT_X = 8;
+constexpr static const int32_t DEFAULT_X = 8;
 #endif
 
 #if defined(DEFINED)
-static const int32_t DEFAULT_X = 42;
+constexpr static const int32_t DEFAULT_X = 42;
 #endif
 
 #if (defined(NOT_DEFINED) || defined(DEFINED))

@@ -4,7 +4,7 @@
 #include <ostream>
 #include <new>
 
-static const int8_t FOURTY_FOUR = 4;
+constexpr static const int8_t FOURTY_FOUR = 4;
 
 enum class E : int8_t {
   A = 1,

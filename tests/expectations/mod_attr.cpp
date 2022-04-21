@@ -11,11 +11,11 @@ DEF BAR = 0
 #include <new>
 
 #if defined(FOO)
-static const int32_t FOO = 1;
+constexpr static const int32_t FOO = 1;
 #endif
 
 #if defined(BAR)
-static const int32_t BAR = 2;
+constexpr static const int32_t BAR = 2;
 #endif
 
 #if defined(FOO)
