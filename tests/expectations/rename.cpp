@@ -4,7 +4,7 @@
 #include <ostream>
 #include <new>
 
-static const int32_t C_H = 10;
+constexpr static const int32_t C_H = 10;
 
 enum class C_E : uint8_t {
   x = 0,

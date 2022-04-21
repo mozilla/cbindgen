@@ -23,10 +23,10 @@ template<typename T>
 using TransparentPrimitiveWrapper = uint32_t;
 
 using TransparentPrimitiveWithAssociatedConstants = uint32_t;
-static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ZERO = 0;
-static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ONE = 1;
+constexpr static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ZERO = 0;
+constexpr static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ONE = 1;
 
-static const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_TEN = 10;
+constexpr static const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_TEN = 10;
 
 extern "C" {
 

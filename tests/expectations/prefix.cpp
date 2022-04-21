@@ -4,11 +4,11 @@
 #include <ostream>
 #include <new>
 
-static const int32_t PREFIX_LEN = 22;
+constexpr static const int32_t PREFIX_LEN = 22;
 
-static const int64_t PREFIX_X = (22 << 22);
+constexpr static const int64_t PREFIX_X = (22 << 22);
 
-static const int64_t PREFIX_Y = (PREFIX_X + PREFIX_X);
+constexpr static const int64_t PREFIX_Y = (PREFIX_X + PREFIX_X);
 
 using PREFIX_NamedLenArray = int32_t[PREFIX_LEN];
 

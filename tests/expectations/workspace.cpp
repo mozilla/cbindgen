@@ -4,7 +4,7 @@
 #include <ostream>
 #include <new>
 
-static const int32_t EXT_CONST = 0;
+constexpr static const int32_t EXT_CONST = 0;
 
 struct ExtType {
   uint32_t data;

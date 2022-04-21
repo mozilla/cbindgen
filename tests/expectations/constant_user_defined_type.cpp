@@ -14,8 +14,8 @@ struct S {
 
 using A = uint8_t;
 
-static const S C1 = S{ /* .field = */ 0 };
+constexpr static const S C1 = S{ /* .field = */ 0 };
 
-static const E C2 = V;
+constexpr static const E C2 = V;
 
-static const A C3 = 0;
+constexpr static const A C3 = 0;

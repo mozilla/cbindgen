@@ -4,7 +4,7 @@
 #include <ostream>
 #include <new>
 
-static const uint8_t EXPORT_ME_TOO = 42;
+constexpr static const uint8_t EXPORT_ME_TOO = 42;
 
 struct ExportMe {
   uint64_t val;

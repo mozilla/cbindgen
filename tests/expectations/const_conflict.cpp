@@ -4,4 +4,4 @@
 #include <ostream>
 #include <new>
 
-static const uint32_t Foo_FOO = 42;
+constexpr static const uint32_t Foo_FOO = 42;

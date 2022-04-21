@@ -14,7 +14,7 @@ struct PREFIXFoo {
   PREFIXBar bar;
 };
 
-static const PREFIXFoo PREFIXVAL = PREFIXFoo{ /* .a = */ 42, /* .b = */ 1337, /* .bar = */ PREFIXBar{ /* .a = */ 323 } };
+constexpr static const PREFIXFoo PREFIXVAL = PREFIXFoo{ /* .a = */ 42, /* .b = */ 1337, /* .bar = */ PREFIXBar{ /* .a = */ 323 } };
 
 extern "C" {
 

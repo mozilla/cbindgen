@@ -706,7 +706,7 @@ impl Default for ConstantConfig {
     fn default() -> ConstantConfig {
         ConstantConfig {
             allow_static_const: true,
-            allow_constexpr: false,
+            allow_constexpr: true,
             sort_by: None,
         }
     }

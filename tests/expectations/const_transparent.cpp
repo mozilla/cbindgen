@@ -6,4 +6,4 @@
 
 using Transparent = uint8_t;
 
-static const Transparent FOO = 0;
+constexpr static const Transparent FOO = 0;
