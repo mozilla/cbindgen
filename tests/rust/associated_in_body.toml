@@ -6,3 +6,6 @@ bitflags = true
 
 [export]
 prefix = "Style" # Just ensuring they play well together :)
+
+[const]
+allow_constexpr = true

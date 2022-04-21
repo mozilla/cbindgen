@@ -18,4 +18,4 @@ struct Foo {
 };
 constexpr inline const int64_t Foo::CONSTANT_I64_BODY = 216;
 
-static const Foo SomeFoo = Foo{ /* .x = */ 99 };
+constexpr static const Foo SomeFoo = Foo{ /* .x = */ 99 };
