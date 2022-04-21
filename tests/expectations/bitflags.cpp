@@ -39,18 +39,18 @@ struct AlignFlags {
   }
 };
 /// 'auto'
-static const AlignFlags AlignFlags_AUTO = AlignFlags{ /* .bits = */ (uint8_t)0 };
+constexpr static const AlignFlags AlignFlags_AUTO = AlignFlags{ /* .bits = */ (uint8_t)0 };
 /// 'normal'
-static const AlignFlags AlignFlags_NORMAL = AlignFlags{ /* .bits = */ (uint8_t)1 };
+constexpr static const AlignFlags AlignFlags_NORMAL = AlignFlags{ /* .bits = */ (uint8_t)1 };
 /// 'start'
-static const AlignFlags AlignFlags_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 1) };
+constexpr static const AlignFlags AlignFlags_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 1) };
 /// 'end'
-static const AlignFlags AlignFlags_END = AlignFlags{ /* .bits = */ (uint8_t)(1 << 2) };
-static const AlignFlags AlignFlags_ALIAS = AlignFlags{ /* .bits = */ (uint8_t)(AlignFlags_END).bits };
+constexpr static const AlignFlags AlignFlags_END = AlignFlags{ /* .bits = */ (uint8_t)(1 << 2) };
+constexpr static const AlignFlags AlignFlags_ALIAS = AlignFlags{ /* .bits = */ (uint8_t)(AlignFlags_END).bits };
 /// 'flex-start'
-static const AlignFlags AlignFlags_FLEX_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 3) };
-static const AlignFlags AlignFlags_MIXED = AlignFlags{ /* .bits = */ (uint8_t)(((1 << 4) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) };
-static const AlignFlags AlignFlags_MIXED_SELF = AlignFlags{ /* .bits = */ (uint8_t)(((1 << 5) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) };
+constexpr static const AlignFlags AlignFlags_FLEX_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 3) };
+constexpr static const AlignFlags AlignFlags_MIXED = AlignFlags{ /* .bits = */ (uint8_t)(((1 << 4) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) };
+constexpr static const AlignFlags AlignFlags_MIXED_SELF = AlignFlags{ /* .bits = */ (uint8_t)(((1 << 5) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) };
 
 struct DebugFlags {
   uint32_t bits;
@@ -84,7 +84,7 @@ struct DebugFlags {
   }
 };
 /// Flag with the topmost bit set of the u32
-static const DebugFlags DebugFlags_BIGGEST_ALLOWED = DebugFlags{ /* .bits = */ (uint32_t)(1 << 31) };
+constexpr static const DebugFlags DebugFlags_BIGGEST_ALLOWED = DebugFlags{ /* .bits = */ (uint32_t)(1 << 31) };
 
 extern "C" {
 

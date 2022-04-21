@@ -501,6 +501,10 @@ impl Type {
         Ok(Some(converted))
     }
 
+    pub fn is_ptr(&self) -> bool {
+        matches!(*self, Type::Ptr { .. } | Type::FuncPtr { .. })
+    }
+
     pub fn is_primitive_or_ptr_primitive(&self) -> bool {
         match *self {
             Type::Primitive(..) => true,

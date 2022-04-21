@@ -183,21 +183,59 @@ impl Literal {
         }
     }
 
-    pub fn uses_only_primitive_types(&self) -> bool {
+    fn can_be_constexpr(&self) -> bool {
+        !self.has_pointer_casts()
+    }
+
+    fn visit(&self, visitor: &mut impl FnMut(&Self) -> bool) -> bool {
+        if !visitor(self) {
+            return false;
+        }
         match self {
             Literal::Expr(..) | Literal::Path { .. } => true,
-            Literal::PostfixUnaryOp { ref value, .. } => value.uses_only_primitive_types(),
+            Literal::PostfixUnaryOp { ref value, .. } => value.visit(visitor),
             Literal::BinOp {
                 ref left,
                 ref right,
                 ..
-            } => left.uses_only_primitive_types() & right.uses_only_primitive_types(),
-            Literal::FieldAccess { ref base, .. } => base.uses_only_primitive_types(),
-            Literal::Struct { .. } => false,
-            Literal::Cast { ref value, ref ty } => {
-                value.uses_only_primitive_types() && ty.is_primitive_or_ptr_primitive()
+            } => left.visit(visitor) && right.visit(visitor),
+            Literal::FieldAccess { ref base, .. } => base.visit(visitor),
+            Literal::Struct { ref fields, .. } => {
+                for (_name, field) in fields.iter() {
+                    if !field.visit(visitor) {
+                        return false;
+                    }
+                }
+                true
             }
+            Literal::Cast { ref value, .. } => value.visit(visitor),
         }
+    }
+
+    fn has_pointer_casts(&self) -> bool {
+        let mut has_pointer_casts = false;
+        self.visit(&mut |lit| {
+            if let Literal::Cast { ref ty, .. } = *lit {
+                has_pointer_casts = has_pointer_casts || ty.is_ptr();
+            }
+            !has_pointer_casts
+        });
+        has_pointer_casts
+    }
+
+    pub fn uses_only_primitive_types(&self) -> bool {
+        let mut uses_only_primitive_types = true;
+        self.visit(&mut |lit| {
+            // XXX This is a bit sketchy, but alas.
+            uses_only_primitive_types = uses_only_primitive_types
+                && match *lit {
+                    Literal::Struct { .. } => false,
+                    Literal::Cast { ref ty, .. } => ty.is_primitive_or_ptr_primitive(),
+                    _ => true,
+                };
+            uses_only_primitive_types
+        });
+        uses_only_primitive_types
     }
 }
 
@@ -720,12 +758,7 @@ impl Constant {
 
         self.documentation.write(config, out);
 
-        let allow_constexpr = if let Type::Primitive(..) = self.ty {
-            config.constant.allow_constexpr
-        } else {
-            false
-        };
-
+        let allow_constexpr = config.constant.allow_constexpr && self.value.can_be_constexpr();
         match config.language {
             Language::Cxx if config.constant.allow_static_const || allow_constexpr => {
                 if allow_constexpr {
