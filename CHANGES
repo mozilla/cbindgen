@@ -1,3 +1,9 @@
+## 0.23.0
+
+      * Better support for constexpr. (#756)
+      * constexpr is now enabled by default in C++ mode. You can use const.allow_constexpr=false to revert to previous behavior. (#756)
+      * Minimum syn version no longer parses old rust code. (#754)
+
 ## 0.22.0
 
       * Support rename rule for union body members (#751).
