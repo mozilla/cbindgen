@@ -15,4 +15,11 @@ cdef extern from *:
 
   ctypedef FooU8 Boo;
 
-  void root(Boo x, Bar y);
+  ctypedef enum Dog_Tag:
+    DogWoof,
+
+  ctypedef struct Dog:
+    Dog_Tag tag;
+    FooU8 woof;
+
+  void root(Boo x, Bar y, Dog z);

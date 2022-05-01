@@ -12,8 +12,11 @@ pub enum Bar {
     Thing,
 }
 
+/// cbindgen:prefix-with-name=true
+#[repr(C)]
+pub enum Dog<T> {
+    Woof(T),
+}
+
 #[no_mangle]
-pub extern "C" fn root(
-    x: Boo,
-    y: Bar,
-) { }
+pub extern "C" fn root(x: Boo, y: Bar, z: Dog<Foo<u8>>) {}

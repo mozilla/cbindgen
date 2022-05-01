@@ -95,21 +95,24 @@ impl<T: Item + Clone> ItemMap<T> {
     }
 
     pub fn try_insert(&mut self, item: T) -> bool {
-        match (item.cfg().is_some(), self.data.get_mut(item.path())) {
-            (true, Some(&mut ItemValue::Cfg(ref mut items))) => {
-                items.push(item);
-                return true;
+        self.try_insert_item(item, false)
+    }
+
+    pub fn try_insert_item(&mut self, item: T, overwrite_existing: bool) -> bool {
+        if !overwrite_existing {
+            match (item.cfg().is_some(), self.data.get_mut(item.path())) {
+                (true, Some(&mut ItemValue::Cfg(ref mut items))) => {
+                    items.push(item);
+                    return true;
+                }
+                (false, Some(&mut ItemValue::Cfg(_))) => {
+                    return false;
+                }
+                (_, Some(&mut ItemValue::Single(_))) => {
+                    return false;
+                }
+                _ => {}
             }
-            (false, Some(&mut ItemValue::Cfg(_))) => {
-                return false;
-            }
-            (true, Some(&mut ItemValue::Single(_))) => {
-                return false;
-            }
-            (false, Some(&mut ItemValue::Single(_))) => {
-                return false;
-            }
-            _ => {}
         }
 
         let path = item.path().clone();

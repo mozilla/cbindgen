@@ -417,21 +417,22 @@ impl Library {
             x.add_monomorphs(self, &mut monomorphs);
         }
 
-        // Insert the monomorphs into self
+        // Insert the monomorphs into self. Allow overwriting to enable empty type parameter
+        // replacements to work properly.
         for monomorph in monomorphs.drain_structs() {
-            self.structs.try_insert(monomorph);
+            self.structs.try_insert_item(monomorph, true);
         }
         for monomorph in monomorphs.drain_unions() {
-            self.unions.try_insert(monomorph);
+            self.unions.try_insert_item(monomorph, true);
         }
         for monomorph in monomorphs.drain_opaques() {
-            self.opaque_items.try_insert(monomorph);
+            self.opaque_items.try_insert_item(monomorph, true);
         }
         for monomorph in monomorphs.drain_typedefs() {
-            self.typedefs.try_insert(monomorph);
+            self.typedefs.try_insert_item(monomorph, true);
         }
         for monomorph in monomorphs.drain_enums() {
-            self.enums.try_insert(monomorph);
+            self.enums.try_insert_item(monomorph, true);
         }
 
         // Remove structs and opaque items that are generic

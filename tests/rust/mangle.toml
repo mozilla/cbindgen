@@ -1,3 +1,6 @@
 [export.mangle]
 remove_underscores = true
 rename_types = "PascalCase"
+
+[export.mangle.type_replacements]
+"FooU8" = ""

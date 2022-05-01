@@ -70,21 +70,32 @@ impl<'a> Mangler<'a> {
                 let sub_path =
                     Mangler::new(generic.export_name(), generic.generics(), last, self.config)
                         .mangle();
+                let mangled = self
+                    .config
+                    .rename_types
+                    .apply(&sub_path, IdentifierType::Type);
+                let type_str = self
+                    .config
+                    .type_replacements
+                    .get(mangled.as_ref())
+                    .map(String::as_str)
+                    .unwrap_or_else(|| mangled.as_ref());
 
-                self.output.push_str(
-                    &self
-                        .config
-                        .rename_types
-                        .apply(&sub_path, IdentifierType::Type),
-                );
+                self.output.push_str(type_str);
             }
             Type::Primitive(ref primitive) => {
-                self.output.push_str(
-                    &self
-                        .config
-                        .rename_types
-                        .apply(primitive.to_repr_rust(), IdentifierType::Type),
-                );
+                let mangled = self
+                    .config
+                    .rename_types
+                    .apply(primitive.to_repr_rust(), IdentifierType::Type);
+                let type_str = self
+                    .config
+                    .type_replacements
+                    .get(mangled.as_ref())
+                    .map(String::as_str)
+                    .unwrap_or_else(|| mangled.as_ref());
+
+                self.output.push_str(type_str);
             }
             Type::Ptr {
                 ref ty, is_const, ..
@@ -145,6 +156,8 @@ impl<'a> Mangler<'a> {
 
 #[test]
 fn generics() {
+    use std::collections::HashMap;
+
     use crate::bindgen::ir::{GenericPath, PrimitiveType};
     use crate::bindgen::rename::RenameRule::{self, PascalCase};
 
@@ -196,6 +209,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: RenameRule::None,
+                type_replacements: HashMap::new(),
             }
         ),
         Path::new("FooBar")
@@ -209,6 +223,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
+                type_replacements: HashMap::new(),
             },
         ),
         Path::new("FooBarF32")
@@ -222,6 +237,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
+                type_replacements: HashMap::new(),
             },
         ),
         Path::new("FooBarCChar")
@@ -268,6 +284,7 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
+                type_replacements: HashMap::new(),
             },
         ),
         Path::new("FooBarTE")
@@ -284,8 +301,76 @@ fn generics() {
             &MangleConfig {
                 remove_underscores: true,
                 rename_types: PascalCase,
+                type_replacements: HashMap::new(),
             },
         ),
         Path::new("FooBarTBarE")
+    );
+
+    // Foo<Bar<T>, E> => Foo_BarX__E
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &[generic_path("Bar", &[path("T")]), path("E")],
+            &MangleConfig {
+                remove_underscores: false,
+                rename_types: PascalCase,
+                type_replacements: vec![("T".to_owned(), "X".to_owned())]
+                    .into_iter()
+                    .collect::<HashMap<_, _>>()
+            },
+        ),
+        Path::new("Foo_BarX__E")
+    );
+
+    // Foo<Bar<T>, E> => FooChickenE
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &[generic_path("Bar", &[path("T")]), path("E")],
+            &MangleConfig {
+                remove_underscores: true,
+                rename_types: PascalCase,
+                type_replacements: vec![("BarT".to_owned(), "Chicken".to_owned())]
+                    .into_iter()
+                    .collect::<HashMap<_, _>>()
+            },
+        ),
+        Path::new("FooChickenE")
+    );
+
+    // Foo<Bar<T>, T> => FooChickenNugget
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &[generic_path("Bar", &[path("T")]), path("T")],
+            &MangleConfig {
+                remove_underscores: true,
+                rename_types: PascalCase,
+                type_replacements: vec![
+                    ("T".to_owned(), "Nugget".to_owned()),
+                    ("BarNugget".to_owned(), "Chicken".to_owned()),
+                ]
+                .into_iter()
+                .collect::<HashMap<_, _>>()
+            },
+        ),
+        Path::new("FooChickenNugget")
+    );
+
+    // Foo<Bar<T>, T> => FooT
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &[generic_path("Bar", &[path("T")]), path("T")],
+            &MangleConfig {
+                remove_underscores: true,
+                rename_types: PascalCase,
+                type_replacements: vec![("BarT".to_owned(), "".to_owned()),]
+                    .into_iter()
+                    .collect::<HashMap<_, _>>()
+            },
+        ),
+        Path::new("FooT")
     );
 }
