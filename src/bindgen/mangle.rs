@@ -3,14 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::bindgen::config::MangleConfig;
-use crate::bindgen::ir::{Path, Type};
+use crate::bindgen::ir::{ArrayLength, GenericArgument, GenericPath, Path, Type};
 use crate::bindgen::rename::IdentifierType;
 
-pub fn mangle_path(path: &Path, generic_values: &[Type], config: &MangleConfig) -> Path {
+pub fn mangle_path(path: &Path, generic_values: &[GenericArgument], config: &MangleConfig) -> Path {
     Path::new(mangle_name(path.name(), generic_values, config))
 }
 
-pub fn mangle_name(name: &str, generic_values: &[Type], config: &MangleConfig) -> String {
+pub fn mangle_name(
+    name: &str,
+    generic_values: &[GenericArgument],
+    config: &MangleConfig,
+) -> String {
     Mangler::new(name, generic_values, /* last = */ true, config).mangle()
 }
 
@@ -27,7 +31,7 @@ enum Separator {
 
 struct Mangler<'a> {
     input: &'a str,
-    generic_values: &'a [Type],
+    generic_values: &'a [GenericArgument],
     output: String,
     last: bool,
     config: &'a MangleConfig,
@@ -36,7 +40,7 @@ struct Mangler<'a> {
 impl<'a> Mangler<'a> {
     fn new(
         input: &'a str,
-        generic_values: &'a [Type],
+        generic_values: &'a [GenericArgument],
         last: bool,
         config: &'a MangleConfig,
     ) -> Self {
@@ -62,6 +66,20 @@ impl<'a> Mangler<'a> {
             "_"
         };
         self.output.extend(std::iter::repeat(separator).take(count));
+    }
+
+    fn append_mangled_argument(&mut self, arg: &GenericArgument, last: bool) {
+        match *arg {
+            GenericArgument::Type(ref ty) => self.append_mangled_type(ty, last),
+            GenericArgument::Const(ArrayLength::Name(ref name)) => {
+                // This must behave the same as a GenericArgument::Type,
+                // because const arguments are commonly represented as Types;
+                // see the comment on `enum GenericArgument`.
+                let fake_ty = Type::Path(GenericPath::new(Path::new(name), vec![]));
+                self.append_mangled_type(&fake_ty, last);
+            }
+            GenericArgument::Const(ArrayLength::Value(ref val)) => self.output.push_str(val),
+        }
     }
 
     fn append_mangled_type(&mut self, ty: &Type, last: bool) {
@@ -128,12 +146,12 @@ impl<'a> Mangler<'a> {
         }
 
         self.push(Separator::OpeningAngleBracket);
-        for (i, ty) in self.generic_values.iter().enumerate() {
+        for (i, arg) in self.generic_values.iter().enumerate() {
             if i != 0 {
                 self.push(Separator::Comma);
             }
             let last = self.last && i == self.generic_values.len() - 1;
-            self.append_mangled_type(ty, last);
+            self.append_mangled_argument(arg, last);
         }
 
         // Skip writing the trailing '>' mangling when possible
@@ -148,22 +166,22 @@ fn generics() {
     use crate::bindgen::ir::{GenericPath, PrimitiveType};
     use crate::bindgen::rename::RenameRule::{self, PascalCase};
 
-    fn float() -> Type {
-        Type::Primitive(PrimitiveType::Float)
+    fn float() -> GenericArgument {
+        GenericArgument::Type(Type::Primitive(PrimitiveType::Float))
     }
 
-    fn c_char() -> Type {
-        Type::Primitive(PrimitiveType::Char)
+    fn c_char() -> GenericArgument {
+        GenericArgument::Type(Type::Primitive(PrimitiveType::Char))
     }
 
-    fn path(path: &str) -> Type {
+    fn path(path: &str) -> GenericArgument {
         generic_path(path, &[])
     }
 
-    fn generic_path(path: &str, generics: &[Type]) -> Type {
+    fn generic_path(path: &str, arguments: &[GenericArgument]) -> GenericArgument {
         let path = Path::new(path);
-        let generic_path = GenericPath::new(path, generics.to_owned());
-        Type::Path(generic_path)
+        let generic_path = GenericPath::new(path, arguments.to_owned());
+        GenericArgument::Type(Type::Path(generic_path))
     }
 
     // Foo<f32> => Foo_f32
@@ -287,5 +305,44 @@ fn generics() {
             },
         ),
         Path::new("FooBarTBarE")
+    );
+
+    assert_eq!(
+        mangle_path(
+            &Path::new("Top"),
+            &[GenericArgument::Const(ArrayLength::Value("40".to_string()))],
+            &MangleConfig::default(),
+        ),
+        Path::new("Top_40")
+    );
+
+    assert_eq!(
+        mangle_path(
+            &Path::new("Top"),
+            &[GenericArgument::Const(ArrayLength::Name("N".to_string()))],
+            &MangleConfig::default(),
+        ),
+        Path::new("Top_N")
+    );
+
+    assert_eq!(
+        mangle_path(
+            &Path::new("Top"),
+            &[generic_path("N", &[])],
+            &MangleConfig::default(),
+        ),
+        Path::new("Top_N")
+    );
+
+    assert_eq!(
+        mangle_path(
+            &Path::new("Foo"),
+            &[
+                float(),
+                GenericArgument::Const(ArrayLength::Value("40".to_string()))
+            ],
+            &MangleConfig::default(),
+        ),
+        Path::new("Foo_f32__40")
     );
 }

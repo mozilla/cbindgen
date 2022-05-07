@@ -8,8 +8,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericArgument, GenericParams, Item,
+    ItemContainer, Path, ToCondition,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -98,7 +98,7 @@ impl Item for OpaqueItem {
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &[Type],
+        generic_values: &[GenericArgument],
         library: &Library,
         out: &mut Monomorphs,
     ) {

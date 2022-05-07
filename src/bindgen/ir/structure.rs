@@ -10,8 +10,9 @@ use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, Field, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, ToCondition, Type, Typedef,
+    AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, Field, GenericArgument,
+    GenericParams, Item, ItemContainer, Path, Repr, ReprAlign, ReprStyle, ToCondition, Type,
+    Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -174,8 +175,8 @@ impl Struct {
 
     pub fn specialize(
         &self,
-        generic_values: &[Type],
-        mappings: &[(&Path, &Type)],
+        generic_values: &[GenericArgument],
+        mappings: &[(&Path, &GenericArgument)],
         config: &Config,
     ) -> Self {
         let mangled_path = mangle::mangle_path(&self.path, generic_values, &config.export.mangle);
@@ -365,7 +366,7 @@ impl Item for Struct {
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &[Type],
+        generic_values: &[GenericArgument],
         library: &Library,
         out: &mut Monomorphs,
     ) {

@@ -5,7 +5,7 @@
 use std::io::Write;
 
 use crate::bindgen::declarationtyperesolver::DeclarationType;
-use crate::bindgen::ir::{ArrayLength, Function, Type};
+use crate::bindgen::ir::{ArrayLength, Function, GenericArgument, Type};
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
 
@@ -35,7 +35,7 @@ impl CDeclarator {
 struct CDecl {
     type_qualifers: String,
     type_name: String,
-    type_generic_args: Vec<Type>,
+    type_generic_args: Vec<GenericArgument>,
     declarators: Vec<CDeclarator>,
     type_ctype: Option<DeclarationType>,
 }
