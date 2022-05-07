@@ -103,7 +103,7 @@ impl Struct {
 
         Ok(Struct::new(
             path,
-            GenericParams::new(&item.generics),
+            GenericParams::load(&item.generics)?,
             fields,
             has_tag_field,
             is_enum_variant_body,
@@ -370,25 +370,7 @@ impl Item for Struct {
         library: &Library,
         out: &mut Monomorphs,
     ) {
-        assert!(
-            self.generic_params.len() > 0,
-            "{} is not generic",
-            self.path
-        );
-        assert!(
-            self.generic_params.len() == generic_values.len(),
-            "{} has {} params but is being instantiated with {} values",
-            self.path,
-            self.generic_params.len(),
-            generic_values.len(),
-        );
-
-        let mappings = self
-            .generic_params
-            .iter()
-            .zip(generic_values.iter())
-            .collect::<Vec<_>>();
-
+        let mappings = self.generic_params.call(self.path.name(), generic_values);
         let monomorph = self.specialize(generic_values, &mappings, library.get_config());
         out.insert_struct(library, self, monomorph, generic_values.to_owned());
     }

@@ -3,30 +3,95 @@ use std::ops::Deref;
 
 use syn::ext::IdentExt;
 
+use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use crate::bindgen::ir::{ArrayLength, Path, Type};
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
+#[derive(Debug, Clone)]
+pub enum GenericParamType {
+    Type,
+    Const(Type),
+}
+
+#[derive(Debug, Clone)]
+pub struct GenericParam {
+    name: Path,
+    ty: GenericParamType,
+}
+
+impl GenericParam {
+    pub fn new_type_param(name: &str) -> Self {
+        GenericParam {
+            name: Path::new(name),
+            ty: GenericParamType::Type,
+        }
+    }
+
+    pub fn load(param: &syn::GenericParam) -> Result<Option<Self>, String> {
+        match *param {
+            syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => Ok(Some(GenericParam {
+                name: Path::new(ident.unraw().to_string()),
+                ty: GenericParamType::Type,
+            })),
+
+            syn::GenericParam::Lifetime(_) => Ok(None),
+
+            syn::GenericParam::Const(syn::ConstParam {
+                ref ident, ref ty, ..
+            }) => match Type::load(ty)? {
+                None => {
+                    // A type that evaporates, like PhantomData.
+                    Err(format!("unsupported const generic type: {:?}", ty))
+                }
+                Some(ty) => Ok(Some(GenericParam {
+                    name: Path::new(ident.unraw().to_string()),
+                    ty: GenericParamType::Const(ty),
+                })),
+            },
+        }
+    }
+
+    pub fn name(&self) -> &Path {
+        &self.name
+    }
+}
+
 #[derive(Default, Debug, Clone)]
-pub struct GenericParams(pub Vec<Path>);
+pub struct GenericParams(pub Vec<GenericParam>);
 
 impl GenericParams {
-    pub fn new(generics: &syn::Generics) -> Self {
-        GenericParams(
-            generics
-                .params
-                .iter()
-                .filter_map(|x| match *x {
-                    syn::GenericParam::Type(syn::TypeParam { ref ident, .. })
-                    | syn::GenericParam::Const(syn::ConstParam { ref ident, .. }) => {
-                        Some(Path::new(ident.unraw().to_string()))
-                    }
-                    _ => None,
-                })
-                .collect(),
-        )
+    pub fn load(generics: &syn::Generics) -> Result<Self, String> {
+        let mut params = vec![];
+        for param in &generics.params {
+            if let Some(p) = GenericParam::load(param)? {
+                params.push(p);
+            }
+        }
+
+        Ok(GenericParams(params))
+    }
+
+    /// Associate each parameter with an argument.
+    pub fn call<'out>(
+        &'out self,
+        item_name: &str,
+        arguments: &'out [GenericArgument],
+    ) -> Vec<(&'out Path, &'out GenericArgument)> {
+        assert!(self.len() > 0, "{} is not generic", item_name);
+        assert!(
+            self.len() == arguments.len(),
+            "{} has {} params but is being instantiated with {} values",
+            item_name,
+            self.len(),
+            arguments.len(),
+        );
+        self.iter()
+            .map(|param| param.name())
+            .zip(arguments.iter())
+            .collect()
     }
 
     fn write_internal<F: Write>(
@@ -41,9 +106,19 @@ impl GenericParams {
                 if i != 0 {
                     out.write(", ");
                 }
-                write!(out, "typename {}", item);
-                if with_default {
-                    write!(out, " = void");
+                match item.ty {
+                    GenericParamType::Type => {
+                        write!(out, "typename {}", item.name);
+                        if with_default {
+                            write!(out, " = void");
+                        }
+                    }
+                    GenericParamType::Const(ref ty) => {
+                        cdecl::write_field(out, ty, item.name.name(), config);
+                        if with_default {
+                            write!(out, " = 0");
+                        }
+                    }
                 }
             }
             out.write(">");
@@ -57,9 +132,9 @@ impl GenericParams {
 }
 
 impl Deref for GenericParams {
-    type Target = [Path];
+    type Target = [GenericParam];
 
-    fn deref(&self) -> &[Path] {
+    fn deref(&self) -> &[GenericParam] {
         &self.0
     }
 }
@@ -168,7 +243,7 @@ impl GenericPath {
         for generic in &mut self.generics {
             generic.rename_for_config(config, generic_params);
         }
-        if !generic_params.contains(&self.path) {
+        if !generic_params.iter().any(|param| param.name == self.path) {
             config.export.rename(&mut self.export_name);
         }
     }

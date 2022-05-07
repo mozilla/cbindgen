@@ -15,8 +15,8 @@ use crate::bindgen::cargo::{Cargo, PackageRef};
 use crate::bindgen::config::{Config, ParseConfig};
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParams, ItemMap,
-    OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParam, GenericParams,
+    ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::utilities::{SynAbiHelpers, SynAttributeHelpers, SynItemFnHelpers};
 
@@ -425,7 +425,10 @@ impl Parse {
     pub fn add_std_types(&mut self) {
         let mut add_opaque = |path: &str, generic_params: Vec<&str>| {
             let path = Path::new(path);
-            let generic_params: Vec<_> = generic_params.into_iter().map(Path::new).collect();
+            let generic_params: Vec<_> = generic_params
+                .into_iter()
+                .map(GenericParam::new_type_param)
+                .collect();
             self.opaque_items.try_insert(OpaqueItem::new(
                 path,
                 GenericParams(generic_params),

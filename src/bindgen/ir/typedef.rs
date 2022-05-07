@@ -37,7 +37,7 @@ impl Typedef {
             let path = Path::new(item.ident.unraw().to_string());
             Ok(Typedef::new(
                 path,
-                GenericParams::new(&item.generics),
+                GenericParams::load(&item.generics)?,
                 x,
                 Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
                 AnnotationSet::load(&item.attrs)?,
@@ -159,24 +159,7 @@ impl Item for Typedef {
         library: &Library,
         out: &mut Monomorphs,
     ) {
-        assert!(
-            self.generic_params.len() > 0,
-            "{} is not generic",
-            self.path
-        );
-        assert!(
-            self.generic_params.len() == generic_values.len(),
-            "{} has {} params but is being instantiated with {} values",
-            self.path,
-            self.generic_params.len(),
-            generic_values.len(),
-        );
-
-        let mappings = self
-            .generic_params
-            .iter()
-            .zip(generic_values.iter())
-            .collect::<Vec<_>>();
+        let mappings = self.generic_params.call(self.path.name(), generic_values);
 
         let mangled_path = mangle::mangle_path(
             &self.path,
