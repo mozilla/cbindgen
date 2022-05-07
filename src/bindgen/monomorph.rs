@@ -5,7 +5,9 @@
 use std::collections::HashMap;
 use std::mem;
 
-use crate::bindgen::ir::{Enum, GenericPath, OpaqueItem, Path, Struct, Type, Typedef, Union};
+use crate::bindgen::ir::{
+    Enum, GenericArgument, GenericPath, OpaqueItem, Path, Struct, Typedef, Union,
+};
 use crate::bindgen::library::Library;
 
 #[derive(Default, Clone, Debug)]
@@ -28,9 +30,9 @@ impl Monomorphs {
         library: &Library,
         generic: &Struct,
         monomorph: Struct,
-        parameters: Vec<Type>,
+        arguments: Vec<GenericArgument>,
     ) {
-        let replacement_path = GenericPath::new(generic.path.clone(), parameters);
+        let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
@@ -48,9 +50,9 @@ impl Monomorphs {
         library: &Library,
         generic: &Enum,
         monomorph: Enum,
-        parameters: Vec<Type>,
+        arguments: Vec<GenericArgument>,
     ) {
-        let replacement_path = GenericPath::new(generic.path.clone(), parameters);
+        let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
@@ -68,9 +70,9 @@ impl Monomorphs {
         library: &Library,
         generic: &Union,
         monomorph: Union,
-        parameters: Vec<Type>,
+        arguments: Vec<GenericArgument>,
     ) {
-        let replacement_path = GenericPath::new(generic.path.clone(), parameters);
+        let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
@@ -87,9 +89,9 @@ impl Monomorphs {
         &mut self,
         generic: &OpaqueItem,
         monomorph: OpaqueItem,
-        parameters: Vec<Type>,
+        arguments: Vec<GenericArgument>,
     ) {
-        let replacement_path = GenericPath::new(generic.path.clone(), parameters);
+        let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));
@@ -104,9 +106,9 @@ impl Monomorphs {
         library: &Library,
         generic: &Typedef,
         monomorph: Typedef,
-        parameters: Vec<Type>,
+        arguments: Vec<GenericArgument>,
     ) {
-        let replacement_path = GenericPath::new(generic.path.clone(), parameters);
+        let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
         debug_assert!(generic.generic_params.len() > 0);
         debug_assert!(!self.contains(&replacement_path));

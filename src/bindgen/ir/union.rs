@@ -10,8 +10,8 @@ use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, Field, GenericParams, Item, ItemContainer,
-    Path, Repr, ReprAlign, ReprStyle, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, Field, GenericArgument, GenericParams, Item,
+    ItemContainer, Path, Repr, ReprAlign, ReprStyle, ToCondition,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -223,7 +223,7 @@ impl Item for Union {
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &[Type],
+        generic_values: &[GenericArgument],
         library: &Library,
         out: &mut Monomorphs,
     ) {

@@ -9,7 +9,8 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Enum, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, Cfg, Constant, Enum, GenericArgument, OpaqueItem, Path, Static, Struct, Typedef,
+    Union,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
@@ -37,7 +38,12 @@ pub trait Item {
     }
     fn rename_for_config(&mut self, _config: &Config) {}
     fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) {}
-    fn instantiate_monomorph(&self, _generics: &[Type], _library: &Library, _out: &mut Monomorphs) {
+    fn instantiate_monomorph(
+        &self,
+        _generics: &[GenericArgument],
+        _library: &Library,
+        _out: &mut Monomorphs,
+    ) {
         unreachable!("Cannot instantiate {} as a generic.", self.name())
     }
 }

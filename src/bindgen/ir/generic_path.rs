@@ -5,7 +5,7 @@ use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
-use crate::bindgen::ir::{Path, Type};
+use crate::bindgen::ir::{ArrayLength, Path, Type};
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -19,7 +19,8 @@ impl GenericParams {
                 .params
                 .iter()
                 .filter_map(|x| match *x {
-                    syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => {
+                    syn::GenericParam::Type(syn::TypeParam { ref ident, .. })
+                    | syn::GenericParam::Const(syn::ConstParam { ref ident, .. }) => {
                         Some(Path::new(ident.unraw().to_string()))
                     }
                     _ => None,
@@ -69,16 +70,52 @@ impl Source for GenericParams {
     }
 }
 
+/// A (non-lifetime) argument passed to a generic, either a type or a constant expression.
+///
+/// Note: Both arguments in a type like `Array<T, N>` are represented as
+/// `GenericArgument::Type`s, even if `N` is actually the name of a const. This
+/// is a consequence of `syn::GenericArgument` doing the same thing.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum GenericArgument {
+    Type(Type),
+    Const(ArrayLength),
+}
+
+impl GenericArgument {
+    pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> GenericArgument {
+        match *self {
+            GenericArgument::Type(ref ty) => GenericArgument::Type(ty.specialize(mappings)),
+            GenericArgument::Const(ref expr) => GenericArgument::Const(expr.clone()),
+        }
+    }
+
+    pub fn rename_for_config(&mut self, config: &Config, generic_params: &GenericParams) {
+        match *self {
+            GenericArgument::Type(ref mut ty) => ty.rename_for_config(config, generic_params),
+            GenericArgument::Const(ref mut expr) => expr.rename_for_config(config),
+        }
+    }
+}
+
+impl Source for GenericArgument {
+    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        match *self {
+            GenericArgument::Type(ref ty) => ty.write(config, out),
+            GenericArgument::Const(ref expr) => expr.write(config, out),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct GenericPath {
     path: Path,
     export_name: String,
-    generics: Vec<Type>,
+    generics: Vec<GenericArgument>,
     ctype: Option<DeclarationType>,
 }
 
 impl GenericPath {
-    pub fn new(path: Path, generics: Vec<Type>) -> Self {
+    pub fn new(path: Path, generics: Vec<GenericArgument>) -> Self {
         let export_name = path.name().to_owned();
         Self {
             path,
@@ -103,11 +140,11 @@ impl GenericPath {
         &self.path
     }
 
-    pub fn generics(&self) -> &[Type] {
+    pub fn generics(&self) -> &[GenericArgument] {
         &self.generics
     }
 
-    pub fn generics_mut(&mut self) -> &mut [Type] {
+    pub fn generics_mut(&mut self) -> &mut [GenericArgument] {
         &mut self.generics
     }
 
@@ -121,6 +158,10 @@ impl GenericPath {
 
     pub fn export_name(&self) -> &str {
         &self.export_name
+    }
+
+    pub fn is_single_identifier(&self) -> bool {
+        self.generics.is_empty()
     }
 
     pub fn rename_for_config(&mut self, config: &Config, generic_params: &GenericParams) {
@@ -156,8 +197,11 @@ impl GenericPath {
                 ref args,
                 ..
             }) => args.iter().try_skip_map(|x| match *x {
-                syn::GenericArgument::Type(ref x) => Type::load(x),
+                syn::GenericArgument::Type(ref x) => Ok(Type::load(x)?.map(GenericArgument::Type)),
                 syn::GenericArgument::Lifetime(_) => Ok(None),
+                syn::GenericArgument::Const(ref x) => {
+                    Ok(Some(GenericArgument::Const(ArrayLength::load(x)?)))
+                }
                 _ => Err(format!("can't handle generic argument {:?}", x)),
             })?,
             syn::PathArguments::Parenthesized(_) => {

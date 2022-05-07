@@ -11,7 +11,7 @@ use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{GenericParams, GenericPath, Path};
+use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::utilities::IterHelpers;
@@ -320,15 +320,63 @@ pub enum ArrayLength {
 
 impl ArrayLength {
     pub fn as_str(&self) -> &str {
-        match self {
+        match *self {
             ArrayLength::Name(ref string) | ArrayLength::Value(ref string) => string,
         }
     }
 
-    fn rename_for_config(&mut self, config: &Config) {
+    pub fn rename_for_config(&mut self, config: &Config) {
         if let ArrayLength::Name(ref mut name) = self {
             config.export.rename(name);
         }
+    }
+
+    pub fn load(expr: &syn::Expr) -> Result<Self, String> {
+        match *expr {
+            syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Int(ref len),
+                ..
+            }) => Ok(ArrayLength::Value(len.base10_digits().to_string())),
+            syn::Expr::Path(ref path) => {
+                let generic_path = GenericPath::load(&path.path)?;
+                Ok(ArrayLength::Name(generic_path.export_name().to_owned()))
+            }
+            _ => Err(format!("can't handle const expression {:?}", expr)),
+        }
+    }
+
+    pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> ArrayLength {
+        match *self {
+            ArrayLength::Name(ref name) => {
+                let path = Path::new(name);
+                for &(param, value) in mappings {
+                    if path == *param {
+                        match *value {
+                            GenericArgument::Type(Type::Path(ref path))
+                                if path.is_single_identifier() =>
+                            {
+                                // This happens when the generic argument is a path.
+                                return ArrayLength::Name(path.name().to_string());
+                            }
+                            GenericArgument::Const(ref expr) => {
+                                return expr.clone();
+                            }
+                            _ => {
+                                // unsupported argument type - really should be an error
+                            }
+                        }
+                    }
+                }
+            }
+            ArrayLength::Value(_) => {}
+        }
+        self.clone()
+    }
+}
+
+impl Source for ArrayLength {
+    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
+        write!(out, "{}", self.as_str());
     }
 }
 
@@ -415,28 +463,7 @@ impl Type {
                 }
             }
             syn::Type::Array(syn::TypeArray {
-                ref elem,
-                len: syn::Expr::Path(ref path),
-                ..
-            }) => {
-                let converted = Type::load(elem)?;
-
-                let converted = match converted {
-                    Some(converted) => converted,
-                    None => return Err("Cannot have an array of zero sized types.".to_owned()),
-                };
-                let generic_path = GenericPath::load(&path.path)?;
-                let len = ArrayLength::Name(generic_path.export_name().to_owned());
-                Type::Array(Box::new(converted), len)
-            }
-            syn::Type::Array(syn::TypeArray {
-                ref elem,
-                len:
-                    syn::Expr::Lit(syn::ExprLit {
-                        lit: syn::Lit::Int(ref len),
-                        ..
-                    }),
-                ..
+                ref elem, ref len, ..
             }) => {
                 let converted = Type::load(elem)?;
 
@@ -445,8 +472,7 @@ impl Type {
                     None => return Err("Cannot have an array of zero sized types.".to_owned()),
                 };
 
-                let len = ArrayLength::Value(len.base10_digits().to_string());
-                // panic!("panic -> value: {:?}", len);
+                let len = ArrayLength::load(len)?;
                 Type::Array(Box::new(converted), len)
             }
             syn::Type::BareFn(ref function) => {
@@ -609,7 +635,11 @@ impl Type {
             return None;
         }
 
-        let unsimplified_generic = &path.generics()[0];
+        let unsimplified_generic = match path.generics()[0] {
+            GenericArgument::Type(ref ty) => ty,
+            GenericArgument::Const(_) => return None,
+        };
+
         let generic = match unsimplified_generic.simplified_type(config) {
             Some(generic) => Cow::Owned(generic),
             None => Cow::Borrowed(unsimplified_generic),
@@ -663,7 +693,10 @@ impl Type {
             Type::Array(ref mut ty, ..) | Type::Ptr { ref mut ty, .. } => visitor(ty),
             Type::Path(ref mut path) => {
                 for generic in path.generics_mut() {
-                    visitor(generic);
+                    match *generic {
+                        GenericArgument::Type(ref mut ty) => visitor(ty),
+                        GenericArgument::Const(_) => {}
+                    }
                 }
             }
             Type::Primitive(..) => {}
@@ -701,7 +734,7 @@ impl Type {
         }
     }
 
-    pub fn specialize(&self, mappings: &[(&Path, &Type)]) -> Type {
+    pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> Type {
         match *self {
             Type::Ptr {
                 ref ty,
@@ -717,7 +750,9 @@ impl Type {
             Type::Path(ref generic_path) => {
                 for &(param, value) in mappings {
                     if generic_path.path() == param {
-                        return value.clone();
+                        if let GenericArgument::Type(ref ty) = *value {
+                            return ty.clone();
+                        }
                     }
                 }
 
@@ -732,9 +767,10 @@ impl Type {
                 Type::Path(specialized)
             }
             Type::Primitive(ref primitive) => Type::Primitive(primitive.clone()),
-            Type::Array(ref ty, ref constant) => {
-                Type::Array(Box::new(ty.specialize(mappings)), constant.clone())
-            }
+            Type::Array(ref ty, ref constant) => Type::Array(
+                Box::new(ty.specialize(mappings)),
+                constant.specialize(mappings),
+            ),
             Type::FuncPtr {
                 ref ret,
                 ref args,
@@ -763,7 +799,9 @@ impl Type {
             }
             Type::Path(ref generic) => {
                 for generic_value in generic.generics() {
-                    generic_value.add_dependencies_ignoring_generics(generic_params, library, out);
+                    if let GenericArgument::Type(ref ty) = *generic_value {
+                        ty.add_dependencies_ignoring_generics(generic_params, library, out);
+                    }
                 }
                 let path = generic.path();
                 if !generic_params.contains(path) {

@@ -10,8 +10,9 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, Documentation, Field, GenericParams,
-    GenericPath, Item, ItemContainer, Literal, Path, Repr, ReprStyle, Struct, ToCondition, Type,
+    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, Documentation, Field, GenericArgument,
+    GenericParams, GenericPath, Item, ItemContainer, Literal, Path, Repr, ReprStyle, Struct,
+    ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -61,8 +62,8 @@ impl VariantBody {
 
     fn specialize(
         &self,
-        generic_values: &[Type],
-        mappings: &[(&Path, &Type)],
+        generic_values: &[GenericArgument],
+        mappings: &[(&Path, &GenericArgument)],
         config: &Config,
     ) -> Self {
         match *self {
@@ -265,8 +266,8 @@ impl EnumVariant {
 
     fn specialize(
         &self,
-        generic_values: &[Type],
-        mappings: &[(&Path, &Type)],
+        generic_values: &[GenericArgument],
+        mappings: &[(&Path, &GenericArgument)],
         config: &Config,
     ) -> Self {
         Self::new(
@@ -611,7 +612,7 @@ impl Item for Enum {
 
     fn instantiate_monomorph(
         &self,
-        generic_values: &[Type],
+        generic_values: &[GenericArgument],
         library: &Library,
         out: &mut Monomorphs,
     ) {
