@@ -383,7 +383,7 @@ impl Enum {
         }
 
         let path = Path::new(item.ident.unraw().to_string());
-        let generic_params = GenericParams::new(&item.generics);
+        let generic_params = GenericParams::load(&item.generics)?;
 
         let mut variants = Vec::new();
         let mut has_data = false;
@@ -616,24 +616,7 @@ impl Item for Enum {
         library: &Library,
         out: &mut Monomorphs,
     ) {
-        assert!(
-            self.generic_params.len() > 0,
-            "{} is not generic",
-            self.path.name()
-        );
-        assert!(
-            self.generic_params.len() == generic_values.len(),
-            "{} has {} params but is being instantiated with {} values",
-            self.path.name(),
-            self.generic_params.len(),
-            generic_values.len(),
-        );
-
-        let mappings = self
-            .generic_params
-            .iter()
-            .zip(generic_values.iter())
-            .collect::<Vec<_>>();
+        let mappings = self.generic_params.call(self.path.name(), generic_values);
 
         for variant in &self.variants {
             if let VariantBody::Body { ref body, .. } = variant.body {

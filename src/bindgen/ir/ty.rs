@@ -804,7 +804,7 @@ impl Type {
                     }
                 }
                 let path = generic.path();
-                if !generic_params.contains(path) {
+                if !generic_params.iter().any(|param| param.name() == path) {
                     if let Some(items) = library.get_items(path) {
                         if !out.items.contains(path) {
                             out.items.insert(path.clone());

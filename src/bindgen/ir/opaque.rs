@@ -35,7 +35,7 @@ impl OpaqueItem {
     ) -> Result<OpaqueItem, String> {
         Ok(Self::new(
             path,
-            GenericParams::new(generics),
+            GenericParams::load(generics)?,
             Cfg::append(mod_cfg, Cfg::load(attrs)),
             AnnotationSet::load(attrs).unwrap_or_else(|_| AnnotationSet::new()),
             Documentation::load(attrs),
