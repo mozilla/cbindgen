@@ -5,7 +5,7 @@
 use std::io::Write;
 
 use crate::bindgen::declarationtyperesolver::DeclarationType;
-use crate::bindgen::ir::{ArrayLength, Function, GenericArgument, Type};
+use crate::bindgen::ir::{ConstExpr, Function, GenericArgument, Type};
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
 
@@ -70,7 +70,7 @@ impl CDecl {
                 t
             ),
         };
-        let ptr_as_array = Type::Array(ty.clone(), ArrayLength::Value(length.to_string()));
+        let ptr_as_array = Type::Array(ty.clone(), ConstExpr::Value(length.to_string()));
         cdecl.build_type(&ptr_as_array, *is_const, config);
         cdecl
     }
