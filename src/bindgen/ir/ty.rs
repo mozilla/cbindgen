@@ -337,13 +337,17 @@ impl ConstExpr {
     pub fn load(expr: &syn::Expr) -> Result<Self, String> {
         match *expr {
             syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Bool(syn::LitBool { value, .. }),
+                ..
+            }) => Ok(ConstExpr::Value(value.to_string())),
+            syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref len),
                 ..
             }) => Ok(ConstExpr::Value(len.base10_digits().to_string())),
             syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Bool(syn::LitBool { value, .. }),
+                lit: syn::Lit::Byte(ref byte),
                 ..
-            }) => Ok(ConstExpr::Value(value.to_string())),
+            }) => Ok(ConstExpr::Value(u8::to_string(&byte.value()))),
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Char(ref ch),
                 ..
