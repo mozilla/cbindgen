@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::bindgen::config::MangleConfig;
-use crate::bindgen::ir::{ArrayLength, GenericArgument, GenericPath, Path, Type};
+use crate::bindgen::ir::{ConstExpr, GenericArgument, GenericPath, Path, Type};
 use crate::bindgen::rename::IdentifierType;
 
 pub fn mangle_path(path: &Path, generic_values: &[GenericArgument], config: &MangleConfig) -> Path {
@@ -71,14 +71,14 @@ impl<'a> Mangler<'a> {
     fn append_mangled_argument(&mut self, arg: &GenericArgument, last: bool) {
         match *arg {
             GenericArgument::Type(ref ty) => self.append_mangled_type(ty, last),
-            GenericArgument::Const(ArrayLength::Name(ref name)) => {
+            GenericArgument::Const(ConstExpr::Name(ref name)) => {
                 // This must behave the same as a GenericArgument::Type,
                 // because const arguments are commonly represented as Types;
                 // see the comment on `enum GenericArgument`.
                 let fake_ty = Type::Path(GenericPath::new(Path::new(name), vec![]));
                 self.append_mangled_type(&fake_ty, last);
             }
-            GenericArgument::Const(ArrayLength::Value(ref val)) => self.output.push_str(val),
+            GenericArgument::Const(ConstExpr::Value(ref val)) => self.output.push_str(val),
         }
     }
 
@@ -310,7 +310,7 @@ fn generics() {
     assert_eq!(
         mangle_path(
             &Path::new("Top"),
-            &[GenericArgument::Const(ArrayLength::Value("40".to_string()))],
+            &[GenericArgument::Const(ConstExpr::Value("40".to_string()))],
             &MangleConfig::default(),
         ),
         Path::new("Top_40")
@@ -319,7 +319,7 @@ fn generics() {
     assert_eq!(
         mangle_path(
             &Path::new("Top"),
-            &[GenericArgument::Const(ArrayLength::Name("N".to_string()))],
+            &[GenericArgument::Const(ConstExpr::Name("N".to_string()))],
             &MangleConfig::default(),
         ),
         Path::new("Top_N")
@@ -339,7 +339,7 @@ fn generics() {
             &Path::new("Foo"),
             &[
                 float(),
-                GenericArgument::Const(ArrayLength::Value("40".to_string()))
+                GenericArgument::Const(ConstExpr::Value("40".to_string()))
             ],
             &MangleConfig::default(),
         ),

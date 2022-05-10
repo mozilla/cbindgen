@@ -6,7 +6,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
-use crate::bindgen::ir::{ArrayLength, Path, Type};
+use crate::bindgen::ir::{ConstExpr, Path, Type};
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -153,7 +153,7 @@ impl Source for GenericParams {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum GenericArgument {
     Type(Type),
-    Const(ArrayLength),
+    Const(ConstExpr),
 }
 
 impl GenericArgument {
@@ -275,7 +275,7 @@ impl GenericPath {
                 syn::GenericArgument::Type(ref x) => Ok(Type::load(x)?.map(GenericArgument::Type)),
                 syn::GenericArgument::Lifetime(_) => Ok(None),
                 syn::GenericArgument::Const(ref x) => {
-                    Ok(Some(GenericArgument::Const(ArrayLength::load(x)?)))
+                    Ok(Some(GenericArgument::Const(ConstExpr::load(x)?)))
                 }
                 _ => Err(format!("can't handle generic argument {:?}", x)),
             })?,

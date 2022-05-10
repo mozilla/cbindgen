@@ -311,22 +311,25 @@ impl PrimitiveType {
     }
 }
 
-// The `U` part of `[T; U]`
+/// Constant expressions.
+///
+/// Used for the `U` part of `[T; U]` and const generics. We support a very
+/// limited vocabulary here: only identifiers and literals.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum ArrayLength {
+pub enum ConstExpr {
     Name(String),
     Value(String),
 }
 
-impl ArrayLength {
+impl ConstExpr {
     pub fn as_str(&self) -> &str {
         match *self {
-            ArrayLength::Name(ref string) | ArrayLength::Value(ref string) => string,
+            ConstExpr::Name(ref string) | ConstExpr::Value(ref string) => string,
         }
     }
 
     pub fn rename_for_config(&mut self, config: &Config) {
-        if let ArrayLength::Name(ref mut name) = self {
+        if let ConstExpr::Name(ref mut name) = self {
             config.export.rename(name);
         }
     }
@@ -336,18 +339,18 @@ impl ArrayLength {
             syn::Expr::Lit(syn::ExprLit {
                 lit: syn::Lit::Int(ref len),
                 ..
-            }) => Ok(ArrayLength::Value(len.base10_digits().to_string())),
+            }) => Ok(ConstExpr::Value(len.base10_digits().to_string())),
             syn::Expr::Path(ref path) => {
                 let generic_path = GenericPath::load(&path.path)?;
-                Ok(ArrayLength::Name(generic_path.export_name().to_owned()))
+                Ok(ConstExpr::Name(generic_path.export_name().to_owned()))
             }
             _ => Err(format!("can't handle const expression {:?}", expr)),
         }
     }
 
-    pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> ArrayLength {
+    pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> ConstExpr {
         match *self {
-            ArrayLength::Name(ref name) => {
+            ConstExpr::Name(ref name) => {
                 let path = Path::new(name);
                 for &(param, value) in mappings {
                     if path == *param {
@@ -356,7 +359,7 @@ impl ArrayLength {
                                 if path.is_single_identifier() =>
                             {
                                 // This happens when the generic argument is a path.
-                                return ArrayLength::Name(path.name().to_string());
+                                return ConstExpr::Name(path.name().to_string());
                             }
                             GenericArgument::Const(ref expr) => {
                                 return expr.clone();
@@ -368,13 +371,13 @@ impl ArrayLength {
                     }
                 }
             }
-            ArrayLength::Value(_) => {}
+            ConstExpr::Value(_) => {}
         }
         self.clone()
     }
 }
 
-impl Source for ArrayLength {
+impl Source for ConstExpr {
     fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
         write!(out, "{}", self.as_str());
     }
@@ -393,7 +396,7 @@ pub enum Type {
     },
     Path(GenericPath),
     Primitive(PrimitiveType),
-    Array(Box<Type>, ArrayLength),
+    Array(Box<Type>, ConstExpr),
     FuncPtr {
         ret: Box<Type>,
         args: Vec<(Option<String>, Type)>,
@@ -472,7 +475,7 @@ impl Type {
                     None => return Err("Cannot have an array of zero sized types.".to_owned()),
                 };
 
-                let len = ArrayLength::load(len)?;
+                let len = ConstExpr::load(len)?;
                 Type::Array(Box::new(converted), len)
             }
             syn::Type::BareFn(ref function) => {
