@@ -340,6 +340,14 @@ impl ConstExpr {
                 lit: syn::Lit::Int(ref len),
                 ..
             }) => Ok(ConstExpr::Value(len.base10_digits().to_string())),
+            syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Bool(syn::LitBool { value, .. }),
+                ..
+            }) => Ok(ConstExpr::Value(value.to_string())),
+            syn::Expr::Lit(syn::ExprLit {
+                lit: syn::Lit::Char(ref ch),
+                ..
+            }) => Ok(ConstExpr::Value(u32::to_string(&ch.value().into()))),
             syn::Expr::Path(ref path) => {
                 let generic_path = GenericPath::load(&path.path)?;
                 Ok(ConstExpr::Name(generic_path.export_name().to_owned()))
