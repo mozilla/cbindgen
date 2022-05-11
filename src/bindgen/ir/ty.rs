@@ -336,22 +336,16 @@ impl ConstExpr {
 
     pub fn load(expr: &syn::Expr) -> Result<Self, String> {
         match *expr {
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Bool(syn::LitBool { value, .. }),
-                ..
-            }) => Ok(ConstExpr::Value(value.to_string())),
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Int(ref len),
-                ..
-            }) => Ok(ConstExpr::Value(len.base10_digits().to_string())),
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Byte(ref byte),
-                ..
-            }) => Ok(ConstExpr::Value(u8::to_string(&byte.value()))),
-            syn::Expr::Lit(syn::ExprLit {
-                lit: syn::Lit::Char(ref ch),
-                ..
-            }) => Ok(ConstExpr::Value(u32::to_string(&ch.value().into()))),
+            syn::Expr::Lit(syn::ExprLit { ref lit, .. }) => {
+                let val = match *lit {
+                    syn::Lit::Bool(syn::LitBool { value, .. }) => value.to_string(),
+                    syn::Lit::Int(ref len) => len.base10_digits().to_string(),
+                    syn::Lit::Byte(ref byte) => u8::to_string(&byte.value()),
+                    syn::Lit::Char(ref ch) => u32::to_string(&ch.value().into()),
+                    _ => return Err(format!("can't handle const expression {:?}", lit)),
+                };
+                Ok(ConstExpr::Value(val))
+            }
             syn::Expr::Path(ref path) => {
                 let generic_path = GenericPath::load(&path.path)?;
                 Ok(ConstExpr::Name(generic_path.export_name().to_owned()))
