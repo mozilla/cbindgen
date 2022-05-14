@@ -5,4 +5,4 @@ pub const PinTest = extern struct {
     _pinned_ref: ?*i32,
 };
 
-extern fn root(_s: ?*i32, p: PinTest) anyopaque;
+pub extern fn root(_s: ?*i32, p: PinTest) anyopaque;
