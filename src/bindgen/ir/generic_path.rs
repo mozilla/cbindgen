@@ -159,7 +159,20 @@ pub enum GenericArgument {
 impl GenericArgument {
     pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> GenericArgument {
         match *self {
-            GenericArgument::Type(ref ty) => GenericArgument::Type(ty.specialize(mappings)),
+            GenericArgument::Type(ref ty) => {
+                if let Type::Path(ref path) = *ty {
+                    if path.is_single_identifier() {
+                        // See note on `GenericArgument` above: `ty` may
+                        // actually be the name of a const. Check for that now.
+                        for &(name, value) in mappings {
+                            if *name == path.path {
+                                return value.clone();
+                            }
+                        }
+                    }
+                }
+                GenericArgument::Type(ty.specialize(mappings))
+            }
             GenericArgument::Const(ref expr) => GenericArgument::Const(expr.clone()),
         }
     }
