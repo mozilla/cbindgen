@@ -43,11 +43,19 @@ struct DebugFlags {
  */
 #define DebugFlags_BIGGEST_ALLOWED (DebugFlags){ .bits = (uint32_t)(1 << 31) }
 
+struct LargeFlags {
+  uint64_t bits;
+};
+/**
+ * Flag with a very large shift that usually would be narrowed.
+ */
+#define LargeFlags_LARGE_SHIFT (LargeFlags){ .bits = (uint64_t)(1ull << 44) }
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(struct AlignFlags flags, struct DebugFlags bigger_flags);
+void root(struct AlignFlags flags, struct DebugFlags bigger_flags, struct LargeFlags largest_flags);
 
 #ifdef __cplusplus
 } // extern "C"
