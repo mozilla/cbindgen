@@ -1,3 +1,8 @@
+## 0.24.0
+
+      * Basic const generic suppor (#759, #760 #762).
+      * Suffixes on integer literals are now honored to avoid narrowing (#764).
+
 ## 0.23.0
 
       * Better support for constexpr. (#756)
