@@ -225,7 +225,8 @@ impl Struct {
             out,
             "return {} {{ static_cast<decltype(bits)>(this->bits {} {}.bits) }};",
             self.export_name(),
-            operator, other
+            operator,
+            other
         );
         out.close_brace(false);
 
@@ -554,7 +555,11 @@ impl Source for Struct {
                     self.export_name()
                 );
                 out.open_brace();
-                write!(out, "return {} {{ static_cast<decltype(bits)>(~bits) }};", self.export_name());
+                write!(
+                    out,
+                    "return {} {{ static_cast<decltype(bits)>(~bits) }};",
+                    self.export_name()
+                );
                 out.close_brace(false);
                 self.emit_bitflags_binop(constexpr_prefix, '|', &other, out);
                 self.emit_bitflags_binop(constexpr_prefix, '&', &other, out);
