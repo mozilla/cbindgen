@@ -1,3 +1,7 @@
+## 0.24.2
+
+      * Make bitfield operators use explicit constructors.
+
 ## 0.24.1
 
       * Add support for unary negation (#765).
