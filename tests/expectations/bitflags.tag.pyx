@@ -34,5 +34,6 @@ cdef extern from *:
     uint64_t bits;
   # Flag with a very large shift that usually would be narrowed.
   const LargeFlags LargeFlags_LARGE_SHIFT # = <LargeFlags>{ <uint64_t>(1ull << 44) }
+  const LargeFlags LargeFlags_INVERTED # = <LargeFlags>{ <uint64_t>~(LargeFlags_LARGE_SHIFT).bits }
 
   void root(AlignFlags flags, DebugFlags bigger_flags, LargeFlags largest_flags);

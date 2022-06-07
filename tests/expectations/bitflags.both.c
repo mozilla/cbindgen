@@ -50,5 +50,6 @@ typedef struct LargeFlags {
  * Flag with a very large shift that usually would be narrowed.
  */
 #define LargeFlags_LARGE_SHIFT (LargeFlags){ .bits = (uint64_t)(1ull << 44) }
+#define LargeFlags_INVERTED (LargeFlags){ .bits = (uint64_t)~(LargeFlags_LARGE_SHIFT).bits }
 
 void root(struct AlignFlags flags, struct DebugFlags bigger_flags, struct LargeFlags largest_flags);
