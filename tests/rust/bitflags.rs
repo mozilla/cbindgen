@@ -29,5 +29,14 @@ bitflags! {
     }
 }
 
+bitflags! {
+    #[repr(C)]
+    pub struct LargeFlags: u64 {
+        /// Flag with a very large shift that usually would be narrowed.
+        const LARGE_SHIFT = 1u64 << 44;
+    }
+}
+
+
 #[no_mangle]
-pub extern "C" fn root(flags: AlignFlags, bigger_flags: DebugFlags) {}
+pub extern "C" fn root(flags: AlignFlags, bigger_flags: DebugFlags, largest_flags: LargeFlags) {}

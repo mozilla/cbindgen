@@ -86,8 +86,42 @@ struct DebugFlags {
 /// Flag with the topmost bit set of the u32
 constexpr static const DebugFlags DebugFlags_BIGGEST_ALLOWED = DebugFlags{ /* .bits = */ (uint32_t)(1 << 31) };
 
+struct LargeFlags {
+  uint64_t bits;
+
+  explicit operator bool() const {
+    return !!bits;
+  }
+  LargeFlags operator~() const {
+    return {static_cast<decltype(bits)>(~bits)};
+  }
+  LargeFlags operator|(const LargeFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits | other.bits)};
+  }
+  LargeFlags& operator|=(const LargeFlags& other) {
+    *this = (*this | other);
+    return *this;
+  }
+  LargeFlags operator&(const LargeFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits & other.bits)};
+  }
+  LargeFlags& operator&=(const LargeFlags& other) {
+    *this = (*this & other);
+    return *this;
+  }
+  LargeFlags operator^(const LargeFlags& other) const {
+    return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
+  }
+  LargeFlags& operator^=(const LargeFlags& other) {
+    *this = (*this ^ other);
+    return *this;
+  }
+};
+/// Flag with a very large shift that usually would be narrowed.
+constexpr static const LargeFlags LargeFlags_LARGE_SHIFT = LargeFlags{ /* .bits = */ (uint64_t)(1ull << 44) };
+
 extern "C" {
 
-void root(AlignFlags flags, DebugFlags bigger_flags);
+void root(AlignFlags flags, DebugFlags bigger_flags, LargeFlags largest_flags);
 
 } // extern "C"

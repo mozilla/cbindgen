@@ -340,11 +340,18 @@ impl Literal {
                         other_code => format!(r"U'\U{:08X}'", other_code),
                     })),
                     syn::Lit::Int(ref value) => {
-                        if value.base10_parse::<i64>().is_err() {
-                            Ok(Literal::Expr(format!("{}ULL", value.base10_digits())))
-                        } else {
-                            Ok(Literal::Expr(value.base10_digits().to_string()))
-                        }
+                        let suffix = match value.suffix() {
+                            "u64" => "ull",
+                            "i64" => "ll",
+                            "u32" => "u",
+                            _ if value.base10_parse::<i64>().is_err() => "ull",
+                            _ => "",
+                        };
+                        Ok(Literal::Expr(format!(
+                            "{}{}",
+                            value.base10_digits(),
+                            suffix
+                        )))
                     }
                     syn::Lit::Float(ref value) => {
                         Ok(Literal::Expr(value.base10_digits().to_string()))
