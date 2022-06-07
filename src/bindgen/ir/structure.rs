@@ -205,6 +205,7 @@ impl Struct {
 
     fn emit_bitflags_binop<F: Write>(
         &self,
+        constexpr_prefix: &str,
         operator: char,
         other: &str,
         out: &mut SourceWriter<F>,
@@ -212,7 +213,8 @@ impl Struct {
         out.new_line();
         write!(
             out,
-            "{} operator{}(const {}& {}) const",
+            "{}{} operator{}(const {}& {}) const",
+            constexpr_prefix,
             self.export_name(),
             operator,
             self.export_name(),
@@ -531,21 +533,31 @@ impl Source for Struct {
                     wrote_start_newline = true;
                     out.new_line();
                 }
+                let constexpr_prefix = if config.constant.allow_constexpr {
+                    "constexpr "
+                } else {
+                    ""
+                };
+
                 out.new_line();
-                write!(out, "explicit operator bool() const");
+                write!(out, "{}explicit operator bool() const", constexpr_prefix);
                 out.open_brace();
                 write!(out, "return !!bits;");
                 out.close_brace(false);
 
                 out.new_line();
-                write!(out, "{} operator~() const", self.export_name());
+                write!(
+                    out,
+                    "{}{} operator~() const",
+                    constexpr_prefix,
+                    self.export_name()
+                );
                 out.open_brace();
                 write!(out, "return {{static_cast<decltype(bits)>(~bits)}};");
                 out.close_brace(false);
-
-                self.emit_bitflags_binop('|', &other, out);
-                self.emit_bitflags_binop('&', &other, out);
-                self.emit_bitflags_binop('^', &other, out);
+                self.emit_bitflags_binop(constexpr_prefix, '|', &other, out);
+                self.emit_bitflags_binop(constexpr_prefix, '&', &other, out);
+                self.emit_bitflags_binop(constexpr_prefix, '^', &other, out);
             }
 
             // Generate a serializer function that allows dumping this struct

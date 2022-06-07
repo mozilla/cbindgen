@@ -10,27 +10,27 @@
 struct AlignFlags {
   uint8_t bits;
 
-  explicit operator bool() const {
+  constexpr explicit operator bool() const {
     return !!bits;
   }
-  AlignFlags operator~() const {
+  constexpr AlignFlags operator~() const {
     return {static_cast<decltype(bits)>(~bits)};
   }
-  AlignFlags operator|(const AlignFlags& other) const {
+  constexpr AlignFlags operator|(const AlignFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits | other.bits)};
   }
   AlignFlags& operator|=(const AlignFlags& other) {
     *this = (*this | other);
     return *this;
   }
-  AlignFlags operator&(const AlignFlags& other) const {
+  constexpr AlignFlags operator&(const AlignFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits & other.bits)};
   }
   AlignFlags& operator&=(const AlignFlags& other) {
     *this = (*this & other);
     return *this;
   }
-  AlignFlags operator^(const AlignFlags& other) const {
+  constexpr AlignFlags operator^(const AlignFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
   }
   AlignFlags& operator^=(const AlignFlags& other) {
@@ -55,27 +55,27 @@ constexpr static const AlignFlags AlignFlags_MIXED_SELF = AlignFlags{ /* .bits =
 struct DebugFlags {
   uint32_t bits;
 
-  explicit operator bool() const {
+  constexpr explicit operator bool() const {
     return !!bits;
   }
-  DebugFlags operator~() const {
+  constexpr DebugFlags operator~() const {
     return {static_cast<decltype(bits)>(~bits)};
   }
-  DebugFlags operator|(const DebugFlags& other) const {
+  constexpr DebugFlags operator|(const DebugFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits | other.bits)};
   }
   DebugFlags& operator|=(const DebugFlags& other) {
     *this = (*this | other);
     return *this;
   }
-  DebugFlags operator&(const DebugFlags& other) const {
+  constexpr DebugFlags operator&(const DebugFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits & other.bits)};
   }
   DebugFlags& operator&=(const DebugFlags& other) {
     *this = (*this & other);
     return *this;
   }
-  DebugFlags operator^(const DebugFlags& other) const {
+  constexpr DebugFlags operator^(const DebugFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
   }
   DebugFlags& operator^=(const DebugFlags& other) {
@@ -89,27 +89,27 @@ constexpr static const DebugFlags DebugFlags_BIGGEST_ALLOWED = DebugFlags{ /* .b
 struct LargeFlags {
   uint64_t bits;
 
-  explicit operator bool() const {
+  constexpr explicit operator bool() const {
     return !!bits;
   }
-  LargeFlags operator~() const {
+  constexpr LargeFlags operator~() const {
     return {static_cast<decltype(bits)>(~bits)};
   }
-  LargeFlags operator|(const LargeFlags& other) const {
+  constexpr LargeFlags operator|(const LargeFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits | other.bits)};
   }
   LargeFlags& operator|=(const LargeFlags& other) {
     *this = (*this | other);
     return *this;
   }
-  LargeFlags operator&(const LargeFlags& other) const {
+  constexpr LargeFlags operator&(const LargeFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits & other.bits)};
   }
   LargeFlags& operator&=(const LargeFlags& other) {
     *this = (*this & other);
     return *this;
   }
-  LargeFlags operator^(const LargeFlags& other) const {
+  constexpr LargeFlags operator^(const LargeFlags& other) const {
     return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
   }
   LargeFlags& operator^=(const LargeFlags& other) {
