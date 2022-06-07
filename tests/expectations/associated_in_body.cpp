@@ -14,24 +14,24 @@ struct StyleAlignFlags {
     return !!bits;
   }
   constexpr StyleAlignFlags operator~() const {
-    return {static_cast<decltype(bits)>(~bits)};
+    return StyleAlignFlags { static_cast<decltype(bits)>(~bits) };
   }
   constexpr StyleAlignFlags operator|(const StyleAlignFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits | other.bits)};
+    return StyleAlignFlags { static_cast<decltype(bits)>(this->bits | other.bits) };
   }
   StyleAlignFlags& operator|=(const StyleAlignFlags& other) {
     *this = (*this | other);
     return *this;
   }
   constexpr StyleAlignFlags operator&(const StyleAlignFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits & other.bits)};
+    return StyleAlignFlags { static_cast<decltype(bits)>(this->bits & other.bits) };
   }
   StyleAlignFlags& operator&=(const StyleAlignFlags& other) {
     *this = (*this & other);
     return *this;
   }
   constexpr StyleAlignFlags operator^(const StyleAlignFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
+    return StyleAlignFlags { static_cast<decltype(bits)>(this->bits ^ other.bits) };
   }
   StyleAlignFlags& operator^=(const StyleAlignFlags& other) {
     *this = (*this ^ other);

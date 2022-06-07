@@ -14,24 +14,24 @@ struct AlignFlags {
     return !!bits;
   }
   constexpr AlignFlags operator~() const {
-    return {static_cast<decltype(bits)>(~bits)};
+    return AlignFlags { static_cast<decltype(bits)>(~bits) };
   }
   constexpr AlignFlags operator|(const AlignFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits | other.bits)};
+    return AlignFlags { static_cast<decltype(bits)>(this->bits | other.bits) };
   }
   AlignFlags& operator|=(const AlignFlags& other) {
     *this = (*this | other);
     return *this;
   }
   constexpr AlignFlags operator&(const AlignFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits & other.bits)};
+    return AlignFlags { static_cast<decltype(bits)>(this->bits & other.bits) };
   }
   AlignFlags& operator&=(const AlignFlags& other) {
     *this = (*this & other);
     return *this;
   }
   constexpr AlignFlags operator^(const AlignFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
+    return AlignFlags { static_cast<decltype(bits)>(this->bits ^ other.bits) };
   }
   AlignFlags& operator^=(const AlignFlags& other) {
     *this = (*this ^ other);
@@ -59,24 +59,24 @@ struct DebugFlags {
     return !!bits;
   }
   constexpr DebugFlags operator~() const {
-    return {static_cast<decltype(bits)>(~bits)};
+    return DebugFlags { static_cast<decltype(bits)>(~bits) };
   }
   constexpr DebugFlags operator|(const DebugFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits | other.bits)};
+    return DebugFlags { static_cast<decltype(bits)>(this->bits | other.bits) };
   }
   DebugFlags& operator|=(const DebugFlags& other) {
     *this = (*this | other);
     return *this;
   }
   constexpr DebugFlags operator&(const DebugFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits & other.bits)};
+    return DebugFlags { static_cast<decltype(bits)>(this->bits & other.bits) };
   }
   DebugFlags& operator&=(const DebugFlags& other) {
     *this = (*this & other);
     return *this;
   }
   constexpr DebugFlags operator^(const DebugFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
+    return DebugFlags { static_cast<decltype(bits)>(this->bits ^ other.bits) };
   }
   DebugFlags& operator^=(const DebugFlags& other) {
     *this = (*this ^ other);
@@ -93,24 +93,24 @@ struct LargeFlags {
     return !!bits;
   }
   constexpr LargeFlags operator~() const {
-    return {static_cast<decltype(bits)>(~bits)};
+    return LargeFlags { static_cast<decltype(bits)>(~bits) };
   }
   constexpr LargeFlags operator|(const LargeFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits | other.bits)};
+    return LargeFlags { static_cast<decltype(bits)>(this->bits | other.bits) };
   }
   LargeFlags& operator|=(const LargeFlags& other) {
     *this = (*this | other);
     return *this;
   }
   constexpr LargeFlags operator&(const LargeFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits & other.bits)};
+    return LargeFlags { static_cast<decltype(bits)>(this->bits & other.bits) };
   }
   LargeFlags& operator&=(const LargeFlags& other) {
     *this = (*this & other);
     return *this;
   }
   constexpr LargeFlags operator^(const LargeFlags& other) const {
-    return {static_cast<decltype(bits)>(this->bits ^ other.bits)};
+    return LargeFlags { static_cast<decltype(bits)>(this->bits ^ other.bits) };
   }
   LargeFlags& operator^=(const LargeFlags& other) {
     *this = (*this ^ other);
