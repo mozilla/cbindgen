@@ -1,3 +1,8 @@
+## 0.24.1
+
+      * Add support for unary negation (#765).
+      * Make more bitfield operators constexpr (#765).
+
 ## 0.24.0
 
       * Basic const generic support (#759, #760 #762).
