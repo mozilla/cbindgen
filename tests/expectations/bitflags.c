@@ -43,4 +43,12 @@ typedef struct {
  */
 #define DebugFlags_BIGGEST_ALLOWED (DebugFlags){ .bits = (uint32_t)(1 << 31) }
 
-void root(AlignFlags flags, DebugFlags bigger_flags);
+typedef struct {
+  uint64_t bits;
+} LargeFlags;
+/**
+ * Flag with a very large shift that usually would be narrowed.
+ */
+#define LargeFlags_LARGE_SHIFT (LargeFlags){ .bits = (uint64_t)(1ull << 44) }
+
+void root(AlignFlags flags, DebugFlags bigger_flags, LargeFlags largest_flags);

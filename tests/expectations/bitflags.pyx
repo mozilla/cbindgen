@@ -30,4 +30,9 @@ cdef extern from *:
   # Flag with the topmost bit set of the u32
   const DebugFlags DebugFlags_BIGGEST_ALLOWED # = <DebugFlags>{ <uint32_t>(1 << 31) }
 
-  void root(AlignFlags flags, DebugFlags bigger_flags);
+  ctypedef struct LargeFlags:
+    uint64_t bits;
+  # Flag with a very large shift that usually would be narrowed.
+  const LargeFlags LargeFlags_LARGE_SHIFT # = <LargeFlags>{ <uint64_t>(1ull << 44) }
+
+  void root(AlignFlags flags, DebugFlags bigger_flags, LargeFlags largest_flags);
