@@ -417,6 +417,13 @@ impl Literal {
             syn::Expr::Unary(syn::ExprUnary {
                 ref op, ref expr, ..
             }) => match *op {
+                UnOp::Not(_) => {
+                    let val = Self::load(expr)?;
+                    Ok(Literal::PostfixUnaryOp {
+                        op: "~",
+                        value: Box::new(val),
+                    })
+                }
                 UnOp::Neg(_) => {
                     let val = Self::load(expr)?;
                     Ok(Literal::PostfixUnaryOp {

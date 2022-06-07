@@ -119,6 +119,7 @@ struct LargeFlags {
 };
 /// Flag with a very large shift that usually would be narrowed.
 constexpr static const LargeFlags LargeFlags_LARGE_SHIFT = LargeFlags{ /* .bits = */ (uint64_t)(1ull << 44) };
+constexpr static const LargeFlags LargeFlags_INVERTED = LargeFlags{ /* .bits = */ (uint64_t)~(LargeFlags_LARGE_SHIFT).bits };
 
 extern "C" {
 
