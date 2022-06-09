@@ -67,6 +67,7 @@ impl Library {
                 Default::default(),
                 Default::default(),
                 Default::default(),
+                Default::default(),
                 true,
             ));
         }
@@ -147,6 +148,7 @@ impl Library {
         Ok(Bindings::new(
             self.config,
             self.structs,
+            self.typedefs,
             constants,
             globals,
             items,
