@@ -1,3 +1,7 @@
+## 0.24.3
+
+      * Make struct expressions correctly generated through typedefs (#768).
+
 ## 0.24.2
 
       * Make bitfield operators use explicit constructors.
