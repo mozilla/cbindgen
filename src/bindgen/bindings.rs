@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
@@ -12,7 +13,7 @@ use std::rc::Rc;
 
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::ir::{
-    Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct,
+    Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct, Typedef,
 };
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -22,6 +23,7 @@ pub struct Bindings {
     /// The map from path to struct, used to lookup whether a given type is a
     /// transparent struct. This is needed to generate code for constants.
     struct_map: ItemMap<Struct>,
+    typedef_map: ItemMap<Typedef>,
     struct_fileds_memo: RefCell<HashMap<BindgenPath, Rc<Vec<String>>>>,
     globals: Vec<Static>,
     constants: Vec<Constant>,
@@ -39,9 +41,11 @@ enum NamespaceOperation {
 }
 
 impl Bindings {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         config: Config,
         struct_map: ItemMap<Struct>,
+        typedef_map: ItemMap<Typedef>,
         constants: Vec<Constant>,
         globals: Vec<Static>,
         items: Vec<ItemContainer>,
@@ -51,6 +55,7 @@ impl Bindings {
         Bindings {
             config,
             struct_map,
+            typedef_map,
             struct_fileds_memo: Default::default(),
             globals,
             constants,
@@ -67,9 +72,30 @@ impl Bindings {
         any
     }
 
+    /// Peels through typedefs to allow resolving structs.
+    fn resolved_struct_path<'a>(&self, path: &'a BindgenPath) -> Cow<'a, BindgenPath> {
+        use crate::bindgen::ir::Type;
+
+        let mut resolved_path = Cow::Borrowed(path);
+        loop {
+            let mut found = None;
+            self.typedef_map.for_items(&resolved_path, |item| {
+                if let Type::Path(ref p) = item.aliased {
+                    found = Some(p.path().clone());
+                }
+            });
+            resolved_path = match found {
+                Some(p) => Cow::Owned(p),
+                None => break,
+            }
+        }
+        resolved_path
+    }
+
     pub fn struct_exists(&self, path: &BindgenPath) -> bool {
         let mut any = false;
-        self.struct_map.for_items(path, |_| any = true);
+        self.struct_map
+            .for_items(&self.resolved_struct_path(path), |_| any = true);
         any
     }
 
@@ -79,8 +105,10 @@ impl Bindings {
             return memo.clone();
         }
 
+        let resolved_path = self.resolved_struct_path(path);
+
         let mut fields = Vec::<String>::new();
-        self.struct_map.for_items(path, |st| {
+        self.struct_map.for_items(&resolved_path, |st| {
             let mut pos: usize = 0;
             for field in &st.fields {
                 if let Some(found_pos) = fields.iter().position(|v| *v == field.name) {
@@ -94,6 +122,9 @@ impl Bindings {
 
         let fields = Rc::new(fields);
         memos.insert(path.clone(), fields.clone());
+        if let Cow::Owned(p) = resolved_path {
+            memos.insert(p, fields.clone());
+        }
         fields
     }
 
