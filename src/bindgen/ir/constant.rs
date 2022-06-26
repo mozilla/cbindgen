@@ -548,7 +548,7 @@ impl Literal {
                     Language::C => write!(out, "({})", export_name),
                     Language::Cxx => write!(out, "{}", export_name),
                     Language::Cython => write!(out, "<{}>", export_name),
-                    Language::Zig => write!(out, ":{} = ", export_name),
+                    Language::Zig => write!(out, ":{} = .", export_name),
                 }
 
                 write!(out, "{{ ");
@@ -811,7 +811,11 @@ impl Constant {
             Language::Zig => {
                 out.write(config.style.zig_def());
                 self.ty.write(config, out);
-                write!(out, "{} = ", name);
+                if let Literal::Struct { .. } = &self.value {
+                    write!(out, "{} ", name);
+                } else {
+                    write!(out, "{} = ", name);
+                }
                 value.write(config, out);
                 write!(out, ";");
             }

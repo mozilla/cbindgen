@@ -71,13 +71,13 @@ impl Source for Field {
         cdecl::write_field(out, &self.ty, &self.name, config);
         // Cython extern declarations don't manage layouts, layouts are defined entierly by the
         // corresponding C code. So we can omit bitfield sizes which are not supported by Cython.
-        if config.language != Language::Cython || config.language != Language::Zig {
+        if config.language != Language::Cython && config.language != Language::Zig {
             if let Some(bitfield) = self.annotations.atom("bitfield") {
                 write!(out, ": {}", bitfield.unwrap_or_default());
             }
         }
 
-        if config.language != Language::Cython || config.language != Language::Zig {
+        if config.language != Language::Cython && config.language != Language::Zig {
             condition.write_after(config, out);
             // FIXME(#634): `write_vertical_source_list` should support
             // configuring list elements natively. For now we print a newline
