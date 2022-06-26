@@ -439,7 +439,7 @@ impl Source for Struct {
             write!(out, "{} = extern struct", self.export_name());
         } else {
             out.write("struct");
-        } 
+        }
 
         if config.language != Language::Cython {
             if let Some(align) = self.alignment {
@@ -464,8 +464,10 @@ impl Source for Struct {
             }
         }
 
-        if config.language != Language::Zig && config.language != Language::C {
-            write!(out, " {}", self.export_name());
+        if config.language != Language::C || config.style.generate_tag() {
+            if config.language != Language::Zig {
+                write!(out, " {}", self.export_name);
+            }
         }
 
         out.open_brace();
@@ -476,7 +478,14 @@ impl Source for Struct {
             out.new_line();
         }
 
-        out.write_vertical_source_list(&self.fields, ListType::Cap(if config.language != Language::Zig {";"}else{","}));
+        out.write_vertical_source_list(
+            &self.fields,
+            ListType::Cap(if config.language != Language::Zig {
+                ";"
+            } else {
+                ","
+            }),
+        );
         if config.language == Language::Cython && self.fields.is_empty() {
             out.write("pass");
         }

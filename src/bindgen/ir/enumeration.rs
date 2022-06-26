@@ -863,7 +863,12 @@ impl Enum {
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
             Language::Zig => {
-                write!(out, "{}{} = extern ", config.style.zig_def(), self.export_name());
+                write!(
+                    out,
+                    "{}{} = extern ",
+                    config.style.zig_def(),
+                    self.export_name()
+                );
             }
         }
 
@@ -939,7 +944,7 @@ impl Enum {
 
         if config.language != Language::Zig {
             write!(out, "{} tag;", tag_name);
-        }else {
+        } else {
             write!(out, "tag: {},", tag_name);
         }
 
@@ -978,14 +983,21 @@ impl Enum {
                     // support unnamed structs.
                     // For the same reason with Cython we can omit per-variant tags (the first
                     // field) to avoid extra noise, the main `tag` is enough in this case.
-                    if config.language != Language::Cython {
+                    if config.language != Language::Cython && config.language != Language::Zig {
                         out.write("struct");
                         out.open_brace();
                     }
                     let start_field =
                         usize::from(inline_tag_field && config.language == Language::Cython);
-                    out.write_vertical_source_list(&body.fields[start_field..], ListType::Cap(";"));
-                    if config.language != Language::Cython {
+                    out.write_vertical_source_list(
+                        &body.fields[start_field..],
+                        ListType::Cap(if config.language != Language::Zig {
+                            ";"
+                        } else {
+                            ","
+                        }),
+                    );
+                    if config.language != Language::Cython && config.language != Language::Zig {
                         out.close_brace(true);
                     }
                 } else if config.language == Language::Zig {
