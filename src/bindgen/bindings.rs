@@ -138,7 +138,8 @@ impl Bindings {
             if let Some(parent) = path::Path::new(path.as_ref()).parent() {
                 fs::create_dir_all(parent).unwrap();
             }
-            self.write(File::create(path).unwrap());
+            let mut out = File::create(path).unwrap();
+            self.write(&mut out);
             return true;
         }
 
@@ -290,7 +291,7 @@ impl Bindings {
         }
     }
 
-    pub fn write<F: Write>(&self, file: F) {
+    pub fn write<F: Write>(&self, file: &mut F) {
         if self.noop {
             return;
         }

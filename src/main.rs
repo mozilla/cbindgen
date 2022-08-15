@@ -308,7 +308,8 @@ fn main() {
             }
         }
         _ => {
-            bindings.write(io::stdout());
+            let mut out = io::stdout();
+            bindings.write(&mut out);
         }
     }
 }
