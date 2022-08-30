@@ -34,7 +34,7 @@ pub struct Bindings {
     noop: bool,
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 enum NamespaceOperation {
     Open,
     Close,
