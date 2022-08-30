@@ -1,8 +1,7 @@
-#include <cstdarg>
-#include <cstdint>
-#include <cstdlib>
-#include <ostream>
-#include <new>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 #ifndef NO_RETURN_ATTR
   #ifdef __GNUC__
     #define NO_RETURN_ATTR __attribute__ ((noreturn))
@@ -16,10 +15,6 @@ struct Example {
   void (*f)(uintptr_t, uintptr_t) NO_RETURN_ATTR;
 };
 
-extern "C" {
+void loop_forever(void) NO_RETURN_ATTR;
 
-void loop_forever() NO_RETURN_ATTR;
-
-uint8_t normal_return(Example arg, void (*other)(uint8_t) NO_RETURN_ATTR);
-
-} // extern "C"
+uint8_t normal_return(struct Example arg, void (*other)(uint8_t) NO_RETURN_ATTR);
