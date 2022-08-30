@@ -201,13 +201,13 @@ pub trait ToCondition: Sized {
     fn to_condition(&self, config: &Config) -> Option<Condition>;
 }
 
-impl<'a> ToCondition for Option<Cfg> {
+impl ToCondition for Option<Cfg> {
     fn to_condition(&self, config: &Config) -> Option<Condition> {
         self.as_ref()?.to_condition(config)
     }
 }
 
-impl<'a> ToCondition for Cfg {
+impl ToCondition for Cfg {
     fn to_condition(&self, config: &Config) -> Option<Condition> {
         match *self {
             Cfg::Boolean(ref cfg_name) => {
