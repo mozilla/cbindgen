@@ -11,6 +11,10 @@
 #endif // NO_RETURN_ATTR
 
 
+typedef struct {
+  void (*f)(uintptr_t, uintptr_t) NO_RETURN_ATTR;
+} Example;
+
 void loop_forever(void) NO_RETURN_ATTR;
 
-uint8_t normal_return(void);
+uint8_t normal_return(Example arg, void (*other)(uint8_t) NO_RETURN_ATTR);

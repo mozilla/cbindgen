@@ -20,13 +20,17 @@ enum CDeclarator {
         is_ref: bool,
     },
     Array(String),
-    Func(Vec<(Option<String>, CDecl)>, bool),
+    Func {
+        args: Vec<(Option<String>, CDecl)>,
+        layout_vertical: bool,
+        never_return: bool,
+    },
 }
 
 impl CDeclarator {
     fn is_ptr(&self) -> bool {
         match self {
-            CDeclarator::Ptr { .. } | CDeclarator::Func(..) => true,
+            CDeclarator::Ptr { .. } | CDeclarator::Func { .. } => true,
             _ => false,
         }
     }
@@ -92,8 +96,11 @@ impl CDecl {
                 )
             })
             .collect();
-        self.declarators
-            .push(CDeclarator::Func(args, layout_vertical));
+        self.declarators.push(CDeclarator::Func {
+            args,
+            layout_vertical,
+            never_return: f.never_return,
+        });
         self.build_type(&f.ret, false, config);
     }
 
@@ -162,6 +169,7 @@ impl CDecl {
                 ref ret,
                 ref args,
                 is_nullable: _,
+                never_return,
             } => {
                 let args = args
                     .iter()
@@ -172,7 +180,11 @@ impl CDecl {
                     is_nullable: true,
                     is_ref: false,
                 });
-                self.declarators.push(CDeclarator::Func(args, false));
+                self.declarators.push(CDeclarator::Func {
+                    args,
+                    layout_vertical: false,
+                    never_return: *never_return,
+                });
                 self.build_type(ret, false, config);
             }
         }
@@ -231,7 +243,7 @@ impl CDecl {
                         out.write("(");
                     }
                 }
-                CDeclarator::Func(..) => {
+                CDeclarator::Func { .. } => {
                     if next_is_pointer {
                         out.write("(");
                     }
@@ -262,7 +274,11 @@ impl CDecl {
 
                     last_was_pointer = false;
                 }
-                CDeclarator::Func(ref args, layout_vertical) => {
+                CDeclarator::Func {
+                    ref args,
+                    layout_vertical,
+                    never_return,
+                } => {
                     if last_was_pointer {
                         out.write(")");
                     }
@@ -299,6 +315,12 @@ impl CDecl {
                         }
                     }
                     out.write(")");
+
+                    if never_return && config.language != Language::Cython {
+                        if let Some(ref no_return_attr) = config.function.no_return {
+                            out.write_fmt(format_args!(" {}", no_return_attr));
+                        }
+                    }
 
                     last_was_pointer = true;
                 }

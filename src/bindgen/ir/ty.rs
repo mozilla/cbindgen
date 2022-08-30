@@ -407,6 +407,7 @@ pub enum Type {
         ret: Box<Type>,
         args: Vec<(Option<String>, Type)>,
         is_nullable: bool,
+        never_return: bool,
     },
 }
 
@@ -418,6 +419,22 @@ impl Type {
             is_nullable: false,
             is_ref: true,
         }
+    }
+
+    pub fn load_from_output(output: &syn::ReturnType) -> Result<(Type, bool), String> {
+        let mut never_return = false;
+        let ty = match output {
+            syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
+            syn::ReturnType::Type(_, ref ty) => {
+                if let syn::Type::Never(_) = ty.as_ref() {
+                    never_return = true;
+                    Type::Primitive(PrimitiveType::Void)
+                } else {
+                    Type::load(ty)?.unwrap_or(Type::Primitive(PrimitiveType::Void))
+                }
+            }
+        };
+        Ok((ty, never_return))
     }
 
     pub fn load(ty: &syn::Type) -> Result<Option<Type>, String> {
@@ -507,21 +524,12 @@ impl Type {
                         })
                     })
                 })?;
-                let ret = match function.output {
-                    syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
-                    syn::ReturnType::Type(_, ref ty) => {
-                        if let Some(x) = Type::load(ty)? {
-                            x
-                        } else {
-                            Type::Primitive(PrimitiveType::Void)
-                        }
-                    }
-                };
-
+                let (ret, never_return) = Type::load_from_output(&function.output)?;
                 Type::FuncPtr {
                     ret: Box::new(ret),
                     args,
                     is_nullable: false,
+                    never_return,
                 }
             }
             syn::Type::Tuple(ref tuple) => {
@@ -585,10 +593,12 @@ impl Type {
                 ref ret,
                 ref args,
                 is_nullable: false,
+                never_return,
             } => Some(Type::FuncPtr {
                 ret: ret.clone(),
                 args: args.clone(),
                 is_nullable: true,
+                never_return,
             }),
             _ => None,
         }
@@ -784,6 +794,7 @@ impl Type {
                 ref ret,
                 ref args,
                 is_nullable,
+                never_return,
             } => Type::FuncPtr {
                 ret: Box::new(ret.specialize(mappings)),
                 args: args
@@ -792,6 +803,7 @@ impl Type {
                     .map(|(name, ty)| (name, ty.specialize(mappings)))
                     .collect(),
                 is_nullable,
+                never_return,
             },
         }
     }
