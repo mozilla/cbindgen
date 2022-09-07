@@ -306,20 +306,12 @@ impl CDecl {
                     last_was_pointer = true;
 
                     if config.language == Language::Zig {
-                        if self.type_name.contains("u8")
-                            || self.type_name.contains("const u8")
-                            || self.type_name.contains("CStr")
-                            || self.type_name.contains("c_char")
-                        {
+                        if self.type_name.contains("u8") || self.type_name.contains("const u8") {
                             write!(out, ": ?[*:0]{}", self.type_name);
                         } else if is_functors {
                             out.write(": ?fn");
                         } else {
                             write!(out, ": ?*{}", self.type_name);
-                        }
-
-                        if self.type_name.contains("c_void") && !last_was_pointer {
-                            out.write(": callconv(.C) void");
                         }
                     }
                 }
@@ -351,7 +343,7 @@ impl CDecl {
                     if last_was_pointer && config.language != Language::Zig {
                         out.write(")");
                     }
-                    is_functors = true;
+                    is_functors = false;
 
                     out.write("(");
                     if args.is_empty() && config.language == Language::C {
@@ -393,7 +385,11 @@ impl CDecl {
                     }
 
                     if config.language == Language::Zig {
-                        write!(out, " {}", self.type_name);
+                        if !last_was_pointer && self.type_name.contains("anyopaque") {
+                            out.write(" callconv(.C) void")
+                        } else {
+                            write!(out, " {}", self.type_name);
+                        }
                     }
 
                     last_was_pointer = true;
