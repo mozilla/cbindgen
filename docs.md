@@ -1017,6 +1017,16 @@ derive_tagged_enum_copy_assignment = false
 # default: false
 private_default_tagged_enum_constructor = false
 
+# Whether to only output a single tag enum for generic tagged enums. This only
+# applies when generics are being monomorphized (i.e. not C++).
+#
+# For example, an enum monomorph `COption<u8>` would normally generate a tag enum
+# `COption_u8_Tag`, but with this option enabled all monomorphs of `COption<T>` will
+# use the same tag enum, named `COption_Tag`.
+#
+# default: false
+merge_generic_tags = false
+
 
 
 
