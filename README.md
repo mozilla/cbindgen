@@ -49,6 +49,12 @@ cargo install --force cbindgen
 
 (--force just makes it update to the latest cbindgen if it's already installed)
 
+Or with Homebrew, run
+
+```text
+brew install cbindgen
+```
+
 To use cbindgen you need two things:
 
 * A configuration (cbindgen.toml, which can be empty to start)
