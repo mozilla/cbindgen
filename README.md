@@ -85,6 +85,7 @@ in production:
 * [milksnake](https://github.com/getsentry/milksnake)
 * [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/gfx/webrender_bindings/webrender_ffi_generated.h))
 * [stylo](https://searchfox.org/mozilla-central/source/layout/style) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/layout/style/ServoStyleConsts.h))
+* [maturin](https://github.com/PyO3/maturin)
 
 If you're using `cbindgen` and would like to be added to this list, please open
 a pull request!
