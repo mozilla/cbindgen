@@ -8,6 +8,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationType;
 use crate::bindgen::ir::{ConstExpr, Function, GenericArgument, Type};
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
+use crate::bindgen::config::Layout;
 
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.
@@ -22,7 +23,7 @@ enum CDeclarator {
     Array(String),
     Func {
         args: Vec<(Option<String>, CDecl)>,
-        layout_vertical: bool,
+        layout: Layout,
         never_return: bool,
     },
 }
@@ -79,13 +80,13 @@ impl CDecl {
         cdecl
     }
 
-    fn from_func(f: &Function, layout_vertical: bool, config: &Config) -> CDecl {
+    fn from_func(f: &Function, layout: Layout, config: &Config) -> CDecl {
         let mut cdecl = CDecl::new();
-        cdecl.build_func(f, layout_vertical, config);
+        cdecl.build_func(f, layout, config);
         cdecl
     }
 
-    fn build_func(&mut self, f: &Function, layout_vertical: bool, config: &Config) {
+    fn build_func(&mut self, f: &Function, layout: Layout, config: &Config) {
         let args = f
             .args
             .iter()
@@ -98,7 +99,7 @@ impl CDecl {
             .collect();
         self.declarators.push(CDeclarator::Func {
             args,
-            layout_vertical,
+            layout,
             never_return: f.never_return,
         });
         self.build_type(&f.ret, false, config);
@@ -182,7 +183,7 @@ impl CDecl {
                 });
                 self.declarators.push(CDeclarator::Func {
                     args,
-                    layout_vertical: false,
+                    layout: config.function.args.clone(),
                     never_return: *never_return,
                 });
                 self.build_type(ret, false, config);
@@ -276,7 +277,7 @@ impl CDecl {
                 }
                 CDeclarator::Func {
                     ref args,
-                    layout_vertical,
+                    ref layout,
                     never_return,
                 } => {
                     if last_was_pointer {
@@ -287,7 +288,8 @@ impl CDecl {
                     if args.is_empty() && config.language == Language::C {
                         out.write("void");
                     }
-                    if layout_vertical {
+
+                    fn write_vertical<F:Write>(out: &mut SourceWriter<F>, config: &Config, args: &Vec<(Option<String>, CDecl)>) {
                         let align_length = out.line_length_for_align();
                         out.push_set_spaces(align_length);
                         for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
@@ -302,7 +304,9 @@ impl CDecl {
                             arg_ty.write(out, arg_ident, config);
                         }
                         out.pop_tab();
-                    } else {
+                    }
+
+                    fn write_horizontal<F:Write>(out: &mut SourceWriter<F>, config: &Config, args: &Vec<(Option<String>, CDecl)>) {
                         for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(", ");
@@ -312,6 +316,19 @@ impl CDecl {
                             let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
 
                             arg_ty.write(out, arg_ident, config);
+                        }
+                    }
+
+
+                    match layout {
+                        Layout::Vertical => write_vertical(out, config, args),
+                        Layout::Horizontal => write_horizontal(out, config, args),
+                        Layout::Auto => {
+                           if out.line_length_for_align() + out.measure(|out| write_horizontal(out, config,args)) > config.line_length {
+                               write_vertical(out, config, args)
+                           } else {
+                               write_horizontal(out, config, args)
+                           }
                         }
                     }
                     out.write(")");
@@ -332,10 +349,10 @@ impl CDecl {
 pub fn write_func<F: Write>(
     out: &mut SourceWriter<F>,
     f: &Function,
-    layout_vertical: bool,
+    layout: Layout,
     config: &Config,
 ) {
-    CDecl::from_func(f, layout_vertical, config).write(out, Some(f.path().name()), config);
+    CDecl::from_func(f, layout, config).write(out, Some(f.path().name()), config);
 }
 
 pub fn write_field<F: Write>(out: &mut SourceWriter<F>, t: &Type, ident: &str, config: &Config) {
