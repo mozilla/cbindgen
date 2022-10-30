@@ -514,7 +514,7 @@ documentation_style = "doxy"
 # * "full": The full documentation.
 #
 # default: "full"
-documentation_style = "short"
+documentation_length = "short"
 
 
 
