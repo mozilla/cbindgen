@@ -331,13 +331,11 @@ impl CDecl {
                         Layout::Vertical => write_vertical(out, config, args),
                         Layout::Horizontal => write_horizontal(out, config, args),
                         Layout::Auto => {
-                            if out.line_length_for_align()
-                                + out.measure(|out| write_horizontal(out, config, args))
-                                > config.line_length
-                            {
+                            if !out.try_write(
+                                |out| write_horizontal(out, config, args),
+                                config.line_length,
+                            ) {
                                 write_vertical(out, config, args)
-                            } else {
-                                write_horizontal(out, config, args)
                             }
                         }
                     }
