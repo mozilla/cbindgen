@@ -113,7 +113,7 @@ fn load_bindings(input: &Path, matches: &ArgMatches) -> Result<Bindings, Error> 
             let binding_crate_dir = lib.find_crate_dir(&lib.binding_crate_ref());
 
             if let Some(binding_crate_dir) = binding_crate_dir {
-                Config::from_root_or_default(&binding_crate_dir)
+                Config::from_root_or_default(binding_crate_dir)
             } else {
                 // This shouldn't happen
                 Config::from_root_or_default(input)

@@ -112,13 +112,13 @@ impl<'a> Mangler<'a> {
                 } else {
                     Separator::BeginMutPtr
                 });
-                self.append_mangled_type(&**ty, last);
+                self.append_mangled_type(ty, last);
             }
             Type::FuncPtr {
                 ref ret, ref args, ..
             } => {
                 self.push(Separator::BeginFn);
-                self.append_mangled_type(&**ret, args.is_empty());
+                self.append_mangled_type(ret, args.is_empty());
                 for (i, arg) in args.iter().enumerate() {
                     self.push(Separator::BetweenFnArg);
                     let last = last && i == args.len() - 1;

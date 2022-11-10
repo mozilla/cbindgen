@@ -1175,7 +1175,7 @@ impl Enum {
                 write!(out, "static {} {}(", self.export_name, variant.export_name);
 
                 if let VariantBody::Body { ref body, .. } = variant.body {
-                    let skip_fields = if body.has_tag_field { 1 } else { 0 };
+                    let skip_fields = body.has_tag_field as usize;
                     let vec: Vec<_> = body
                         .fields
                         .iter()
@@ -1202,7 +1202,7 @@ impl Enum {
                     ..
                 } = variant.body
                 {
-                    let skip_fields = if body.has_tag_field { 1 } else { 0 };
+                    let skip_fields = body.has_tag_field as usize;
                     for field in body.fields.iter().skip(skip_fields) {
                         out.new_line();
                         match field.ty {
@@ -1257,7 +1257,7 @@ impl Enum {
                         VariantBody::Empty(..) => return,
                     };
 
-                    let skip_fields = if body.has_tag_field { 1 } else { 0 };
+                    let skip_fields = body.has_tag_field as usize;
                     let field_count = body.fields.len() - skip_fields;
                     if field_count == 0 {
                         return;
