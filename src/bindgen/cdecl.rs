@@ -4,11 +4,11 @@
 
 use std::io::Write;
 
+use crate::bindgen::config::Layout;
 use crate::bindgen::declarationtyperesolver::DeclarationType;
 use crate::bindgen::ir::{ConstExpr, Function, GenericArgument, Type};
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
-use crate::bindgen::config::Layout;
 
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.
@@ -289,7 +289,11 @@ impl CDecl {
                         out.write("void");
                     }
 
-                    fn write_vertical<F:Write>(out: &mut SourceWriter<F>, config: &Config, args: &Vec<(Option<String>, CDecl)>) {
+                    fn write_vertical<F: Write>(
+                        out: &mut SourceWriter<F>,
+                        config: &Config,
+                        args: &Vec<(Option<String>, CDecl)>,
+                    ) {
                         let align_length = out.line_length_for_align();
                         out.push_set_spaces(align_length);
                         for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
@@ -306,7 +310,11 @@ impl CDecl {
                         out.pop_tab();
                     }
 
-                    fn write_horizontal<F:Write>(out: &mut SourceWriter<F>, config: &Config, args: &Vec<(Option<String>, CDecl)>) {
+                    fn write_horizontal<F: Write>(
+                        out: &mut SourceWriter<F>,
+                        config: &Config,
+                        args: &Vec<(Option<String>, CDecl)>,
+                    ) {
                         for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(", ");
@@ -319,16 +327,18 @@ impl CDecl {
                         }
                     }
 
-
                     match layout {
                         Layout::Vertical => write_vertical(out, config, args),
                         Layout::Horizontal => write_horizontal(out, config, args),
                         Layout::Auto => {
-                           if out.line_length_for_align() + out.measure(|out| write_horizontal(out, config,args)) > config.line_length {
-                               write_vertical(out, config, args)
-                           } else {
-                               write_horizontal(out, config, args)
-                           }
+                            if out.line_length_for_align()
+                                + out.measure(|out| write_horizontal(out, config, args))
+                                > config.line_length
+                            {
+                                write_vertical(out, config, args)
+                            } else {
+                                write_horizontal(out, config, args)
+                            }
                         }
                     }
                     out.write(")");
