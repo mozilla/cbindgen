@@ -150,6 +150,12 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_cpp_compat(mut self, cpp_compat: bool) -> Builder {
+        self.config.cpp_compat = cpp_compat;
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_style(mut self, style: Style) -> Builder {
         self.config.style = style;
         self
