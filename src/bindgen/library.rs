@@ -54,24 +54,6 @@ impl Library {
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
-        // If macro expansion is enabled, then cbindgen will attempt to build the crate
-        // and will run its build script which may run cbindgen again. That second run may start
-        // infinite recursion, or overwrite previously written files with bindings.
-        // So if we are called recursively, we are skipping the whole generation
-        // and produce "noop" bindings that won't be able to overwrite anything.
-        if std::env::var("_CBINDGEN_IS_RUNNING").is_ok() {
-            return Ok(Bindings::new(
-                self.config,
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                Default::default(),
-                true,
-            ));
-        }
-
         self.transfer_annotations();
         self.simplify_standard_types();
 
