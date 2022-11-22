@@ -72,7 +72,7 @@ jobs:
         pip install Cython==0.29.*
 
     - name: Install Zig
-      uses: goto-bus-stop/setup-zig@v1
+      uses: goto-bus-stop/setup-zig@v2
       with:
         version: master
 

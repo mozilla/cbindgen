@@ -135,10 +135,10 @@ fn compile(
         }
         Language::Zig => {
             command.arg("build-obj");
-            command.arg("-O").arg("ReleaseSafe");
+            command.arg("-O").arg("ReleaseSmall");
             command.arg("-fsingle-threaded");
-            command.arg("-name").arg(&object);
-            command.arg("-femit-bin").arg(cbindgen_output);
+            command.arg("--name").arg(&object);
+            command.arg("-femit-bin=").arg(cbindgen_output);
         }
     }
 
