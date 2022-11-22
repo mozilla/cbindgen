@@ -248,7 +248,7 @@ impl Source for Function {
                     }
                 }
             }
-            cdecl::write_func(out, func, false, config);
+            cdecl::write_func(out, func, Layout::Horizontal, config);
 
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
@@ -296,7 +296,7 @@ impl Source for Function {
                     }
                 }
             }
-            cdecl::write_func(out, func, true, config);
+            cdecl::write_func(out, func, Layout::Vertical, config);
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
                     out.new_line();
@@ -315,14 +315,14 @@ impl Source for Function {
             condition.write_after(config, out);
         }
 
-        let option_1 = out.measure(|out| write_1(self, config, out));
-
-        if (config.function.args == Layout::Auto && option_1 <= config.line_length)
-            || config.function.args == Layout::Horizontal
-        {
-            write_1(self, config, out);
-        } else {
-            write_2(self, config, out);
+        match config.function.args {
+            Layout::Horizontal => write_1(self, config, out),
+            Layout::Vertical => write_2(self, config, out),
+            Layout::Auto => {
+                if !out.try_write(|out| write_1(self, config, out), config.line_length) {
+                    write_2(self, config, out)
+                }
+            }
         }
     }
 }

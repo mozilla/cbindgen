@@ -294,10 +294,7 @@ impl Item for Struct {
 
         // Rename the types used in fields
         {
-            let fields = self
-                .fields
-                .iter_mut()
-                .skip(if self.has_tag_field { 1 } else { 0 });
+            let fields = self.fields.iter_mut().skip(self.has_tag_field as usize);
             for field in fields {
                 field.ty.rename_for_config(config, &self.generic_params);
             }
@@ -618,7 +615,7 @@ impl Source for Struct {
                 out.close_brace(false);
             }
 
-            let skip_fields = if self.has_tag_field { 1 } else { 0 };
+            let skip_fields = self.has_tag_field as usize;
 
             macro_rules! emit_op {
                 ($op_name:expr, $op:expr, $conjuc:expr) => {{

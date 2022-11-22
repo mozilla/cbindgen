@@ -17,18 +17,6 @@ pub enum ListType<'a> {
     Cap(&'a str),
 }
 
-/// An empty file used for creating a null source writer and measuring line
-/// metrics for various code layouts.
-pub struct NullFile;
-impl Write for NullFile {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        Ok(buf.len())
-    }
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
-
 /// A utility wrapper to write unbuffered data and correctly adjust positions.
 struct InnerWriter<'a, 'b: 'a, F: 'a + Write>(&'a mut SourceWriter<'b, F>);
 
@@ -66,7 +54,7 @@ pub struct SourceWriter<'a, F: Write> {
     max_line_length: usize,
 }
 
-pub type MeasureWriter<'a> = SourceWriter<'a, NullFile>;
+pub type MeasureWriter<'a> = SourceWriter<'a, &'a mut Vec<u8>>;
 
 impl<'a, F: Write> SourceWriter<'a, F> {
     pub fn new(out: F, bindings: &'a Bindings) -> Self {
@@ -87,23 +75,39 @@ impl<'a, F: Write> SourceWriter<'a, F> {
 
     /// Takes a function that writes source and returns the maximum line length
     /// written.
-    pub fn measure<T>(&self, func: T) -> usize
+    pub fn try_write<T>(&mut self, func: T, max_line_length: usize) -> bool
     where
         T: Fn(&mut MeasureWriter),
     {
-        let mut measurer = SourceWriter {
-            out: NullFile,
-            bindings: self.bindings,
-            spaces: self.spaces.clone(),
-            line_started: self.line_started,
-            line_length: self.line_length,
-            line_number: self.line_number,
-            max_line_length: self.line_length,
+        if self.line_length > max_line_length {
+            return false;
+        }
+
+        let mut buffer = Vec::new();
+        let line_length = {
+            let mut measurer = SourceWriter {
+                out: &mut buffer,
+                bindings: self.bindings,
+                spaces: self.spaces.clone(),
+                line_started: self.line_started,
+                line_length: self.line_length,
+                line_number: self.line_number,
+                max_line_length: self.line_length,
+            };
+
+            func(&mut measurer);
+
+            measurer.max_line_length
         };
 
-        func(&mut measurer);
-
-        measurer.max_line_length
+        if line_length > max_line_length {
+            return false;
+        }
+        // We don't want the extra alignment, it's already accounted for by the
+        // measurer.
+        self.line_started = true;
+        InnerWriter(self).write_all(&buffer).unwrap();
+        true
     }
 
     fn spaces(&self) -> usize {

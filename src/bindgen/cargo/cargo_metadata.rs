@@ -253,6 +253,6 @@ pub fn metadata(
         }
     };
 
-    let meta: Metadata = serde_json::from_str(&*metadata)?;
+    let meta: Metadata = serde_json::from_str(&metadata)?;
     Ok(meta)
 }
