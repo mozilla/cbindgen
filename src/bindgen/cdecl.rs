@@ -307,7 +307,7 @@ impl CDecl {
 
                     if config.language == Language::Zig {
                         if self.type_name.contains("u8") || self.type_name.contains("const u8") {
-                            write!(out, ": ?[*:0]{}", self.type_name);
+                            write!(out, ": ?[*:0]const {}", self.type_name);
                         } else if is_functors {
                             out.write(": ?fn");
                         } else {

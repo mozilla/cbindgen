@@ -231,9 +231,8 @@ impl Source for Function {
             func.documentation.write(config, out);
 
             if func.extern_decl {
-                out.write("pub extern ");
                 if config.language == Language::Zig {
-                    out.write("fn");
+                    out.write("extern fn");
                 }
             } else {
                 if config.language == Language::Zig {
