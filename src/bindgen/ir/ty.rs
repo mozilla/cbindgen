@@ -538,6 +538,9 @@ impl Type {
                 }
                 return Err("Tuples are not supported types.".to_owned());
             }
+            syn::Type::Verbatim(ref tokens) if tokens.to_string() == "..." => {
+                Type::Primitive(PrimitiveType::VaList)
+            }
             _ => return Err(format!("Unsupported type: {:?}", ty)),
         };
 
