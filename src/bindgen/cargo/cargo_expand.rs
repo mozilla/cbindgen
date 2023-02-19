@@ -69,8 +69,15 @@ pub fn expand(
     expand_features: &Option<Vec<String>>,
     profile: Profile,
 ) -> Result<String, Error> {
-    let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
-    let mut cmd = Command::new(cargo);
+    let rustup = String::from("rustup");
+    let mut cmd = Command::new(rustup);
+    cmd.arg("run");
+
+    // Ensure nightly toolchain is installed and used for macro expansion
+    cmd.arg("--install");
+    cmd.arg("nightly");
+
+    cmd.arg("cargo");
 
     let mut _temp_dir = None; // drop guard
     if use_tempdir {
