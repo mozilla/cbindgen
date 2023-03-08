@@ -17,21 +17,15 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Install stable
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        profile: minimal
-        toolchain: stable
-        override: true
-        components: rustfmt
+        components: "clippy, rustfmt"
 
     - name: Run rustfmt
       uses: actions-rs/cargo@v1
       with:
         command: fmt
         args: -- --check
-
-    - name: Install clippy
-      uses: dtolnay/rust-toolchain@clippy
 
     - name: Run clippy
       run: |
