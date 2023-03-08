@@ -515,10 +515,10 @@ impl Parse {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
                 syn::Item::Impl(ref item_impl) => {
-                    let has_assoc_const = item_impl.items.iter().any(|item| match item {
-                        syn::ImplItem::Const(_) => true,
-                        _ => false,
-                    });
+                    let has_assoc_const = item_impl
+                        .items
+                        .iter()
+                        .any(|item| matches!(item, syn::ImplItem::Const(_)));
                     if has_assoc_const {
                         impls_with_assoc_consts.push(item_impl);
                     }
