@@ -207,10 +207,10 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         InnerWriter(self).write_fmt(fmt).unwrap();
     }
 
-    pub fn write_horizontal_source_list<'b, S: Source>(
+    pub fn write_horizontal_source_list<S: Source>(
         &mut self,
         items: &[S],
-        list_type: ListType<'b>,
+        list_type: ListType<'_>,
     ) {
         for (i, item) in items.iter().enumerate() {
             item.write(&self.bindings.config, self);
@@ -228,11 +228,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
     }
 
-    pub fn write_vertical_source_list<'b, S: Source>(
-        &mut self,
-        items: &[S],
-        list_type: ListType<'b>,
-    ) {
+    pub fn write_vertical_source_list<S: Source>(&mut self, items: &[S], list_type: ListType<'_>) {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
         for (i, item) in items.iter().enumerate() {
