@@ -202,14 +202,9 @@ fn discover_target(manifest_path: &Path) -> Option<String> {
     };
 
     let field = "host: ";
-    rustc_output.lines().find_map(|l| {
-        // XXX l.strip_prefix(field) re-implemented to preserve MSRV
-        if l.starts_with(field) {
-            Some(l[field.len()..].into())
-        } else {
-            None
-        }
-    })
+    rustc_output
+        .lines()
+        .find_map(|l| l.strip_prefix(field).map(|stripped| stripped.to_string()))
 }
 
 /// The main entry point to obtaining metadata
