@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
 use std::str::FromStr;
-use std::{fmt, fs, path::Path as StdPath};
+use std::{fmt, fs, path::Path as StdPath, path::PathBuf as StdPathBuf};
 
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
 use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
@@ -1003,6 +1003,8 @@ pub struct Config {
     pub only_target_dependencies: bool,
     /// Configuration options specific to Cython.
     pub cython: CythonConfig,
+    #[serde(skip)]
+    pub(crate) config_path: Option<StdPathBuf>,
 }
 
 impl Default for Config {
@@ -1045,6 +1047,7 @@ impl Default for Config {
             pointer: PtrConfig::default(),
             only_target_dependencies: false,
             cython: CythonConfig::default(),
+            config_path: None,
         }
     }
 }
@@ -1086,10 +1089,10 @@ impl Config {
             )
         })?;
 
-        match toml::from_str::<Config>(&config_text) {
-            Ok(x) => Ok(x),
-            Err(e) => Err(format!("Couldn't parse config file: {}.", e)),
-        }
+        let mut config = toml::from_str::<Config>(&config_text)
+            .map_err(|e| format!("Couldn't parse config file: {}.", e))?;
+        config.config_path = Some(StdPathBuf::from(file_name.as_ref()));
+        Ok(config)
     }
 
     pub fn from_root_or_default<P: AsRef<StdPath>>(root: P) -> Config {

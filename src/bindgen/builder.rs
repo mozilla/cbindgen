@@ -359,6 +359,7 @@ impl Builder {
                 Default::default(),
                 Default::default(),
                 Default::default(),
+                Default::default(),
                 true,
             ));
         }
@@ -391,6 +392,8 @@ impl Builder {
             result.extend_with(&parser::parse_lib(cargo, &self.config)?);
         }
 
+        result.source_files.extend_from_slice(self.srcs.as_slice());
+
         Library::new(
             self.config,
             result.constants,
@@ -401,6 +404,7 @@ impl Builder {
             result.opaque_items,
             result.typedefs,
             result.functions,
+            result.source_files,
         )
         .generate()
     }
