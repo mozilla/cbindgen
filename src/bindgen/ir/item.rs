@@ -219,12 +219,12 @@ impl<T: Item + Clone> ItemMap<T> {
         F: FnMut(&T),
     {
         match self.data.get(path) {
-            Some(&ItemValue::Cfg(ref items)) => {
+            Some(ItemValue::Cfg(items)) => {
                 for item in items {
                     callback(item);
                 }
             }
-            Some(&ItemValue::Single(ref item)) => {
+            Some(ItemValue::Single(item)) => {
                 callback(item);
             }
             None => {}
