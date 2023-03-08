@@ -90,6 +90,9 @@ pub fn expand(
     // cbindgen
     cmd.env("_CBINDGEN_IS_RUNNING", "1");
 
+    // Enables experimental features when running stable version
+    cmd.env("RUSTC_BOOTSTRAP", "1");
+
     cmd.arg("rustc");
     cmd.arg("--lib");
     // When build with the release profile we can't choose the `check` profile.
