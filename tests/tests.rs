@@ -2,6 +2,8 @@ extern crate cbindgen;
 
 use cbindgen::*;
 use std::collections::HashSet;
+use std::fs::File;
+use std::io::Read;
 use std::path::Path;
 use std::process::Command;
 use std::{env, fs, str};
@@ -19,13 +21,29 @@ fn style_str(style: Style) -> &'static str {
 
 fn run_cbindgen(
     path: &Path,
-    output: &Path,
+    output: Option<&Path>,
     language: Language,
     cpp_compat: bool,
     style: Option<Style>,
-) -> Vec<u8> {
+    generate_depfile: bool,
+) -> (Vec<u8>, Option<String>) {
+    assert!(
+        !(output.is_none() && generate_depfile),
+        "generating a depfile requires outputting to a path"
+    );
     let program = Path::new(CBINDGEN_PATH);
     let mut command = Command::new(program);
+    if let Some(output) = output {
+        command.arg("--output").arg(output);
+    }
+    let cbindgen_depfile = if generate_depfile {
+        let depfile = tempfile::NamedTempFile::new().unwrap();
+        command.arg("--depfile").arg(depfile.path());
+        Some(depfile)
+    } else {
+        None
+    };
+
     match language {
         Language::Cxx => {}
         Language::C => {
@@ -53,13 +71,37 @@ fn run_cbindgen(
 
     println!("Running: {:?}", command);
     let cbindgen_output = command.output().expect("failed to execute process");
+
     assert!(
         cbindgen_output.status.success(),
         "cbindgen failed: {:?} with error: {}",
         output,
         str::from_utf8(&cbindgen_output.stderr).unwrap_or_default()
     );
-    cbindgen_output.stdout
+
+    let bindings = if let Some(output_path) = output {
+        let mut bindings = Vec::new();
+        // Ignore errors here, we have assertions on the expected output later.
+        let _ = File::open(output_path).map(|mut file| {
+            let _ = file.read_to_end(&mut bindings);
+        });
+        bindings
+    } else {
+        cbindgen_output.stdout
+    };
+
+    let depfile_contents = if let Some(mut depfile) = cbindgen_depfile {
+        let mut raw = Vec::new();
+        depfile.read_to_end(&mut raw).unwrap();
+        Some(
+            str::from_utf8(raw.as_slice())
+                .expect("Invalid encoding encountered in depfile")
+                .into(),
+        )
+    } else {
+        None
+    };
+    (bindings, depfile_contents)
 }
 
 fn compile(
@@ -183,7 +225,40 @@ fn run_compile_test(
 
     generated_file.push(source_file);
 
-    let cbindgen_output = run_cbindgen(path, &generated_file, language, cpp_compat, style);
+    let (output_file, generate_depfile) = if env::var_os("CBINDGEN_TEST_VERIFY").is_some() {
+        (None, false)
+    } else {
+        (
+            Some(generated_file.as_path()),
+            // --depfile does not work in combination with expanding yet, so we blacklist expanding tests.
+            !(name.contains("expand") || name.contains("bitfield")),
+        )
+    };
+
+    let (cbindgen_output, depfile_contents) = run_cbindgen(
+        path,
+        output_file,
+        language,
+        cpp_compat,
+        style,
+        generate_depfile,
+    );
+    if generate_depfile {
+        let depfile = depfile_contents.expect("No depfile generated");
+        assert!(depfile.len() > 0);
+        let mut rules = depfile.split(':');
+        let target = rules.next().expect("No target found");
+        assert_eq!(target, generated_file.as_os_str().to_str().unwrap());
+        let sources = rules.next().unwrap();
+        // All the tests here only have one sourcefile.
+        assert!(
+            sources.contains(path.to_str().unwrap()),
+            "Path: {:?}, Depfile contents: {}",
+            path,
+            depfile
+        );
+        assert_eq!(rules.count(), 0, "More than 1 rule in the depfile");
+    }
 
     if cbindgen_outputs.contains(&cbindgen_output) {
         // We already generated an identical file previously.

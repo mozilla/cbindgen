@@ -262,6 +262,20 @@ fn main() {
                 .help("Report errors only (overrides verbosity options).")
                 .required(false),
         )
+        .arg(
+            Arg::new("depfile")
+                .value_name("PATH")
+                .long("depfile")
+                .takes_value(true)
+                .min_values(1)
+                .max_values(1)
+                .required(false)
+                .help("Generate a depfile at the given Path listing the source files \
+                    cbindgen traversed when generating the bindings. Useful when \
+                    integrating cbindgen into 3rd party build-systems. \
+                    This option is ignored if `--out` is missing."
+                )
+        )
         .get_matches();
 
     if !matches.is_present("out") && matches.is_present("verify") {
@@ -305,6 +319,9 @@ fn main() {
             if matches.is_present("verify") && changed {
                 error!("Bindings changed: {}", file);
                 std::process::exit(2);
+            }
+            if let Some(depfile) = matches.value_of("depfile") {
+                bindings.generate_depfile(file, depfile)
             }
         }
         _ => {
