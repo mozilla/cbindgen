@@ -296,7 +296,7 @@ impl CDecl {
                     ) {
                         let align_length = out.line_length_for_align();
                         out.push_set_spaces(align_length);
-                        for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
+                        for (i, (arg_ident, arg_ty)) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(",");
                                 out.new_line();
@@ -315,7 +315,7 @@ impl CDecl {
                         config: &Config,
                         args: &[(Option<String>, CDecl)],
                     ) {
-                        for (i, &(ref arg_ident, ref arg_ty)) in args.iter().enumerate() {
+                        for (i, (arg_ident, arg_ty)) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(", ");
                             }
