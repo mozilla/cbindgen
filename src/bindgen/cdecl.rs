@@ -30,10 +30,7 @@ enum CDeclarator {
 
 impl CDeclarator {
     fn is_ptr(&self) -> bool {
-        match self {
-            CDeclarator::Ptr { .. } | CDeclarator::Func { .. } => true,
-            _ => false,
-        }
+        matches!(self, CDeclarator::Ptr { .. } | CDeclarator::Func { .. })
     }
 }
 
