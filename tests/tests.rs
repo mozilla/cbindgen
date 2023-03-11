@@ -6,6 +6,9 @@ use std::path::Path;
 use std::process::Command;
 use std::{env, fs, str};
 
+// Set automatically by cargo for integration tests
+static CBINDGEN_PATH: &str = env!("CARGO_BIN_EXE_cbindgen");
+
 fn style_str(style: Style) -> &'static str {
     match style {
         Style::Both => "both",
@@ -15,14 +18,13 @@ fn style_str(style: Style) -> &'static str {
 }
 
 fn run_cbindgen(
-    cbindgen_path: &'static str,
     path: &Path,
     output: &Path,
     language: Language,
     cpp_compat: bool,
     style: Option<Style>,
 ) -> Vec<u8> {
-    let program = Path::new(cbindgen_path);
+    let program = Path::new(CBINDGEN_PATH);
     let mut command = Command::new(program);
     match language {
         Language::Cxx => {}
@@ -144,7 +146,6 @@ const SKIP_WARNING_AS_ERROR_SUFFIX: &str = ".skip_warning_as_error";
 
 #[allow(clippy::too_many_arguments)]
 fn run_compile_test(
-    cbindgen_path: &'static str,
     name: &'static str,
     path: &Path,
     tmp_dir: &Path,
@@ -182,14 +183,7 @@ fn run_compile_test(
 
     generated_file.push(source_file);
 
-    let cbindgen_output = run_cbindgen(
-        cbindgen_path,
-        path,
-        &generated_file,
-        language,
-        cpp_compat,
-        style,
-    );
+    let cbindgen_output = run_cbindgen(path, &generated_file, language, cpp_compat, style);
 
     if cbindgen_outputs.contains(&cbindgen_output) {
         // We already generated an identical file previously.
@@ -234,7 +228,7 @@ fn run_compile_test(
     }
 }
 
-fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static str) {
+fn test_file(name: &'static str, filename: &'static str) {
     let test = Path::new(filename);
     let tmp_dir = tempfile::Builder::new()
         .prefix("cbindgen-test-output")
@@ -247,7 +241,6 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
     for cpp_compat in &[true, false] {
         for style in &[Style::Type, Style::Tag, Style::Both] {
             run_compile_test(
-                cbindgen_path,
                 name,
                 test,
                 tmp_dir,
@@ -260,7 +253,6 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
     }
 
     run_compile_test(
-        cbindgen_path,
         name,
         test,
         tmp_dir,
@@ -274,7 +266,6 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
     let mut cbindgen_outputs = HashSet::new();
     for style in &[Style::Type, Style::Tag] {
         run_compile_test(
-            cbindgen_path,
             name,
             test,
             tmp_dir,
@@ -287,10 +278,10 @@ fn test_file(cbindgen_path: &'static str, name: &'static str, filename: &'static
 }
 
 macro_rules! test_file {
-    ($cbindgen_path:expr, $test_function_name:ident, $name:expr, $file:tt) => {
+    ($test_function_name:ident, $name:expr, $file:tt) => {
         #[test]
         fn $test_function_name() {
-            test_file($cbindgen_path, $name, $file);
+            test_file($name, $file);
         }
     };
 }

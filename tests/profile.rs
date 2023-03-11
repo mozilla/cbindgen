@@ -40,26 +40,14 @@ fn build_using_bin(extra_args: &[&str]) -> tempfile::TempDir {
         .tempdir()
         .expect("Creating tmp dir failed");
 
-    let cbindgen_path = match option_env!("CARGO_BIN_EXE_cbindgen") {
-        Some(path) => path.into(),
-        None => {
-            // We must be on an older version of Rust.
-            // Guess where cbindgen would be relative to OUT_DIR.
-            let mut path = PathBuf::from(env!("OUT_DIR"));
-            path.pop();
-            path.pop();
-            path.pop();
-            path.push("cbindgen");
-            path.into_os_string()
-        }
-    };
+    let cbindgen_path = env!("CARGO_BIN_EXE_cbindgen");
 
     Command::new(cbindgen_path)
         .current_dir(expand_dep_test_dir)
         .env("CARGO_EXPAND_TARGET_DIR", tmp_dir.path())
         .args(extra_args)
         .output()
-        .expect("build should succed");
+        .expect("build should succeed");
 
     tmp_dir
 }
