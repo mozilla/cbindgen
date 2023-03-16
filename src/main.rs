@@ -157,7 +157,7 @@ fn main() {
                 .long("lang")
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
-                .possible_values(&["c++", "C++", "c", "C", "cython", "Cython", "zig", "Zig"]),
+                .possible_values(["c++", "C++", "c", "C", "cython", "Cython", "zig", "Zig"]),
         )
         .arg(
             Arg::new("cpp-compat")
@@ -176,7 +176,7 @@ fn main() {
                 .long("style")
                 .value_name("STYLE")
                 .help("Specify the declaration style to use for bindings")
-                .possible_values(&["Both", "both", "Tag", "tag", "Type", "type"]),
+                .possible_values(["Both", "both", "Tag", "tag", "Type", "type"]),
         )
         .arg(
             Arg::new("d")
@@ -253,7 +253,7 @@ fn main() {
                     "Specify the profile to use when expanding macros. \
                      Has no effect otherwise."
                 )
-                .possible_values(&["Debug", "debug", "Release", "release"]),
+                .possible_values(["Debug", "debug", "Release", "release"]),
         )
         .arg(
             Arg::new("quiet")

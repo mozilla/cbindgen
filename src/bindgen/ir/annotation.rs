@@ -130,19 +130,19 @@ impl AnnotationSet {
 
     pub fn list(&self, name: &str) -> Option<Vec<String>> {
         match self.annotations.get(name) {
-            Some(&AnnotationValue::List(ref x)) => Some(x.clone()),
+            Some(AnnotationValue::List(x)) => Some(x.clone()),
             _ => None,
         }
     }
     pub fn atom(&self, name: &str) -> Option<Option<String>> {
         match self.annotations.get(name) {
-            Some(&AnnotationValue::Atom(ref x)) => Some(x.clone()),
+            Some(AnnotationValue::Atom(x)) => Some(x.clone()),
             _ => None,
         }
     }
     pub fn bool(&self, name: &str) -> Option<bool> {
         match self.annotations.get(name) {
-            Some(&AnnotationValue::Bool(ref x)) => Some(*x),
+            Some(AnnotationValue::Bool(x)) => Some(*x),
             _ => None,
         }
     }
@@ -152,7 +152,7 @@ impl AnnotationSet {
         T: Default + FromStr,
     {
         match self.annotations.get(name) {
-            Some(&AnnotationValue::Atom(ref x)) => Some(
+            Some(AnnotationValue::Atom(x)) => Some(
                 x.as_ref()
                     .map_or(T::default(), |y| y.parse::<T>().ok().unwrap()),
             ),

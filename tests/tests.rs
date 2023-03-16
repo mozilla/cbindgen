@@ -23,7 +23,7 @@ fn run_cbindgen(
     style: Option<Style>,
 ) -> Vec<u8> {
     let program = Path::new(cbindgen_path);
-    let mut command = Command::new(&program);
+    let mut command = Command::new(program);
     match language {
         Language::Cxx => {}
         Language::C => {

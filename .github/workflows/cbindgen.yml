@@ -14,57 +14,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Install stable
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        profile: minimal
-        toolchain: stable
-        override: true
-        components: rustfmt
+        components: "clippy, rustfmt"
 
     - name: Run rustfmt
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: -- --check
-
-    - name: Install clippy
-      uses: dtolnay/rust-toolchain@clippy
+      run: |
+        cargo fmt --check
 
     - name: Run clippy
       run: |
         cargo clippy --workspace -- -D warnings
 
     - name: Install minimum supported Rust version
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: 1.54.0
+      id: msrv
+      uses: dtolnay/rust-toolchain@1.54
 
     - name: Build with minimum supported Rust version
       run: |
-        cargo +1.54.0 test nonexistent-test --verbose
+        cargo +${{steps.msrv.outputs.name}} test nonexistent-test --verbose
 
   build:
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: nightly
-        override: true
+    - name: Install stable Rust
+      uses: dtolnay/rust-toolchain@stable
 
     - name: Install Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.8.*'
+        python-version: '3.8'
 
     - name: Install Cython
       run: |
@@ -84,12 +70,6 @@ jobs:
       run: |
         cargo build --verbose --no-default-features
 
-    - name: Test
-      env:
-        CBINDGEN_TEST_VERIFY: 1
-      run: |
-        cargo test --verbose
-
     - name: Test package
       env:
         CBINDGEN_TEST_VERIFY: 1
@@ -97,7 +77,16 @@ jobs:
         cargo package --verbose
         (cd target/package/cbindgen-$(cargo run -- --version | cut -d ' ' -f 2) && cargo test --verbose)
 
+    - name: Install nightly Rust
+      uses: dtolnay/rust-toolchain@nightly
+
+    - name: Test
+      env:
+        CBINDGEN_TEST_VERIFY: 1
+      run: |
+        cargo +nightly test --verbose
+
     - name: Test minimal-versions
       run: |
-        cargo update -Zminimal-versions
-        cargo test
+        cargo +nightly update -Zminimal-versions
+        cargo +nightly test

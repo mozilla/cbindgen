@@ -400,10 +400,7 @@ impl PrimitiveType {
     }
 
     fn can_cmp_order(&self) -> bool {
-        match *self {
-            PrimitiveType::Bool => false,
-            _ => true,
-        }
+        !matches!(*self, PrimitiveType::Bool)
     }
 
     fn can_cmp_eq(&self) -> bool {
@@ -651,10 +648,7 @@ impl Type {
     pub fn is_primitive_or_ptr_primitive(&self) -> bool {
         match *self {
             Type::Primitive(..) => true,
-            Type::Ptr { ref ty, .. } => match ty.as_ref() {
-                Type::Primitive(..) => true,
-                _ => false,
-            },
+            Type::Ptr { ref ty, .. } => matches!(ty.as_ref(), Type::Primitive(..)),
             _ => false,
         }
     }
