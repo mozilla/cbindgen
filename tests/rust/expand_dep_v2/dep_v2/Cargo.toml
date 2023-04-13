@@ -1,5 +1,5 @@
 [package]
-name = "dep"
+name = "expand-dep-2-dep-2"
 version = "0.2.0"
 authors = ["cbindgen"]
 edition = "2018"

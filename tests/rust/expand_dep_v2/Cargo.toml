@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 expand-dep = { path = "../expand_dep" }
-dep = { path = "dep_v2" }
+expand-dep-2-dep-2 = { path = "dep_v2" }

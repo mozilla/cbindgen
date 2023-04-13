@@ -3,7 +3,7 @@ name = "workspace"
 version = "0.1.0"
 authors = ["cbindgen"]
 
-[dependencies.dep]
+[dependencies.workspace-dep]
 path = "dep"
 
 [workspace]
