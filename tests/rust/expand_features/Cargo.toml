@@ -1,5 +1,5 @@
 [package]
-name = "expand"
+name = "expand-features"
 version = "0.1.0"
 authors = ["cbindgen"]
 
