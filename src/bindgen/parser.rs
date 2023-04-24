@@ -1117,10 +1117,14 @@ impl Parse {
                     } => (class, instance, parent_type),
                     _ => panic!(),
                 };
+                let parent_type = parent_type
+                    .as_ref()
+                    .and_then(|p| p.get_root_path())
+                    .map(|p| p.to_string())
+                    .unwrap_or("Object".to_string());
                 if instance.is_none() {
                     let ident =
                         syn::Ident::new(&gobject.path.name(), proc_macro2::Span::call_site());
-                    let parent_type = parent_type.get_root_path().unwrap().to_string();
                     let parent = if parent_type == "Object" {
                         quote!(glib::gobject_ffi::GObject)
                     } else {
@@ -1148,7 +1152,6 @@ impl Parse {
                         &format!("{}Class", gobject.path),
                         proc_macro2::Span::call_site(),
                     );
-                    let parent_type = parent_type.get_root_path().unwrap().to_string();
                     let parent_class = if parent_type == "Object" {
                         quote!(glib::gobject_ffi::GObjectClass)
                     } else {

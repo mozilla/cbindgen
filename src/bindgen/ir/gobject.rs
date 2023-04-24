@@ -23,7 +23,7 @@ pub enum GType {
     Object {
         instance: Option<Type>,
         class: Option<Type>,
-        parent_type: Type,
+        parent_type: Option<Type>,
     },
     Interface {
         type_: Type,
@@ -233,7 +233,7 @@ impl GObject {
         let gtype = GType::Object {
             instance,
             class,
-            parent_type: parent_type.unwrap(),
+            parent_type: parent_type,
         };
 
         Ok(Self::new(
@@ -277,7 +277,9 @@ impl Item for GObject {
                 instance,
                 class,
             } => {
-                parent_type.add_dependencies(library, out);
+                if let Some(parent_type) = parent_type {
+                    parent_type.add_dependencies(library, out);
+                }
                 if let Some(instance) = instance {
                     instance.add_dependencies(library, out);
                 }
@@ -324,7 +326,9 @@ impl Item for GObject {
                 instance,
                 class,
             } => {
-                parent_type.resolve_declaration_types(resolver);
+                if let Some(parent_type) = parent_type {
+                    parent_type.resolve_declaration_types(resolver);
+                }
                 if let Some(instance) = instance {
                     instance.resolve_declaration_types(resolver);
                 }
