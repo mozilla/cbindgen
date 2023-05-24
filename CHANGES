@@ -1,3 +1,11 @@
+## 0.24.4
+
+      * Move expand infinite recursion fix (#799)
+      * Add with_cpp_compat to the builder (#796)
+      * Handle never type in return position consistently (#780)
+      * Fix warnings (#816, #819)
+      * Updated documentation (#788, #791, #792, #810, #823)
+
 ## 0.24.3
 
       * Make struct expressions correctly generated through typedefs (#768).
