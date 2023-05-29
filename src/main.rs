@@ -84,7 +84,11 @@ fn load_bindings(input: &Path, matches: &ArgMatches) -> Result<Bindings, Error> 
         // Load any config specified or search in the input directory
         let mut config = match matches.value_of("config") {
             Some(c) => Config::from_file(c).unwrap(),
-            None => Config::from_root_or_default(input),
+            None => Config::from_root_or_default(
+                input
+                    .parent()
+                    .expect("All files should have a parent directory"),
+            ),
         };
 
         apply_config_overrides(&mut config, matches);
