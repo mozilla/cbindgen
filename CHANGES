@@ -1,3 +1,7 @@
+## 0.24.5
+
+      * Don't enforce tempfile version.
+
 ## 0.24.4
 
       * Move expand infinite recursion fix (#799)
