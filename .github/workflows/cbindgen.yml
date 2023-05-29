@@ -17,9 +17,10 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Install stable
-      uses: dtolnay/rust-toolchain@stable
+      uses: actions-rs/toolchain@v1
       with:
-        components: "clippy, rustfmt"
+        toolchain: stable
+        components: clippy, rustfmt
 
     - name: Run rustfmt
       run: |
@@ -31,11 +32,14 @@ jobs:
 
     - name: Install minimum supported Rust version
       id: msrv
-      uses: dtolnay/rust-toolchain@1.54
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: 1.57
+        override: true
 
     - name: Build with minimum supported Rust version
       run: |
-        cargo +${{steps.msrv.outputs.name}} test nonexistent-test --verbose
+        cargo test nonexistent-test --verbose
 
   build:
 
@@ -44,8 +48,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Install stable Rust
-      uses: dtolnay/rust-toolchain@stable
+    - name: Install stable
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
 
     - name: Install Python
       uses: actions/setup-python@v4
@@ -73,7 +79,9 @@ jobs:
         (cd target/package/cbindgen-$(cargo run -- --version | cut -d ' ' -f 2) && cargo test --verbose)
 
     - name: Install nightly Rust
-      uses: dtolnay/rust-toolchain@nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
 
     - name: Test
       env:
