@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 enum COption_Tag {
-  COption_Some,
-  COption_None,
+  COption_Tag_Some,
+  COption_Tag_None,
 };
 
 struct COption_u8 {
@@ -16,8 +16,6 @@ struct COption_u8 {
     };
   };
 };
-
-
 
 struct COption_u32 {
   enum COption_Tag tag;

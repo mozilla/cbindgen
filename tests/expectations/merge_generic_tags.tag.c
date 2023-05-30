@@ -17,8 +17,6 @@ struct COption_u8 {
   };
 };
 
-
-
 struct COption_u32 {
   enum COption_Tag tag;
   union {

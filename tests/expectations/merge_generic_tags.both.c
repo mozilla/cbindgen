@@ -17,8 +17,6 @@ typedef struct COption_u8 {
   };
 } COption_u8;
 
-
-
 typedef struct COption_u32 {
   COption_Tag tag;
   union {

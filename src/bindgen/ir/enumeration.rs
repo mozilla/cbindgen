@@ -2,9 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::cell::Cell;
 use std::io::Write;
-use std::rc::Rc;
 
 use syn::ext::IdentExt;
 
@@ -272,13 +270,8 @@ impl EnumVariant {
         mappings: &[(&Path, &GenericArgument)],
         config: &Config,
     ) -> Self {
-        let name = if config.enumeration.merge_generic_tags {
-            self.name.clone()
-        } else {
-            mangle::mangle_name(&self.name, generic_values, &config.export.mangle)
-        };
         Self::new(
-            name,
+            mangle::mangle_name(&self.name, generic_values, &config.export.mangle),
             self.discriminant.clone(),
             self.body.specialize(generic_values, mappings, config),
             self.cfg.clone(),
@@ -327,15 +320,12 @@ impl Source for EnumVariant {
 #[derive(Debug, Clone)]
 pub struct Enum {
     pub path: Path,
-    pub unmangled_path: Path,
     pub export_name: String,
-    pub unmangled_export_name: String,
     pub generic_params: GenericParams,
     pub repr: Repr,
     pub variants: Vec<EnumVariant>,
     pub tag: Option<String>,
-    /// Keep track of whether any instance of this enum has had its tag written.
-    pub tag_written: Rc<Cell<bool>>,
+    pub external_tag: bool,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
@@ -444,13 +434,12 @@ impl Enum {
         };
 
         Ok(Enum::new(
-            path.clone(),
             path,
             generic_params,
             repr,
             variants,
             tag,
-            Rc::new(Cell::new(false)),
+            false,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             annotations,
             Documentation::load(&item.attrs),
@@ -460,28 +449,24 @@ impl Enum {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         path: Path,
-        unmangled_path: Path,
         generic_params: GenericParams,
         repr: Repr,
         variants: Vec<EnumVariant>,
         tag: Option<String>,
-        tag_written: Rc<Cell<bool>>,
+        external_tag: bool,
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
     ) -> Self {
         let export_name = path.name().to_owned();
-        let unmangled_export_name = unmangled_path.name().to_owned();
         Self {
             path,
-            unmangled_path,
             export_name,
-            unmangled_export_name,
             generic_params,
             repr,
             variants,
             tag,
-            tag_written,
+            external_tag,
             cfg,
             annotations,
             documentation,
@@ -537,16 +522,10 @@ impl Item for Enum {
 
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.export_name);
-        config.export.rename(&mut self.unmangled_export_name);
 
-        if config.language != Language::Cxx && self.tag.is_some() {
+        if config.language != Language::Cxx && self.tag.is_some() && !self.external_tag {
             // it makes sense to always prefix Tag with type name in C
-            let base_name = if config.enumeration.merge_generic_tags {
-                &self.unmangled_export_name
-            } else {
-                &self.export_name
-            };
-            let new_tag = format!("{}_Tag", base_name);
+            let new_tag = format!("{}_Tag", self.export_name());
             if self.repr.style == ReprStyle::Rust {
                 for variant in &mut self.variants {
                     if let VariantBody::Body { ref mut body, .. } = variant.body {
@@ -585,16 +564,11 @@ impl Item for Enum {
             };
 
             for variant in &mut self.variants {
-                let export_name = if config.enumeration.merge_generic_tags {
-                    &self.unmangled_export_name
-                } else {
-                    &self.export_name
-                };
                 variant.export_name =
-                    format!("{}{}{}", export_name, separator, variant.export_name);
+                    format!("{}{}{}", self.export_name, separator, variant.export_name);
                 if let VariantBody::Body { ref mut body, .. } = variant.body {
                     body.export_name =
-                        format!("{}{}{}", export_name, separator, body.export_name());
+                        format!("{}{}{}", self.export_name, separator, body.export_name());
                 }
             }
         }
@@ -646,6 +620,34 @@ impl Item for Enum {
         library: &Library,
         out: &mut Monomorphs,
     ) {
+        let config = library.get_config();
+        let external_tag = config.enumeration.merge_generic_tags;
+
+        let tag = if external_tag {
+            let new_tag = format!("{}_Tag", self.export_name());
+            let path = Path::new(new_tag.clone());
+
+            if !out.contains(&GenericPath::new(self.path.clone(), vec![])) {
+                let tag = Enum::new(
+                    path,
+                    GenericParams::default(),
+                    self.repr,
+                    self.variants.clone(),
+                    None,
+                    false,
+                    self.cfg.clone(),
+                    self.annotations.clone(),
+                    self.documentation.clone(),
+                );
+
+                out.insert_enum(library, self, tag, vec![]);
+            }
+
+            Some(new_tag)
+        } else {
+            self.tag.clone()
+        };
+
         let mappings = self.generic_params.call(self.path.name(), generic_values);
 
         for variant in &self.variants {
@@ -662,15 +664,14 @@ impl Item for Enum {
 
         let monomorph = Enum::new(
             mangled_path,
-            self.unmangled_path.clone(),
             GenericParams::default(),
             self.repr,
             self.variants
                 .iter()
                 .map(|v| v.specialize(generic_values, &mappings, library.get_config()))
                 .collect(),
-            self.tag.clone(),
-            self.tag_written.clone(),
+            tag,
+            external_tag,
             self.cfg.clone(),
             self.annotations.clone(),
             self.documentation.clone(),
@@ -680,6 +681,18 @@ impl Item for Enum {
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+        if let Some(tag) = self.tag.clone() {
+            let path = Path::new(tag);
+
+            // If there is an external tag enum, then add it as a dependency.
+            if let Some(items) = library.get_items(&path) {
+                if !out.items.contains(&path) {
+                    out.items.insert(path);
+                    out.order.extend(items);
+                }
+            }
+        }
+
         for variant in &self.variants {
             variant.add_dependencies(library, out);
         }
@@ -706,14 +719,19 @@ impl Source for Enum {
             self.open_struct_or_union(config, out, inline_tag_field);
         }
 
-        // Emit the tag enum and everything related to it.
-        self.write_tag_enum(config, out, size, has_data, tag_name);
+        if !self.external_tag {
+            // Emit the tag enum and everything related to it.
+            self.write_tag_enum(config, out, size, has_data, tag_name);
+
+            if has_data {
+                out.new_line();
+                out.new_line();
+            }
+        }
 
         // If the enum has data, we need to emit structs for the variants and gather them together.
         if has_data {
             self.write_variant_defs(config, out);
-            out.new_line();
-            out.new_line();
 
             // Open the struct or union for the data (**), gathering all the variants with data
             // together, unless it's C++, then we have already opened that struct/union at (*) and
@@ -779,12 +797,6 @@ impl Enum {
         has_data: bool,
         tag_name: &str,
     ) {
-        // Only emit the tag enum once if merge_generic_tags is set.
-        if config.enumeration.merge_generic_tags && self.tag_written.get() {
-            return;
-        }
-        self.tag_written.set(true);
-
         // Open the tag enum.
         match config.language {
             Language::C => {
@@ -925,8 +937,6 @@ impl Enum {
                 ..
             } = variant.body
             {
-                out.new_line();
-                out.new_line();
                 let condition = variant.cfg.to_condition(config);
                 // Cython doesn't support conditional enum variants.
                 if config.language != Language::Cython {
@@ -936,6 +946,8 @@ impl Enum {
                 if config.language != Language::Cython {
                     condition.write_after(config, out);
                 }
+                out.new_line();
+                out.new_line();
             }
         }
     }

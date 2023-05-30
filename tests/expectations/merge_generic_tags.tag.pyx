@@ -14,8 +14,6 @@ cdef extern from *:
     COption_Tag tag;
     uint8_t some;
 
-
-
   cdef struct COption_u32:
     COption_Tag tag;
     uint32_t some;

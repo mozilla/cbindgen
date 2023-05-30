@@ -7,14 +7,12 @@ cdef extern from *:
 cdef extern from *:
 
   ctypedef enum COption_Tag:
-    COption_Some,
-    COption_None,
+    COption_Tag_Some,
+    COption_Tag_None,
 
   ctypedef struct COption_u8:
     COption_Tag tag;
     uint8_t some;
-
-
 
   ctypedef struct COption_u32:
     COption_Tag tag;
