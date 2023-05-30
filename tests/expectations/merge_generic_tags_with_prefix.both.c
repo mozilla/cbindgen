@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 typedef enum COption_Tag {
-  COption_Tag_Some,
-  COption_Tag_None,
+  COption_Some,
+  COption_None,
 } COption_Tag;
 
 typedef struct COption_u8 {

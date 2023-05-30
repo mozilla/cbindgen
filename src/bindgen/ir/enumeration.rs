@@ -439,7 +439,7 @@ impl Enum {
             repr,
             variants,
             tag,
-            false,
+            /* external_tag */ false,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             annotations,
             Documentation::load(&item.attrs),
@@ -557,6 +557,8 @@ impl Item for Enum {
         if config.enumeration.prefix_with_name
             || self.annotations.bool("prefix-with-name").unwrap_or(false)
         {
+            let prefix = self.export_name.trim_end_matches("_Tag");
+
             let separator = if config.export.mangle.remove_underscores {
                 ""
             } else {
@@ -564,11 +566,9 @@ impl Item for Enum {
             };
 
             for variant in &mut self.variants {
-                variant.export_name =
-                    format!("{}{}{}", self.export_name, separator, variant.export_name);
+                variant.export_name = format!("{}{}{}", prefix, separator, variant.export_name);
                 if let VariantBody::Body { ref mut body, .. } = variant.body {
-                    body.export_name =
-                        format!("{}{}{}", self.export_name, separator, body.export_name());
+                    body.export_name = format!("{}{}{}", prefix, separator, body.export_name());
                 }
             }
         }
@@ -681,14 +681,16 @@ impl Item for Enum {
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        if let Some(tag) = self.tag.clone() {
-            let path = Path::new(tag);
+        if self.external_tag {
+            if let Some(tag) = self.tag.clone() {
+                let path = Path::new(tag);
 
-            // If there is an external tag enum, then add it as a dependency.
-            if let Some(items) = library.get_items(&path) {
-                if !out.items.contains(&path) {
-                    out.items.insert(path);
-                    out.order.extend(items);
+                // If there is an external tag enum, then add it as a dependency.
+                if let Some(items) = library.get_items(&path) {
+                    if !out.items.contains(&path) {
+                        out.items.insert(path);
+                        out.order.extend(items);
+                    }
                 }
             }
         }
