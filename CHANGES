@@ -1,6 +1,8 @@
 ## Unreleased
 
       * Update MSRV to 1.57
+      * Support variadic arguments (`...`) (#805)
+      * Add --depfile option (#820)
 
 ## 0.24.5
 
