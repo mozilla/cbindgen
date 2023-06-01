@@ -1,4 +1,4 @@
-## 0.24.6
+## 0.24.6 (YANKED: depfile option was breaking, see #841)
 
       * Update MSRV to 1.57
       * Support variadic arguments (`...`) (#805)
