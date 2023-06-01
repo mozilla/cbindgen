@@ -686,12 +686,7 @@ impl Item for Enum {
                 let path = Path::new(tag);
 
                 // If there is an external tag enum, then add it as a dependency.
-                if let Some(items) = library.get_items(&path) {
-                    if !out.items.contains(&path) {
-                        out.items.insert(path);
-                        out.order.extend(items);
-                    }
-                }
+                out.add_path(library, &path);
             }
         }
 
