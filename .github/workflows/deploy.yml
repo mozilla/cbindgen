@@ -8,6 +8,11 @@ on:
 jobs:
 
   linux-binaries:
+    permissions:
+      # Grant the GITHUB_TOKEN additional permissions necessary for creating a release.
+      # We only run this action for tags, so any code has already been reviewed by
+      # someone with permissions to create a tag.
+      contents: write
 
     runs-on: ubuntu-latest
 
@@ -16,6 +21,11 @@ jobs:
 
     - name: Install stable
       uses: dtolnay/rust-toolchain@stable
+
+    - name: semver
+      uses: obi1kenobi/cargo-semver-checks-action@v2
+      with:
+        rust-toolchain: stable
 
     - name: Build cbindgen
       run: |
