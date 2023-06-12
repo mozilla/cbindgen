@@ -1,6 +1,6 @@
 [package]
 name = "cbindgen"
-version = "0.24.3"
+version = "0.25.0"
 authors = [
   "Emilio Cobos Álvarez <emilio@crisal.io>",
   "Jeff Muizelaar <jmuizelaar@mozilla.com>",
@@ -13,6 +13,7 @@ keywords = ["bindings", "ffi", "code-generation"]
 categories = ["external-ffi-bindings", "development-tools::ffi"]
 repository = "https://github.com/eqrion/cbindgen"
 edition = "2018"
+rust-version = "1.57"
 exclude = [
   "tests/profile.rs", # Test relies in a sub-crate, see https://github.com/rust-lang/cargo/issues/9017
 ]
@@ -23,7 +24,7 @@ indexmap = "1"
 log = "0.4"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 serde_json = "1.0"
-tempfile = "3.0"
+tempfile = "3"
 toml = "0.5"
 proc-macro2 = "1"
 quote = "1"

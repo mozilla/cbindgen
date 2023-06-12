@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::config::{Config, Language, SortKey};
@@ -25,6 +26,7 @@ pub struct Library {
     opaque_items: ItemMap<OpaqueItem>,
     typedefs: ItemMap<Typedef>,
     functions: Vec<Function>,
+    source_files: Vec<PathBuf>,
 }
 
 impl Library {
@@ -39,6 +41,7 @@ impl Library {
         opaque_items: ItemMap<OpaqueItem>,
         typedefs: ItemMap<Typedef>,
         functions: Vec<Function>,
+        source_files: Vec<PathBuf>,
     ) -> Library {
         Library {
             config,
@@ -50,6 +53,7 @@ impl Library {
             opaque_items,
             typedefs,
             functions,
+            source_files,
         }
     }
 
@@ -135,6 +139,7 @@ impl Library {
             globals,
             items,
             functions,
+            self.source_files,
             false,
         ))
     }

@@ -1,5 +1,5 @@
 [parse]
 parse_deps = false
 [parse.expand]
-crates = ["expand"]
+crates = ["expand-default-features"]
 all_features = false

@@ -57,6 +57,7 @@ pub fn parse_src(src_file: &FilePath, config: &Config) -> ParseResult {
     };
 
     context.parse_mod(&pkg_ref, src_file, 0)?;
+    context.out.source_files = context.cache_src.keys().map(|k| k.to_owned()).collect();
     Ok(context.out)
 }
 
@@ -79,6 +80,7 @@ pub(crate) fn parse_lib(lib: Cargo, config: &Config) -> ParseResult {
 
     let binding_crate = context.lib.as_ref().unwrap().binding_crate_ref();
     context.parse_crate(&binding_crate)?;
+    context.out.source_files = context.cache_src.keys().map(|k| k.to_owned()).collect();
     Ok(context.out)
 }
 
@@ -406,6 +408,7 @@ pub struct Parse {
     pub opaque_items: ItemMap<OpaqueItem>,
     pub typedefs: ItemMap<Typedef>,
     pub functions: Vec<Function>,
+    pub source_files: Vec<FilePathBuf>,
 }
 
 impl Parse {
@@ -419,6 +422,7 @@ impl Parse {
             opaque_items: ItemMap::default(),
             typedefs: ItemMap::default(),
             functions: Vec::new(),
+            source_files: Vec::new(),
         }
     }
 
@@ -466,6 +470,7 @@ impl Parse {
         self.opaque_items.extend_with(&other.opaque_items);
         self.typedefs.extend_with(&other.typedefs);
         self.functions.extend_from_slice(&other.functions);
+        self.source_files.extend_from_slice(&other.source_files);
     }
 
     fn load_syn_crate_mod<'a>(

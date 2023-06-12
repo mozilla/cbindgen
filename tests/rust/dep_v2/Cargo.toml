@@ -1,8 +1,8 @@
 [package]
-name = "expand-dep"
+name = "dep-2"
 version = "0.1.0"
 authors = ["cbindgen"]
 edition = "2018"
 
 [dependencies]
-dep = { path = "dep" }
+dep-2-dep = { path = "dep" }
