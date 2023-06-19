@@ -5,7 +5,6 @@
 use std::env;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 extern crate clap;
 #[macro_use]
@@ -20,60 +19,60 @@ extern crate quote;
 extern crate syn;
 extern crate toml;
 
+use clap::builder::PossibleValuesParser;
+use clap::ArgAction;
 use clap::{Arg, ArgMatches, Command};
 
 mod bindgen;
 mod logging;
 
-use crate::bindgen::{Bindings, Builder, Cargo, Config, Error, Profile, Style};
+use crate::bindgen::{Bindings, Builder, Cargo, Config, Error};
 
 fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
     // We allow specifying a language to override the config default. This is
     // used by compile-tests.
-    if let Some(lang) = matches.value_of("lang") {
-        config.language = match lang.parse() {
-            Ok(lang) => lang,
-            Err(reason) => {
-                error!("{}", reason);
-                return;
-            }
+    match matches.try_get_one("lang") {
+        Ok(Some(lang)) => {
+            config.language = *lang;
         }
+        Err(reason) => {
+            error!("{}", reason);
+            return;
+        }
+        _ => (),
     }
 
-    if matches.is_present("cpp-compat") {
+    if matches.contains_id("cpp-compat") {
         config.cpp_compat = true;
     }
 
-    if matches.is_present("only-target-dependencies") {
+    if matches.contains_id("only-target-dependencies") {
         config.only_target_dependencies = true;
     }
 
-    if let Some(style) = matches.value_of("style") {
-        config.style = match style {
-            "Both" => Style::Both,
-            "both" => Style::Both,
-            "Tag" => Style::Tag,
-            "tag" => Style::Tag,
-            "Type" => Style::Type,
-            "type" => Style::Type,
-            _ => {
-                error!("Unknown style specified.");
-                return;
-            }
+    match matches.try_get_one("style") {
+        Ok(Some(style)) => {
+            config.style = *style;
         }
+        Err(_) => {
+            error!("Unknown style specified.");
+            return;
+        }
+        _ => (),
     }
 
-    if let Some(profile) = matches.value_of("profile") {
-        config.parse.expand.profile = match Profile::from_str(profile) {
-            Ok(p) => p,
-            Err(e) => {
-                error!("{}", e);
-                return;
-            }
+    match matches.try_get_one("profile") {
+        Ok(Some(profile)) => {
+            config.parse.expand.profile = *profile;
         }
+        Err(e) => {
+            error!("{}", e);
+            return;
+        }
+        _ => (),
     }
 
-    if matches.is_present("d") {
+    if matches.contains_id("d") {
         config.parse.parse_deps = true;
     }
 }
@@ -82,7 +81,7 @@ fn load_bindings(input: &Path, matches: &ArgMatches) -> Result<Bindings, Error> 
     // If a file is specified then we load it as a single source
     if !input.is_dir() {
         // Load any config specified or search in the input directory
-        let mut config = match matches.value_of("config") {
+        let mut config = match matches.get_one::<PathBuf>("config") {
             Some(c) => Config::from_file(c).unwrap(),
             None => Config::from_root_or_default(
                 input
@@ -102,16 +101,16 @@ fn load_bindings(input: &Path, matches: &ArgMatches) -> Result<Bindings, Error> 
     // We have to load a whole crate, so we use cargo to gather metadata
     let lib = Cargo::load(
         input,
-        matches.value_of("lockfile"),
-        matches.value_of("crate"),
+        matches.get_one::<String>("lockfile").map(|s| s.as_str()),
+        matches.get_one::<String>("crate").map(|s| s.as_str()),
         true,
-        matches.is_present("clean"),
-        matches.is_present("only-target-dependencies"),
-        matches.value_of("metadata").map(Path::new),
+        matches.contains_id("clean"),
+        matches.contains_id("only-target-dependencies"),
+        matches.get_one::<PathBuf>("metadata").map(|p| p.as_path()),
     )?;
 
     // Load any config specified or search in the binding crate directory
-    let mut config = match matches.value_of("config") {
+    let mut config = match matches.get_one::<PathBuf>("config") {
         Some(c) => Config::from_file(c).unwrap(),
         None => {
             let binding_crate_dir = lib.find_crate_dir(&lib.binding_crate_ref());
@@ -140,7 +139,7 @@ fn main() {
         .arg(
             Arg::new("v")
                 .short('v')
-                .multiple_occurrences(true)
+                .action(ArgAction::Count)
                 .help("Enable verbose logging"),
         )
         .arg(
@@ -161,7 +160,7 @@ fn main() {
                 .long("lang")
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
-                .possible_values(["c++", "C++", "c", "C", "cython", "Cython"]),
+                .value_parser(PossibleValuesParser::new(["c++", "C++", "c", "C", "cython", "Cython"])),
         )
         .arg(
             Arg::new("cpp-compat")
@@ -180,7 +179,7 @@ fn main() {
                 .long("style")
                 .value_name("STYLE")
                 .help("Specify the declaration style to use for bindings")
-                .possible_values(["Both", "both", "Tag", "tag", "Type", "type"]),
+                .value_parser(PossibleValuesParser::new(["Both", "both", "Tag", "tag", "Type", "type"])),
         )
         .arg(
             Arg::new("d")
@@ -257,7 +256,7 @@ fn main() {
                     "Specify the profile to use when expanding macros. \
                      Has no effect otherwise."
                 )
-                .possible_values(["Debug", "debug", "Release", "release"]),
+                .value_parser(PossibleValuesParser::new(["Debug", "debug", "Release", "release"])),
         )
         .arg(
             Arg::new("quiet")
@@ -270,9 +269,7 @@ fn main() {
             Arg::new("depfile")
                 .value_name("PATH")
                 .long("depfile")
-                .takes_value(true)
-                .min_values(1)
-                .max_values(1)
+                .num_args(1)
                 .required(false)
                 .help("Generate a depfile at the given Path listing the source files \
                     cbindgen traversed when generating the bindings. Useful when \
@@ -282,7 +279,7 @@ fn main() {
         )
         .get_matches();
 
-    if !matches.is_present("out") && matches.is_present("verify") {
+    if !matches.contains_id("out") && matches.contains_id("verify") {
         error!(
             "Cannot verify bindings against `stdout`, please specify a file to compare against."
         );
@@ -290,10 +287,10 @@ fn main() {
     }
 
     // Initialize logging
-    if matches.is_present("quiet") {
+    if matches.contains_id("quiet") {
         logging::ErrorLogger::init().unwrap();
     } else {
-        match matches.occurrences_of("v") {
+        match matches.get_count("v") {
             0 => logging::WarnLogger::init().unwrap(),
             1 => logging::InfoLogger::init().unwrap(),
             _ => logging::TraceLogger::init().unwrap(),
@@ -301,10 +298,10 @@ fn main() {
     }
 
     // Find the input directory
-    let input = match matches.value_of("INPUT") {
-        Some(input) => PathBuf::from(input),
-        None => env::current_dir().unwrap(),
-    };
+    let input: PathBuf = matches
+        .get_one("INPUT")
+        .cloned()
+        .unwrap_or_else(|| env::current_dir().unwrap());
 
     let bindings = match load_bindings(&input, &matches) {
         Ok(bindings) => bindings,
@@ -316,15 +313,15 @@ fn main() {
     };
 
     // Write the bindings file
-    match matches.value_of("out") {
+    match matches.get_one::<String>("out") {
         Some(file) => {
             let changed = bindings.write_to_file(file);
 
-            if matches.is_present("verify") && changed {
+            if matches.contains_id("verify") && changed {
                 error!("Bindings changed: {}", file);
                 std::process::exit(2);
             }
-            if let Some(depfile) = matches.value_of("depfile") {
+            if let Some(depfile) = matches.get_one("depfile") {
                 bindings.generate_depfile(file, depfile)
             }
         }
