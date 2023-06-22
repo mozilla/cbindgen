@@ -1,3 +1,11 @@
+## 0.25.0
+
+      * Re-release of yanked 0.24.6 as a major release
+      * Update MSRV to 1.57
+      * Support variadic arguments (`...`) (#805)
+      * Add --depfile option (#820)
+      * Breaking changes: The `Config` struct now has a private member.
+
 ## 0.24.6 (YANKED: depfile option was breaking, see #841)
 
       * Update MSRV to 1.57
