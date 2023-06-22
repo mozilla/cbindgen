@@ -1,3 +1,7 @@
+# Unreleased
+
+      * Fix swapping of `>>=` and `<<=` in constants.
+
 ## 0.25.0
 
       * Re-release of yanked 0.24.6 as a major release
