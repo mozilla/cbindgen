@@ -14,7 +14,7 @@ jobs:
       # someone with permissions to create a tag.
       contents: write
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v3
@@ -23,9 +23,9 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: semver
-      uses: obi1kenobi/cargo-semver-checks-action@v2
-      with:
-        rust-toolchain: stable
+      run: |
+        cargo install cargo-semver-checks --locked
+        cargo semver-checks check-release
 
     - name: Build cbindgen
       run: |
@@ -49,11 +49,8 @@ jobs:
         sed '$ d' | awk '{$1=$1};1' > CHANGES.txt
 
     - name: Create a release
-      uses: softprops/action-gh-release@v1
-      with:
-        name: v${{ steps.tagName.outputs.version }}
-        body_path: CHANGES.txt
-        files: |
-          target/release/cbindgen
+      run: |
+        TAG=${{ steps.tagName.outputs.version }}
+        gh release create ${TAG} --title "${TAG}" --notes-file "CHANGES.txt" --draft 'target/release/cbindgen#cbindgen-ubuntu20.04'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
