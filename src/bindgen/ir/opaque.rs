@@ -2,19 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::io::Write;
-
-use crate::bindgen::config::{Config, Language};
+use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, ToCondition,
+    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
-use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct OpaqueItem {
@@ -134,43 +130,5 @@ impl Item for OpaqueItem {
         );
 
         out.insert_opaque(self, monomorph, generic_values.to_owned());
-    }
-}
-
-impl Source for OpaqueItem {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        let condition = self.cfg.to_condition(config);
-        condition.write_before(config, out);
-
-        self.documentation.write(config, out);
-
-        self.generic_params.write_with_default(config, out);
-
-        match config.language {
-            Language::C if config.style.generate_typedef() => {
-                write!(
-                    out,
-                    "typedef struct {} {};",
-                    self.export_name(),
-                    self.export_name()
-                );
-            }
-            Language::C | Language::Cxx => {
-                write!(out, "struct {};", self.export_name());
-            }
-            Language::Cython => {
-                write!(
-                    out,
-                    "{}struct {}",
-                    config.style.cython_def(),
-                    self.export_name()
-                );
-                out.open_brace();
-                out.write("pass");
-                out.close_brace(false);
-            }
-        }
-
-        condition.write_after(config, out);
     }
 }
