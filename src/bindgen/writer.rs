@@ -6,7 +6,8 @@ use std::cmp;
 use std::io;
 use std::io::Write;
 
-use crate::bindgen::config::{Braces, Config, Language};
+use crate::bindgen::config::{Braces, Language};
+use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::Bindings;
 
 /// A type of way to format a list.
@@ -77,7 +78,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     /// written.
     pub fn try_write<T>(&mut self, func: T, max_line_length: usize) -> bool
     where
-        T: Fn(&mut MeasureWriter),
+        T: FnOnce(&mut MeasureWriter),
     {
         if self.line_length > max_line_length {
             return false;
@@ -207,13 +208,19 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         InnerWriter(self).write_fmt(fmt).unwrap();
     }
 
-    pub fn write_horizontal_source_list<S: Source>(
+    pub fn write_horizontal_source_list<
+        LB: LanguageBackend,
+        S,
+        WF: Fn(&mut LB, &mut SourceWriter<F>, &S),
+    >(
         &mut self,
+        language_backend: &mut LB,
         items: &[S],
         list_type: ListType<'_>,
+        writer: WF,
     ) {
         for (i, item) in items.iter().enumerate() {
-            item.write(&self.bindings.config, self);
+            writer(language_backend, self, item);
 
             match list_type {
                 ListType::Join(text) => {
@@ -228,11 +235,21 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
     }
 
-    pub fn write_vertical_source_list<S: Source>(&mut self, items: &[S], list_type: ListType<'_>) {
+    pub fn write_vertical_source_list<
+        LB: LanguageBackend,
+        S,
+        WF: Fn(&mut LB, &mut SourceWriter<F>, &S),
+    >(
+        &mut self,
+        language_backend: &mut LB,
+        items: &[S],
+        list_type: ListType<'_>,
+        writer: WF,
+    ) {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
         for (i, item) in items.iter().enumerate() {
-            item.write(&self.bindings.config, self);
+            writer(language_backend, self, item);
 
             match list_type {
                 ListType::Join(text) => {
@@ -251,8 +268,4 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
         self.pop_tab();
     }
-}
-
-pub trait Source {
-    fn write<F: Write>(&self, config: &Config, _: &mut SourceWriter<F>);
 }

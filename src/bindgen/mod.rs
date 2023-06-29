@@ -46,6 +46,7 @@ mod declarationtyperesolver;
 mod dependencies;
 mod error;
 mod ir;
+mod language_backend;
 mod library;
 mod mangle;
 mod monomorph;
