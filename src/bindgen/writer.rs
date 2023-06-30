@@ -6,7 +6,8 @@ use std::cmp;
 use std::io;
 use std::io::Write;
 
-use crate::bindgen::config::{Braces, Config, Language};
+use crate::bindgen::config::{Braces, Language};
+use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::Bindings;
 
 /// A type of way to format a list.
@@ -207,13 +208,14 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         InnerWriter(self).write_fmt(fmt).unwrap();
     }
 
-    pub fn write_horizontal_source_list<S: Source>(
+    pub fn write_horizontal_source_list<LB: LanguageBackend, S: Source<LB>>(
         &mut self,
+        language_backend: &LB,
         items: &[S],
         list_type: ListType<'_>,
     ) {
         for (i, item) in items.iter().enumerate() {
-            item.write(&self.bindings.config, self);
+            item.write(language_backend, self);
 
             match list_type {
                 ListType::Join(text) => {
@@ -228,11 +230,16 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
     }
 
-    pub fn write_vertical_source_list<S: Source>(&mut self, items: &[S], list_type: ListType<'_>) {
+    pub fn write_vertical_source_list<LB: LanguageBackend, S: Source<LB>>(
+        &mut self,
+        language_backend: &LB,
+        items: &[S],
+        list_type: ListType<'_>,
+    ) {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
         for (i, item) in items.iter().enumerate() {
-            item.write(&self.bindings.config, self);
+            item.write(language_backend, self);
 
             match list_type {
                 ListType::Join(text) => {
@@ -253,6 +260,6 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     }
 }
 
-pub trait Source {
-    fn write<F: Write>(&self, config: &Config, _: &mut SourceWriter<F>);
+pub trait Source<LB: LanguageBackend> {
+    fn write<F: Write>(&self, language_backend: &LB, _: &mut SourceWriter<F>);
 }

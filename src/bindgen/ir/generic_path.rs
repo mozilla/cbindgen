@@ -7,6 +7,7 @@ use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use crate::bindgen::ir::{ConstExpr, Path, Type};
+use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -94,12 +95,15 @@ impl GenericParams {
             .collect()
     }
 
-    fn write_internal<F: Write>(
+    pub(crate) fn write_internal<F: Write, LB: LanguageBackend>(
         &self,
+        language_backend: &LB,
         config: &Config,
         out: &mut SourceWriter<F>,
         with_default: bool,
-    ) {
+    ) where
+        GenericArgument: Source<LB>,
+    {
         if !self.0.is_empty() && config.language == Language::Cxx {
             out.write("template<");
             for (i, item) in self.0.iter().enumerate() {
@@ -114,7 +118,7 @@ impl GenericParams {
                         }
                     }
                     GenericParamType::Const(ref ty) => {
-                        cdecl::write_field(out, ty, item.name.name(), config);
+                        cdecl::write_field(language_backend, out, ty, item.name.name(), config);
                         if with_default {
                             write!(out, " = 0");
                         }
@@ -126,8 +130,15 @@ impl GenericParams {
         }
     }
 
-    pub fn write_with_default<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.write_internal(config, out, true);
+    pub fn write_with_default<F: Write, LB: LanguageBackend>(
+        &self,
+        language_backend: &LB,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+    ) where
+        GenericArgument: Source<LB>,
+    {
+        self.write_internal(language_backend, config, out, true);
     }
 }
 
@@ -136,12 +147,6 @@ impl Deref for GenericParams {
 
     fn deref(&self) -> &[GenericParam] {
         &self.0
-    }
-}
-
-impl Source for GenericParams {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.write_internal(config, out, false);
     }
 }
 
@@ -185,11 +190,15 @@ impl GenericArgument {
     }
 }
 
-impl Source for GenericArgument {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+impl<LB: LanguageBackend> Source<LB> for GenericArgument
+where
+    Type: Source<LB>,
+    ConstExpr: Source<LB>,
+{
+    fn write<F: Write>(&self, language_backend: &LB, out: &mut SourceWriter<F>) {
         match *self {
-            GenericArgument::Type(ref ty) => ty.write(config, out),
-            GenericArgument::Const(ref expr) => expr.write(config, out),
+            GenericArgument::Type(ref ty) => ty.write(language_backend, out),
+            GenericArgument::Const(ref expr) => expr.write(language_backend, out),
         }
     }
 }
