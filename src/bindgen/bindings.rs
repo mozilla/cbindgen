@@ -13,7 +13,8 @@ use std::rc::Rc;
 
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::ir::{
-    Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct, Typedef,
+    Constant, Documentation, Enum, Function, ItemContainer, ItemMap, Literal, OpaqueItem,
+    Path as BindgenPath, Static, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::language_backend::{
     CLikeLanguageBackend, CythonLanguageBackend, LanguageBackend, NamespaceOperation,
@@ -74,8 +75,6 @@ impl Bindings {
 
     /// Peels through typedefs to allow resolving structs.
     fn resolved_struct_path<'a>(&self, path: &'a BindgenPath) -> Cow<'a, BindgenPath> {
-        use crate::bindgen::ir::Type;
-
         let mut resolved_path = Cow::Borrowed(path);
         loop {
             let mut found = None;
@@ -204,15 +203,27 @@ impl Bindings {
     pub fn write<F: Write>(&self, file: F) {
         match self.config.language {
             Language::Cxx | Language::C => {
-                self.write_with_backend(file, CLikeLanguageBackend::new(self.config.clone()))
+                self.write_with_backend(file, &CLikeLanguageBackend::new(self.config.clone()))
             }
             Language::Cython => {
-                self.write_with_backend(file, CythonLanguageBackend::new(self.config.clone()))
+                self.write_with_backend(file, &CythonLanguageBackend::new(self.config.clone()))
             }
         }
     }
 
-    pub fn write_with_backend<F: Write, LB: LanguageBackend>(&self, file: F, language_backend: LB) {
+    pub fn write_with_backend<F: Write, LB: LanguageBackend>(&self, file: F, language_backend: &LB)
+    where
+        Enum: Source<LB>,
+        Struct: Source<LB>,
+        Union: Source<LB>,
+        OpaqueItem: Source<LB>,
+        Typedef: Source<LB>,
+        Static: Source<LB>,
+        Function: Source<LB>,
+        Type: Source<LB>,
+        Documentation: Source<LB>,
+        Literal: Source<LB>,
+    {
         if self.noop {
             return;
         }
@@ -228,7 +239,7 @@ impl Bindings {
         for constant in &self.constants {
             if constant.uses_only_primitive_types() {
                 out.new_line_if_not_start();
-                constant.write(&self.config, &mut out, None);
+                constant.write(&self.config, language_backend, &mut out, None);
                 out.new_line();
             }
         }
@@ -247,11 +258,11 @@ impl Bindings {
             match *item {
                 ItemContainer::Constant(..) => unreachable!(),
                 ItemContainer::Static(..) => unreachable!(),
-                ItemContainer::Enum(ref x) => x.write(&self.config, &mut out),
-                ItemContainer::Struct(ref x) => x.write(&self.config, &mut out),
-                ItemContainer::Union(ref x) => x.write(&self.config, &mut out),
-                ItemContainer::OpaqueItem(ref x) => x.write(&self.config, &mut out),
-                ItemContainer::Typedef(ref x) => x.write(&self.config, &mut out),
+                ItemContainer::Enum(ref x) => x.write(language_backend, &mut out),
+                ItemContainer::Struct(ref x) => x.write(language_backend, &mut out),
+                ItemContainer::Union(ref x) => x.write(language_backend, &mut out),
+                ItemContainer::OpaqueItem(ref x) => x.write(language_backend, &mut out),
+                ItemContainer::Typedef(ref x) => x.write(language_backend, &mut out),
             }
             out.new_line();
         }
@@ -259,7 +270,7 @@ impl Bindings {
         for constant in &self.constants {
             if !constant.uses_only_primitive_types() {
                 out.new_line_if_not_start();
-                constant.write(&self.config, &mut out, None);
+                constant.write(&self.config, language_backend, &mut out, None);
                 out.new_line();
             }
         }
@@ -293,13 +304,13 @@ impl Bindings {
 
             for global in &self.globals {
                 out.new_line_if_not_start();
-                global.write(&self.config, &mut out);
+                global.write(language_backend, &mut out);
                 out.new_line();
             }
 
             for function in &self.functions {
                 out.new_line_if_not_start();
-                function.write(&self.config, &mut out);
+                function.write(language_backend, &mut out);
                 out.new_line();
             }
 

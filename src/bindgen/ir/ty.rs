@@ -7,11 +7,11 @@ use std::io::Write;
 
 use syn::ext::IdentExt;
 
-use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
+use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::utilities::IterHelpers;
@@ -377,12 +377,6 @@ impl ConstExpr {
             ConstExpr::Value(_) => {}
         }
         self.clone()
-    }
-}
-
-impl Source for ConstExpr {
-    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        write!(out, "{}", self.as_str());
     }
 }
 
@@ -1004,14 +998,15 @@ impl Type {
     }
 }
 
-impl Source for String {
-    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        write!(out, "{}", self);
+impl<LB: LanguageBackend> Source<LB> for ConstExpr {
+    fn write<F: Write>(&self, _language_backend: &LB, out: &mut SourceWriter<F>) {
+        write!(out, "{}", self.as_str());
     }
 }
 
-impl Source for Type {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_type(out, self, config);
+// TODO this should probably remplace by some more specific structs
+impl<LB: LanguageBackend> Source<LB> for String {
+    fn write<F: Write>(&self, _language_backend: &LB, out: &mut SourceWriter<F>) {
+        write!(out, "{}", self);
     }
 }

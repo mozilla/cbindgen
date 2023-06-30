@@ -46,6 +46,7 @@ mod declarationtyperesolver;
 mod dependencies;
 mod error;
 mod ir;
+mod language_backend;
 mod library;
 mod mangle;
 mod monomorph;
@@ -54,7 +55,6 @@ mod rename;
 mod reserved;
 mod utilities;
 mod writer;
-mod language_backend;
 
 #[allow(unused)]
 pub(crate) use self::cargo::*;
