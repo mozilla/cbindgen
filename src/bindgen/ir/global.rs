@@ -26,7 +26,11 @@ pub struct Static {
 }
 
 impl Static {
-    pub fn load(item: &syn::ItemStatic, mod_cfg: Option<&Cfg>) -> Result<Static, String> {
+    pub fn load(
+        path: Path,
+        item: &syn::ItemStatic,
+        mod_cfg: Option<&Cfg>,
+    ) -> Result<Static, String> {
         let ty = Type::load(&item.ty)?;
 
         if ty.is_none() {
@@ -34,7 +38,7 @@ impl Static {
         }
 
         Ok(Static::new(
-            Path::new(item.ident.unraw().to_string()),
+            path,
             ty.unwrap(),
             item.mutability.is_some(),
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
