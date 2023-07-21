@@ -16,7 +16,7 @@ use crate::bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
     Struct, ToCondition, Type,
 };
-use crate::bindgen::language_backend::LanguageBackend;
+use crate::bindgen::language_backend::{java_writable_literal, wrap_java_value, LanguageBackend};
 use crate::bindgen::library::Library;
 use crate::bindgen::writer::SourceWriter;
 use crate::bindgen::Bindings;
@@ -720,6 +720,22 @@ impl Constant {
                 // but still useful as documentation, so we write it as a comment.
                 write!(out, " {} # = ", name);
                 language_backend.write_literal(out, value);
+            }
+            Language::JavaJna => {
+                if java_writable_literal(&self.ty, value) {
+                    out.write("public static final ");
+                    language_backend.write_type(out, &self.ty);
+                    write!(out, " {}  = ", self.export_name);
+                    language_backend.write_literal(out, &wrap_java_value(value, &self.ty));
+                    out.write(";")
+                } else {
+                    write!(
+                        out,
+                        "/* Unsupported literal for constant {} */",
+                        self.export_name
+                    )
+                }
+                out.new_line();
             }
         }
 

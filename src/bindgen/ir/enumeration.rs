@@ -729,6 +729,7 @@ impl Enum {
                     write!(out, "{}enum {}", config.style.cython_def(), tag_name);
                 }
             }
+            _ => unimplemented!(),
         }
         out.open_brace();
 
@@ -783,6 +784,7 @@ impl Enum {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
+            _ => unimplemented!(),
         }
 
         out.write(if inline_tag_field { "union" } else { "struct" });
