@@ -993,7 +993,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                         return write!(out, "{}", known);
                     }
                     let path_separator = match self.config.language {
-                        Language::Cython | Language::C => "_",
+                        Language::C => "_",
                         Language::Cxx => {
                             if self.config.structure.associated_constants_in_body {
                                 "::"
@@ -1001,6 +1001,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                                 "_"
                             }
                         }
+                        _ => unreachable!(),
                     };
                     write!(out, "{}{}", export_name, path_separator)
                 }

@@ -361,6 +361,7 @@ impl Builder {
                 Default::default(),
                 Default::default(),
                 true,
+                Default::default(),
             ));
         }
 
@@ -405,6 +406,9 @@ impl Builder {
             result.typedefs,
             result.functions,
             result.source_files,
+            self.lib_cargo
+                .map(|cargo| cargo.binding_crate_lib_name().to_string())
+                .unwrap_or_default(),
         )
         .generate()
     }

@@ -4,6 +4,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use std::{fmt, fs, path::Path as StdPath, path::PathBuf as StdPathBuf};
 
@@ -23,6 +24,7 @@ pub enum Language {
     Cxx,
     C,
     Cython,
+    JavaJna,
 }
 
 impl FromStr for Language {
@@ -42,8 +44,37 @@ impl FromStr for Language {
             "C" => Ok(Language::C),
             "cython" => Ok(Language::Cython),
             "Cython" => Ok(Language::Cython),
+            "Java-JNA" => Ok(Language::JavaJna),
+            "Java-Jna" => Ok(Language::JavaJna),
+            "java-jna" => Ok(Language::JavaJna),
+            "JavaJNA" => Ok(Language::JavaJna),
+            "JavaJna" => Ok(Language::JavaJna),
+            "javajna" => Ok(Language::JavaJna),
             _ => Err(format!("Unrecognized Language: '{}'.", s)),
         }
+    }
+}
+
+impl Display for Language {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Language::Cxx => {
+                    "cxx"
+                }
+                Language::C => {
+                    "c"
+                }
+                Language::Cython => {
+                    "cython"
+                }
+                Language::JavaJna => {
+                    "java-jna"
+                }
+            }
+        )
     }
 }
 
@@ -54,6 +85,7 @@ impl Language {
         match self {
             Language::Cxx | Language::C => "typedef",
             Language::Cython => "ctypedef",
+            _ => unimplemented!(),
         }
     }
 }
@@ -888,6 +920,22 @@ pub struct CythonConfig {
     pub cimports: BTreeMap<String, Vec<String>>,
 }
 
+/// Settings specific to Java bindings.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct JavaConfig {
+    /// Package to use
+    pub package: Option<String>,
+
+    /// Name of the generated interface
+    pub interface_name: Option<String>,
+
+    /// Extra definition to include inside the generated interface
+    pub extra_defs: Option<String>,
+}
+
 /// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -1010,6 +1058,8 @@ pub struct Config {
     pub only_target_dependencies: bool,
     /// Configuration options specific to Cython.
     pub cython: CythonConfig,
+    /// Configuration options specific to Java (JNA backend)
+    pub java_jna: JavaConfig,
     #[doc(hidden)]
     #[serde(skip)]
     /// Internal field for tracking from which file the config was loaded.
@@ -1061,6 +1111,7 @@ impl Default for Config {
             pointer: PtrConfig::default(),
             only_target_dependencies: false,
             cython: CythonConfig::default(),
+            java_jna: JavaConfig::default(),
             config_path: None,
         }
     }
