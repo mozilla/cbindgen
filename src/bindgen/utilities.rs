@@ -130,6 +130,58 @@ pub trait SynAttributeHelpers {
             })
     }
 
+    fn find_deprecated_note(&self) -> Option<String> {
+        let attrs = self.attrs();
+        // #[deprecated = ""]
+        if let Some(note) = attrs.attr_name_value_lookup("deprecated") {
+            return Some(note);
+        }
+
+        // #[deprecated]
+        if attrs.has_attr_word("deprecated") {
+            return Some("".to_string());
+        }
+
+        // #[deprecated(note = "")]
+        if let Some(attr) = attrs.iter().find(|attr| {
+            if let Ok(syn::Meta::List(list)) = attr.parse_meta() {
+                list.path.is_ident("deprecated")
+            } else {
+                false
+            }
+        }) {
+            let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> =
+                match attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
+                    Ok(args) => args,
+                    Err(_) => {
+                        warn!("couldn't parse deprecated attribute");
+                        return None;
+                    }
+                };
+
+            let lit = match args
+                .iter()
+                .find(|arg| arg.path.is_ident("note"))
+                .map(|arg| &arg.lit)
+            {
+                Some(lit) => lit,
+                None => {
+                    warn!("couldn't parse deprecated attribute: no `note` field");
+                    return None;
+                }
+            };
+
+            return if let syn::Lit::Str(lit) = lit {
+                Some(lit.value())
+            } else {
+                warn!("deprecated attribute must be a string");
+                None
+            };
+        }
+
+        None
+    }
+
     fn is_no_mangle(&self) -> bool {
         self.has_attr_word("no_mangle")
     }
