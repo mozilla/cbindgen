@@ -753,7 +753,17 @@ impl Enum {
                 if let Some(prim) = size {
                     // If we need to specify size, then we have no choice but to create a typedef,
                     // so `config.style` is not respected.
-                    write!(out, "enum {}", tag_name);
+                    write!(out, "enum");
+                    if let Some(note) = self.annotations.deprecated_note(config) {
+                        if let Some(note) = self.annotations.format_deprecated_note(
+                            config.enumeration.deprecated.as_deref(),
+                            config.enumeration.deprecated_with_note.as_deref(),
+                            note,
+                        ) {
+                            write!(out, " {}", note);
+                        }
+                    }
+                    write!(out, " {}", tag_name);
 
                     if config.cpp_compatible_c() {
                         out.new_line();
@@ -769,6 +779,15 @@ impl Enum {
                         out.write("typedef ");
                     }
                     out.write("enum");
+                    if let Some(note) = self.annotations.deprecated_note(config) {
+                        if let Some(note) = self.annotations.format_deprecated_note(
+                            config.enumeration.deprecated.as_deref(),
+                            config.enumeration.deprecated_with_note.as_deref(),
+                            note,
+                        ) {
+                            write!(out, " {}", note);
+                        }
+                    }
                     if config.style.generate_tag() {
                         write!(out, " {}", tag_name);
                     }
@@ -784,6 +803,16 @@ impl Enum {
                 if self.annotations.must_use(config) {
                     if let Some(ref anno) = config.enumeration.must_use {
                         write!(out, " {}", anno)
+                    }
+                }
+
+                if let Some(note) = self.annotations.deprecated_note(config) {
+                    if let Some(note) = self.annotations.format_deprecated_note(
+                        config.structure.deprecated.as_deref(),
+                        config.structure.deprecated_with_note.as_deref(),
+                        note,
+                    ) {
+                        write!(out, " {}", note);
                     }
                 }
 
@@ -862,6 +891,16 @@ impl Enum {
         if self.annotations.must_use(config) {
             if let Some(ref anno) = config.structure.must_use {
                 write!(out, " {}", anno);
+            }
+        }
+
+        if let Some(note) = self.annotations.deprecated_note(config) {
+            if let Some(note) = self.annotations.format_deprecated_note(
+                config.enumeration.deprecated.as_deref(),
+                config.enumeration.deprecated_with_note.as_deref(),
+                note,
+            ) {
+                write!(out, " {} ", note);
             }
         }
 

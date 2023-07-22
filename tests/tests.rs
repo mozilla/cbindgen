@@ -140,6 +140,9 @@ fn compile(
             // clang also warns about returning non-instantiated templates (they could
             // be specialized, but they're not so it's fine).
             command.arg("-Wno-return-type-c-linkage");
+            // deprecated warnings should not be errors as it's intended
+            command.arg("-Wno-deprecated-declarations");
+
             if let Language::Cxx = language {
                 // enum class is a c++11 extension which makes g++ on macos 10.14 error out
                 // inline variables are are a c++17 extension

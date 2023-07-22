@@ -35,6 +35,7 @@ pub enum AnnotationValue {
 pub struct AnnotationSet {
     annotations: HashMap<String, AnnotationValue>,
     pub must_use: bool,
+    pub deprecated: Option<String>,
 }
 
 impl AnnotationSet {
@@ -42,6 +43,7 @@ impl AnnotationSet {
         AnnotationSet {
             annotations: HashMap::new(),
             must_use: false,
+            deprecated: None,
         }
     }
 
@@ -51,6 +53,27 @@ impl AnnotationSet {
 
     pub(crate) fn must_use(&self, config: &Config) -> bool {
         self.must_use && config.language != Language::Cython
+    }
+
+    pub(crate) fn deprecated_note(&self, config: &Config) -> Option<&str> {
+        if config.language == Language::Cython {
+            return None;
+        }
+
+        self.deprecated.as_deref()
+    }
+
+    pub(crate) fn format_deprecated_note(
+        &self,
+        format_without_note: Option<&str>,
+        format_with_note: Option<&str>,
+        note: &str,
+    ) -> Option<String> {
+        if note.is_empty() {
+            return format_without_note.map(|x| x.to_string());
+        }
+        format_with_note
+            .map(|format_with_note| format_with_note.replace("{}", format!("{:?}", note).as_str()))
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
@@ -68,7 +91,7 @@ impl AnnotationSet {
             .collect();
 
         let must_use = attrs.has_attr_word("must_use");
-
+        let deprecated = attrs.find_deprecated_note();
         let mut annotations = HashMap::new();
 
         // Look at each line for an annotation
@@ -118,6 +141,7 @@ impl AnnotationSet {
         Ok(AnnotationSet {
             annotations,
             must_use,
+            deprecated,
         })
     }
 
