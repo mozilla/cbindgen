@@ -35,6 +35,7 @@ pub enum AnnotationValue {
 pub struct AnnotationSet {
     annotations: HashMap<String, AnnotationValue>,
     pub must_use: bool,
+    pub deprecated: Option<String>,
 }
 
 impl AnnotationSet {
@@ -42,6 +43,7 @@ impl AnnotationSet {
         AnnotationSet {
             annotations: HashMap::new(),
             must_use: false,
+            deprecated: None,
         }
     }
 
@@ -68,6 +70,10 @@ impl AnnotationSet {
             .collect();
 
         let must_use = attrs.has_attr_word("must_use");
+        if attrs.has_attr_word("deprecated") {
+            dbg!(attrs);
+            todo!();
+        }
 
         let mut annotations = HashMap::new();
 
@@ -118,6 +124,7 @@ impl AnnotationSet {
         Ok(AnnotationSet {
             annotations,
             must_use,
+            deprecated: None,
         })
     }
 
