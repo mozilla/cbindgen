@@ -193,11 +193,13 @@ impl CDecl {
 
     fn write<F: Write>(&self, out: &mut SourceWriter<F>, ident: Option<&str>, config: &Config) {
         // Write deprecated attribute
-        if let Some(ref deprecated) = self.deprecated {
-            if deprecated.is_empty() {
-                out.write("[[deprecated]] ");
-            } else {
-                write!(out, "[[deprecated(\"{}\")]] ", deprecated);
+        if config.language != Language::Cython {
+            if let Some(ref deprecated) = self.deprecated {
+                if deprecated.is_empty() {
+                    out.write("[[deprecated]] ");
+                } else {
+                    write!(out, "[[deprecated(\"{}\")]] ", deprecated);
+                }
             }
         }
         // Write the type-specifier and type-qualifier

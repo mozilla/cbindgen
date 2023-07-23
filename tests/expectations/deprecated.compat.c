@@ -7,13 +7,13 @@
 extern "C" {
 #endif // __cplusplus
 
-void deprecated_without_note(void);
+[[deprecated]] void deprecated_without_note(void);
 
-void deprecated_with_value(void);
+[[deprecated("This is a note")]] void deprecated_without_bracket(void);
 
-void deprecated_with_note(void);
+[[deprecated("This is a note")]] void deprecated_with_note(void);
 
-void deprecated_with_note_and_since(void);
+[[deprecated("This is a note")]] void deprecated_with_note_and_since(void);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -6,12 +6,12 @@
 
 extern "C" {
 
-void deprecated_without_note();
+[[deprecated]] void deprecated_without_note();
 
-void deprecated_with_value();
+[[deprecated("This is a note")]] void deprecated_without_bracket();
 
-void deprecated_with_note();
+[[deprecated("This is a note")]] void deprecated_with_note();
 
-void deprecated_with_note_and_since();
+[[deprecated("This is a note")]] void deprecated_with_note_and_since();
 
 } // extern "C"
