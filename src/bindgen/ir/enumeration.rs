@@ -19,6 +19,7 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
+use crate::bindgen::utilities::create_deprecate_attribute;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[allow(clippy::large_enum_variant)]
@@ -779,6 +780,10 @@ impl Enum {
                     out.write("enum class");
                 } else {
                     out.write("enum");
+                }
+
+                if let Some(ref note) = self.annotations.deprecated {
+                    write!(out, " {}", create_deprecate_attribute(note));
                 }
 
                 if self.annotations.must_use(config) {

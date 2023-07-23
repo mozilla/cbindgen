@@ -6,6 +6,10 @@ cdef extern from *:
 
 cdef extern from *:
 
+  cdef enum:
+    A # = 0,
+  ctypedef int32_t DeprecatedEnum;
+
   void deprecated_without_note();
 
   void deprecated_without_bracket();
@@ -13,3 +17,7 @@ cdef extern from *:
   void deprecated_with_note();
 
   void deprecated_with_note_and_since();
+
+  void deprecated_with_note_which_requires_to_be_escaped();
+
+  void dummy(DeprecatedEnum a);

@@ -196,9 +196,13 @@ impl CDecl {
         // Write deprecated attribute
         if config.language != Language::Cython {
             if let Some(ref deprecated) = self.deprecated {
-                writeln!(out, "#ifdef __cplusplus");
-                writeln!(out, "{}", create_deprecate_attribute(deprecated));
-                writeln!(out, "#endif // __cplusplus");
+                if config.language == Language::Cxx {
+                    writeln!(out, "{}", create_deprecate_attribute(deprecated));
+                } else {
+                    writeln!(out, "#ifdef __cplusplus");
+                    writeln!(out, "{}", create_deprecate_attribute(deprecated));
+                    writeln!(out, "#endif // __cplusplus");
+                }
             }
         }
         // Write the type-specifier and type-qualifier

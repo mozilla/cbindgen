@@ -18,20 +18,12 @@ pub extern "C" fn deprecated_with_note_and_since() {}
 #[deprecated(note = "This quote \" requires to be quoted, and this [\n] requires to be escaped")]
 pub extern "C" fn deprecated_with_note_which_requires_to_be_escaped() {}
 
-#[no_mangle]
+#[derive(Debug, PartialEq, Eq)]
+#[repr(i32)]
+#[deprecated]
 pub enum DeprecatedEnum {
-    #[deprecated]
-    DeprecatedVariant,
-    #[deprecated = "This is a note"]
-    DeprecatedVariantWithoutBracket,
-    #[deprecated(note = "This is a note")]
-    DeprecatedVariantWithNote,
-    #[deprecated(note = "This is a note", since = "1.0.0")]
-    DeprecatedVariantWithNoteAndSince,
+    A = 0,
 }
 
 #[no_mangle]
-#[deprecated]
-pub enum DeprecatedEnumItself {
-    Item,
-}
+pub extern "C" fn dummy(a: DeprecatedEnum) {}
