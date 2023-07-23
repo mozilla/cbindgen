@@ -198,7 +198,8 @@ impl CDecl {
                 if deprecated.is_empty() {
                     out.write("[[deprecated]] ");
                 } else {
-                    write!(out, "[[deprecated(\"{}\")]] ", deprecated);
+                    // FIXME: I used {:?} to escape the string, but there should be much better way
+                    write!(out, "[[deprecated({:?})]] ", deprecated);
                 }
             }
         }
