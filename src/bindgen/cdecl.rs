@@ -7,6 +7,7 @@ use std::io::Write;
 use crate::bindgen::config::Layout;
 use crate::bindgen::declarationtyperesolver::DeclarationType;
 use crate::bindgen::ir::{ConstExpr, Function, GenericArgument, Type};
+use crate::bindgen::utilities::create_deprecate_attribute;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
 
@@ -195,12 +196,9 @@ impl CDecl {
         // Write deprecated attribute
         if config.language != Language::Cython {
             if let Some(ref deprecated) = self.deprecated {
-                if deprecated.is_empty() {
-                    out.write("[[deprecated]] ");
-                } else {
-                    // FIXME: I used {:?} to escape the string, but there should be much better way
-                    write!(out, "[[deprecated({:?})]] ", deprecated);
-                }
+                writeln!(out, "#ifdef __cplusplus");
+                writeln!(out, "{}", create_deprecate_attribute(deprecated));
+                writeln!(out, "#endif // __cplusplus");
             }
         }
         // Write the type-specifier and type-qualifier

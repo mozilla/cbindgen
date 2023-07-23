@@ -293,3 +293,12 @@ fn split_doc_attr(input: &str) -> Vec<String> {
         .map(|s| s.trim_end().to_string())
         .collect()
 }
+
+pub fn create_deprecate_attribute(deprecated: &String) -> String {
+    if deprecated.is_empty() {
+        "[[deprecated]]".to_string()
+    } else {
+        // FIXME: I used {:?} to escape the string, but there should be much better way
+        format!("[[deprecated({:?})]]", deprecated)
+    }
+}
