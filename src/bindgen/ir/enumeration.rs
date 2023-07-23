@@ -770,6 +770,19 @@ impl Enum {
                         out.write("typedef ");
                     }
                     out.write("enum");
+                    if let Some(ref note) = self.annotations.deprecated {
+                        if config.cpp_compatible_c() {
+                            writeln!(out, "#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
+                        } else {
+                            writeln!(out, "#if __STDC_VERSION__ >= 201112L");
+                        }
+                        write!(out, " {}", create_deprecate_attribute(note));
+                        if config.cpp_compatible_c() {
+                            writeln!(out, "#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
+                        } else {
+                            writeln!(out, "#endif // __STDC_VERSION__ >= 201112L");
+                        }
+                    }
                     if config.style.generate_tag() {
                         write!(out, " {}", tag_name);
                     }

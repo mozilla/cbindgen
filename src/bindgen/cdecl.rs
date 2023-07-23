@@ -199,9 +199,9 @@ impl CDecl {
                 if config.language == Language::Cxx {
                     writeln!(out, "{}", create_deprecate_attribute(deprecated));
                 } else {
-                    writeln!(out, "#ifdef __cplusplus");
+                    writeln!(out, "#if __STDC_VERSION__ >= 202311L");
                     writeln!(out, "{}", create_deprecate_attribute(deprecated));
-                    writeln!(out, "#endif // __cplusplus");
+                    writeln!(out, "#endif // __STDC_VERSION__ >= 202311L");
                 }
             }
         }
