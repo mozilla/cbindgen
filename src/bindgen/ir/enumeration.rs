@@ -774,7 +774,7 @@ impl Enum {
                         if config.cpp_compatible_c() {
                             out.write("#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
                         } else {
-                            out.write("#if __STDC_VERSION__ >= 201112L");
+                            out.write("#if __STDC_VERSION__ >= 202311L");
                         }
                         out.new_line();
 
@@ -782,7 +782,7 @@ impl Enum {
                         if config.cpp_compatible_c() {
                             out.write("#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
                         } else {
-                            out.write("#endif // __STDC_VERSION__ >= 201112L");
+                            out.write("#endif // __STDC_VERSION__ >= 202311L");
                         }
                         out.new_line();
                     }
