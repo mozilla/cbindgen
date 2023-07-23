@@ -772,16 +772,19 @@ impl Enum {
                     out.write("enum");
                     if let Some(ref note) = self.annotations.deprecated {
                         if config.cpp_compatible_c() {
-                            writeln!(out, "#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
+                            out.write("#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
                         } else {
-                            writeln!(out, "#if __STDC_VERSION__ >= 201112L");
+                            out.write("#if __STDC_VERSION__ >= 201112L");
                         }
+                        out.new_line();
+
                         write!(out, " {}", create_deprecate_attribute(note));
                         if config.cpp_compatible_c() {
-                            writeln!(out, "#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
+                            out.write("#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
                         } else {
-                            writeln!(out, "#endif // __STDC_VERSION__ >= 201112L");
+                            out.write("#endif // __STDC_VERSION__ >= 201112L");
                         }
+                        out.new_line();
                     }
                     if config.style.generate_tag() {
                         write!(out, " {}", tag_name);
