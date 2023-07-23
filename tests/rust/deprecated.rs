@@ -18,12 +18,18 @@ pub extern "C" fn deprecated_with_note_and_since() {}
 #[deprecated(note = "This quote \" requires to be quoted, and this [\n] requires to be escaped")]
 pub extern "C" fn deprecated_with_note_which_requires_to_be_escaped() {}
 
-#[derive(Debug, PartialEq, Eq)]
 #[repr(i32)]
 #[deprecated]
 pub enum DeprecatedEnum {
     A = 0,
 }
 
+// TODO: Support deprecated structs
+#[repr(C)]
+#[deprecated]
+pub struct DeprecatedStruct {
+    pub a: i32,
+}
+
 #[no_mangle]
-pub extern "C" fn dummy(a: DeprecatedEnum) {}
+pub extern "C" fn dummy(a: DeprecatedEnum, b: DeprecatedStruct) {}

@@ -10,6 +10,9 @@ cdef extern from *:
     A # = 0,
   ctypedef int32_t DeprecatedEnum;
 
+  ctypedef struct DeprecatedStruct:
+    int32_t a;
+
   void deprecated_without_note();
 
   void deprecated_without_bracket();
@@ -20,4 +23,4 @@ cdef extern from *:
 
   void deprecated_with_note_which_requires_to_be_escaped();
 
-  void dummy(DeprecatedEnum a);
+  void dummy(DeprecatedEnum a, DeprecatedStruct b);
