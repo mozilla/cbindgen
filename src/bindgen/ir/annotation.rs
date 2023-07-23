@@ -70,10 +70,36 @@ impl AnnotationSet {
             .collect();
 
         let must_use = attrs.has_attr_word("must_use");
-        if attrs.has_attr_word("deprecated") {
-            dbg!(attrs);
-            todo!();
-        }
+        let deprecated = if let Some(note) = attrs.attr_name_value_lookup("deprecated") {
+            Some(note)
+        } else if attrs.has_attr_word("deprecated") {
+            Some("".to_string())
+        } else if let Some(attr) = attrs.iter().find(|attr| {
+            if let Ok(syn::Meta::List(list)) = attr.parse_meta() {
+                list.path.is_ident("deprecated")
+            } else {
+                false
+            }
+        }) {
+            let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> = attr
+                .parse_args_with(syn::punctuated::Punctuated::parse_terminated)
+                .map_err(|e| format!("Couldn't parse deprecated attribute: {}", e.to_string()))?;
+            let Some(lit) = args
+                .iter()
+                .find(|arg| arg.path.is_ident("note"))
+                .map(|arg| &arg.lit)
+            else {
+                return Err("Couldn't parse deprecated attribute: no `note` field".to_string());
+            };
+
+            if let syn::Lit::Str(lit) = lit {
+                Some(lit.value())
+            } else {
+                return Err("deprecated attribute must be a string".to_string());
+            }
+        } else {
+            None
+        };
 
         let mut annotations = HashMap::new();
 
@@ -124,7 +150,7 @@ impl AnnotationSet {
         Ok(AnnotationSet {
             annotations,
             must_use,
-            deprecated: None,
+            deprecated,
         })
     }
 

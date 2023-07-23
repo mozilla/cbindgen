@@ -6,4 +6,10 @@ cdef extern from *:
 
 cdef extern from *:
 
-  void root();
+  void deprecated_without_note();
+
+  void deprecated_with_value();
+
+  void deprecated_with_note();
+
+  void deprecated_with_note_and_since();
