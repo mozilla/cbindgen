@@ -22,9 +22,24 @@ enum DEPRECATED_STRUCT DeprecatedEnum
 typedef int32_t DeprecatedEnum;
 #endif // __cplusplus
 
+enum DEPRECATED_STRUCT_WITH_NOTE("This is a note") DeprecatedEnumWithNote
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  B = 0,
+};
+#ifndef __cplusplus
+typedef int32_t DeprecatedEnumWithNote;
+#endif // __cplusplus
+
 typedef struct DEPRECATED_STRUCT DeprecatedStruct {
   int32_t a;
 } DeprecatedStruct;
+
+typedef struct DEPRECATED_STRUCT_WITH_NOTE("This is a note") DeprecatedStructWithNote {
+  int32_t a;
+} DeprecatedStructWithNote;
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +56,10 @@ DEPRECATED_FUNC_WITH_NOTE("This is a note") void deprecated_with_note_and_since(
 DEPRECATED_FUNC_WITH_NOTE("This quote \" requires to be quoted, and this [\n] requires to be escaped")
 void deprecated_with_note_which_requires_to_be_escaped(void);
 
-void dummy(DeprecatedEnum a, struct DeprecatedStruct b);
+void dummy(DeprecatedEnum a,
+           DeprecatedEnumWithNote b,
+           struct DeprecatedStruct c,
+           struct DeprecatedStructWithNote d);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -791,7 +791,11 @@ impl Enum {
                                 write!(out, " {}", anno);
                             }
                         } else if let Some(ref anno) = config.structure.deprecated_with_note {
-                            write!(out, " {}", anno);
+                            write!(
+                                out,
+                                " {}",
+                                anno.replace("{}", format!("{:?}", note).as_str())
+                            );
                         }
                     }
                     if config.style.generate_tag() {
@@ -819,7 +823,11 @@ impl Enum {
                             write!(out, " {}", anno);
                         }
                     } else if let Some(ref anno) = config.structure.deprecated_with_note {
-                        write!(out, " {}", anno);
+                        write!(
+                            out,
+                            " {}",
+                            anno.replace("{}", format!("{:?}", note).as_str())
+                        );
                     }
                 }
 

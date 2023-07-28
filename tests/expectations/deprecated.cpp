@@ -16,7 +16,15 @@ enum class DEPRECATED_STRUCT DeprecatedEnum : int32_t {
   A = 0,
 };
 
+enum class DEPRECATED_STRUCT_WITH_NOTE("This is a note") DeprecatedEnumWithNote : int32_t {
+  B = 0,
+};
+
 struct DEPRECATED_STRUCT DeprecatedStruct {
+  int32_t a;
+};
+
+struct DEPRECATED_STRUCT_WITH_NOTE("This is a note") DeprecatedStructWithNote {
   int32_t a;
 };
 
@@ -33,6 +41,9 @@ DEPRECATED_FUNC_WITH_NOTE("This is a note") void deprecated_with_note_and_since(
 DEPRECATED_FUNC_WITH_NOTE("This quote \" requires to be quoted, and this [\n] requires to be escaped")
 void deprecated_with_note_which_requires_to_be_escaped();
 
-void dummy(DeprecatedEnum a, DeprecatedStruct b);
+void dummy(DeprecatedEnum a,
+           DeprecatedEnumWithNote b,
+           DeprecatedStruct c,
+           DeprecatedStructWithNote d);
 
 } // extern "C"

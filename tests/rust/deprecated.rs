@@ -24,12 +24,29 @@ pub enum DeprecatedEnum {
     A = 0,
 }
 
-// TODO: Support deprecated structs
+#[repr(i32)]
+#[deprecated(note = "This is a note")]
+pub enum DeprecatedEnumWithNote {
+    B = 0,
+}
+
 #[repr(C)]
 #[deprecated]
 pub struct DeprecatedStruct {
     pub a: i32,
 }
 
+#[repr(C)]
+#[deprecated(note = "This is a note")]
+pub struct DeprecatedStructWithNote {
+    pub a: i32,
+}
+
 #[no_mangle]
-pub extern "C" fn dummy(a: DeprecatedEnum, b: DeprecatedStruct) {}
+pub extern "C" fn dummy(
+    a: DeprecatedEnum,
+    b: DeprecatedEnumWithNote,
+    c: DeprecatedStruct,
+    d: DeprecatedStructWithNote,
+) -> void {
+}
