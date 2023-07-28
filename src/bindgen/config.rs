@@ -425,6 +425,10 @@ pub struct FunctionConfig {
     pub postfix: Option<String>,
     /// The way to annotation this function as #[must_use]
     pub must_use: Option<String>,
+    /// The way to annotation this function as #[deprecated] without notes
+    pub deprecated: Option<String>,
+    /// The way to annotation this function as #[deprecated] with notes
+    pub deprecated_with_notes: Option<String>,
     /// The style to layout the args
     pub args: Layout,
     /// The rename rule to apply to function args
@@ -443,6 +447,8 @@ impl Default for FunctionConfig {
             prefix: None,
             postfix: None,
             must_use: None,
+            deprecated: None,
+            deprecated_with_notes: None,
             args: Layout::Auto,
             rename_args: RenameRule::None,
             swift_name_macro: None,
@@ -498,6 +504,10 @@ pub struct StructConfig {
     pub associated_constants_in_body: bool,
     /// The way to annotate this struct as #[must_use].
     pub must_use: Option<String>,
+    /// The way to annotation this function as #[deprecated] without notes
+    pub deprecated: Option<String>,
+    /// The way to annotation this function as #[deprecated] with notes
+    pub deprecated_with_notes: Option<String>,
 }
 
 impl StructConfig {
@@ -581,6 +591,10 @@ pub struct EnumConfig {
     pub cast_assert_name: Option<String>,
     /// The way to annotation this enum as #[must_use].
     pub must_use: Option<String>,
+    /// The way to annotation this function as #[deprecated] without notes
+    pub deprecated: Option<String>,
+    /// The way to annotation this function as #[deprecated] with notes
+    pub deprecated_with_notes: Option<String>,
     /// Whether to generate destructors of tagged enums.
     pub derive_tagged_enum_destructor: bool,
     /// Whether to generate copy-constructors of tagged enums.
@@ -612,6 +626,8 @@ impl Default for EnumConfig {
             derive_mut_casts: false,
             cast_assert_name: None,
             must_use: None,
+            deprecated: None,
+            deprecated_with_notes: None,
             derive_tagged_enum_destructor: false,
             derive_tagged_enum_copy_constructor: false,
             derive_tagged_enum_copy_assignment: false,
