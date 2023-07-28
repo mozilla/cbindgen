@@ -455,6 +455,20 @@ impl Source for Struct {
                 write!(out, " {}", anno);
             }
         }
+        if self.annotations.deprecated(config) {
+            let note = self.annotations.deprecated.as_ref().unwrap();
+            if note.is_empty() {
+                if let Some(ref anno) = config.structure.deprecated {
+                    write!(out, " {}", anno);
+                }
+            } else if let Some(ref anno) = config.structure.deprecated_with_note {
+                write!(
+                    out,
+                    " {}",
+                    anno.replace("{}", format!("{:?}", note).as_str())
+                );
+            }
+        }
 
         if config.language != Language::C || config.style.generate_tag() {
             write!(out, " {}", self.export_name());

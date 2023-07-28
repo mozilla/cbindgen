@@ -19,7 +19,6 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::utilities::create_deprecate_attribute;
 use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[allow(clippy::large_enum_variant)]
@@ -754,7 +753,22 @@ impl Enum {
                 if let Some(prim) = size {
                     // If we need to specify size, then we have no choice but to create a typedef,
                     // so `config.style` is not respected.
-                    write!(out, "enum {}", tag_name);
+                    write!(out, "enum");
+                    if self.annotations.deprecated(config) {
+                        let note = self.annotations.deprecated.as_ref().unwrap();
+                        if note.is_empty() {
+                            if let Some(ref anno) = config.structure.deprecated {
+                                write!(out, " {}", anno);
+                            }
+                        } else if let Some(ref anno) = config.structure.deprecated_with_note {
+                            write!(
+                                out,
+                                " {}",
+                                anno.replace("{}", format!("{:?}", note).as_str())
+                            );
+                        }
+                    }
+                    write!(out, " {}", tag_name);
 
                     if config.cpp_compatible_c() {
                         out.new_line();
@@ -770,21 +784,15 @@ impl Enum {
                         out.write("typedef ");
                     }
                     out.write("enum");
-                    if let Some(ref note) = self.annotations.deprecated {
-                        if config.cpp_compatible_c() {
-                            out.write("#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
-                        } else {
-                            out.write("#if __STDC_VERSION__ >= 202311L");
+                    if self.annotations.deprecated(config) {
+                        let note = self.annotations.deprecated.as_ref().unwrap();
+                        if note.is_empty() {
+                            if let Some(ref anno) = config.structure.deprecated {
+                                write!(out, " {}", anno);
+                            }
+                        } else if let Some(ref anno) = config.structure.deprecated_with_note {
+                            write!(out, " {}", anno);
                         }
-                        out.new_line();
-
-                        write!(out, " {}", create_deprecate_attribute(note));
-                        if config.cpp_compatible_c() {
-                            out.write("#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
-                        } else {
-                            out.write("#endif // __STDC_VERSION__ >= 202311L");
-                        }
-                        out.new_line();
                     }
                     if config.style.generate_tag() {
                         write!(out, " {}", tag_name);
@@ -798,13 +806,20 @@ impl Enum {
                     out.write("enum");
                 }
 
-                if let Some(ref note) = self.annotations.deprecated {
-                    write!(out, " {}", create_deprecate_attribute(note));
-                }
-
                 if self.annotations.must_use(config) {
                     if let Some(ref anno) = config.enumeration.must_use {
                         write!(out, " {}", anno)
+                    }
+                }
+
+                if self.annotations.deprecated(config) {
+                    let note = self.annotations.deprecated.as_ref().unwrap();
+                    if note.is_empty() {
+                        if let Some(ref anno) = config.structure.deprecated {
+                            write!(out, " {}", anno);
+                        }
+                    } else if let Some(ref anno) = config.structure.deprecated_with_note {
+                        write!(out, " {}", anno);
                     }
                 }
 
@@ -882,6 +897,17 @@ impl Enum {
 
         if self.annotations.must_use(config) {
             if let Some(ref anno) = config.structure.must_use {
+                write!(out, " {}", anno);
+            }
+        }
+
+        if self.annotations.deprecated(config) {
+            let note = self.annotations.deprecated.as_ref().unwrap();
+            if note.is_empty() {
+                if let Some(ref anno) = config.structure.deprecated {
+                    write!(out, " {}", anno);
+                }
+            } else if let Some(ref anno) = config.structure.deprecated_with_note {
                 write!(out, " {}", anno);
             }
         }

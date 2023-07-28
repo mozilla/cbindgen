@@ -241,6 +241,20 @@ impl Source for Function {
                         write!(out, "{} ", anno);
                     }
                 }
+                if func.annotations.deprecated(config) {
+                    let note = func.annotations.deprecated.as_ref().unwrap();
+                    if note.is_empty() {
+                        if let Some(ref anno) = config.function.deprecated {
+                            write!(out, "{} ", anno);
+                        }
+                    } else if let Some(ref anno) = config.function.deprecated_with_note {
+                        write!(
+                            out,
+                            "{} ",
+                            anno.replace("{}", format!("{:?}", note).as_str())
+                        );
+                    }
+                }
             }
             cdecl::write_func(out, func, Layout::Horizontal, config);
 
@@ -281,6 +295,22 @@ impl Source for Function {
                 if func.annotations.must_use(config) {
                     if let Some(ref anno) = config.function.must_use {
                         write!(out, "{}", anno);
+                        out.new_line();
+                    }
+                }
+                if func.annotations.deprecated(config) {
+                    let note = func.annotations.deprecated.as_ref().unwrap();
+                    if note.is_empty() {
+                        if let Some(ref anno) = config.function.deprecated {
+                            write!(out, "{}", anno);
+                            out.new_line();
+                        }
+                    } else if let Some(ref anno) = config.function.deprecated_with_note {
+                        write!(
+                            out,
+                            "{}",
+                            anno.replace("{}", format!("{:?}", note).as_str())
+                        );
                         out.new_line();
                     }
                 }

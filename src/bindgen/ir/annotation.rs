@@ -55,6 +55,10 @@ impl AnnotationSet {
         self.must_use && config.language != Language::Cython
     }
 
+    pub(crate) fn deprecated(&self, config: &Config) -> bool {
+        self.deprecated.is_some() && config.language != Language::Cython
+    }
+
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
         let lines = attrs.get_comment_lines();
         let lines: Vec<&str> = lines

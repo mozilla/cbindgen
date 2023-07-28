@@ -7,7 +7,6 @@ use std::io::Write;
 use crate::bindgen::config::Layout;
 use crate::bindgen::declarationtyperesolver::DeclarationType;
 use crate::bindgen::ir::{ConstExpr, Function, GenericArgument, Type};
-use crate::bindgen::utilities::create_deprecate_attribute;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
 
@@ -193,21 +192,7 @@ impl CDecl {
     }
 
     fn write<F: Write>(&self, out: &mut SourceWriter<F>, ident: Option<&str>, config: &Config) {
-        // Write deprecated attribute
-        if config.language != Language::Cython {
-            if let Some(ref deprecated) = self.deprecated {
-                if config.language == Language::Cxx {
-                    writeln!(out, "{}", create_deprecate_attribute(deprecated));
-                } else {
-                    out.write("#if __STDC_VERSION__ >= 202311L");
-                    out.new_line();
-                    writeln!(out, "{}", create_deprecate_attribute(deprecated));
-                    out.write("#endif // __STDC_VERSION__ >= 202311L");
-                    out.new_line();
-                }
-            }
-        }
-        // Write the type-specifier and type-qualifier
+        // Write the type-specifier and type-qualifier first
         if !self.type_qualifers.is_empty() {
             write!(out, "{} ", self.type_qualifers);
         }
