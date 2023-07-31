@@ -101,7 +101,11 @@ impl AnnotationSet {
                 .ok_or("Could not find suffix in line")?;
             let prefix = first_line[..suffix_index].to_string();
 
-            while value_lines.last().is_some_and(|l| l.ends_with('\\')) {
+            while let Some(last) = value_lines.last() {
+                if !last.ends_with('\\') {
+                    break;
+                }
+
                 i += 1;
                 let s = &attrs_lines[i];
                 value_lines.push(s.to_string());
@@ -118,8 +122,10 @@ impl AnnotationSet {
                         .trim_end()
                         .to_string();
 
-                    if l.find(&prefix).is_some_and(|i| i == 0) {
-                        l = l.replacen(&prefix, "", 1);
+                    if let Some(line) = l.find(&prefix) {
+                        if line == 0 {
+                            l = l.replacen(&prefix, "", 1);
+                        }
                     }
 
                     l
