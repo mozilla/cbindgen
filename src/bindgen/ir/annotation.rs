@@ -81,10 +81,6 @@ impl AnnotationSet {
             // Split the annotation in two
             let parts: Vec<&str> = annotation.split('=').map(|x| x.trim()).collect();
 
-            if parts.len() > 2 {
-                return Err(format!("Couldn't parse {}.", line));
-            }
-
             // Grab the name that this annotation is modifying
             let name = parts[0];
 
@@ -95,9 +91,9 @@ impl AnnotationSet {
             }
 
             // Parse the value we're setting the name to
-            let value = parts[1];
+            let value = parts[1..].join("=");
 
-            if let Some(x) = parse_list(value) {
+            if let Some(x) = parse_list(&value) {
                 annotations.insert(name.to_string(), AnnotationValue::List(x));
                 continue;
             }
