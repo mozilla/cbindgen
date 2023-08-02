@@ -263,7 +263,7 @@ impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
         if let Some(ref abi) = *self {
             if let Some(ref lit_string) = abi.name {
-                return lit_string.value() == "C";
+                return matches!(lit_string.value().as_str(), "C" | "C-unwind");
             }
         }
         false
@@ -280,7 +280,7 @@ impl SynAbiHelpers for Option<syn::Abi> {
 impl SynAbiHelpers for syn::Abi {
     fn is_c(&self) -> bool {
         if let Some(ref lit_string) = self.name {
-            lit_string.value() == "C"
+            matches!(lit_string.value().as_str(), "C" | "C-unwind")
         } else {
             false
         }
