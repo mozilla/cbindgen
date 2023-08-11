@@ -62,7 +62,6 @@ pub use self::bindings::Bindings;
 pub use self::builder::Builder;
 pub use self::config::Profile; // disambiguate with cargo::Profile
 pub use self::config::*;
-pub use self::config::CustomLanguageBindgen;
 pub use self::error::Error;
 pub use self::ir::ItemContainer;
 pub use self::ir::constant::Constant;

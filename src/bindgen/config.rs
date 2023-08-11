@@ -19,7 +19,7 @@ pub use crate::bindgen::rename::RenameRule;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub trait CustomLanguageBindgen: 'static + std::fmt::Debug {
+pub trait CustomLanguage: 'static + std::fmt::Debug {
     fn write(
         &self,
         bindings: &Bindings,
@@ -34,7 +34,7 @@ pub enum Language {
     Cxx,
     C,
     Cython,
-    Custom(Rc<dyn CustomLanguageBindgen>)
+    Custom(Rc<dyn CustomLanguage>)
 }
 
 impl PartialEq for Language {

@@ -5,7 +5,7 @@
 use std::path;
 use std::rc::Rc;
 
-use crate::bindgen::CustomLanguageBindgen;
+use crate::bindgen::CustomLanguage;
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::cargo::Cargo;
 use crate::bindgen::config::{Braces, Config, Language, Profile, Style};
@@ -152,7 +152,7 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_custom_language(mut self, language: impl CustomLanguageBindgen) -> Builder {
+    pub fn with_custom_language(mut self, language: impl CustomLanguage) -> Builder {
         self.config.language = Language::Custom(Rc::new(language));
         self
     }
