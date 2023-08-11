@@ -146,7 +146,7 @@ impl Source for OpaqueItem {
 
         self.generic_params.write_with_default(config, out);
 
-        match config.language {
+        match &config.language {
             Language::C if config.style.generate_typedef() => {
                 write!(
                     out,
@@ -168,7 +168,8 @@ impl Source for OpaqueItem {
                 out.open_brace();
                 out.write("pass");
                 out.close_brace(false);
-            }
+            },
+            Language::Custom(_) => unreachable!(),
         }
 
         condition.write_after(config, out);

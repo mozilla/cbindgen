@@ -176,6 +176,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
                 self.new_line();
                 self.push_tab();
             }
+            Language::Custom(_) => unreachable!()
         }
     }
 
@@ -191,6 +192,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
                 }
             }
             Language::Cython => {}
+            Language::Custom(_) => unreachable!()
         }
     }
 

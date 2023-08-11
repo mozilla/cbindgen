@@ -417,6 +417,7 @@ impl Source for Struct {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
+            Language::Custom(_) => unreachable!(),
         }
 
         // Cython extern declarations don't manage layouts, layouts are defined entierly by the

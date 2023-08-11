@@ -748,7 +748,7 @@ impl Enum {
         tag_name: &str,
     ) {
         // Open the tag enum.
-        match config.language {
+        match &config.language {
             Language::C => {
                 if let Some(prim) = size {
                     // If we need to specify size, then we have no choice but to create a typedef,
@@ -800,7 +800,8 @@ impl Enum {
                 } else {
                     write!(out, "{}enum {}", config.style.cython_def(), tag_name);
                 }
-            }
+            },
+            Language::Custom(_) => unreachable!(),
         }
         out.open_brace();
 
@@ -831,7 +832,7 @@ impl Enum {
 
             if config.language != Language::Cxx {
                 out.new_line();
-                write!(out, "{} {} {};", config.language.typedef(), prim, tag_name);
+                write!(out, "{} {} {};", config.language.clone().typedef(), prim, tag_name);
             }
 
             if config.cpp_compatible_c() {
@@ -851,10 +852,11 @@ impl Enum {
         out: &mut SourceWriter<F>,
         inline_tag_field: bool,
     ) {
-        match config.language {
+        match &config.language {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
+            Language::Custom(_) => unreachable!(),
         }
 
         out.write(if inline_tag_field { "union" } else { "struct" });

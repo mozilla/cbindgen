@@ -308,6 +308,7 @@ impl Bindings {
                     out.new_line();
                     out.close_brace(false);
                 }
+                Language::Custom(_) => unreachable!()
             }
         }
 
@@ -337,6 +338,15 @@ impl Bindings {
     pub fn write<F: Write>(&self, file: F) {
         if self.noop {
             return;
+        }
+
+        match &self.config.language {
+            Language::Custom(custom_language) => {
+                let mut file = file;
+                custom_language.write(self, &mut file);
+                return;
+            },
+            _ => {}
         }
 
         let mut out = SourceWriter::new(file, self);
