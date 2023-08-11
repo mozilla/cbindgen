@@ -62,4 +62,17 @@ pub use self::bindings::Bindings;
 pub use self::builder::Builder;
 pub use self::config::Profile; // disambiguate with cargo::Profile
 pub use self::config::*;
+pub use self::config::CustomLanguageBindgen;
 pub use self::error::Error;
+pub use self::ir::ItemContainer;
+pub use self::ir::constant::Constant;
+pub use self::ir::Static;
+pub use self::ir::OpaqueItem;
+pub use self::ir::Struct;
+pub use self::ir::Union;
+pub use self::ir::Enum;
+pub use self::ir::Typedef;
+pub use self::ir::Type;
+pub use self::ir::PrimitiveType;
+pub use self::ir::FunctionArgument;
+pub use self::ir::IntKind;

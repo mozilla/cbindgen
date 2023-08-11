@@ -19,8 +19,13 @@ pub use crate::bindgen::rename::RenameRule;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub trait CustomLanguageBindgen: std::fmt::Debug {
-    fn write(&self, bindings: &Bindings, file: &mut dyn std::io::Write);
+pub trait CustomLanguageBindgen: 'static + std::fmt::Debug {
+    fn write(
+        &self,
+        bindings: &Bindings,
+        file: &mut dyn std::io::Write,
+        config: &Config
+    ) -> std::io::Result<()>;
 }
 
 /// A language type to generate bindings for.
