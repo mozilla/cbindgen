@@ -358,7 +358,7 @@ impl Bindings {
         match &self.config.language {
             Language::Custom(custom_language) => {
                 let mut file = file;
-                custom_language.write(self, &mut file, &self.config).unwrap();
+                custom_language.write(&mut file, self, &self.config).unwrap();
                 return;
             },
             _ => {}

@@ -22,8 +22,8 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub trait CustomLanguage: 'static + std::fmt::Debug {
     fn write(
         &self,
-        bindings: &Bindings,
         file: &mut dyn std::io::Write,
+        bindings: &Bindings,
         config: &Config
     ) -> std::io::Result<()>;
 }
