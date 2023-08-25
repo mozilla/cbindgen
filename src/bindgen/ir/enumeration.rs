@@ -907,7 +907,6 @@ impl Enum {
         }
 
         if let Some(note) = self.annotations.deprecated_node(config) {
-            let note = self.annotations.deprecated.as_ref().unwrap();
             if note.is_empty() {
                 if let Some(ref anno) = config.structure.deprecated {
                     write!(out, " {}", anno);
