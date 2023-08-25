@@ -5,6 +5,7 @@
 use std::env;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 extern crate clap;
 #[macro_use]
@@ -19,21 +20,19 @@ extern crate quote;
 extern crate syn;
 extern crate toml;
 
-use clap::builder::PossibleValuesParser;
-use clap::ArgAction;
-use clap::{Arg, ArgMatches, Command};
+use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 
 mod bindgen;
 mod logging;
 
-use crate::bindgen::{Bindings, Builder, Cargo, Config, Error};
+use bindgen::{Bindings, Builder, Cargo, Config, Error};
 
 fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
     // We allow specifying a language to override the config default. This is
     // used by compile-tests.
-    match matches.try_get_one("lang") {
+    match matches.try_get_one::<String>("lang") {
         Ok(Some(lang)) => {
-            config.language = *lang;
+            config.language = bindgen::Language::from_str(lang).unwrap();
         }
         Err(reason) => {
             error!("{}", reason);
@@ -42,17 +41,17 @@ fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
         _ => (),
     }
 
-    if matches.contains_id("cpp-compat") {
+    if matches.get_flag("cpp-compat") {
         config.cpp_compat = true;
     }
 
-    if matches.contains_id("only-target-dependencies") {
+    if matches.get_flag("only-target-dependencies") {
         config.only_target_dependencies = true;
     }
 
-    match matches.try_get_one("style") {
+    match matches.try_get_one::<String>("style") {
         Ok(Some(style)) => {
-            config.style = *style;
+            config.style = bindgen::Style::from_str(style).unwrap();
         }
         Err(_) => {
             error!("Unknown style specified.");
@@ -61,9 +60,9 @@ fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
         _ => (),
     }
 
-    match matches.try_get_one("profile") {
+    match matches.try_get_one::<String>("profile") {
         Ok(Some(profile)) => {
-            config.parse.expand.profile = *profile;
+            config.parse.expand.profile = bindgen::Profile::from_str(profile).unwrap();
         }
         Err(e) => {
             error!("{}", e);
@@ -72,7 +71,7 @@ fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
         _ => (),
     }
 
-    if matches.contains_id("d") {
+    if matches.get_flag("d") {
         config.parse.parse_deps = true;
     }
 }
@@ -101,11 +100,11 @@ fn load_bindings(input: &Path, matches: &ArgMatches) -> Result<Bindings, Error> 
     // We have to load a whole crate, so we use cargo to gather metadata
     let lib = Cargo::load(
         input,
-        matches.get_one::<String>("lockfile").map(|s| s.as_str()),
+        matches.get_one::<PathBuf>("lockfile").map(|s| s.as_path()),
         matches.get_one::<String>("crate").map(|s| s.as_str()),
         true,
-        matches.contains_id("clean"),
-        matches.contains_id("only-target-dependencies"),
+        matches.get_flag("clean"),
+        matches.get_flag("only-target-dependencies"),
         matches.get_one::<PathBuf>("metadata").map(|p| p.as_path()),
     )?;
 
@@ -145,6 +144,7 @@ fn main() {
         .arg(
             Arg::new("verify")
                 .long("verify")
+                .action(ArgAction::SetTrue)
                 .help("Generate bindings and compare it to the existing bindings file and error if they are different"),
         )
         .arg(
@@ -152,6 +152,7 @@ fn main() {
                 .short('c')
                 .long("config")
                 .value_name("PATH")
+                .value_parser(value_parser!(PathBuf))
                 .help("Specify path to a `cbindgen.toml` config to use"),
         )
         .arg(
@@ -160,16 +161,18 @@ fn main() {
                 .long("lang")
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
-                .value_parser(PossibleValuesParser::new(["c++", "C++", "c", "C", "cython", "Cython"])),
+                .value_parser(["c++", "C++", "c", "C", "cython", "Cython"]),
         )
         .arg(
             Arg::new("cpp-compat")
                 .long("cpp-compat")
+                .action(ArgAction::SetTrue)
                 .help("Whether to add C++ compatibility to generated C bindings")
         )
         .arg(
             Arg::new("only-target-dependencies")
                 .long("only-target-dependencies")
+                .action(ArgAction::SetTrue)
                 .help("Only fetch dependencies needed by the target platform. \
                     The target platform defaults to the host platform; set TARGET to override.")
         )
@@ -179,17 +182,19 @@ fn main() {
                 .long("style")
                 .value_name("STYLE")
                 .help("Specify the declaration style to use for bindings")
-                .value_parser(PossibleValuesParser::new(["Both", "both", "Tag", "tag", "Type", "type"])),
+                .value_parser(["Both", "both", "Tag", "tag", "Type", "type"]),
         )
         .arg(
             Arg::new("d")
                 .short('d')
                 .long("parse-dependencies")
+                .action(ArgAction::SetTrue)
                 .help("Whether to parse dependencies when generating bindings"),
         )
         .arg(
             Arg::new("clean")
                 .long("clean")
+                .action(ArgAction::SetTrue)
                 .help(
                     "Whether to use a new temporary directory for expanding macros. \
                     Affects performance, but might be required in certain build processes.")
@@ -202,6 +207,7 @@ fn main() {
                     In general this is the folder where the Cargo.toml file of \
                     source Rust library resides.")
                 .required(false)
+                .value_parser(value_parser!(PathBuf))
                 .index(1),
         )
         .arg(
@@ -220,6 +226,7 @@ fn main() {
                 .long("output")
                 .value_name("PATH")
                 .help("The file to output the bindings to")
+                .value_parser(value_parser!(PathBuf))
                 .required(false),
         )
         .arg(
@@ -231,6 +238,7 @@ fn main() {
                     is not specified, the Cargo.lock file is searched for in the \
                     same folder as the Cargo.toml file. This option is useful for \
                     projects that use workspaces.")
+                .value_parser(value_parser!(PathBuf))
                 .required(false),
         )
         .arg(
@@ -246,6 +254,7 @@ fn main() {
                      `cargo metadata --all-features --format-version 1 \
                       --manifest-path <path/to/crate/Cargo.toml>"
                 )
+                .value_parser(value_parser!(PathBuf))
                 .required(false),
         )
         .arg(
@@ -256,12 +265,13 @@ fn main() {
                     "Specify the profile to use when expanding macros. \
                      Has no effect otherwise."
                 )
-                .value_parser(PossibleValuesParser::new(["Debug", "debug", "Release", "release"])),
+                .value_parser(["Debug", "debug", "Release", "release"]),
         )
         .arg(
             Arg::new("quiet")
                 .short('q')
                 .long("quiet")
+                .action(ArgAction::SetTrue)
                 .help("Report errors only (overrides verbosity options).")
                 .required(false),
         )
@@ -271,6 +281,7 @@ fn main() {
                 .long("depfile")
                 .num_args(1)
                 .required(false)
+                .value_parser(value_parser!(PathBuf))
                 .help("Generate a depfile at the given Path listing the source files \
                     cbindgen traversed when generating the bindings. Useful when \
                     integrating cbindgen into 3rd party build-systems. \
@@ -279,7 +290,7 @@ fn main() {
         )
         .get_matches();
 
-    if !matches.contains_id("out") && matches.contains_id("verify") {
+    if matches.get_flag("verify") && !matches.contains_id("out") {
         error!(
             "Cannot verify bindings against `stdout`, please specify a file to compare against."
         );
@@ -287,7 +298,7 @@ fn main() {
     }
 
     // Initialize logging
-    if matches.contains_id("quiet") {
+    if matches.get_flag("quiet") {
         logging::ErrorLogger::init().unwrap();
     } else {
         match matches.get_count("v") {
@@ -313,12 +324,12 @@ fn main() {
     };
 
     // Write the bindings file
-    match matches.get_one::<String>("out") {
+    match matches.get_one::<PathBuf>("out") {
         Some(file) => {
             let changed = bindings.write_to_file(file);
 
-            if matches.contains_id("verify") && changed {
-                error!("Bindings changed: {}", file);
+            if matches.get_flag("verify") && changed {
+                error!("Bindings changed: {}", file.display());
                 std::process::exit(2);
             }
             if let Some(depfile) = matches.get_one("depfile") {
