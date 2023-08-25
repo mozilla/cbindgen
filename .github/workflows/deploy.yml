@@ -24,12 +24,12 @@ jobs:
 
     - name: semver
       run: |
-        cargo install cargo-semver-checks --locked
+        cargo +stable install cargo-semver-checks --locked
         cargo semver-checks check-release
 
     - name: Build cbindgen
       run: |
-        cargo build --release
+        cargo +stable build --release
 
     - name: Strip cbindgen
       run: |

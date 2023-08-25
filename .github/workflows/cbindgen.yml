@@ -23,11 +23,11 @@ jobs:
 
     - name: Run rustfmt
       run: |
-        cargo fmt --check
+        cargo +stable fmt --check
 
     - name: Run clippy
       run: |
-        cargo clippy --workspace -- -D warnings
+        cargo +stable clippy --workspace -- -D warnings
 
     - name: Install minimum supported Rust version
       id: msrv
@@ -59,18 +59,18 @@ jobs:
 
     - name: Build
       run: |
-        cargo build --verbose
+        cargo +stable build --verbose
 
     - name: Build no-default-features
       run: |
-        cargo build --verbose --no-default-features
+        cargo +stable build --verbose --no-default-features
 
     - name: Test package
       env:
         CBINDGEN_TEST_VERIFY: 1
       run: |
-        cargo package --verbose
-        (cd target/package/cbindgen-$(cargo run -- --version | cut -d ' ' -f 2) && cargo test --verbose)
+        cargo +stable package --verbose
+        (cd target/package/cbindgen-$(cargo +stable run -- --version | cut -d ' ' -f 2) && cargo +stable test --verbose)
 
     - name: Install nightly Rust
       uses: dtolnay/rust-toolchain@nightly
