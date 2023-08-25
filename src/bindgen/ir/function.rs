@@ -241,17 +241,13 @@ impl Source for Function {
                         write!(out, "{} ", anno);
                     }
                 }
-                if let Some(note) = func.annotations.deprecated_node(config) {
-                    if note.is_empty() {
-                        if let Some(ref anno) = config.function.deprecated {
-                            write!(out, "{} ", anno);
-                        }
-                    } else if let Some(ref anno) = config.function.deprecated_with_note {
-                        write!(
-                            out,
-                            "{} ",
-                            anno.replace("{}", format!("{:?}", note).as_str())
-                        );
+                if let Some(note) = func.annotations.deprecated_note(config) {
+                    if let Some(note) = func.annotations.format_deprecated_note(
+                        config.function.deprecated.as_deref(),
+                        config.function.deprecated_with_note.as_deref(),
+                        &note,
+                    ) {
+                        write!(out, "{} ", note);
                     }
                 }
             }
@@ -297,7 +293,7 @@ impl Source for Function {
                         out.new_line();
                     }
                 }
-                if let Some(note) = func.annotations.deprecated_node(config) {
+                if let Some(note) = func.annotations.deprecated_note(config) {
                     if note.is_empty() {
                         if let Some(ref anno) = config.function.deprecated {
                             write!(out, "{}", anno);

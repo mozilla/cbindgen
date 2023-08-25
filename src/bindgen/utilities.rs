@@ -118,7 +118,7 @@ pub trait SynAttributeHelpers {
 
     fn find_deprecated_note(&self) -> Result<Option<String>, String> {
         let attrs = self.attrs();
-        // #[deprecated(note = "")]
+        // #[deprecated = ""]
         if let Some(note) = attrs.attr_name_value_lookup("deprecated") {
             return Ok(Some(note));
         }

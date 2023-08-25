@@ -754,7 +754,7 @@ impl Enum {
                     // If we need to specify size, then we have no choice but to create a typedef,
                     // so `config.style` is not respected.
                     write!(out, "enum");
-                    if let Some(note) = self.annotations.deprecated_node(config) {
+                    if let Some(note) = self.annotations.deprecated_note(config) {
                         if note.is_empty() {
                             if let Some(ref anno) = config.structure.deprecated {
                                 write!(out, " {}", anno);
@@ -783,7 +783,7 @@ impl Enum {
                         out.write("typedef ");
                     }
                     out.write("enum");
-                    if let Some(note) = self.annotations.deprecated_node(config) {
+                    if let Some(note) = self.annotations.deprecated_note(config) {
                         if note.is_empty() {
                             if let Some(ref anno) = config.structure.deprecated {
                                 write!(out, " {}", anno);
@@ -814,7 +814,7 @@ impl Enum {
                     }
                 }
 
-                if let Some(note) = self.annotations.deprecated_node(config) {
+                if let Some(note) = self.annotations.deprecated_note(config) {
                     if note.is_empty() {
                         if let Some(ref anno) = config.structure.deprecated {
                             write!(out, " {}", anno);
@@ -906,13 +906,13 @@ impl Enum {
             }
         }
 
-        if let Some(note) = self.annotations.deprecated_node(config) {
-            if note.is_empty() {
-                if let Some(ref anno) = config.structure.deprecated {
-                    write!(out, " {}", anno);
-                }
-            } else if let Some(ref anno) = config.structure.deprecated_with_note {
-                write!(out, " {}", anno);
+        if let Some(note) = self.annotations.deprecated_note(config) {
+            if let Some(note) = self.annotations.format_deprecated_note(
+                config.enumeration.deprecated.as_deref(),
+                config.enumeration.deprecated_with_note.as_deref(),
+                &note,
+            ) {
+                write!(out, " {} ", note);
             }
         }
 

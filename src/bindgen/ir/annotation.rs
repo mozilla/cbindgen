@@ -55,12 +55,25 @@ impl AnnotationSet {
         self.must_use && config.language != Language::Cython
     }
 
-    pub(crate) fn deprecated_node(&self, config: &Config) -> Option<String> {
+    pub(crate) fn deprecated_note(&self, config: &Config) -> Option<String> {
         if config.language == Language::Cython {
             return None;
         }
 
         self.deprecated.clone()
+    }
+
+    pub(crate) fn format_deprecated_note(
+        &self,
+        format_without_note: Option<&str>,
+        format_with_note: Option<&str>,
+        note: &str,
+    ) -> Option<String> {
+        if note.is_empty() {
+            return format_without_note.map(|x| x.to_string());
+        }
+        format_with_note
+            .map(|format_with_note| format_with_note.replace("{}", format!("{:?}", note).as_str()))
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
