@@ -25,7 +25,7 @@ jobs:
     - name: semver
       run: |
         cargo +stable install cargo-semver-checks --locked
-        cargo semver-checks check-release
+        cargo +stable semver-checks check-release
 
     - name: Build cbindgen
       run: |
