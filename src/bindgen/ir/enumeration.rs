@@ -754,8 +754,7 @@ impl Enum {
                     // If we need to specify size, then we have no choice but to create a typedef,
                     // so `config.style` is not respected.
                     write!(out, "enum");
-                    if self.annotations.deprecated(config) {
-                        let note = self.annotations.deprecated.as_ref().unwrap();
+                    if let Some(note) = self.annotations.deprecated_node(config) {
                         if note.is_empty() {
                             if let Some(ref anno) = config.structure.deprecated {
                                 write!(out, " {}", anno);
@@ -784,8 +783,7 @@ impl Enum {
                         out.write("typedef ");
                     }
                     out.write("enum");
-                    if self.annotations.deprecated(config) {
-                        let note = self.annotations.deprecated.as_ref().unwrap();
+                    if let Some(note) = self.annotations.deprecated_node(config) {
                         if note.is_empty() {
                             if let Some(ref anno) = config.structure.deprecated {
                                 write!(out, " {}", anno);
@@ -816,8 +814,7 @@ impl Enum {
                     }
                 }
 
-                if self.annotations.deprecated(config) {
-                    let note = self.annotations.deprecated.as_ref().unwrap();
+                if let Some(note) = self.annotations.deprecated_node(config) {
                     if note.is_empty() {
                         if let Some(ref anno) = config.structure.deprecated {
                             write!(out, " {}", anno);
@@ -909,7 +906,7 @@ impl Enum {
             }
         }
 
-        if self.annotations.deprecated(config) {
+        if let Some(note) = self.annotations.deprecated_node(config) {
             let note = self.annotations.deprecated.as_ref().unwrap();
             if note.is_empty() {
                 if let Some(ref anno) = config.structure.deprecated {

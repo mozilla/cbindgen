@@ -455,8 +455,7 @@ impl Source for Struct {
                 write!(out, " {}", anno);
             }
         }
-        if self.annotations.deprecated(config) {
-            let note = self.annotations.deprecated.as_ref().unwrap();
+        if let Some(note) = self.annotations.deprecated_node(config) {
             if note.is_empty() {
                 if let Some(ref anno) = config.structure.deprecated {
                     write!(out, " {}", anno);

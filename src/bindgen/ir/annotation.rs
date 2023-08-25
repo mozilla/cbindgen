@@ -55,8 +55,12 @@ impl AnnotationSet {
         self.must_use && config.language != Language::Cython
     }
 
-    pub(crate) fn deprecated(&self, config: &Config) -> bool {
-        self.deprecated.is_some() && config.language != Language::Cython
+    pub(crate) fn deprecated_node(&self, config: &Config) -> Option<String> {
+        if config.language != Language::Cython {
+            return None;
+        }
+
+        self.deprecated
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
@@ -74,7 +78,9 @@ impl AnnotationSet {
             .collect();
 
         let must_use = attrs.has_attr_word("must_use");
-        let deprecated = if let Some(note) = attrs.attr_name_value_lookup("deprecated") {
+        let deprecated = 
+            // #[deprecated(note = "")]
+            if let Some(note) = attrs.attr_name_value_lookup("deprecated") {
             Some(note)
         } else if attrs.has_attr_word("deprecated") {
             Some("".to_string())
