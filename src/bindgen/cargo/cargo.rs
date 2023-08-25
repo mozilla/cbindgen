@@ -36,7 +36,7 @@ impl Cargo {
     /// need to be parsed.
     pub(crate) fn load(
         crate_dir: &Path,
-        lock_file: Option<&str>,
+        lock_file: Option<&Path>,
         binding_crate_name: Option<&str>,
         use_cargo_lock: bool,
         clean: bool,
