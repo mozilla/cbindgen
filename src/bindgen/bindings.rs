@@ -141,7 +141,7 @@ impl Bindings {
         let mut canon_source_files: Vec<_> = self
             .source_files
             .iter()
-            .chain(self.config.config_path.as_ref().into_iter())
+            .chain(self.config.config_path.as_ref())
             .map(|p| p.canonicalize().unwrap())
             .collect();
         // Sorting makes testing easier by ensuring the output is ordered.

@@ -16,6 +16,7 @@ There is continuous integration setup for `cbindgen` using [GitHub Actions](http
 
 In addition to a C/C++ compiler `cargo test` requires Python and Cython
 (`python -m pip install Cython`) for checking Cython bindings generated from tests (`.pyx` files).
+Note that the tests will be failed with Cython 3.x or later.
 
 Please run `cargo test` before filing a pull request to be sure that all tests pass. This will also update the test expectations.
 
