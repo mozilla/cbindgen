@@ -150,20 +150,25 @@ pub trait SynAttributeHelpers {
                 false
             }
         }) {
-            let Ok(args): Result<syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]>, _> =
-                attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated)
-            else {
-                warn!("couldn't parse deprecated attribute");
-                return None;
-            };
+            let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> =
+                match attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
+                    Ok(args) => args,
+                    Err(_) => {
+                        warn!("couldn't parse deprecated attribute");
+                        return None;
+                    }
+                };
 
-            let Some(lit) = args
+            let lit = match args
                 .iter()
                 .find(|arg| arg.path.is_ident("note"))
                 .map(|arg| &arg.lit)
-            else {
-                warn!("couldn't parse deprecated attribute: no `note` field");
-                return None;
+            {
+                Ok(lit) => lit,
+                Err(_) => {
+                    warn!("couldn't parse deprecated attribute: no `note` field");
+                    return None;
+                }
             };
 
             return if let syn::Lit::Str(lit) = lit {
