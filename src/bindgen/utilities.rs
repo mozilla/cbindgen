@@ -164,8 +164,8 @@ pub trait SynAttributeHelpers {
                 .find(|arg| arg.path.is_ident("note"))
                 .map(|arg| &arg.lit)
             {
-                Ok(lit) => lit,
-                Err(_) => {
+                Some(lit) => lit,
+                None => {
                     warn!("couldn't parse deprecated attribute: no `note` field");
                     return None;
                 }
