@@ -116,16 +116,16 @@ pub trait SynAttributeHelpers {
             })
     }
 
-    fn find_deprecated_note(&self) -> Result<Option<String>, String> {
+    fn find_deprecated_note(&self) -> Option<String> {
         let attrs = self.attrs();
         // #[deprecated = ""]
         if let Some(note) = attrs.attr_name_value_lookup("deprecated") {
-            return Ok(Some(note));
+            return Some(note);
         }
 
         // #[deprecated]
         if attrs.has_attr_word("deprecated") {
-            return Ok(Some("".to_string()));
+            return Some("".to_string());
         }
 
         // #[deprecated(note = "")]
@@ -136,25 +136,31 @@ pub trait SynAttributeHelpers {
                 false
             }
         }) {
-            let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> = attr
-                .parse_args_with(syn::punctuated::Punctuated::parse_terminated)
-                .map_err(|e| format!("Couldn't parse deprecated attribute: {}", e.to_string()))?;
+            let Ok(args): Result<syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]>, _> =
+                attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated)
+            else {
+                warn!("couldn't parse deprecated attribute");
+                return None;
+            };
+
             let Some(lit) = args
                 .iter()
                 .find(|arg| arg.path.is_ident("note"))
                 .map(|arg| &arg.lit)
             else {
-                return Err("Couldn't parse deprecated attribute: no `note` field".to_string());
+                warn!("couldn't parse deprecated attribute: no `note` field");
+                return None;
             };
 
             return if let syn::Lit::Str(lit) = lit {
-                Ok(Some(lit.value()))
+                Some(lit.value())
             } else {
-                Err("deprecated attribute must be a string".to_string())
+                warn!("deprecated attribute must be a string");
+                None
             };
         }
 
-        Ok(None)
+        None
     }
 
     fn is_no_mangle(&self) -> bool {
