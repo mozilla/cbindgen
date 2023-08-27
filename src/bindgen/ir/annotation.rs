@@ -55,12 +55,12 @@ impl AnnotationSet {
         self.must_use && config.language != Language::Cython
     }
 
-    pub(crate) fn deprecated_note(&self, config: &Config) -> Option<String> {
+    pub(crate) fn deprecated_note(&self, config: &Config) -> Option<&str> {
         if config.language == Language::Cython {
             return None;
         }
 
-        self.deprecated.clone()
+        self.deprecated.as_deref()
     }
 
     pub(crate) fn format_deprecated_note(

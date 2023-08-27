@@ -459,7 +459,7 @@ impl Source for Struct {
             if let Some(note) = self.annotations.format_deprecated_note(
                 config.structure.deprecated.as_deref(),
                 config.structure.deprecated_with_note.as_deref(),
-                &note,
+                note,
             ) {
                 write!(out, " {}", note);
             }

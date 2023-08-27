@@ -245,7 +245,7 @@ impl Source for Function {
                     if let Some(note) = func.annotations.format_deprecated_note(
                         config.function.deprecated.as_deref(),
                         config.function.deprecated_with_note.as_deref(),
-                        &note,
+                        note,
                     ) {
                         write!(out, "{} ", note);
                     }

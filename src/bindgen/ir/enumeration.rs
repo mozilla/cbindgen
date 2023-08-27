@@ -910,7 +910,7 @@ impl Enum {
             if let Some(note) = self.annotations.format_deprecated_note(
                 config.enumeration.deprecated.as_deref(),
                 config.enumeration.deprecated_with_note.as_deref(),
-                &note,
+                note,
             ) {
                 write!(out, " {} ", note);
             }
