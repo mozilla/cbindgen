@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum DEPRECATED_STRUCT DeprecatedEnum
+enum DEPRECATED_ENUM DeprecatedEnum
 #ifdef __cplusplus
   : int32_t
 #endif // __cplusplus
@@ -22,7 +22,7 @@ enum DEPRECATED_STRUCT DeprecatedEnum
 typedef int32_t DeprecatedEnum;
 #endif // __cplusplus
 
-enum DEPRECATED_STRUCT_WITH_NOTE("This is a note") DeprecatedEnumWithNote
+enum DEPRECATED_ENUM_WITH_NOTE("This is a note") DeprecatedEnumWithNote
 #ifdef __cplusplus
   : int32_t
 #endif // __cplusplus

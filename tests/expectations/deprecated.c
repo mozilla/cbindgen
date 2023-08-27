@@ -11,12 +11,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum DEPRECATED_STRUCT DeprecatedEnum {
+enum DEPRECATED_ENUM DeprecatedEnum {
   A = 0,
 };
 typedef int32_t DeprecatedEnum;
 
-enum DEPRECATED_STRUCT_WITH_NOTE("This is a note") DeprecatedEnumWithNote {
+enum DEPRECATED_ENUM_WITH_NOTE("This is a note") DeprecatedEnumWithNote {
   B = 0,
 };
 typedef int32_t DeprecatedEnumWithNote;

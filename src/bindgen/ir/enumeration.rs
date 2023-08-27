@@ -755,16 +755,12 @@ impl Enum {
                     // so `config.style` is not respected.
                     write!(out, "enum");
                     if let Some(note) = self.annotations.deprecated_note(config) {
-                        if note.is_empty() {
-                            if let Some(ref anno) = config.structure.deprecated {
-                                write!(out, " {}", anno);
-                            }
-                        } else if let Some(ref anno) = config.structure.deprecated_with_note {
-                            write!(
-                                out,
-                                " {}",
-                                anno.replace("{}", format!("{:?}", note).as_str())
-                            );
+                        if let Some(note) = self.annotations.format_deprecated_note(
+                            config.enumeration.deprecated.as_deref(),
+                            config.enumeration.deprecated_with_note.as_deref(),
+                            note,
+                        ) {
+                            write!(out, " {}", note);
                         }
                     }
                     write!(out, " {}", tag_name);
@@ -784,16 +780,12 @@ impl Enum {
                     }
                     out.write("enum");
                     if let Some(note) = self.annotations.deprecated_note(config) {
-                        if note.is_empty() {
-                            if let Some(ref anno) = config.structure.deprecated {
-                                write!(out, " {}", anno);
-                            }
-                        } else if let Some(ref anno) = config.structure.deprecated_with_note {
-                            write!(
-                                out,
-                                " {}",
-                                anno.replace("{}", format!("{:?}", note).as_str())
-                            );
+                        if let Some(note) = self.annotations.format_deprecated_note(
+                            config.enumeration.deprecated.as_deref(),
+                            config.enumeration.deprecated_with_note.as_deref(),
+                            note,
+                        ) {
+                            write!(out, " {}", note);
                         }
                     }
                     if config.style.generate_tag() {
@@ -815,16 +807,12 @@ impl Enum {
                 }
 
                 if let Some(note) = self.annotations.deprecated_note(config) {
-                    if note.is_empty() {
-                        if let Some(ref anno) = config.structure.deprecated {
-                            write!(out, " {}", anno);
-                        }
-                    } else if let Some(ref anno) = config.structure.deprecated_with_note {
-                        write!(
-                            out,
-                            " {}",
-                            anno.replace("{}", format!("{:?}", note).as_str())
-                        );
+                    if let Some(note) = self.annotations.format_deprecated_note(
+                        config.structure.deprecated.as_deref(),
+                        config.structure.deprecated_with_note.as_deref(),
+                        note,
+                    ) {
+                        write!(out, " {}", note);
                     }
                 }
 
