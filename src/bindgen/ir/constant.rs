@@ -321,8 +321,8 @@ impl Literal {
                     syn::BinOp::BitXorEq(..) => "^=",
                     syn::BinOp::BitAndEq(..) => "&=",
                     syn::BinOp::BitOrEq(..) => "|=",
-                    syn::BinOp::ShlEq(..) => ">>=",
-                    syn::BinOp::ShrEq(..) => "<<=",
+                    syn::BinOp::ShlEq(..) => "<<=",
+                    syn::BinOp::ShrEq(..) => ">>=",
                 };
                 Ok(Literal::BinOp {
                     left: Box::new(l),
