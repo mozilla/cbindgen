@@ -294,17 +294,12 @@ impl Source for Function {
                     }
                 }
                 if let Some(note) = func.annotations.deprecated_note(config) {
-                    if note.is_empty() {
-                        if let Some(ref anno) = config.function.deprecated {
-                            write!(out, "{}", anno);
-                            out.new_line();
-                        }
-                    } else if let Some(ref anno) = config.function.deprecated_with_note {
-                        write!(
-                            out,
-                            "{}",
-                            anno.replace("{}", format!("{:?}", note).as_str())
-                        );
+                    if let Some(note) = func.annotations.format_deprecated_note(
+                        config.function.deprecated.as_deref(),
+                        config.function.deprecated_with_note.as_deref(),
+                        note,
+                    ) {
+                        write!(out, "{}", note);
                         out.new_line();
                     }
                 }
