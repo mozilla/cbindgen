@@ -30,11 +30,11 @@ where
     }
 }
 
-pub trait SynItemFnHelpers: SynAttributeHelpers {
+pub trait SynItemHelpers: SynAttributeHelpers {
     fn exported_name(&self) -> Option<String>;
 }
 
-impl SynItemFnHelpers for syn::ItemFn {
+impl SynItemHelpers for syn::ItemFn {
     fn exported_name(&self) -> Option<String> {
         self.attrs
             .attr_name_value_lookup("export_name")
@@ -48,13 +48,27 @@ impl SynItemFnHelpers for syn::ItemFn {
     }
 }
 
-impl SynItemFnHelpers for syn::ImplItemMethod {
+impl SynItemHelpers for syn::ImplItemMethod {
     fn exported_name(&self) -> Option<String> {
         self.attrs
             .attr_name_value_lookup("export_name")
             .or_else(|| {
                 if self.is_no_mangle() {
                     Some(self.sig.ident.unraw().to_string())
+                } else {
+                    None
+                }
+            })
+    }
+}
+
+impl SynItemHelpers for syn::ItemStatic {
+    fn exported_name(&self) -> Option<String> {
+        self.attrs
+            .attr_name_value_lookup("export_name")
+            .or_else(|| {
+                if self.is_no_mangle() {
+                    Some(self.ident.unraw().to_string())
                 } else {
                     None
                 }

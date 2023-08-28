@@ -4,8 +4,6 @@
 
 use std::io::Write;
 
-use syn::ext::IdentExt;
-
 use crate::bindgen::cdecl;
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
@@ -26,7 +24,11 @@ pub struct Static {
 }
 
 impl Static {
-    pub fn load(item: &syn::ItemStatic, mod_cfg: Option<&Cfg>) -> Result<Static, String> {
+    pub fn load(
+        path: Path,
+        item: &syn::ItemStatic,
+        mod_cfg: Option<&Cfg>,
+    ) -> Result<Static, String> {
         let ty = Type::load(&item.ty)?;
 
         if ty.is_none() {
@@ -34,7 +36,7 @@ impl Static {
         }
 
         Ok(Static::new(
-            Path::new(item.ident.unraw().to_string()),
+            path,
             ty.unwrap(),
             item.mutability.is_some(),
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),

@@ -14,7 +14,7 @@ pub struct ErrorLogger;
 
 impl TraceLogger {
     pub fn init() -> Result<(), SetLoggerError> {
-        log::set_logger(&InfoLogger)?;
+        log::set_logger(&TraceLogger)?;
         log::set_max_level(LevelFilter::Trace);
         Ok(())
     }
@@ -37,7 +37,7 @@ impl log::Log for TraceLogger {
 
 impl WarnLogger {
     pub fn init() -> Result<(), SetLoggerError> {
-        log::set_logger(&InfoLogger)?;
+        log::set_logger(&WarnLogger)?;
         log::set_max_level(LevelFilter::Warn);
         Ok(())
     }
@@ -60,7 +60,7 @@ impl log::Log for WarnLogger {
 
 impl ErrorLogger {
     pub fn init() -> Result<(), SetLoggerError> {
-        log::set_logger(&InfoLogger)?;
+        log::set_logger(&ErrorLogger)?;
         log::set_max_level(LevelFilter::Error);
         Ok(())
     }
