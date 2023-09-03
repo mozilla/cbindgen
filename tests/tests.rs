@@ -202,9 +202,10 @@ fn run_compile_test(
     fs::create_dir_all(&generated_file).unwrap();
 
     let style_ext = style
+        // Cython is sensitive to dots, so we can't include any dots.
         .map(|style| match style {
-            Style::Both => ".both",
-            Style::Tag => ".tag",
+            Style::Both => "_both",
+            Style::Tag => "_tag",
             Style::Type => "",
         })
         .unwrap_or_default();
