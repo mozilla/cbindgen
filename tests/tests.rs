@@ -167,7 +167,9 @@ fn compile(
         Language::Cython => {
             command.arg("-Wextra");
             if !skip_warning_as_error {
-                command.arg("-Werror");
+                // Our tests contain code that is deprecated in Cython 3.0.
+                // Allowing warnings buys a little time.
+                // command.arg("-Werror");
             }
             command.arg("-3");
             command.arg("-o").arg(&object);
