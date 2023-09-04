@@ -1,6 +1,7 @@
 # Unreleased
 
       * Fix swapping of `>>=` and `<<=` in constants.
+      * Add support for #[deprecated] (#860).
 
 ## 0.25.0
 
