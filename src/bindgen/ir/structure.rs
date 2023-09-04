@@ -10,9 +10,9 @@ use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Constant, Documentation, Field, GenericArgument,
-    GenericParams, Item, ItemContainer, Path, Repr, ReprAlign, ReprStyle, ToCondition, Type,
-    Typedef,
+    AnnotationSet, Cfg, ConditionWrite, Constant, DeprecatedNoteKind, Documentation, Field,
+    GenericArgument, GenericParams, Item, ItemContainer, Path, Repr, ReprAlign, ReprStyle,
+    ToCondition, Type, Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -455,14 +455,11 @@ impl Source for Struct {
                 write!(out, " {}", anno);
             }
         }
-        if let Some(note) = self.annotations.deprecated_note(config) {
-            if let Some(note) = self.annotations.format_deprecated_note(
-                config.structure.deprecated.as_deref(),
-                config.structure.deprecated_with_note.as_deref(),
-                note,
-            ) {
-                write!(out, " {}", note);
-            }
+        if let Some(note) = self
+            .annotations
+            .deprecated_note(config, DeprecatedNoteKind::Struct)
+        {
+            write!(out, " {}", note);
         }
 
         if config.language != Language::C || config.style.generate_tag() {
