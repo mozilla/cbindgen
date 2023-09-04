@@ -20,7 +20,7 @@ pub mod ty;
 pub mod typedef;
 pub mod union;
 
-pub use self::annotation::{AnnotationSet, AnnotationValue};
+pub use self::annotation::{AnnotationSet, AnnotationValue, DeprecatedNoteKind};
 pub use self::cfg::*;
 pub use self::constant::*;
 pub use self::documentation::Documentation;

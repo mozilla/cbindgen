@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -38,6 +39,12 @@ pub struct AnnotationSet {
     pub deprecated: Option<String>,
 }
 
+pub enum DeprecatedNoteKind {
+    Function,
+    Struct,
+    Enum,
+}
+
 impl AnnotationSet {
     pub fn new() -> AnnotationSet {
         AnnotationSet {
@@ -55,25 +62,32 @@ impl AnnotationSet {
         self.must_use && config.language != Language::Cython
     }
 
-    pub(crate) fn deprecated_note(&self, config: &Config) -> Option<&str> {
+    pub(crate) fn deprecated_note<'c>(
+        &self,
+        config: &'c Config,
+        kind: DeprecatedNoteKind,
+    ) -> Option<Cow<'c, str>> {
+        let note = self.deprecated.as_deref()?;
+
         if config.language == Language::Cython {
             return None;
         }
 
-        self.deprecated.as_deref()
-    }
-
-    pub(crate) fn format_deprecated_note(
-        &self,
-        format_without_note: Option<&str>,
-        format_with_note: Option<&str>,
-        note: &str,
-    ) -> Option<String> {
         if note.is_empty() {
-            return format_without_note.map(|x| x.to_string());
+            return Some(Cow::Borrowed(match kind {
+                DeprecatedNoteKind::Enum => config.enumeration.deprecated.as_deref()?,
+                DeprecatedNoteKind::Function => config.function.deprecated.as_deref()?,
+                DeprecatedNoteKind::Struct => config.structure.deprecated.as_deref()?,
+            }));
         }
-        format_with_note
-            .map(|format_with_note| format_with_note.replace("{}", format!("{:?}", note).as_str()))
+
+        let format = match kind {
+            DeprecatedNoteKind::Enum => &config.enumeration.deprecated_with_note,
+            DeprecatedNoteKind::Function => &config.function.deprecated_with_note,
+            DeprecatedNoteKind::Struct => &config.structure.deprecated_with_note,
+        }
+        .as_ref()?;
+        Some(Cow::Owned(format.replace("{}", &format!("{:?}", note))))
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {

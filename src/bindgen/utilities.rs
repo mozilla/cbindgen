@@ -139,47 +139,34 @@ pub trait SynAttributeHelpers {
 
         // #[deprecated]
         if attrs.has_attr_word("deprecated") {
-            return Some("".to_string());
+            return Some(String::new());
         }
 
         // #[deprecated(note = "")]
-        if let Some(attr) = attrs.iter().find(|attr| {
+        let attr = attrs.iter().find(|attr| {
             if let Ok(syn::Meta::List(list)) = attr.parse_meta() {
                 list.path.is_ident("deprecated")
             } else {
                 false
             }
-        }) {
-            let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> =
-                match attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
-                    Ok(args) => args,
-                    Err(_) => {
-                        warn!("couldn't parse deprecated attribute");
-                        return None;
-                    }
-                };
+        })?;
 
-            let lit = match args
-                .iter()
-                .find(|arg| arg.path.is_ident("note"))
-                .map(|arg| &arg.lit)
-            {
-                Some(lit) => lit,
-                None => {
-                    warn!("couldn't parse deprecated attribute: no `note` field");
+        let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> =
+            match attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
+                Ok(args) => args,
+                Err(_) => {
+                    warn!("couldn't parse deprecated attribute");
                     return None;
                 }
             };
 
-            return if let syn::Lit::Str(lit) = lit {
-                Some(lit.value())
-            } else {
-                warn!("deprecated attribute must be a string");
-                None
-            };
+        let arg = args.iter().find(|arg| arg.path.is_ident("note"))?;
+        if let syn::Lit::Str(ref lit) = arg.lit {
+            Some(lit.value())
+        } else {
+            warn!("deprecated attribute must be a string");
+            None
         }
-
-        None
     }
 
     fn is_no_mangle(&self) -> bool {

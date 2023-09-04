@@ -10,9 +10,9 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, Documentation, Field, GenericArgument,
-    GenericParams, GenericPath, Item, ItemContainer, Literal, Path, Repr, ReprStyle, Struct,
-    ToCondition, Type,
+    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation, Field,
+    GenericArgument, GenericParams, GenericPath, Item, ItemContainer, Literal, Path, Repr,
+    ReprStyle, Struct, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -754,14 +754,11 @@ impl Enum {
                     // If we need to specify size, then we have no choice but to create a typedef,
                     // so `config.style` is not respected.
                     write!(out, "enum");
-                    if let Some(note) = self.annotations.deprecated_note(config) {
-                        if let Some(note) = self.annotations.format_deprecated_note(
-                            config.enumeration.deprecated.as_deref(),
-                            config.enumeration.deprecated_with_note.as_deref(),
-                            note,
-                        ) {
-                            write!(out, " {}", note);
-                        }
+                    if let Some(note) = self
+                        .annotations
+                        .deprecated_note(config, DeprecatedNoteKind::Enum)
+                    {
+                        write!(out, " {}", note);
                     }
                     write!(out, " {}", tag_name);
 
@@ -779,14 +776,11 @@ impl Enum {
                         out.write("typedef ");
                     }
                     out.write("enum");
-                    if let Some(note) = self.annotations.deprecated_note(config) {
-                        if let Some(note) = self.annotations.format_deprecated_note(
-                            config.enumeration.deprecated.as_deref(),
-                            config.enumeration.deprecated_with_note.as_deref(),
-                            note,
-                        ) {
-                            write!(out, " {}", note);
-                        }
+                    if let Some(note) = self
+                        .annotations
+                        .deprecated_note(config, DeprecatedNoteKind::Enum)
+                    {
+                        write!(out, " {}", note);
                     }
                     if config.style.generate_tag() {
                         write!(out, " {}", tag_name);
@@ -806,14 +800,11 @@ impl Enum {
                     }
                 }
 
-                if let Some(note) = self.annotations.deprecated_note(config) {
-                    if let Some(note) = self.annotations.format_deprecated_note(
-                        config.structure.deprecated.as_deref(),
-                        config.structure.deprecated_with_note.as_deref(),
-                        note,
-                    ) {
-                        write!(out, " {}", note);
-                    }
+                if let Some(note) = self
+                    .annotations
+                    .deprecated_note(config, DeprecatedNoteKind::Enum)
+                {
+                    write!(out, " {}", note);
                 }
 
                 write!(out, " {}", tag_name);
@@ -894,14 +885,11 @@ impl Enum {
             }
         }
 
-        if let Some(note) = self.annotations.deprecated_note(config) {
-            if let Some(note) = self.annotations.format_deprecated_note(
-                config.enumeration.deprecated.as_deref(),
-                config.enumeration.deprecated_with_note.as_deref(),
-                note,
-            ) {
-                write!(out, " {} ", note);
-            }
+        if let Some(note) = self
+            .annotations
+            .deprecated_note(config, DeprecatedNoteKind::Struct)
+        {
+            write!(out, " {} ", note);
         }
 
         if config.language != Language::C || config.style.generate_tag() {
