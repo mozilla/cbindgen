@@ -208,14 +208,19 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         InnerWriter(self).write_fmt(fmt).unwrap();
     }
 
-    pub fn write_horizontal_source_list<LB: LanguageBackend, S: Source<LB>>(
+    pub fn write_horizontal_source_list<
+        LB: LanguageBackend,
+        S,
+        WF: Fn(&LB, &mut SourceWriter<F>, &S),
+    >(
         &mut self,
         language_backend: &LB,
         items: &[S],
         list_type: ListType<'_>,
+        writer: WF,
     ) {
         for (i, item) in items.iter().enumerate() {
-            item.write(language_backend, self);
+            writer(language_backend, self, item);
 
             match list_type {
                 ListType::Join(text) => {
@@ -230,16 +235,21 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
     }
 
-    pub fn write_vertical_source_list<LB: LanguageBackend, S: Source<LB>>(
+    pub fn write_vertical_source_list<
+        LB: LanguageBackend,
+        S,
+        WF: Fn(&LB, &mut SourceWriter<F>, &S),
+    >(
         &mut self,
         language_backend: &LB,
         items: &[S],
         list_type: ListType<'_>,
+        writer: WF,
     ) {
         let align_length = self.line_length_for_align();
         self.push_set_spaces(align_length);
         for (i, item) in items.iter().enumerate() {
-            item.write(language_backend, self);
+            writer(language_backend, self, item);
 
             match list_type {
                 ListType::Join(text) => {
@@ -258,8 +268,4 @@ impl<'a, F: Write> SourceWriter<'a, F> {
         }
         self.pop_tab();
     }
-}
-
-pub trait Source<LB: LanguageBackend> {
-    fn write<F: Write>(&self, language_backend: &LB, _: &mut SourceWriter<F>);
 }

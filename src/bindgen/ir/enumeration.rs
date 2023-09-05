@@ -20,7 +20,7 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::writer::{ListType, Source, SourceWriter};
+use crate::bindgen::writer::{ListType, SourceWriter};
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
@@ -634,18 +634,19 @@ impl Enum {
     /// Emit the tag enum and convenience methods for it.
     /// For enums with data this is only a part of the output,
     /// but for enums without data it's the whole output (modulo doc comments etc.).
-    pub(crate) fn write_tag_enum<F: Write, LB: LanguageBackend>(
+    pub(crate) fn write_tag_enum<
+        F: Write,
+        LB: LanguageBackend,
+        WV: Fn(&LB, &mut SourceWriter<F>, &EnumVariant),
+    >(
         &self,
         config: &Config,
         language_backend: &LB,
         out: &mut SourceWriter<F>,
         size: Option<&str>,
-        has_data: bool,
-        tag_name: &str,
-    ) where
-        EnumVariant: Source<LB>,
-        String: Source<LB>,
-    {
+        write_variant: WV,
+    ) {
+        let tag_name = self.tag_name();
         // Open the tag enum.
         match config.language {
             Language::C => {
@@ -728,7 +729,7 @@ impl Enum {
             if i != 0 {
                 out.new_line()
             }
-            variant.write(language_backend, out);
+            write_variant(language_backend, out, variant);
         }
 
         // Close the tag enum.
@@ -760,7 +761,7 @@ impl Enum {
         }
 
         // Emit convenience methods for the tag enum.
-        self.write_derived_functions_enum(config, language_backend, out, has_data, tag_name);
+        self.write_derived_functions_enum(config, language_backend, out);
     }
 
     /// The code here mirrors the beginning of `Struct::write` and `Union::write`.
@@ -810,9 +811,7 @@ impl Enum {
         config: &Config,
         language_backend: &LB, // TODO probably need only one of Config/LanguageBackend
         out: &mut SourceWriter<F>,
-    ) where
-        Struct: Source<LB>,
-    {
+    ) {
         for variant in &self.variants {
             if let VariantBody::Body {
                 ref body,
@@ -827,7 +826,7 @@ impl Enum {
                 if config.language != Language::Cython {
                     condition.write_before(config, out);
                 }
-                body.write(language_backend, out);
+                language_backend.write_struct(out, body);
                 if config.language != Language::Cython {
                     condition.write_after(config, out);
                 }
@@ -868,15 +867,18 @@ impl Enum {
     }
 
     /// Emit fields for all variants with data.
-    pub(crate) fn write_variant_fields<F: Write, LB: LanguageBackend>(
+    pub(crate) fn write_variant_fields<
+        F: Write,
+        LB: LanguageBackend,
+        WF: Fn(&LB, &mut SourceWriter<F>, &Field),
+    >(
         &self,
         config: &Config,
         language_backend: &LB,
         out: &mut SourceWriter<F>,
         inline_tag_field: bool,
-    ) where
-        Field: Source<LB>,
-    {
+        write_field: WF,
+    ) {
         let mut first = true;
         for variant in &self.variants {
             if let VariantBody::Body {
@@ -910,6 +912,7 @@ impl Enum {
                         language_backend,
                         &body.fields[start_field..],
                         ListType::Cap(";"),
+                        &write_field,
                     );
                     if config.language != Language::Cython {
                         out.close_brace(true);
@@ -932,11 +935,9 @@ impl Enum {
         config: &Config,
         language_backend: &LB,
         out: &mut SourceWriter<F>,
-        has_data: bool,
-        tag_name: &str,
-    ) where
-        String: Source<LB>,
-    {
+    ) {
+        let has_data = self.tag.is_some();
+        let tag_name = self.tag_name();
         if config.language != Language::Cxx {
             return;
         }
@@ -1003,7 +1004,12 @@ impl Enum {
                     )
                 })
                 .collect();
-            out.write_vertical_source_list(language_backend, &vec[..], ListType::Join(""));
+            out.write_vertical_source_list(
+                language_backend,
+                &vec[..],
+                ListType::Join(""),
+                |_, out, s| write!(out, "{}", s),
+            );
             out.close_brace(false);
             out.new_line();
 
@@ -1064,7 +1070,12 @@ impl Enum {
                         }
                     })
                     .collect();
-                out.write_vertical_source_list(language_backend, &vec[..], ListType::Join(""));
+                out.write_vertical_source_list(
+                    language_backend,
+                    &vec[..],
+                    ListType::Join(""),
+                    |_, out, s| write!(out, "{}", s),
+                );
                 out.close_brace(false);
                 out.new_line();
 
@@ -1075,16 +1086,18 @@ impl Enum {
     }
 
     // Emit convenience methods for structs or unions produced for enums with data.
-    pub(crate) fn write_derived_functions_data<F: Write, LB: LanguageBackend>(
+    pub(crate) fn write_derived_functions_data<
+        F: Write,
+        LB: LanguageBackend,
+        WF: Fn(&LB, &mut SourceWriter<F>, &Field),
+    >(
         &self,
         config: &Config,
         language_backend: &LB,
         out: &mut SourceWriter<F>,
         tag_name: &str,
-    ) where
-        Type: Source<LB>,
-        Field: Source<LB>,
-    {
+        write_field: WF,
+    ) {
         if config.language != Language::Cxx {
             return;
         }
@@ -1135,7 +1148,12 @@ impl Enum {
                             )
                         })
                         .collect();
-                    out.write_vertical_source_list(language_backend, &vec[..], ListType::Join(","));
+                    out.write_vertical_source_list(
+                        language_backend,
+                        &vec[..],
+                        ListType::Join(","),
+                        &write_field,
+                    );
                 }
 
                 write!(out, ")");
@@ -1159,13 +1177,13 @@ impl Enum {
                                 write!(out, "for (int i = 0; i < {}; i++)", length.as_str());
                                 out.open_brace();
                                 write!(out, "::new (&result.{}.{}[i]) (", variant_name, field.name);
-                                ty.write(language_backend, out);
+                                language_backend.write_type(out, ty);
                                 write!(out, ")({}[i]);", arg_renamer(&field.name));
                                 out.close_brace(false);
                             }
                             ref ty => {
                                 write!(out, "::new (&result.{}.{}) (", variant_name, field.name);
-                                ty.write(language_backend, out);
+                                language_backend.write_type(out, ty);
                                 write!(out, ")({});", arg_renamer(&field.name));
                             }
                         }
@@ -1227,7 +1245,7 @@ impl Enum {
                             is_ref: true,
                             is_nullable: false,
                         };
-                        return_type.write(language_backend, out);
+                        language_backend.write_type(out, &return_type);
                     } else if const_casts {
                         write!(out, "const {}&", body.export_name());
                     } else {
