@@ -10,19 +10,19 @@ use crate::bindgen::{cdecl, Config, Language, Layout};
 use crate::bindgen::{DocumentationLength, DocumentationStyle};
 use std::io::Write;
 
-pub struct CLikeLanguageBackend {
-    config: Config,
+pub struct CLikeLanguageBackend<'a> {
+    config: &'a Config,
 }
 
-impl CLikeLanguageBackend {
-    pub fn new(config: Config) -> Self {
+impl<'a> CLikeLanguageBackend<'a> {
+    pub fn new(config: &'a Config) -> Self {
         Self { config }
     }
 
     fn write_enum_variant<W: Write>(&self, out: &mut SourceWriter<W>, u: &EnumVariant) {
-        let condition = u.cfg.to_condition(&self.config);
+        let condition = u.cfg.to_condition(self.config);
 
-        condition.write_before(&self.config, out);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &u.documentation);
         write!(out, "{}", u.export_name);
@@ -32,21 +32,21 @@ impl CLikeLanguageBackend {
             self.write_literal(out, discriminant);
         }
         out.write(",");
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_field<W: Write>(&self, out: &mut SourceWriter<W>, f: &Field) {
-        let condition = f.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = f.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &f.documentation);
-        cdecl::write_field(self, out, &f.ty, &f.name, &self.config);
+        cdecl::write_field(self, out, &f.ty, &f.name, self.config);
 
         if let Some(bitfield) = f.annotations.atom("bitfield") {
             write!(out, ": {}", bitfield.unwrap_or_default());
         }
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
         // FIXME(#634): `write_vertical_source_list` should support
         // configuring list elements natively. For now we print a newline
         // here to avoid printing `#endif;` with semicolon.
@@ -56,11 +56,11 @@ impl CLikeLanguageBackend {
     }
 
     fn write_generic_param<W: Write>(&self, out: &mut SourceWriter<W>, g: &GenericParams) {
-        g.write_internal(self, &self.config, out, false);
+        g.write_internal(self, self.config, out, false);
     }
 }
 
-impl LanguageBackend for CLikeLanguageBackend {
+impl LanguageBackend for CLikeLanguageBackend<'_> {
     fn write_headers<W: Write>(&self, out: &mut SourceWriter<W>) {
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
@@ -221,16 +221,13 @@ impl LanguageBackend for CLikeLanguageBackend {
     }
 
     fn write_enum<W: Write>(&self, out: &mut SourceWriter<W>, e: &Enum) {
-        let size = e
-            .repr
-            .ty
-            .map(|ty| ty.to_primitive().to_repr_c(&self.config));
+        let size = e.repr.ty.map(|ty| ty.to_primitive().to_repr_c(self.config));
         let has_data = e.tag.is_some();
         let inline_tag_field = Enum::inline_tag_field(&e.repr);
         let tag_name = e.tag_name();
 
-        let condition = e.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = e.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &e.documentation);
         self.write_generic_param(out, &e.generic_params);
@@ -239,15 +236,15 @@ impl LanguageBackend for CLikeLanguageBackend {
         // and enum for the tag. C++ supports nested type definitions, so we open
         // the struct or union here and define the tag enum inside it (*).
         if has_data && self.config.language == Language::Cxx {
-            e.open_struct_or_union(&self.config, out, inline_tag_field);
+            e.open_struct_or_union(self.config, out, inline_tag_field);
         }
 
         // Emit the tag enum and everything related to it.
-        e.write_tag_enum(&self.config, self, out, size, Self::write_enum_variant);
+        e.write_tag_enum(self.config, self, out, size, Self::write_enum_variant);
 
         // If the enum has data, we need to emit structs for the variants and gather them together.
         if has_data {
-            e.write_variant_defs(&self.config, self, out);
+            e.write_variant_defs(self.config, self, out);
             out.new_line();
             out.new_line();
 
@@ -255,11 +252,11 @@ impl LanguageBackend for CLikeLanguageBackend {
             // together, unless it's C++, then we have already opened that struct/union at (*) and
             // are currently inside it.
             if self.config.language != Language::Cxx {
-                e.open_struct_or_union(&self.config, out, inline_tag_field);
+                e.open_struct_or_union(self.config, out, inline_tag_field);
             }
 
             // Emit tag field that is separate from all variants.
-            e.write_tag_field(&self.config, out, size, inline_tag_field, tag_name);
+            e.write_tag_field(self.config, out, size, inline_tag_field, tag_name);
             out.new_line();
 
             // Open union of all variants with data, only in the non-inline tag scenario.
@@ -269,7 +266,7 @@ impl LanguageBackend for CLikeLanguageBackend {
             }
 
             // Emit fields for all variants with data.
-            e.write_variant_fields(&self.config, self, out, inline_tag_field, Self::write_field);
+            e.write_variant_fields(self.config, self, out, inline_tag_field, Self::write_field);
 
             // Close union of all variants with data, only in the non-inline tag scenario.
             if !inline_tag_field {
@@ -277,7 +274,7 @@ impl LanguageBackend for CLikeLanguageBackend {
             }
 
             // Emit convenience methods for the struct or enum for the data.
-            e.write_derived_functions_data(&self.config, self, out, tag_name, Self::write_field);
+            e.write_derived_functions_data(self.config, self, out, tag_name, Self::write_field);
 
             // Emit the post_body section, if relevant.
             if let Some(body) = self.config.export.post_body(&e.path) {
@@ -294,7 +291,7 @@ impl LanguageBackend for CLikeLanguageBackend {
             }
         }
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_struct<W: Write>(&self, out: &mut SourceWriter<W>, s: &Struct) {
@@ -311,13 +308,13 @@ impl LanguageBackend for CLikeLanguageBackend {
             self.write_type_def(out, &typedef);
             for constant in &s.associated_constants {
                 out.new_line();
-                constant.write(&self.config, self, out, Some(s));
+                constant.write(self.config, self, out, Some(s));
             }
             return;
         }
 
-        let condition = s.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = s.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &s.documentation);
 
@@ -355,7 +352,7 @@ impl LanguageBackend for CLikeLanguageBackend {
             }
         }
 
-        if s.annotations.must_use(&self.config) {
+        if s.annotations.must_use(self.config) {
             if let Some(ref anno) = self.config.structure.must_use {
                 write!(out, " {}", anno);
             }
@@ -363,7 +360,7 @@ impl LanguageBackend for CLikeLanguageBackend {
 
         if let Some(note) = s
             .annotations
-            .deprecated_note(&self.config, DeprecatedNoteKind::Struct)
+            .deprecated_note(self.config, DeprecatedNoteKind::Struct)
         {
             write!(out, " {}", note);
         }
@@ -615,7 +612,7 @@ impl LanguageBackend for CLikeLanguageBackend {
         {
             for constant in &s.associated_constants {
                 out.new_line();
-                constant.write_declaration(&self.config, self, out, s);
+                constant.write_declaration(self.config, self, out, s);
             }
         }
 
@@ -628,15 +625,15 @@ impl LanguageBackend for CLikeLanguageBackend {
 
         for constant in &s.associated_constants {
             out.new_line();
-            constant.write(&self.config, self, out, Some(s));
+            constant.write(self.config, self, out, Some(s));
         }
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_union<W: Write>(&self, out: &mut SourceWriter<W>, u: &Union) {
-        let condition = u.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = u.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &u.documentation);
 
@@ -699,16 +696,16 @@ impl LanguageBackend for CLikeLanguageBackend {
             out.close_brace(true);
         }
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_opaque_item<W: Write>(&self, out: &mut SourceWriter<W>, o: &OpaqueItem) {
-        let condition = o.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = o.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &o.documentation);
 
-        o.generic_params.write_with_default(self, &self.config, out);
+        o.generic_params.write_with_default(self, self.config, out);
 
         match self.config.language {
             Language::C if self.config.style.generate_typedef() => {
@@ -725,12 +722,12 @@ impl LanguageBackend for CLikeLanguageBackend {
             _ => unreachable!(),
         }
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_type_def<W: Write>(&self, out: &mut SourceWriter<W>, t: &Typedef) {
-        let condition = t.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = t.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &t.documentation);
 
@@ -753,7 +750,7 @@ impl LanguageBackend for CLikeLanguageBackend {
 
         out.write(";");
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_static<W: Write>(&self, out: &mut SourceWriter<W>, s: &Static) {
@@ -762,7 +759,7 @@ impl LanguageBackend for CLikeLanguageBackend {
         } else if !s.mutable {
             out.write("const ");
         }
-        cdecl::write_field(self, out, &s.ty, &s.export_name, &self.config);
+        cdecl::write_field(self, out, &s.ty, &s.export_name, self.config);
         out.write(";");
     }
 
@@ -775,8 +772,8 @@ impl LanguageBackend for CLikeLanguageBackend {
             let prefix = language_backend.config.function.prefix(&func.annotations);
             let postfix = language_backend.config.function.postfix(&func.annotations);
 
-            let condition = func.cfg.to_condition(&language_backend.config);
-            condition.write_before(&language_backend.config, out);
+            let condition = func.cfg.to_condition(language_backend.config);
+            condition.write_before(language_backend.config, out);
 
             language_backend.write_documentation(out, &func.documentation);
 
@@ -786,14 +783,14 @@ impl LanguageBackend for CLikeLanguageBackend {
                 if let Some(ref prefix) = prefix {
                     write!(out, "{} ", prefix);
                 }
-                if func.annotations.must_use(&language_backend.config) {
+                if func.annotations.must_use(language_backend.config) {
                     if let Some(ref anno) = language_backend.config.function.must_use {
                         write!(out, "{} ", anno);
                     }
                 }
                 if let Some(note) = func
                     .annotations
-                    .deprecated_note(&language_backend.config, DeprecatedNoteKind::Function)
+                    .deprecated_note(language_backend.config, DeprecatedNoteKind::Function)
                 {
                     write!(out, "{} ", note);
                 }
@@ -803,7 +800,7 @@ impl LanguageBackend for CLikeLanguageBackend {
                 out,
                 func,
                 Layout::Horizontal,
-                &language_backend.config,
+                language_backend.config,
             );
 
             if !func.extern_decl {
@@ -813,14 +810,14 @@ impl LanguageBackend for CLikeLanguageBackend {
             }
 
             if let Some(ref swift_name_macro) = language_backend.config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name(&language_backend.config) {
+                if let Some(swift_name) = func.swift_name(language_backend.config) {
                     write!(out, " {}({})", swift_name_macro, swift_name);
                 }
             }
 
             out.write(";");
 
-            condition.write_after(&language_backend.config, out);
+            condition.write_after(language_backend.config, out);
         }
 
         fn write_2<W: Write>(
@@ -831,9 +828,9 @@ impl LanguageBackend for CLikeLanguageBackend {
             let prefix = language_backend.config.function.prefix(&func.annotations);
             let postfix = language_backend.config.function.postfix(&func.annotations);
 
-            let condition = func.cfg.to_condition(&language_backend.config);
+            let condition = func.cfg.to_condition(language_backend.config);
 
-            condition.write_before(&language_backend.config, out);
+            condition.write_before(language_backend.config, out);
 
             language_backend.write_documentation(out, &func.documentation);
 
@@ -844,7 +841,7 @@ impl LanguageBackend for CLikeLanguageBackend {
                     write!(out, "{}", prefix);
                     out.new_line();
                 }
-                if func.annotations.must_use(&language_backend.config) {
+                if func.annotations.must_use(language_backend.config) {
                     if let Some(ref anno) = language_backend.config.function.must_use {
                         write!(out, "{}", anno);
                         out.new_line();
@@ -852,7 +849,7 @@ impl LanguageBackend for CLikeLanguageBackend {
                 }
                 if let Some(note) = func
                     .annotations
-                    .deprecated_note(&language_backend.config, DeprecatedNoteKind::Function)
+                    .deprecated_note(language_backend.config, DeprecatedNoteKind::Function)
                 {
                     write!(out, "{}", note);
                     out.new_line();
@@ -863,7 +860,7 @@ impl LanguageBackend for CLikeLanguageBackend {
                 out,
                 func,
                 Layout::Vertical,
-                &language_backend.config,
+                language_backend.config,
             );
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
@@ -873,14 +870,14 @@ impl LanguageBackend for CLikeLanguageBackend {
             }
 
             if let Some(ref swift_name_macro) = language_backend.config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name(&language_backend.config) {
+                if let Some(swift_name) = func.swift_name(language_backend.config) {
                     write!(out, " {}({})", swift_name_macro, swift_name);
                 }
             }
 
             out.write(";");
 
-            condition.write_after(&language_backend.config, out);
+            condition.write_after(language_backend.config, out);
         }
 
         match self.config.function.args {
@@ -895,7 +892,7 @@ impl LanguageBackend for CLikeLanguageBackend {
     }
 
     fn write_type<W: Write>(&self, out: &mut SourceWriter<W>, t: &Type) {
-        cdecl::write_type(self, out, t, &self.config);
+        cdecl::write_type(self, out, t, self.config);
     }
 
     fn write_documentation<W: Write>(&self, out: &mut SourceWriter<W>, d: &Documentation) {

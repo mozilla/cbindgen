@@ -10,12 +10,12 @@ use crate::bindgen::Layout;
 use crate::bindgen::{cdecl, Config};
 use std::io::Write;
 
-pub struct CythonLanguageBackend {
-    config: Config,
+pub struct CythonLanguageBackend<'a> {
+    config: &'a Config,
 }
 
-impl CythonLanguageBackend {
-    pub fn new(config: Config) -> Self {
+impl<'a> CythonLanguageBackend<'a> {
+    pub fn new(config: &'a Config) -> Self {
         Self { config }
     }
 
@@ -39,7 +39,7 @@ impl CythonLanguageBackend {
         // let condition = f.cfg.to_condition(self.config);
 
         self.write_documentation(out, &f.documentation);
-        cdecl::write_field(self, out, &f.ty, &f.name, &self.config);
+        cdecl::write_field(self, out, &f.ty, &f.name, self.config);
 
         // Cython extern declarations don't manage layouts, layouts are defined entierly by the
         // corresponding C code. So we can omit bitfield sizes which are not supported by Cython.
@@ -49,7 +49,7 @@ impl CythonLanguageBackend {
     }
 }
 
-impl LanguageBackend for CythonLanguageBackend {
+impl LanguageBackend for CythonLanguageBackend<'_> {
     fn write_headers<W: Write>(&self, out: &mut SourceWriter<W>) {
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
@@ -66,7 +66,7 @@ impl LanguageBackend for CythonLanguageBackend {
             );
             out.new_line();
         }
-        if let Some(ref f) = self.config.autogen_warning {
+        if let Some(ref f) = &self.config.autogen_warning {
             out.new_line_if_not_start();
             write!(out, "{}", f);
             out.new_line();
@@ -83,7 +83,7 @@ impl LanguageBackend for CythonLanguageBackend {
 
         out.new_line_if_not_start();
 
-        if !self.config.no_includes {
+        if !&self.config.no_includes {
             out.write("from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t");
             out.new_line();
             out.write("from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, uintptr_t");
@@ -102,7 +102,7 @@ impl LanguageBackend for CythonLanguageBackend {
             out.new_line();
         }
 
-        if let Some(ref line) = self.config.after_includes {
+        if let Some(ref line) = &self.config.after_includes {
             write!(out, "{}", line);
             out.new_line();
         }
@@ -111,7 +111,7 @@ impl LanguageBackend for CythonLanguageBackend {
     fn open_close_namespaces<W: Write>(&self, op: NamespaceOperation, out: &mut SourceWriter<W>) {
         if op == NamespaceOperation::Open {
             out.new_line();
-            let header = self.config.cython.header.as_deref().unwrap_or("*");
+            let header = &self.config.cython.header.as_deref().unwrap_or("*");
             write!(out, "cdef extern from {}", header);
             out.open_brace();
         } else {
@@ -122,39 +122,36 @@ impl LanguageBackend for CythonLanguageBackend {
     fn write_footers<W: Write>(&self, _out: &mut SourceWriter<W>) {}
 
     fn write_enum<W: Write>(&self, out: &mut SourceWriter<W>, e: &Enum) {
-        let size = e
-            .repr
-            .ty
-            .map(|ty| ty.to_primitive().to_repr_c(&self.config));
+        let size = e.repr.ty.map(|ty| ty.to_primitive().to_repr_c(self.config));
         let has_data = e.tag.is_some();
         let inline_tag_field = Enum::inline_tag_field(&e.repr);
         let tag_name = e.tag_name();
 
-        let condition = e.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = e.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &e.documentation);
 
         // Emit the tag enum and everything related to it.
-        e.write_tag_enum(&self.config, self, out, size, Self::write_enum_variant);
+        e.write_tag_enum(self.config, self, out, size, Self::write_enum_variant);
 
         // If the enum has data, we need to emit structs for the variants and gather them together.
         if has_data {
-            e.write_variant_defs(&self.config, self, out);
+            e.write_variant_defs(self.config, self, out);
             out.new_line();
             out.new_line();
 
-            e.open_struct_or_union(&self.config, out, inline_tag_field);
+            e.open_struct_or_union(self.config, out, inline_tag_field);
 
             // Emit tag field that is separate from all variants.
-            e.write_tag_field(&self.config, out, size, inline_tag_field, tag_name);
+            e.write_tag_field(self.config, out, size, inline_tag_field, tag_name);
             out.new_line();
 
             // Emit fields for all variants with data.
-            e.write_variant_fields(&self.config, self, out, inline_tag_field, Self::write_field);
+            e.write_variant_fields(self.config, self, out, inline_tag_field, Self::write_field);
 
             // Emit the post_body section, if relevant.
-            if let Some(body) = self.config.export.post_body(&e.path) {
+            if let Some(body) = &self.config.export.post_body(&e.path) {
                 out.new_line();
                 out.write_raw_block(body);
             }
@@ -162,7 +159,7 @@ impl LanguageBackend for CythonLanguageBackend {
             out.close_brace(true);
         }
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_struct<W: Write>(&self, out: &mut SourceWriter<W>, s: &Struct) {
@@ -179,13 +176,13 @@ impl LanguageBackend for CythonLanguageBackend {
             self.write_type_def(out, &typedef);
             for constant in &s.associated_constants {
                 out.new_line();
-                constant.write(&self.config, self, out, Some(s));
+                constant.write(self.config, self, out, Some(s));
             }
             return;
         }
 
-        let condition = s.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = s.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &s.documentation);
 
@@ -203,15 +200,15 @@ impl LanguageBackend for CythonLanguageBackend {
 
         out.write("struct");
 
-        if s.annotations.must_use(&self.config) {
-            if let Some(ref anno) = self.config.structure.must_use {
+        if s.annotations.must_use(self.config) {
+            if let Some(ref anno) = &self.config.structure.must_use {
                 write!(out, " {}", anno);
             }
         }
 
         if let Some(note) = s
             .annotations
-            .deprecated_note(&self.config, DeprecatedNoteKind::Struct)
+            .deprecated_note(self.config, DeprecatedNoteKind::Struct)
         {
             write!(out, " {}", note);
         }
@@ -221,7 +218,7 @@ impl LanguageBackend for CythonLanguageBackend {
         out.open_brace();
 
         // Emit the pre_body section, if relevant
-        if let Some(body) = self.config.export.pre_body(&s.path) {
+        if let Some(body) = &self.config.export.pre_body(&s.path) {
             out.write_raw_block(body);
             out.new_line();
         }
@@ -232,7 +229,7 @@ impl LanguageBackend for CythonLanguageBackend {
         }
 
         // Emit the post_body section, if relevant
-        if let Some(body) = self.config.export.post_body(&s.path) {
+        if let Some(body) = &self.config.export.post_body(&s.path) {
             out.new_line();
             out.write_raw_block(body);
         }
@@ -240,15 +237,15 @@ impl LanguageBackend for CythonLanguageBackend {
 
         for constant in &s.associated_constants {
             out.new_line();
-            constant.write(&self.config, self, out, Some(s));
+            constant.write(self.config, self, out, Some(s));
         }
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_union<W: Write>(&self, out: &mut SourceWriter<W>, u: &Union) {
-        let condition = u.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = u.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &u.documentation);
 
@@ -261,7 +258,7 @@ impl LanguageBackend for CythonLanguageBackend {
         out.open_brace();
 
         // Emit the pre_body section, if relevant
-        if let Some(body) = self.config.export.pre_body(&u.path) {
+        if let Some(body) = &self.config.export.pre_body(&u.path) {
             out.write_raw_block(body);
             out.new_line();
         }
@@ -272,44 +269,44 @@ impl LanguageBackend for CythonLanguageBackend {
         }
 
         // Emit the post_body section, if relevant
-        if let Some(body) = self.config.export.post_body(&u.path) {
+        if let Some(body) = &self.config.export.post_body(&u.path) {
             out.new_line();
             out.write_raw_block(body);
         }
 
         out.close_brace(true);
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_opaque_item<W: Write>(&self, out: &mut SourceWriter<W>, o: &OpaqueItem) {
-        let condition = o.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = o.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &o.documentation);
 
-        o.generic_params.write_with_default(self, &self.config, out);
+        o.generic_params.write_with_default(self, self.config, out);
 
         write!(
             out,
             "{}struct {}",
-            self.config.style.cython_def(),
+            &self.config.style.cython_def(),
             o.export_name()
         );
         out.open_brace();
         out.write("pass");
         out.close_brace(false);
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_type_def<W: Write>(&self, out: &mut SourceWriter<W>, t: &Typedef) {
-        let condition = t.cfg.to_condition(&self.config);
-        condition.write_before(&self.config, out);
+        let condition = t.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
 
         self.write_documentation(out, &t.documentation);
 
-        write!(out, "{} ", self.config.language.typedef());
+        write!(out, "{} ", &self.config.language.typedef());
 
         self.write_field(
             out,
@@ -318,7 +315,7 @@ impl LanguageBackend for CythonLanguageBackend {
 
         out.write(";");
 
-        condition.write_after(&self.config, out);
+        condition.write_after(self.config, out);
     }
 
     fn write_static<W: Write>(&self, out: &mut SourceWriter<W>, s: &Static) {
@@ -327,7 +324,7 @@ impl LanguageBackend for CythonLanguageBackend {
         } else if !s.mutable {
             out.write("const ");
         }
-        cdecl::write_field(self, out, &s.ty, &s.export_name, &self.config);
+        cdecl::write_field(self, out, &s.ty, &s.export_name, self.config);
         out.write(";");
     }
 
@@ -340,8 +337,8 @@ impl LanguageBackend for CythonLanguageBackend {
             let prefix = language_backend.config.function.prefix(&func.annotations);
             let postfix = language_backend.config.function.postfix(&func.annotations);
 
-            let condition = func.cfg.to_condition(&language_backend.config);
-            condition.write_before(&language_backend.config, out);
+            let condition = func.cfg.to_condition(language_backend.config);
+            condition.write_before(language_backend.config, out);
 
             language_backend.write_documentation(out, &func.documentation);
 
@@ -351,14 +348,14 @@ impl LanguageBackend for CythonLanguageBackend {
                 if let Some(ref prefix) = prefix {
                     write!(out, "{} ", prefix);
                 }
-                if func.annotations.must_use(&language_backend.config) {
+                if func.annotations.must_use(language_backend.config) {
                     if let Some(ref anno) = language_backend.config.function.must_use {
                         write!(out, "{} ", anno);
                     }
                 }
                 if let Some(note) = func
                     .annotations
-                    .deprecated_note(&language_backend.config, DeprecatedNoteKind::Function)
+                    .deprecated_note(language_backend.config, DeprecatedNoteKind::Function)
                 {
                     write!(out, "{} ", note);
                 }
@@ -368,7 +365,7 @@ impl LanguageBackend for CythonLanguageBackend {
                 out,
                 func,
                 Layout::Horizontal,
-                &language_backend.config,
+                language_backend.config,
             );
 
             if !func.extern_decl {
@@ -378,14 +375,14 @@ impl LanguageBackend for CythonLanguageBackend {
             }
 
             if let Some(ref swift_name_macro) = language_backend.config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name(&language_backend.config) {
+                if let Some(swift_name) = func.swift_name(language_backend.config) {
                     write!(out, " {}({})", swift_name_macro, swift_name);
                 }
             }
 
             out.write(";");
 
-            condition.write_after(&language_backend.config, out);
+            condition.write_after(language_backend.config, out);
         }
 
         fn write_2<W: Write>(
@@ -396,9 +393,9 @@ impl LanguageBackend for CythonLanguageBackend {
             let prefix = language_backend.config.function.prefix(&func.annotations);
             let postfix = language_backend.config.function.postfix(&func.annotations);
 
-            let condition = func.cfg.to_condition(&language_backend.config);
+            let condition = func.cfg.to_condition(language_backend.config);
 
-            condition.write_before(&language_backend.config, out);
+            condition.write_before(language_backend.config, out);
 
             language_backend.write_documentation(out, &func.documentation);
 
@@ -409,7 +406,7 @@ impl LanguageBackend for CythonLanguageBackend {
                     write!(out, "{}", prefix);
                     out.new_line();
                 }
-                if func.annotations.must_use(&language_backend.config) {
+                if func.annotations.must_use(language_backend.config) {
                     if let Some(ref anno) = language_backend.config.function.must_use {
                         write!(out, "{}", anno);
                         out.new_line();
@@ -417,7 +414,7 @@ impl LanguageBackend for CythonLanguageBackend {
                 }
                 if let Some(note) = func
                     .annotations
-                    .deprecated_note(&language_backend.config, DeprecatedNoteKind::Function)
+                    .deprecated_note(language_backend.config, DeprecatedNoteKind::Function)
                 {
                     write!(out, "{} ", note);
                 }
@@ -427,7 +424,7 @@ impl LanguageBackend for CythonLanguageBackend {
                 out,
                 func,
                 Layout::Vertical,
-                &language_backend.config,
+                language_backend.config,
             );
             if !func.extern_decl {
                 if let Some(ref postfix) = postfix {
@@ -437,17 +434,17 @@ impl LanguageBackend for CythonLanguageBackend {
             }
 
             if let Some(ref swift_name_macro) = language_backend.config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name(&language_backend.config) {
+                if let Some(swift_name) = func.swift_name(language_backend.config) {
                     write!(out, " {}({})", swift_name_macro, swift_name);
                 }
             }
 
             out.write(";");
 
-            condition.write_after(&language_backend.config, out);
+            condition.write_after(language_backend.config, out);
         }
 
-        match self.config.function.args {
+        match &self.config.function.args {
             Layout::Horizontal => write_1(f, self, out),
             Layout::Vertical => write_2(f, self, out),
             Layout::Auto => {
@@ -459,15 +456,15 @@ impl LanguageBackend for CythonLanguageBackend {
     }
 
     fn write_type<W: Write>(&self, out: &mut SourceWriter<W>, t: &Type) {
-        cdecl::write_type(self, out, t, &self.config);
+        cdecl::write_type(self, out, t, self.config);
     }
 
     fn write_documentation<W: Write>(&self, out: &mut SourceWriter<W>, d: &Documentation) {
-        if d.doc_comment.is_empty() || !self.config.documentation {
+        if d.doc_comment.is_empty() || !&self.config.documentation {
             return;
         }
 
-        let end = match self.config.documentation_length {
+        let end = match &self.config.documentation_length {
             DocumentationLength::Short => 1,
             DocumentationLength::Full => d.doc_comment.len(),
         };
