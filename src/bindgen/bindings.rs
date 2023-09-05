@@ -219,9 +219,7 @@ impl Bindings {
             return;
         }
 
-        let writer = Box::new(file);
-
-        let mut out = SourceWriter::new(writer, self);
+        let mut out = SourceWriter::new(file, self);
 
         language_backend.write_headers(&mut out);
 
