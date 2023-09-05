@@ -13,13 +13,12 @@ use std::rc::Rc;
 
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::ir::{
-    Constant, Documentation, Enum, Function, ItemContainer, ItemMap, Literal, OpaqueItem,
-    Path as BindgenPath, Static, Struct, Type, Typedef, Union,
+    Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct, Type, Typedef,
 };
 use crate::bindgen::language_backend::{
     CLikeLanguageBackend, CythonLanguageBackend, LanguageBackend, NamespaceOperation,
 };
-use crate::bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::writer::SourceWriter;
 
 /// A bindings header that can be written.
 pub struct Bindings {
@@ -211,19 +210,11 @@ impl Bindings {
         }
     }
 
-    pub fn write_with_backend<F: Write, LB: LanguageBackend>(&self, file: F, language_backend: &LB)
-    where
-        Enum: Source<LB>,
-        Struct: Source<LB>,
-        Union: Source<LB>,
-        OpaqueItem: Source<LB>,
-        Typedef: Source<LB>,
-        Static: Source<LB>,
-        Function: Source<LB>,
-        Type: Source<LB>,
-        Documentation: Source<LB>,
-        Literal: Source<LB>,
-    {
+    pub fn write_with_backend<F: Write, LB: LanguageBackend>(
+        &self,
+        file: F,
+        language_backend: &LB,
+    ) {
         if self.noop {
             return;
         }
@@ -258,11 +249,11 @@ impl Bindings {
             match *item {
                 ItemContainer::Constant(..) => unreachable!(),
                 ItemContainer::Static(..) => unreachable!(),
-                ItemContainer::Enum(ref x) => x.write(language_backend, &mut out),
-                ItemContainer::Struct(ref x) => x.write(language_backend, &mut out),
-                ItemContainer::Union(ref x) => x.write(language_backend, &mut out),
-                ItemContainer::OpaqueItem(ref x) => x.write(language_backend, &mut out),
-                ItemContainer::Typedef(ref x) => x.write(language_backend, &mut out),
+                ItemContainer::Enum(ref x) => language_backend.write_enum(&mut out, x),
+                ItemContainer::Struct(ref x) => language_backend.write_struct(&mut out, x),
+                ItemContainer::Union(ref x) => language_backend.write_union(&mut out, x),
+                ItemContainer::OpaqueItem(ref x) => language_backend.write_opaque_item(&mut out, x),
+                ItemContainer::Typedef(ref x) => language_backend.write_type_def(&mut out, x),
             }
             out.new_line();
         }
@@ -304,13 +295,13 @@ impl Bindings {
 
             for global in &self.globals {
                 out.new_line_if_not_start();
-                global.write(language_backend, &mut out);
+                language_backend.write_static(&mut out, global);
                 out.new_line();
             }
 
             for function in &self.functions {
                 out.new_line_if_not_start();
-                function.write(language_backend, &mut out);
+                language_backend.write_function(&mut out, function);
                 out.new_line();
             }
 

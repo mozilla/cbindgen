@@ -8,7 +8,7 @@ use crate::bindgen::config::Layout;
 use crate::bindgen::declarationtyperesolver::DeclarationType;
 use crate::bindgen::ir::{ConstExpr, Function, GenericArgument, Type};
 use crate::bindgen::language_backend::LanguageBackend;
-use crate::bindgen::writer::{ListType, Source, SourceWriter};
+use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
 
 // This code is for translating Rust types into C declarations.
@@ -198,9 +198,7 @@ impl CDecl {
         out: &mut SourceWriter<F>,
         ident: Option<&str>,
         config: &Config,
-    ) where
-        GenericArgument: Source<LB>,
-    {
+    ) {
         // Write the type-specifier and type-qualifier first
         if !self.type_qualifers.is_empty() {
             write!(out, "{} ", self.type_qualifers);
@@ -220,6 +218,10 @@ impl CDecl {
                 language_backend,
                 &self.type_generic_args,
                 ListType::Join(", "),
+                |language_backend, out, g| match *g {
+                    GenericArgument::Type(ref ty) => language_backend.write_type(out, ty),
+                    GenericArgument::Const(ref expr) => write!(out, "{}", expr.as_str()),
+                },
             );
             out.write(">");
         }
@@ -307,9 +309,7 @@ impl CDecl {
                         out: &mut SourceWriter<F>,
                         config: &Config,
                         args: &[(Option<String>, CDecl)],
-                    ) where
-                        GenericArgument: Source<LB>,
-                    {
+                    ) {
                         let align_length = out.line_length_for_align();
                         out.push_set_spaces(align_length);
                         for (i, (arg_ident, arg_ty)) in args.iter().enumerate() {
@@ -331,9 +331,7 @@ impl CDecl {
                         out: &mut SourceWriter<F>,
                         config: &Config,
                         args: &[(Option<String>, CDecl)],
-                    ) where
-                        GenericArgument: Source<LB>,
-                    {
+                    ) {
                         for (i, (arg_ident, arg_ty)) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(", ");
@@ -379,9 +377,7 @@ pub fn write_func<F: Write, LB: LanguageBackend>(
     f: &Function,
     layout: Layout,
     config: &Config,
-) where
-    GenericArgument: Source<LB>,
-{
+) {
     CDecl::from_func(f, layout, config).write(language_backend, out, Some(f.path().name()), config);
 }
 
@@ -391,9 +387,7 @@ pub fn write_field<F: Write, LB: LanguageBackend>(
     t: &Type,
     ident: &str,
     config: &Config,
-) where
-    GenericArgument: Source<LB>,
-{
+) {
     CDecl::from_type(t, config).write(language_backend, out, Some(ident), config);
 }
 
@@ -402,8 +396,6 @@ pub fn write_type<F: Write, LB: LanguageBackend>(
     out: &mut SourceWriter<F>,
     t: &Type,
     config: &Config,
-) where
-    GenericArgument: Source<LB>,
-{
+) {
     CDecl::from_type(t, config).write(language_backend, out, None, config);
 }

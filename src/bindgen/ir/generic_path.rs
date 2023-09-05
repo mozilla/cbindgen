@@ -9,7 +9,7 @@ use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeRe
 use crate::bindgen::ir::{ConstExpr, Path, Type};
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::utilities::IterHelpers;
-use crate::bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::writer::SourceWriter;
 
 #[derive(Debug, Clone)]
 pub enum GenericParamType {
@@ -101,9 +101,7 @@ impl GenericParams {
         config: &Config,
         out: &mut SourceWriter<F>,
         with_default: bool,
-    ) where
-        GenericArgument: Source<LB>,
-    {
+    ) {
         if !self.0.is_empty() && config.language == Language::Cxx {
             out.write("template<");
             for (i, item) in self.0.iter().enumerate() {
@@ -135,9 +133,7 @@ impl GenericParams {
         language_backend: &LB,
         config: &Config,
         out: &mut SourceWriter<F>,
-    ) where
-        GenericArgument: Source<LB>,
-    {
+    ) {
         self.write_internal(language_backend, config, out, true);
     }
 }
@@ -186,19 +182,6 @@ impl GenericArgument {
         match *self {
             GenericArgument::Type(ref mut ty) => ty.rename_for_config(config, generic_params),
             GenericArgument::Const(ref mut expr) => expr.rename_for_config(config),
-        }
-    }
-}
-
-impl<LB: LanguageBackend> Source<LB> for GenericArgument
-where
-    Type: Source<LB>,
-    ConstExpr: Source<LB>,
-{
-    fn write<F: Write>(&self, language_backend: &LB, out: &mut SourceWriter<F>) {
-        match *self {
-            GenericArgument::Type(ref ty) => ty.write(language_backend, out),
-            GenericArgument::Const(ref expr) => expr.write(language_backend, out),
         }
     }
 }

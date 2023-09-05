@@ -18,7 +18,7 @@ use crate::bindgen::ir::{
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
-use crate::bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::writer::SourceWriter;
 use crate::bindgen::Bindings;
 
 fn member_to_ident(member: &syn::Member) -> String {
@@ -598,9 +598,7 @@ impl Constant {
         language_backend: &LB,
         out: &mut SourceWriter<F>,
         associated_to_struct: &Struct,
-    ) where
-        Type: Source<LB>,
-    {
+    ) {
         debug_assert!(self.associated_to.is_some());
         debug_assert!(config.language == Language::Cxx);
         debug_assert!(!associated_to_struct.is_transparent);
@@ -612,7 +610,7 @@ impl Constant {
         } else {
             out.write("static const ");
         }
-        self.ty.write(language_backend, out);
+        language_backend.write_type(out, &self.ty);
         write!(out, " {};", self.export_name())
     }
 
@@ -622,11 +620,7 @@ impl Constant {
         language_backend: &LB,
         out: &mut SourceWriter<F>,
         associated_to_struct: Option<&Struct>,
-    ) where
-        Type: Source<LB>,
-        Documentation: Source<LB>,
-        Literal: Source<LB>,
-    {
+    ) {
         if let Some(assoc) = associated_to_struct {
             if assoc.is_generic() {
                 return; // Not tested / implemented yet, so bail out.
@@ -678,7 +672,7 @@ impl Constant {
             _ => &self.value,
         };
 
-        self.documentation.write(language_backend, out);
+        language_backend.write_documentation(out, &self.documentation);
 
         let allow_constexpr = config.constant.allow_constexpr && self.value.can_be_constexpr();
         match config.language {
@@ -697,22 +691,22 @@ impl Constant {
                     out.write("const ");
                 }
 
-                self.ty.write(language_backend, out);
+                language_backend.write_type(out, &self.ty);
                 write!(out, " {} = ", name);
-                value.write(language_backend, out);
+                language_backend.write_literal(out, value);
                 write!(out, ";");
             }
             Language::Cxx | Language::C => {
                 write!(out, "#define {} ", name);
-                value.write(language_backend, out);
+                language_backend.write_literal(out, value);
             }
             Language::Cython => {
                 out.write("const ");
-                self.ty.write(language_backend, out);
+                language_backend.write_type(out, &self.ty);
                 // For extern Cython declarations the initializer is ignored,
                 // but still useful as documentation, so we write it as a comment.
                 write!(out, " {} # = ", name);
-                value.write(language_backend, out);
+                language_backend.write_literal(out, value);
             }
         }
 

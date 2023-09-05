@@ -1,10 +1,10 @@
 use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, Function, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct,
-    ToCondition, Type, Typedef, Union,
+    Field, Function, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
+    Typedef, Union,
 };
 use crate::bindgen::language_backend::{LanguageBackend, NamespaceOperation};
-use crate::bindgen::writer::{ListType, Source, SourceWriter};
+use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::DocumentationLength;
 use crate::bindgen::Layout;
 use crate::bindgen::{cdecl, Config};
@@ -17,6 +17,35 @@ pub struct CythonLanguageBackend {
 impl CythonLanguageBackend {
     pub fn new(config: Config) -> Self {
         Self { config }
+    }
+
+    fn write_enum_variant<W: Write>(&self, out: &mut SourceWriter<W>, u: &EnumVariant) {
+        self.write_documentation(out, &u.documentation);
+        write!(out, "{}", u.export_name);
+        if let Some(discriminant) = &u.discriminant {
+            // For extern Cython declarations the enumerator value is ignored,
+            // but still useful as documentation, so we write it as a comment.
+            out.write(" #");
+
+            out.write(" = ");
+
+            self.write_literal(out, discriminant);
+        }
+        out.write(",");
+    }
+
+    fn write_field<W: Write>(&self, out: &mut SourceWriter<W>, f: &Field) {
+        // Cython doesn't support conditional fields.
+        // let condition = f.cfg.to_condition(self.config);
+
+        self.write_documentation(out, &f.documentation);
+        cdecl::write_field(self, out, &f.ty, &f.name, &self.config);
+
+        // Cython extern declarations don't manage layouts, layouts are defined entierly by the
+        // corresponding C code. So we can omit bitfield sizes which are not supported by Cython.
+        // if let Some(bitfield) = f.annotations.atom("bitfield") {
+        //
+        // }
     }
 }
 
@@ -91,79 +120,41 @@ impl LanguageBackend for CythonLanguageBackend {
     }
 
     fn write_footers<W: Write>(&self, _out: &mut SourceWriter<W>) {}
-}
 
-impl Source<CythonLanguageBackend> for EnumVariant {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        self.documentation.write(language_backend, out);
-        write!(out, "{}", self.export_name);
-        if let Some(discriminant) = &self.discriminant {
-            // For extern Cython declarations the enumerator value is ignored,
-            // but still useful as documentation, so we write it as a comment.
-            out.write(" #");
-
-            out.write(" = ");
-
-            discriminant.write(language_backend, out);
-        }
-        out.write(",");
-    }
-}
-
-impl Source<CythonLanguageBackend> for Enum {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        let size = self
+    fn write_enum<W: Write>(&self, out: &mut SourceWriter<W>, e: &Enum) {
+        let size = e
             .repr
             .ty
-            .map(|ty| ty.to_primitive().to_repr_c(&language_backend.config));
-        let has_data = self.tag.is_some();
-        let inline_tag_field = Self::inline_tag_field(&self.repr);
-        let tag_name = self.tag_name();
+            .map(|ty| ty.to_primitive().to_repr_c(&self.config));
+        let has_data = e.tag.is_some();
+        let inline_tag_field = Enum::inline_tag_field(&e.repr);
+        let tag_name = e.tag_name();
 
-        let condition = self.cfg.to_condition(&language_backend.config);
-        condition.write_before(&language_backend.config, out);
+        let condition = e.cfg.to_condition(&self.config);
+        condition.write_before(&self.config, out);
 
-        self.documentation.write(language_backend, out);
-        self.generic_params.write(language_backend, out);
+        self.write_documentation(out, &e.documentation);
 
         // Emit the tag enum and everything related to it.
-        self.write_tag_enum(
-            &language_backend.config,
-            language_backend,
-            out,
-            size,
-            has_data,
-            tag_name,
-        );
+        e.write_tag_enum(&self.config, self, out, size, Self::write_enum_variant);
 
         // If the enum has data, we need to emit structs for the variants and gather them together.
         if has_data {
-            self.write_variant_defs(&language_backend.config, language_backend, out);
+            e.write_variant_defs(&self.config, self, out);
             out.new_line();
             out.new_line();
 
-            self.open_struct_or_union(&language_backend.config, out, inline_tag_field);
+            e.open_struct_or_union(&self.config, out, inline_tag_field);
 
             // Emit tag field that is separate from all variants.
-            self.write_tag_field(
-                &language_backend.config,
-                out,
-                size,
-                inline_tag_field,
-                tag_name,
-            );
+            e.write_tag_field(&self.config, out, size, inline_tag_field, tag_name);
             out.new_line();
 
             // Emit fields for all variants with data.
-            self.write_variant_fields(
-                &language_backend.config,
-                language_backend,
-                out,
-                inline_tag_field,
-            );
+            e.write_variant_fields(&self.config, self, out, inline_tag_field, Self::write_field);
 
             // Emit the post_body section, if relevant.
-            if let Some(body) = language_backend.config.export.post_body(&self.path) {
+            if let Some(body) = self.config.export.post_body(&e.path) {
                 out.new_line();
                 out.write_raw_block(body);
             }
@@ -171,45 +162,39 @@ impl Source<CythonLanguageBackend> for Enum {
             out.close_brace(true);
         }
 
-        condition.write_after(&language_backend.config, out);
+        condition.write_after(&self.config, out);
     }
-}
 
-impl Source<CythonLanguageBackend> for Struct {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        if self.is_transparent {
+    fn write_struct<W: Write>(&self, out: &mut SourceWriter<W>, s: &Struct) {
+        if s.is_transparent {
             let typedef = Typedef {
-                path: self.path.clone(),
-                export_name: self.export_name.to_owned(),
-                generic_params: self.generic_params.clone(),
-                aliased: self.fields[0].ty.clone(),
-                cfg: self.cfg.clone(),
-                annotations: self.annotations.clone(),
-                documentation: self.documentation.clone(),
+                path: s.path.clone(),
+                export_name: s.export_name.to_owned(),
+                generic_params: s.generic_params.clone(),
+                aliased: s.fields[0].ty.clone(),
+                cfg: s.cfg.clone(),
+                annotations: s.annotations.clone(),
+                documentation: s.documentation.clone(),
             };
-            typedef.write(language_backend, out);
-            for constant in &self.associated_constants {
+            self.write_type_def(out, &typedef);
+            for constant in &s.associated_constants {
                 out.new_line();
-                constant.write(&language_backend.config, language_backend, out, Some(self));
+                constant.write(&self.config, self, out, Some(s));
             }
             return;
         }
 
-        let condition = self.cfg.to_condition(&language_backend.config);
-        condition.write_before(&language_backend.config, out);
+        let condition = s.cfg.to_condition(&self.config);
+        condition.write_before(&self.config, out);
 
-        self.documentation.write(language_backend, out);
+        self.write_documentation(out, &s.documentation);
 
-        if !self.is_enum_variant_body {
-            self.generic_params.write(language_backend, out);
-        }
-
-        out.write(language_backend.config.style.cython_def());
+        out.write(self.config.style.cython_def());
 
         // Cython extern declarations don't manage layouts, layouts are defined entierly by the
         // corresponding C code. So this `packed` is only for documentation, and missing
         // `aligned(n)` is also not a problem.
-        if let Some(align) = self.alignment {
+        if let Some(align) = s.alignment {
             match align {
                 ReprAlign::Packed => out.write("packed "),
                 ReprAlign::Align(_) => {} // Not supported
@@ -218,181 +203,135 @@ impl Source<CythonLanguageBackend> for Struct {
 
         out.write("struct");
 
-        if self.annotations.must_use(&language_backend.config) {
-            if let Some(ref anno) = language_backend.config.structure.must_use {
+        if s.annotations.must_use(&self.config) {
+            if let Some(ref anno) = self.config.structure.must_use {
                 write!(out, " {}", anno);
             }
         }
 
-        if let Some(note) = self
+        if let Some(note) = s
             .annotations
-            .deprecated_note(&language_backend.config, DeprecatedNoteKind::Struct)
+            .deprecated_note(&self.config, DeprecatedNoteKind::Struct)
         {
             write!(out, " {}", note);
         }
 
-        write!(out, " {}", self.export_name());
+        write!(out, " {}", s.export_name());
 
         out.open_brace();
 
         // Emit the pre_body section, if relevant
-        if let Some(body) = language_backend.config.export.pre_body(&self.path) {
+        if let Some(body) = self.config.export.pre_body(&s.path) {
             out.write_raw_block(body);
             out.new_line();
         }
 
-        out.write_vertical_source_list(language_backend, &self.fields, ListType::Cap(";"));
-        if self.fields.is_empty() {
+        out.write_vertical_source_list(self, &s.fields, ListType::Cap(";"), Self::write_field);
+        if s.fields.is_empty() {
             out.write("pass");
         }
 
         // Emit the post_body section, if relevant
-        if let Some(body) = language_backend.config.export.post_body(&self.path) {
+        if let Some(body) = self.config.export.post_body(&s.path) {
             out.new_line();
             out.write_raw_block(body);
         }
         out.close_brace(true);
 
-        for constant in &self.associated_constants {
+        for constant in &s.associated_constants {
             out.new_line();
-            constant.write(&language_backend.config, language_backend, out, Some(self));
+            constant.write(&self.config, self, out, Some(s));
         }
 
-        condition.write_after(&language_backend.config, out);
+        condition.write_after(&self.config, out);
     }
-}
 
-impl Source<CythonLanguageBackend> for Union {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        let condition = self.cfg.to_condition(&language_backend.config);
-        condition.write_before(&language_backend.config, out);
+    fn write_union<W: Write>(&self, out: &mut SourceWriter<W>, u: &Union) {
+        let condition = u.cfg.to_condition(&self.config);
+        condition.write_before(&self.config, out);
 
-        self.documentation.write(language_backend, out);
+        self.write_documentation(out, &u.documentation);
 
-        self.generic_params.write(language_backend, out);
-
-        out.write(language_backend.config.style.cython_def());
+        out.write(self.config.style.cython_def());
 
         out.write("union");
 
-        write!(out, " {}", self.export_name);
+        write!(out, " {}", u.export_name);
 
         out.open_brace();
 
         // Emit the pre_body section, if relevant
-        if let Some(body) = language_backend.config.export.pre_body(&self.path) {
+        if let Some(body) = self.config.export.pre_body(&u.path) {
             out.write_raw_block(body);
             out.new_line();
         }
 
-        out.write_vertical_source_list(language_backend, &self.fields, ListType::Cap(";"));
-        if self.fields.is_empty() {
+        out.write_vertical_source_list(self, &u.fields, ListType::Cap(";"), Self::write_field);
+        if u.fields.is_empty() {
             out.write("pass");
         }
 
         // Emit the post_body section, if relevant
-        if let Some(body) = language_backend.config.export.post_body(&self.path) {
+        if let Some(body) = self.config.export.post_body(&u.path) {
             out.new_line();
             out.write_raw_block(body);
         }
 
         out.close_brace(true);
 
-        condition.write_after(&language_backend.config, out);
+        condition.write_after(&self.config, out);
     }
-}
 
-impl Source<CythonLanguageBackend> for OpaqueItem {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        let condition = self.cfg.to_condition(&language_backend.config);
-        condition.write_before(&language_backend.config, out);
+    fn write_opaque_item<W: Write>(&self, out: &mut SourceWriter<W>, o: &OpaqueItem) {
+        let condition = o.cfg.to_condition(&self.config);
+        condition.write_before(&self.config, out);
 
-        self.documentation.write(language_backend, out);
+        self.write_documentation(out, &o.documentation);
 
-        self.generic_params
-            .write_with_default(language_backend, &language_backend.config, out);
+        o.generic_params.write_with_default(self, &self.config, out);
 
         write!(
             out,
             "{}struct {}",
-            language_backend.config.style.cython_def(),
-            self.export_name()
+            self.config.style.cython_def(),
+            o.export_name()
         );
         out.open_brace();
         out.write("pass");
         out.close_brace(false);
 
-        condition.write_after(&language_backend.config, out);
+        condition.write_after(&self.config, out);
     }
-}
 
-impl Source<CythonLanguageBackend> for Field {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        // Cython doesn't support conditional fields.
-        // let condition = self.cfg.to_condition(&language_backend.config);
+    fn write_type_def<W: Write>(&self, out: &mut SourceWriter<W>, t: &Typedef) {
+        let condition = t.cfg.to_condition(&self.config);
+        condition.write_before(&self.config, out);
 
-        self.documentation.write(language_backend, out);
-        cdecl::write_field(
-            language_backend,
+        self.write_documentation(out, &t.documentation);
+
+        write!(out, "{} ", self.config.language.typedef());
+
+        self.write_field(
             out,
-            &self.ty,
-            &self.name,
-            &language_backend.config,
+            &Field::from_name_and_type(t.export_name().to_owned(), t.aliased.clone()),
         );
-
-        // Cython extern declarations don't manage layouts, layouts are defined entierly by the
-        // corresponding C code. So we can omit bitfield sizes which are not supported by Cython.
-        // if let Some(bitfield) = self.annotations.atom("bitfield") {
-        //
-        // }
-    }
-}
-
-impl Source<CythonLanguageBackend> for GenericParams {
-    fn write<F: Write>(&self, _language_backend: &CythonLanguageBackend, _: &mut SourceWriter<F>) {
-        // not supported
-    }
-}
-
-impl Source<CythonLanguageBackend> for Typedef {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        let condition = self.cfg.to_condition(&language_backend.config);
-        condition.write_before(&language_backend.config, out);
-
-        self.documentation.write(language_backend, out);
-
-        self.generic_params.write(language_backend, out);
-
-        write!(out, "{} ", language_backend.config.language.typedef());
-        Field::from_name_and_type(self.export_name().to_owned(), self.aliased.clone())
-            .write(language_backend, out);
 
         out.write(";");
 
-        condition.write_after(&language_backend.config, out);
+        condition.write_after(&self.config, out);
     }
-}
 
-impl Source<CythonLanguageBackend> for Static {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
+    fn write_static<W: Write>(&self, out: &mut SourceWriter<W>, s: &Static) {
         out.write("extern ");
-        if let Type::Ptr { is_const: true, .. } = self.ty {
-        } else if !self.mutable {
+        if let Type::Ptr { is_const: true, .. } = s.ty {
+        } else if !s.mutable {
             out.write("const ");
         }
-        cdecl::write_field(
-            language_backend,
-            out,
-            &self.ty,
-            &self.export_name,
-            &language_backend.config,
-        );
+        cdecl::write_field(self, out, &s.ty, &s.export_name, &self.config);
         out.write(";");
     }
-}
 
-impl Source<CythonLanguageBackend> for Function {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
+    fn write_function<W: Write>(&self, out: &mut SourceWriter<W>, f: &Function) {
         fn write_1<W: Write>(
             func: &Function,
             language_backend: &CythonLanguageBackend,
@@ -404,7 +343,7 @@ impl Source<CythonLanguageBackend> for Function {
             let condition = func.cfg.to_condition(&language_backend.config);
             condition.write_before(&language_backend.config, out);
 
-            func.documentation.write(language_backend, out);
+            language_backend.write_documentation(out, &func.documentation);
 
             if func.extern_decl {
                 out.write("extern ");
@@ -461,7 +400,7 @@ impl Source<CythonLanguageBackend> for Function {
 
             condition.write_before(&language_backend.config, out);
 
-            func.documentation.write(language_backend, out);
+            language_backend.write_documentation(out, &func.documentation);
 
             if func.extern_decl {
                 out.write("extern ");
@@ -508,49 +447,40 @@ impl Source<CythonLanguageBackend> for Function {
             condition.write_after(&language_backend.config, out);
         }
 
-        match language_backend.config.function.args {
-            Layout::Horizontal => write_1(self, language_backend, out),
-            Layout::Vertical => write_2(self, language_backend, out),
+        match self.config.function.args {
+            Layout::Horizontal => write_1(f, self, out),
+            Layout::Vertical => write_2(f, self, out),
             Layout::Auto => {
-                if !out.try_write(
-                    |out| write_1(self, language_backend, out),
-                    language_backend.config.line_length,
-                ) {
-                    write_2(self, language_backend, out)
+                if !out.try_write(|out| write_1(f, self, out), self.config.line_length) {
+                    write_2(f, self, out)
                 }
             }
         }
     }
-}
 
-impl Source<CythonLanguageBackend> for Type {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        cdecl::write_type(language_backend, out, self, &language_backend.config);
+    fn write_type<W: Write>(&self, out: &mut SourceWriter<W>, t: &Type) {
+        cdecl::write_type(self, out, t, &self.config);
     }
-}
 
-impl Source<CythonLanguageBackend> for Documentation {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        if self.doc_comment.is_empty() || !language_backend.config.documentation {
+    fn write_documentation<W: Write>(&self, out: &mut SourceWriter<W>, d: &Documentation) {
+        if d.doc_comment.is_empty() || !self.config.documentation {
             return;
         }
 
-        let end = match language_backend.config.documentation_length {
+        let end = match self.config.documentation_length {
             DocumentationLength::Short => 1,
-            DocumentationLength::Full => self.doc_comment.len(),
+            DocumentationLength::Full => d.doc_comment.len(),
         };
 
         // Cython uses Python-style comments, so `documentation_style` is not relevant.
-        for line in &self.doc_comment[..end] {
+        for line in &d.doc_comment[..end] {
             write!(out, "#{}", line);
             out.new_line();
         }
     }
-}
 
-impl Source<CythonLanguageBackend> for Literal {
-    fn write<F: Write>(&self, language_backend: &CythonLanguageBackend, out: &mut SourceWriter<F>) {
-        match self {
+    fn write_literal<W: Write>(&self, out: &mut SourceWriter<W>, l: &Literal) {
+        match l {
             Literal::Expr(v) => match &**v {
                 "true" => write!(out, "True"),
                 "false" => write!(out, "False"),
@@ -573,12 +503,12 @@ impl Source<CythonLanguageBackend> for Literal {
                 ref field,
             } => {
                 write!(out, "(");
-                base.write(language_backend, out);
+                self.write_literal(out, base);
                 write!(out, ").{}", field);
             }
             Literal::PostfixUnaryOp { op, ref value } => {
                 write!(out, "{}", op);
-                value.write(language_backend, out);
+                self.write_literal(out, value);
             }
             Literal::BinOp {
                 ref left,
@@ -586,16 +516,16 @@ impl Source<CythonLanguageBackend> for Literal {
                 ref right,
             } => {
                 write!(out, "(");
-                left.write(language_backend, out);
+                self.write_literal(out, left);
                 write!(out, " {} ", op);
-                right.write(language_backend, out);
+                self.write_literal(out, right);
                 write!(out, ")");
             }
             Literal::Cast { ref ty, ref value } => {
                 out.write("<");
-                ty.write(language_backend, out);
+                self.write_type(out, ty);
                 out.write(">");
-                value.write(language_backend, out);
+                self.write_literal(out, value);
             }
             Literal::Struct {
                 export_name,
@@ -615,7 +545,7 @@ impl Source<CythonLanguageBackend> for Literal {
                         } else {
                             is_first_field = false;
                         }
-                        lit.write(language_backend, out);
+                        self.write_literal(out, lit);
                     }
                 }
                 write!(out, " }}");
