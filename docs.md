@@ -1075,4 +1075,4 @@ module = ["name1", "name2"]
 [reference]: https://doc.rust-lang.org/nightly/reference/type-layout.html#representations
 [really-tagged-unions]: https://github.com/rust-lang/rfcs/blob/master/text/2195-really-tagged-unions.md
 [section-cfgs]: #defines-and-cfgs
-[file-it]: https://github.com/eqrion/cbindgen/issues/new
+[file-it]: https://github.com/mozilla/cbindgen/issues/new

@@ -12,7 +12,7 @@ Check out [Servo's GitHub workflow](https://github.com/servo/servo/wiki/Github-w
 
 Don't worry about requesting code review, as there is nothing formally setup for this repository. I try and review each pull request as soon as I can.
 
-There is continuous integration setup for `cbindgen` using [GitHub Actions](https://github.com/eqrion/cbindgen/actions). It automatically runs `cargo test` which runs `cbindgen` against a series of Rust files from `tests/rust/` and checks that the output compiles using `gcc` or `g++`.
+There is continuous integration setup for `cbindgen` using [GitHub Actions](https://github.com/mozilla/cbindgen/actions). It automatically runs `cargo test` which runs `cbindgen` against a series of Rust files from `tests/rust/` and checks that the output compiles using `gcc` or `g++`.
 
 In addition to a C/C++ compiler `cargo test` requires Python and Cython
 (`python -m pip install Cython`) for checking Cython bindings generated from tests (`.pyx` files).

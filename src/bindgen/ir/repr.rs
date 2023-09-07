@@ -107,7 +107,7 @@ impl Repr {
                 }
                 ("packed", args) => {
                     // #[repr(packed(n))] not supported because of some open questions about how
-                    // to calculate the native alignment of types. See eqrion/cbindgen#433.
+                    // to calculate the native alignment of types. See mozilla/cbindgen#433.
                     if args.is_some() {
                         return Err(
                             "Not-yet-implemented #[repr(packed(...))] encountered.".to_string()
