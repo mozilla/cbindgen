@@ -28,9 +28,10 @@ impl<'a> IdentifierType<'a> {
 }
 
 /// A rule to apply to an identifier when generating bindings.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum RenameRule {
     /// Do not apply any renaming. The default.
+    #[default]
     None,
     /// Converts the identifier to PascalCase and adds a context dependent prefix
     GeckoCase,
@@ -90,12 +91,6 @@ impl RenameRule {
                 result
             }
         })
-    }
-}
-
-impl Default for RenameRule {
-    fn default() -> RenameRule {
-        RenameRule::None
     }
 }
 
