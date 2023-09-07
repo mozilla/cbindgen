@@ -61,8 +61,10 @@ impl Language {
 /// Controls what type of line endings are used in the generated code.
 #[derive(Debug, Clone, Copy)]
 #[allow(clippy::upper_case_acronyms)]
+#[derive(Default)]
 pub enum LineEndingStyle {
     /// Use Unix-style linefeed characters
+    #[default]
     LF,
     /// Use classic Mac-style carriage-return characters
     CR,
@@ -70,12 +72,6 @@ pub enum LineEndingStyle {
     CRLF,
     /// Use the native mode for the platform: CRLF on Windows, LF everywhere else.
     Native,
-}
-
-impl Default for LineEndingStyle {
-    fn default() -> Self {
-        LineEndingStyle::LF
-    }
 }
 
 impl LineEndingStyle {
@@ -213,8 +209,9 @@ impl FromStr for DocumentationLength {
 deserialize_enum_str!(DocumentationLength);
 
 /// A style of Style to use when generating structs and enums.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub enum Style {
+    #[default]
     Both,
     Tag,
     Type,
@@ -242,12 +239,6 @@ impl Style {
         } else {
             "ctypedef "
         }
-    }
-}
-
-impl Default for Style {
-    fn default() -> Self {
-        Style::Both
     }
 }
 

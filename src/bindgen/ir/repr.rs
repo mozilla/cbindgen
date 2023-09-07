@@ -6,17 +6,12 @@ use syn::ext::IdentExt;
 
 use crate::bindgen::ir::ty::{IntKind, PrimitiveType};
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub enum ReprStyle {
+    #[default]
     Rust,
     C,
     Transparent,
-}
-
-impl Default for ReprStyle {
-    fn default() -> Self {
-        ReprStyle::Rust
-    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
