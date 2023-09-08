@@ -33,7 +33,7 @@ heck = "0.4"
 [dependencies.syn]
 version = "1.0.88"
 default-features = false
-features = ["clone-impls", "extra-traits", "full", "parsing", "printing"]
+features = ["clone-impls", "extra-traits", "fold", "full", "parsing", "printing"]
 
 [dev-dependencies]
 serial_test = "0.5.0"
