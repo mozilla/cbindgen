@@ -1,4 +1,4 @@
-# `cbindgen` &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.57%2B-blue.svg?maxAge=3600)](https://github.com/mozilla/cbindgen)
+# `cbindgen` &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.64%2B-blue.svg?maxAge=3600)](https://github.com/mozilla/cbindgen)
 
 [Build Status]: https://github.com/mozilla/cbindgen/workflows/cbindgen/badge.svg
 [actions]: https://github.com/mozilla/cbindgen/actions
