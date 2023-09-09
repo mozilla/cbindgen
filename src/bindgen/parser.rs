@@ -15,8 +15,8 @@ use crate::bindgen::cargo::{Cargo, PackageRef};
 use crate::bindgen::config::{Config, ParseConfig};
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Enum, Function, GenericParam, GenericParams,
-    ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GenericParam,
+    GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::utilities::{SynAbiHelpers, SynAttributeHelpers, SynItemHelpers};
 
@@ -547,7 +547,7 @@ impl Parse {
                     }
                 }
                 syn::Item::Macro(ref item) => {
-                    self.load_builtin_macro(config, crate_name, mod_cfg, item)
+                    self.load_builtin_macro(config, crate_name, mod_cfg, item);
                 }
                 syn::Item::Mod(ref item) => {
                     nested_modules.push(item);
@@ -986,7 +986,7 @@ impl Parse {
         }
 
         let bitflags = match bitflags::parse(item.mac.tokens.clone()) {
-            Ok(b) => b,
+            Ok(bf) => bf,
             Err(e) => {
                 warn!("Failed to parse bitflags invocation: {:?}", e);
                 return;
@@ -994,10 +994,18 @@ impl Parse {
         };
 
         let (struct_, impl_) = bitflags.expand();
-        self.load_syn_struct(config, crate_name, mod_cfg, &struct_);
-        // We know that the expansion will only reference `struct_`, so it's
-        // fine to just do it here instead of deferring it like we do with the
-        // other calls to this function.
-        self.load_syn_assoc_consts_from_impl(crate_name, mod_cfg, &impl_);
+        if let Some(struct_) = struct_ {
+            self.load_syn_struct(config, crate_name, mod_cfg, &struct_);
+        }
+        if let syn::Type::Path(ref path) = *impl_.self_ty {
+            if let Some(type_name) = path.path.get_ident() {
+                self.structs
+                    .for_items_mut(&Path::new(type_name.unraw().to_string()), |item| {
+                        item.annotations
+                            .add_default("internal-derive-bitflags", AnnotationValue::Bool(true));
+                    });
+            }
+        }
+        self.load_syn_assoc_consts_from_impl(crate_name, mod_cfg, &impl_)
     }
 }

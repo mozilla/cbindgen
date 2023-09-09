@@ -210,6 +210,7 @@ impl Struct {
         other: &str,
         out: &mut SourceWriter<F>,
     ) {
+        let bits = &self.fields[0].name;
         out.new_line();
         write!(
             out,
@@ -223,10 +224,8 @@ impl Struct {
         out.open_brace();
         write!(
             out,
-            "return {} {{ static_cast<decltype(bits)>(this->bits {} {}.bits) }};",
-            self.export_name(),
-            operator,
-            other
+            "return {} {{ static_cast<decltype({bits})>(this->{bits} {operator} {other}.{bits}) }};",
+            self.export_name()
         );
         out.close_brace(false);
 
@@ -534,6 +533,8 @@ impl Source for Struct {
                 .bool("internal-derive-bitflags")
                 .unwrap_or(false)
             {
+                assert_eq!(self.fields.len(), 1);
+                let bits = &self.fields[0].name;
                 if !wrote_start_newline {
                     wrote_start_newline = true;
                     out.new_line();
@@ -547,7 +548,7 @@ impl Source for Struct {
                 out.new_line();
                 write!(out, "{}explicit operator bool() const", constexpr_prefix);
                 out.open_brace();
-                write!(out, "return !!bits;");
+                write!(out, "return !!{bits};");
                 out.close_brace(false);
 
                 out.new_line();
@@ -560,7 +561,7 @@ impl Source for Struct {
                 out.open_brace();
                 write!(
                     out,
-                    "return {} {{ static_cast<decltype(bits)>(~bits) }};",
+                    "return {} {{ static_cast<decltype({bits})>(~{bits}) }};",
                     self.export_name()
                 );
                 out.close_brace(false);
