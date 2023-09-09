@@ -121,8 +121,46 @@ struct LargeFlags {
 constexpr static const LargeFlags LargeFlags_LARGE_SHIFT = LargeFlags{ /* .bits = */ (uint64_t)(1ull << 44) };
 constexpr static const LargeFlags LargeFlags_INVERTED = LargeFlags{ /* .bits = */ (uint64_t)~(LargeFlags_LARGE_SHIFT).bits };
 
+struct OutOfLine {
+  uint32_t _0;
+
+  constexpr explicit operator bool() const {
+    return !!_0;
+  }
+  constexpr OutOfLine operator~() const {
+    return OutOfLine { static_cast<decltype(_0)>(~_0) };
+  }
+  constexpr OutOfLine operator|(const OutOfLine& other) const {
+    return OutOfLine { static_cast<decltype(_0)>(this->_0 | other._0) };
+  }
+  OutOfLine& operator|=(const OutOfLine& other) {
+    *this = (*this | other);
+    return *this;
+  }
+  constexpr OutOfLine operator&(const OutOfLine& other) const {
+    return OutOfLine { static_cast<decltype(_0)>(this->_0 & other._0) };
+  }
+  OutOfLine& operator&=(const OutOfLine& other) {
+    *this = (*this & other);
+    return *this;
+  }
+  constexpr OutOfLine operator^(const OutOfLine& other) const {
+    return OutOfLine { static_cast<decltype(_0)>(this->_0 ^ other._0) };
+  }
+  OutOfLine& operator^=(const OutOfLine& other) {
+    *this = (*this ^ other);
+    return *this;
+  }
+};
+constexpr static const OutOfLine OutOfLine_A = OutOfLine{ /* ._0 = */ (uint32_t)1 };
+constexpr static const OutOfLine OutOfLine_B = OutOfLine{ /* ._0 = */ (uint32_t)2 };
+constexpr static const OutOfLine OutOfLine_AB = OutOfLine{ /* ._0 = */ (uint32_t)((OutOfLine_A)._0 | (OutOfLine_B)._0) };
+
 extern "C" {
 
-void root(AlignFlags flags, DebugFlags bigger_flags, LargeFlags largest_flags);
+void root(AlignFlags flags,
+          DebugFlags bigger_flags,
+          LargeFlags largest_flags,
+          OutOfLine out_of_line);
 
 } // extern "C"

@@ -38,6 +38,24 @@ bitflags! {
     }
 }
 
+// bitflags 2 allows to define types out-of-line for custom derives
+// #[derive(SomeTrait)]
+#[repr(C)]
+pub struct OutOfLine(u32);
+
+bitflags! {
+    impl OutOfLine: u32 {
+        const A = 1;
+        const B = 2;
+        const AB = Self::A.bits() | Self::B.bits();
+    }
+}
 
 #[no_mangle]
-pub extern "C" fn root(flags: AlignFlags, bigger_flags: DebugFlags, largest_flags: LargeFlags) {}
+pub extern "C" fn root(
+    flags: AlignFlags,
+    bigger_flags: DebugFlags,
+    largest_flags: LargeFlags,
+    out_of_line: OutOfLine,
+) {
+}

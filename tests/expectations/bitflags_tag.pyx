@@ -36,4 +36,13 @@ cdef extern from *:
   const LargeFlags LargeFlags_LARGE_SHIFT # = <LargeFlags>{ <uint64_t>(1ull << 44) }
   const LargeFlags LargeFlags_INVERTED # = <LargeFlags>{ <uint64_t>~(LargeFlags_LARGE_SHIFT).bits }
 
-  void root(AlignFlags flags, DebugFlags bigger_flags, LargeFlags largest_flags);
+  cdef struct OutOfLine:
+    uint32_t _0;
+  const OutOfLine OutOfLine_A # = <OutOfLine>{ <uint32_t>1 }
+  const OutOfLine OutOfLine_B # = <OutOfLine>{ <uint32_t>2 }
+  const OutOfLine OutOfLine_AB # = <OutOfLine>{ <uint32_t>((OutOfLine_A)._0 | (OutOfLine_B)._0) }
+
+  void root(AlignFlags flags,
+            DebugFlags bigger_flags,
+            LargeFlags largest_flags,
+            OutOfLine out_of_line);
