@@ -1,7 +1,10 @@
-# Unreleased
+# 0.26.0
 
       * Fix swapping of `>>=` and `<<=` in constants.
       * Add support for #[deprecated] (#860).
+      * Built-in support for bitflags 2.0.
+      * Support for "C-unwind" ABI.
+      * Generate bindings for non-public extern items if they are #[no_mangle].
 
 ## 0.25.0
 
