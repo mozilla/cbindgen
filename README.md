@@ -1,7 +1,7 @@
-# `cbindgen` &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.57%2B-blue.svg?maxAge=3600)](https://github.com/eqrion/cbindgen)
+# `cbindgen` &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.64%2B-blue.svg?maxAge=3600)](https://github.com/mozilla/cbindgen)
 
-[Build Status]: https://github.com/eqrion/cbindgen/workflows/cbindgen/badge.svg
-[actions]: https://github.com/eqrion/cbindgen/actions
+[Build Status]: https://github.com/mozilla/cbindgen/workflows/cbindgen/badge.svg
+[actions]: https://github.com/mozilla/cbindgen/actions
 [Latest Version]: https://img.shields.io/crates/v/cbindgen.svg
 [crates.io]: https://crates.io/crates/cbindgen
 [Api Rustdoc]: https://img.shields.io/badge/api-rustdoc-blue.svg
@@ -35,7 +35,7 @@ It's worth noting that the development of cbindgen has been largely adhoc, as
 features have been added to support the usecases of the maintainers. This means
 cbindgen may randomly fail to support some particular situation simply because
 no one has put in the effort to handle it yet. [Please file an issue if you run
-into such a situation](https://github.com/eqrion/cbindgen/issues/new). Although
+into such a situation](https://github.com/mozilla/cbindgen/issues/new). Although
 since we all have other jobs, you might need to do the implementation work too
 :)
 

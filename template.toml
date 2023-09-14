@@ -1,7 +1,7 @@
 # This is a template cbindgen.toml file with all of the default values.
 # Some values are commented out because their absence is the real default.
 #
-# See https://github.com/eqrion/cbindgen/blob/master/docs.md#cbindgentoml
+# See https://github.com/mozilla/cbindgen/blob/master/docs.md#cbindgentoml
 # for detailed documentation of every option here.
 
 
@@ -78,6 +78,8 @@ renaming_overrides_prefixing = false
 [fn]
 rename_args = "None"
 # must_use = "MUST_USE_FUNC"
+# deprecated = "DEPRECATED_FUNC"
+# deprecated_with_note = "DEPRECATED_FUNC_WITH_NOTE"
 # no_return = "NO_RETURN"
 # prefix = "START_FUNC"
 # postfix = "END_FUNC"
@@ -90,6 +92,8 @@ sort_by = "Name"
 [struct]
 rename_fields = "None"
 # must_use = "MUST_USE_STRUCT"
+# deprecated = "DEPRECATED_STRUCT"
+# deprecated_with_note = "DEPRECATED_STRUCT_WITH_NOTE"
 derive_constructor = false
 derive_eq = false
 derive_neq = false
@@ -104,6 +108,8 @@ derive_gte = false
 [enum]
 rename_variants = "None"
 # must_use = "MUST_USE_ENUM"
+# deprecated = "DEPRECATED_ENUM"
+# deprecated_with_note = "DEPRECATED_ENUM_WITH_NOTE"
 add_sentinel = false
 prefix_with_name = false
 derive_helper_methods = false

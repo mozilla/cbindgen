@@ -93,7 +93,6 @@ fn test_project(project_path: &str) {
     );
 
     std::fs::remove_dir_all(build_dir).expect("Failed to remove old build directory");
-    ()
 }
 
 macro_rules! test_file {

@@ -144,6 +144,9 @@ fn compile(
             // clang also warns about returning non-instantiated templates (they could
             // be specialized, but they're not so it's fine).
             command.arg("-Wno-return-type-c-linkage");
+            // deprecated warnings should not be errors as it's intended
+            command.arg("-Wno-deprecated-declarations");
+
             if let Language::Cxx = language {
                 // enum class is a c++11 extension which makes g++ on macos 10.14 error out
                 // inline variables are are a c++17 extension
@@ -171,7 +174,9 @@ fn compile(
         Language::Cython => {
             command.arg("-Wextra");
             if !skip_warning_as_error {
-                command.arg("-Werror");
+                // Our tests contain code that is deprecated in Cython 3.0.
+                // Allowing warnings buys a little time.
+                // command.arg("-Werror");
             }
             command.arg("-3");
             command.arg("-o").arg(&object);
@@ -213,9 +218,10 @@ fn run_compile_test(
     fs::create_dir_all(&generated_file).unwrap();
 
     let style_ext = style
+        // Cython is sensitive to dots, so we can't include any dots.
         .map(|style| match style {
-            Style::Both => ".both",
-            Style::Tag => ".tag",
+            Style::Both => "_both",
+            Style::Tag => "_tag",
             Style::Type => "",
         })
         .unwrap_or_default();
@@ -257,7 +263,7 @@ fn run_compile_test(
     );
     if generate_depfile {
         let depfile = depfile_contents.expect("No depfile generated");
-        assert!(depfile.len() > 0);
+        assert!(!depfile.is_empty());
         let mut rules = depfile.split(':');
         let target = rules.next().expect("No target found");
         assert_eq!(target, generated_file.as_os_str().to_str().unwrap());

@@ -40,6 +40,7 @@ struct CDecl {
     type_generic_args: Vec<GenericArgument>,
     declarators: Vec<CDeclarator>,
     type_ctype: Option<DeclarationType>,
+    deprecated: Option<String>,
 }
 
 impl CDecl {
@@ -50,6 +51,7 @@ impl CDecl {
             type_generic_args: Vec::new(),
             declarators: Vec::new(),
             type_ctype: None,
+            deprecated: None,
         }
     }
 
@@ -99,6 +101,7 @@ impl CDecl {
             layout,
             never_return: f.never_return,
         });
+        self.deprecated = f.annotations.deprecated.clone();
         self.build_type(&f.ret, false, config);
     }
 

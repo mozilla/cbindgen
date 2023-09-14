@@ -680,6 +680,23 @@ args = "horizontal"
 # default: nothing is emitted for must_use functions
 must_use = "MUST_USE_FUNC"
 
+# An optional string that should prefix function declarations which have been
+# marked as `#[deprecated]` without note. For instance, "__attribute__((deprecated))"
+# would be a reasonable value if targeting gcc/clang. A more portable solution
+# would involve emitting the name of a macro which you define in a
+# platform-specific way. e.g. "DEPRECATED_FUNC"
+# default: nothing is emitted for deprecated functions
+deprecated = "DEPRECATED_FUNC"
+
+# An optional string that should prefix function declarations which have been
+# marked as `#[deprecated(note = "reason")]`. `{}` will be replaced with the
+# double-quoted string. For instance, "__attribute__((deprecated({})))"
+# would be a reasonable value if targeting gcc/clang. A more portable solution
+# would involve emitting the name of a macro which you define in a
+# platform-specific way. e.g. "DEPRECATED_FUNC_WITH_NOTE(note)"
+# default: nothing is emitted for deprecated functions
+deprecated_with_notes = "DEPRECATED_FUNC_WITH_NOTE"
+
 # An optional string that will be used in the attribute position for functions
 # that don't return (that return `!` in Rust).
 #
@@ -751,6 +768,23 @@ rename_fields = "PascalCase"
 #
 # default: nothing is emitted for must_use structs
 must_use = "MUST_USE_STRUCT"
+
+# An optional string that should come before the name of any struct which has been
+# marked as `#[deprecated]` without note. For instance, "__attribute__((deprecated))"
+# would be a reasonable value if targeting gcc/clang. A more portable solution
+# would involve emitting the name of a macro which you define in a
+# platform-specific way. e.g. "DEPRECATED_STRUCT"
+# default: nothing is emitted for deprecated structs
+deprecated = "DEPRECATED_STRUCT"
+
+# An optional string that should come before the name of any struct which has been
+# marked as `#[deprecated(note = "reason")]`. `{}` will be replaced with the
+# double-quoted string. For instance, "__attribute__((deprecated({})))"
+# would be a reasonable value if targeting gcc/clang. A more portable solution
+# would involve emitting the name of a macro which you define in a
+# platform-specific way. e.g. "DEPRECATED_STRUCT_WITH_NOTE(note)"
+# default: nothing is emitted for deprecated structs
+deprecated_with_notes = "DEPRECATED_STRUCT_WITH_NOTE"
 
 # Whether a Rust type with associated consts should emit those consts inside the
 # type's body. Otherwise they will be emitted trailing and with the type's name
@@ -864,6 +898,23 @@ cast_assert_name = "MOZ_RELEASE_ASSERT"
 #
 # default: nothing is emitted for must_use enums
 must_use = "MUST_USE_ENUM"
+
+# An optional string that should come before the name of any enum which has been
+# marked as `#[deprecated]` without note. For instance, "__attribute__((deprecated))"
+# would be a reasonable value if targeting gcc/clang. A more portable solution
+# would involve emitting the name of a macro which you define in a
+# platform-specific way. e.g. "DEPRECATED_ENUM"
+# default: nothing is emitted for deprecated enums
+deprecated = "DEPRECATED_ENUM"
+
+# An optional string that should come before the name of any enum which has been
+# marked as `#[deprecated(note = "reason")]`. `{}` will be replaced with the
+# double-quoted string. For instance, "__attribute__((deprecated({})))"
+# would be a reasonable value if targeting gcc/clang. A more portable solution
+# would involve emitting the name of a macro which you define in a
+# platform-specific way. e.g. "DEPRECATED_ENUM_WITH_NOTE(note)"
+# default: nothing is emitted for deprecated enums
+deprecated_with_notes = "DEPRECATED_ENUM_WITH_NOTE"
 
 # Whether enums with fields should generate destructors. This exists so that generic
 # enums can be properly instantiated with payloads that are C++ types with
@@ -1024,4 +1075,4 @@ module = ["name1", "name2"]
 [reference]: https://doc.rust-lang.org/nightly/reference/type-layout.html#representations
 [really-tagged-unions]: https://github.com/rust-lang/rfcs/blob/master/text/2195-really-tagged-unions.md
 [section-cfgs]: #defines-and-cfgs
-[file-it]: https://github.com/eqrion/cbindgen/issues/new
+[file-it]: https://github.com/mozilla/cbindgen/issues/new

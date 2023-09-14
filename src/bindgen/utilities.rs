@@ -130,6 +130,45 @@ pub trait SynAttributeHelpers {
             })
     }
 
+    fn find_deprecated_note(&self) -> Option<String> {
+        let attrs = self.attrs();
+        // #[deprecated = ""]
+        if let Some(note) = attrs.attr_name_value_lookup("deprecated") {
+            return Some(note);
+        }
+
+        // #[deprecated]
+        if attrs.has_attr_word("deprecated") {
+            return Some(String::new());
+        }
+
+        // #[deprecated(note = "")]
+        let attr = attrs.iter().find(|attr| {
+            if let Ok(syn::Meta::List(list)) = attr.parse_meta() {
+                list.path.is_ident("deprecated")
+            } else {
+                false
+            }
+        })?;
+
+        let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> =
+            match attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
+                Ok(args) => args,
+                Err(_) => {
+                    warn!("couldn't parse deprecated attribute");
+                    return None;
+                }
+            };
+
+        let arg = args.iter().find(|arg| arg.path.is_ident("note"))?;
+        if let syn::Lit::Str(ref lit) = arg.lit {
+            Some(lit.value())
+        } else {
+            warn!("deprecated attribute must be a string");
+            None
+        }
+    }
+
     fn is_no_mangle(&self) -> bool {
         self.has_attr_word("no_mangle")
     }
@@ -263,7 +302,7 @@ impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
         if let Some(ref abi) = *self {
             if let Some(ref lit_string) = abi.name {
-                return lit_string.value() == "C";
+                return matches!(lit_string.value().as_str(), "C" | "C-unwind");
             }
         }
         false
@@ -280,7 +319,7 @@ impl SynAbiHelpers for Option<syn::Abi> {
 impl SynAbiHelpers for syn::Abi {
     fn is_c(&self) -> bool {
         if let Some(ref lit_string) = self.name {
-            lit_string.value() == "C"
+            matches!(lit_string.value().as_str(), "C" | "C-unwind")
         } else {
             false
         }

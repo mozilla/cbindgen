@@ -1,6 +1,10 @@
-# Unreleased
+# 0.26.0
 
       * Fix swapping of `>>=` and `<<=` in constants.
+      * Add support for #[deprecated] (#860).
+      * Built-in support for bitflags 2.0.
+      * Support for "C-unwind" ABI.
+      * Generate bindings for non-public extern items if they are #[no_mangle].
 
 ## 0.25.0
 
@@ -209,59 +213,59 @@ Thanks to all the awesome contributors that contributed to this release.
 
 ## 0.12.2
 
-     * Fixed version detection with lockfile v2. https://github.com/eqrion/cbindgen/pull/446
-     * Added support for export_name on functions. https://github.com/eqrion/cbindgen/pull/447
+     * Fixed version detection with lockfile v2. https://github.com/mozilla/cbindgen/pull/446
+     * Added support for export_name on functions. https://github.com/mozilla/cbindgen/pull/447
 
 ## 0.12.1
 
-     * Added support for #[repr*64)] on enums. https://github.com/eqrion/cbindgen/pull/441
-     * Added support to generate plain enums instead of enum classes for C++. https://github.com/eqrion/cbindgen/pull/443
-     * Fixed dependency resolution with lockfile v2. https://github.com/eqrion/cbindgen/pull/438
+     * Added support for #[repr*64)] on enums. https://github.com/mozilla/cbindgen/pull/441
+     * Added support to generate plain enums instead of enum classes for C++. https://github.com/mozilla/cbindgen/pull/443
+     * Fixed dependency resolution with lockfile v2. https://github.com/mozilla/cbindgen/pull/438
 
 ## 0.12.0
 
-     * Added support for #[repr(align)] and #[repr(packed)] on structs and unions. https://github.com/eqrion/cbindgen/pull/431
-     * Added support to generate copy-assignment operators for enums. https://github.com/eqrion/cbindgen/pull/434
+     * Added support for #[repr(align)] and #[repr(packed)] on structs and unions. https://github.com/mozilla/cbindgen/pull/431
+     * Added support to generate copy-assignment operators for enums. https://github.com/mozilla/cbindgen/pull/434
 
 ## 0.11.1
 
-     * More binary operators and expressions are supported. https://github.com/eqrion/cbindgen/pull/425
-     * More built-in bitflags operators. https://github.com/eqrion/cbindgen/pull/426
+     * More binary operators and expressions are supported. https://github.com/mozilla/cbindgen/pull/425
+     * More built-in bitflags operators. https://github.com/mozilla/cbindgen/pull/426
 
 ## 0.11.0
 
-     * Made rust char map to uint32_t. https://github.com/eqrion/cbindgen/pull/424
+     * Made rust char map to uint32_t. https://github.com/mozilla/cbindgen/pull/424
 
 ## 0.10.1
 
-     * Improved error message for missing config file. https://github.com/eqrion/cbindgen/pull/422
-     * Add missing header for char32_t. https://github.com/eqrion/cbindgen/pull/414
+     * Improved error message for missing config file. https://github.com/mozilla/cbindgen/pull/422
+     * Add missing header for char32_t. https://github.com/mozilla/cbindgen/pull/414
 
 ## 0.10.0
 
-     * Initialize struct literal with list-initializer for C++11 standard. https://github.com/eqrion/cbindgen/pull/401
-     * Surround namespace with __cplusplus ifdef in cpp_compat mode. https://github.com/eqrion/cbindgen/pull/407
-     * Add support for --quiet flag. https://github.com/eqrion/cbindgen/pull/400
-     * Map char to char32_t. https://github.com/eqrion/cbindgen/pull/396
-     * Improve binding_crate_ref() error message. https://github.com/eqrion/cbindgen/pull/395
-     * avoid prematurely returning during expansion. https://github.com/eqrion/cbindgen/pull/389
-     * Add support for adding "using namespace" statements. https://github.com/eqrion/cbindgen/pull/387
+     * Initialize struct literal with list-initializer for C++11 standard. https://github.com/mozilla/cbindgen/pull/401
+     * Surround namespace with __cplusplus ifdef in cpp_compat mode. https://github.com/mozilla/cbindgen/pull/407
+     * Add support for --quiet flag. https://github.com/mozilla/cbindgen/pull/400
+     * Map char to char32_t. https://github.com/mozilla/cbindgen/pull/396
+     * Improve binding_crate_ref() error message. https://github.com/mozilla/cbindgen/pull/395
+     * avoid prematurely returning during expansion. https://github.com/mozilla/cbindgen/pull/389
+     * Add support for adding "using namespace" statements. https://github.com/mozilla/cbindgen/pull/387
 
 ## 0.9.1
 
-     * Various improvements to comment output. https://github.com/eqrion/cbindgen/pull/370 / https://github.com/eqrion/cbindgen/pull/375.
-     * Fixed expand when ran from build.rs. https://github.com/eqrion/cbindgen/pull/371
-     * More debugging output for expansion. https://github.com/eqrion/cbindgen/pull/383
-     * New option to add a default private constructor in C++ tagged enums. https://github.com/eqrion/cbindgen/pull/377
-     * Syn and related dependencies updated to 1.0. https://github.com/eqrion/cbindgen/pull/379
+     * Various improvements to comment output. https://github.com/mozilla/cbindgen/pull/370 / https://github.com/mozilla/cbindgen/pull/375.
+     * Fixed expand when ran from build.rs. https://github.com/mozilla/cbindgen/pull/371
+     * More debugging output for expansion. https://github.com/mozilla/cbindgen/pull/383
+     * New option to add a default private constructor in C++ tagged enums. https://github.com/mozilla/cbindgen/pull/377
+     * Syn and related dependencies updated to 1.0. https://github.com/mozilla/cbindgen/pull/379
 
 ## 0.9.0
 
-     * Support to generate C headers with C++ compatibility. https://github.com/eqrion/cbindgen/pull/349
-     * Fix include guard generation when no_includes is set. https://github.com/eqrion/cbindgen/pull/352
-     * Fix crate parsing order so that types from the binding crate are preferred in presence of conflicting names. https://github.com/eqrion/cbindgen/pull/355
-     * Add extra_bindings option to generate bindings for dependencies. https://github.com/eqrion/cbindgen/pull/362
-     * Clap dependency is optional now so it's feasible to avoid building it if cbindgen is used as a library. https://github.com/eqrion/cbindgen/pull/363
+     * Support to generate C headers with C++ compatibility. https://github.com/mozilla/cbindgen/pull/349
+     * Fix include guard generation when no_includes is set. https://github.com/mozilla/cbindgen/pull/352
+     * Fix crate parsing order so that types from the binding crate are preferred in presence of conflicting names. https://github.com/mozilla/cbindgen/pull/355
+     * Add extra_bindings option to generate bindings for dependencies. https://github.com/mozilla/cbindgen/pull/362
+     * Clap dependency is optional now so it's feasible to avoid building it if cbindgen is used as a library. https://github.com/mozilla/cbindgen/pull/363
 
 ## 0.8.7
 

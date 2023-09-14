@@ -55,7 +55,7 @@ jobs:
     - name: Install Cython
       run: |
         python -m pip install --upgrade pip wheel
-        pip install Cython==0.29.*
+        pip install Cython==3.0.2
 
     - name: Install Zig
       uses: goto-bus-stop/setup-zig@v2

@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -35,6 +36,13 @@ pub enum AnnotationValue {
 pub struct AnnotationSet {
     annotations: HashMap<String, AnnotationValue>,
     pub must_use: bool,
+    pub deprecated: Option<String>,
+}
+
+pub enum DeprecatedNoteKind {
+    Function,
+    Struct,
+    Enum,
 }
 
 impl AnnotationSet {
@@ -42,6 +50,7 @@ impl AnnotationSet {
         AnnotationSet {
             annotations: HashMap::new(),
             must_use: false,
+            deprecated: None,
         }
     }
 
@@ -51,6 +60,34 @@ impl AnnotationSet {
 
     pub(crate) fn must_use(&self, config: &Config) -> bool {
         self.must_use && config.language != Language::Cython
+    }
+
+    pub(crate) fn deprecated_note<'c>(
+        &self,
+        config: &'c Config,
+        kind: DeprecatedNoteKind,
+    ) -> Option<Cow<'c, str>> {
+        let note = self.deprecated.as_deref()?;
+
+        if config.language == Language::Cython {
+            return None;
+        }
+
+        if note.is_empty() {
+            return Some(Cow::Borrowed(match kind {
+                DeprecatedNoteKind::Enum => config.enumeration.deprecated.as_deref()?,
+                DeprecatedNoteKind::Function => config.function.deprecated.as_deref()?,
+                DeprecatedNoteKind::Struct => config.structure.deprecated.as_deref()?,
+            }));
+        }
+
+        let format = match kind {
+            DeprecatedNoteKind::Enum => &config.enumeration.deprecated_with_note,
+            DeprecatedNoteKind::Function => &config.function.deprecated_with_note,
+            DeprecatedNoteKind::Struct => &config.structure.deprecated_with_note,
+        }
+        .as_ref()?;
+        Some(Cow::Owned(format.replace("{}", &format!("{:?}", note))))
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
@@ -68,7 +105,7 @@ impl AnnotationSet {
             .collect();
 
         let must_use = attrs.has_attr_word("must_use");
-
+        let deprecated = attrs.find_deprecated_note();
         let mut annotations = HashMap::new();
 
         // Look at each line for an annotation
@@ -118,6 +155,7 @@ impl AnnotationSet {
         Ok(AnnotationSet {
             annotations,
             must_use,
+            deprecated,
         })
     }
 

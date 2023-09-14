@@ -52,4 +52,14 @@ typedef struct LargeFlags {
 #define LargeFlags_LARGE_SHIFT (LargeFlags){ .bits = (uint64_t)(1ull << 44) }
 #define LargeFlags_INVERTED (LargeFlags){ .bits = (uint64_t)~(LargeFlags_LARGE_SHIFT).bits }
 
-void root(struct AlignFlags flags, struct DebugFlags bigger_flags, struct LargeFlags largest_flags);
+typedef struct OutOfLine {
+  uint32_t _0;
+} OutOfLine;
+#define OutOfLine_A (OutOfLine){ ._0 = (uint32_t)1 }
+#define OutOfLine_B (OutOfLine){ ._0 = (uint32_t)2 }
+#define OutOfLine_AB (OutOfLine){ ._0 = (uint32_t)((OutOfLine_A)._0 | (OutOfLine_B)._0) }
+
+void root(struct AlignFlags flags,
+          struct DebugFlags bigger_flags,
+          struct LargeFlags largest_flags,
+          struct OutOfLine out_of_line);

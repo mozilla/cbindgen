@@ -1,6 +1,6 @@
 [package]
 name = "cbindgen"
-version = "0.25.0"
+version = "0.26.0"
 authors = [
   "Emilio Cobos Álvarez <emilio@crisal.io>",
   "Jeff Muizelaar <jmuizelaar@mozilla.com>",
@@ -11,7 +11,7 @@ license = "MPL-2.0"
 description = "A tool for generating C bindings to Rust code."
 keywords = ["bindings", "ffi", "code-generation"]
 categories = ["external-ffi-bindings", "development-tools::ffi"]
-repository = "https://github.com/eqrion/cbindgen"
+repository = "https://github.com/mozilla/cbindgen"
 edition = "2018"
 rust-version = "1.64"
 exclude = [
@@ -33,7 +33,7 @@ heck = "0.4"
 [dependencies.syn]
 version = "1.0.88"
 default-features = false
-features = ["clone-impls", "extra-traits", "full", "parsing", "printing"]
+features = ["clone-impls", "extra-traits", "fold", "full", "parsing", "printing"]
 
 [dev-dependencies]
 serial_test = "0.5.0"
