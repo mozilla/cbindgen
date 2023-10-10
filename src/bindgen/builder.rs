@@ -394,6 +394,20 @@ impl Builder {
 
         result.source_files.extend_from_slice(self.srcs.as_slice());
 
+        let assoc_types = result
+            .assoc_types
+            .into_iter()
+            .filter_map(
+                |(id, (ty_, count))| {
+                    if count == 0 {
+                        Some((id, ty_))
+                    } else {
+                        None
+                    }
+                },
+            )
+            .collect();
+
         Library::new(
             self.config,
             result.constants,
@@ -405,6 +419,7 @@ impl Builder {
             result.typedefs,
             result.functions,
             result.source_files,
+            assoc_types,
         )
         .generate()
     }

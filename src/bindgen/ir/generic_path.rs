@@ -6,9 +6,41 @@ use syn::ext::IdentExt;
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
-use crate::bindgen::ir::{ConstExpr, Path, Type};
+use crate::bindgen::ir::{AssocTypeResolver, ConstExpr, Path, Type};
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::{Source, SourceWriter};
+
+// Struct that serves as key for resolving associated types
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct AssocTypeId {
+    pub ty: Box<Type>,
+    pub trait_: Path,
+    pub ident: Path,
+}
+
+impl AssocTypeId {
+    pub fn load(path: &syn::Path, qself: &syn::QSelf) -> Result<Self, String> {
+        let self_type = &qself.ty;
+
+        let ir_type_opt = Type::load(&self_type)?;
+        let ir_type = ir_type_opt.ok_or(String::from("Valid but empty type"))?;
+
+        let path_len = path.segments.len();
+        // Theoretically not possible if qself is present
+        if path_len < 2 {
+            return Err(String::from("Trait not found in type"));
+        }
+
+        let ident = path.segments.last().unwrap().ident.to_string();
+        let trait_ident = path.segments[path_len - 2].ident.to_string();
+
+        Ok(AssocTypeId {
+            ty: Box::new(ir_type),
+            trait_: Path::new(trait_ident),
+            ident: Path::new(ident),
+        })
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum GenericParamType {
@@ -129,6 +161,14 @@ impl GenericParams {
     pub fn write_with_default<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         self.write_internal(config, out, true);
     }
+
+    pub fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        for generic_param in self.0.iter_mut() {
+            if let GenericParamType::Const(ty_) = &mut generic_param.ty {
+                ty_.resolve_assoc_types(resolver);
+            }
+        }
+    }
 }
 
 impl Deref for GenericParams {
@@ -200,6 +240,7 @@ pub struct GenericPath {
     export_name: String,
     generics: Vec<GenericArgument>,
     ctype: Option<DeclarationType>,
+    assoc: Option<AssocTypeId>,
 }
 
 impl GenericPath {
@@ -210,6 +251,7 @@ impl GenericPath {
             export_name,
             generics,
             ctype: None,
+            assoc: None,
         }
     }
 
@@ -248,6 +290,10 @@ impl GenericPath {
         &self.export_name
     }
 
+    pub fn assoc(&self) -> Option<&AssocTypeId> {
+        self.assoc.as_ref()
+    }
+
     pub fn is_single_identifier(&self) -> bool {
         self.generics.is_empty()
     }
@@ -265,7 +311,7 @@ impl GenericPath {
         self.ctype = resolver.type_for(&self.path);
     }
 
-    pub fn load(path: &syn::Path) -> Result<Self, String> {
+    pub fn load(path: &syn::Path, qself: Option<&syn::QSelf>) -> Result<Self, String> {
         assert!(
             !path.segments.is_empty(),
             "{:?} doesn't have any segments",
@@ -273,6 +319,10 @@ impl GenericPath {
         );
         let last_segment = path.segments.last().unwrap();
         let name = last_segment.ident.unraw().to_string();
+
+        let assoc = qself
+            .map(|qself| AssocTypeId::load(path, qself))
+            .transpose()?;
 
         let path = Path::new(name);
         let phantom_data_path = Path::new("PhantomData");
@@ -298,6 +348,9 @@ impl GenericPath {
             _ => Vec::new(),
         };
 
-        Ok(Self::new(path, generics))
+        let mut ret = Self::new(path, generics);
+        ret.assoc = assoc;
+
+        Ok(ret)
     }
 }
