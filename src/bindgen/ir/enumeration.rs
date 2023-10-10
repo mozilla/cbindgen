@@ -10,9 +10,9 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation, Field,
-    GenericArgument, GenericParams, GenericPath, Item, ItemContainer, Literal, Path, Repr,
-    ReprStyle, Struct, ToCondition, Type,
+    AnnotationSet, AnnotationValue, AssocTypeResolver, Cfg, ConditionWrite, DeprecatedNoteKind,
+    Documentation, Field, GenericArgument, GenericParams, GenericPath, Item, ItemContainer,
+    Literal, Path, Repr, ReprStyle, Struct, ToCondition, Type,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -638,6 +638,19 @@ impl Item for Enum {
         for variant in &self.variants {
             variant.add_dependencies(library, out);
         }
+    }
+
+    fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        for variant in self.variants.iter_mut() {
+            if let Some(literal) = variant.discriminant.as_mut() {
+                literal.resolve_assoc_types(resolver);
+            }
+            if let VariantBody::Body { body, .. } = &mut variant.body {
+                body.resolve_assoc_types(resolver);
+            }
+        }
+
+        self.generic_params.resolve_assoc_types(resolver);
     }
 }
 
