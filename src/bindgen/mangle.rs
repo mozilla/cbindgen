@@ -135,6 +135,7 @@ impl<'a> Mangler<'a> {
                     self.input
                 );
             }
+            Type::VarArgs => todo!(),
         }
     }
 
