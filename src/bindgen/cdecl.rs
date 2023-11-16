@@ -114,7 +114,9 @@ impl CDecl {
                         "error generating cdecl for {:?}",
                         t
                     );
-                    self.type_qualifers = "const".to_owned();
+                    if config.language != Language::Zig {
+                        self.type_qualifers = "const".to_owned();
+                    }
                 }
 
                 assert!(
@@ -138,7 +140,9 @@ impl CDecl {
                         "error generating cdecl for {:?}",
                         t
                     );
-                    self.type_qualifers = "const".to_owned();
+                    if config.language != Language::Zig {
+                        self.type_qualifers = "const".to_owned();
+                    }
                 }
 
                 assert!(
@@ -146,7 +150,12 @@ impl CDecl {
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_name = p.to_repr_c(config).to_string();
+
+                if config.language == Language::Zig {
+                    self.type_name = p.to_repr_zig().to_string();
+                } else {
+                    self.type_name = p.to_repr_c(config).to_string();
+                }
             }
             Type::Ptr {
                 ref ty,
@@ -203,7 +212,9 @@ impl CDecl {
             }
         }
 
-        write!(out, "{}", self.type_name);
+        if config.language != Language::Zig {
+            write!(out, "{}", self.type_name);
+        }
 
         if !self.type_generic_args.is_empty() {
             out.write("<");
@@ -213,11 +224,16 @@ impl CDecl {
 
         // When we have an identifier, put a space between the type and the declarators
         if ident.is_some() {
-            out.write(" ");
+            if config.language == Language::Zig && self.declarators.is_empty() {
+                out.write("");
+            } else {
+                out.write(" ");
+            }
         }
 
         // Write the left part of declarators before the identifier
         let mut iter_rev = self.declarators.iter().rev().peekable();
+        let mut is_functors = false;
 
         #[allow(clippy::while_let_on_iterator)]
         while let Some(declarator) = iter_rev.next() {
@@ -229,9 +245,23 @@ impl CDecl {
                     is_nullable,
                     is_ref,
                 } => {
-                    out.write(if is_ref { "&" } else { "*" });
+                    if config.language != Language::Zig {
+                        out.write(if is_ref { "&" } else { "*" });
+                    } else {
+                        if !self.type_qualifers.is_empty() {
+                            write!(out, "{}", self.type_qualifers);
+                        } else {
+                            if config.language != Language::Zig {
+                                out.write("_");
+                            }
+                        }
+                    }
                     if is_const {
-                        out.write("const ");
+                        if config.language == Language::Zig {
+                            write!(out, "{} ", config.style.zig_def());
+                        } else {
+                            out.write("const ");
+                        }
                     }
                     if !is_nullable && !is_ref && config.language != Language::Cython {
                         if let Some(attr) = &config.pointer.non_null_attribute {
@@ -245,16 +275,25 @@ impl CDecl {
                     }
                 }
                 CDeclarator::Func { .. } => {
-                    if next_is_pointer {
+                    if next_is_pointer && config.language != Language::Zig {
                         out.write("(");
                     }
+                    is_functors = true;
                 }
             }
         }
 
         // Write the identifier
         if let Some(ident) = ident {
-            write!(out, "{}", ident);
+            if config.language == Language::Zig && self.declarators.is_empty() {
+                if ident.is_empty() {
+                    write!(out, "{}", self.type_name);
+                } else {
+                    write!(out, "{}: {}", ident, self.type_name);
+                }
+            } else {
+                write!(out, "{}", ident);
+            }
         }
 
         // Write the right part of declarators after the identifier
@@ -266,12 +305,34 @@ impl CDecl {
             match *declarator {
                 CDeclarator::Ptr { .. } => {
                     last_was_pointer = true;
+
+                    if config.language == Language::Zig {
+                        if self.type_name.contains("u8") || self.type_name.contains("const u8") {
+                            write!(out, ": ?[*:0]const {}", self.type_name);
+                        } else if is_functors {
+                            out.write(": ?fn");
+                        } else {
+                            write!(out, ": ?*{}", self.type_name);
+                        }
+                    }
                 }
                 CDeclarator::Array(ref constant) => {
                     if last_was_pointer {
                         out.write(")");
                     }
-                    write!(out, "[{}]", constant);
+                    if config.language == Language::Zig {
+                        if constant.is_empty() {
+                            write!(out, "{}: [*]{}", self.type_qualifers, self.type_name);
+                        } else {
+                            write!(
+                                out,
+                                "{}: [{}]{}",
+                                self.type_qualifers, constant, self.type_name
+                            );
+                        }
+                    } else {
+                        write!(out, "[{}]", constant);
+                    }
 
                     last_was_pointer = false;
                 }
@@ -280,9 +341,10 @@ impl CDecl {
                     ref layout,
                     never_return,
                 } => {
-                    if last_was_pointer {
+                    if last_was_pointer && config.language != Language::Zig {
                         out.write(")");
                     }
+                    is_functors = false;
 
                     out.write("(");
                     if args.is_empty() && config.language == Language::C {
@@ -344,6 +406,14 @@ impl CDecl {
                     if never_return && config.language != Language::Cython {
                         if let Some(ref no_return_attr) = config.function.no_return {
                             out.write_fmt(format_args!(" {}", no_return_attr));
+                        }
+                    }
+
+                    if config.language == Language::Zig {
+                        if !last_was_pointer && self.type_name.contains("anyopaque") {
+                            out.write(" callconv(.C) void")
+                        } else {
+                            write!(out, " {}", self.type_name);
                         }
                     }
 

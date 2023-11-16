@@ -199,6 +199,10 @@ impl Source for Typedef {
                 Field::from_name_and_type(self.export_name().to_owned(), self.aliased.clone())
                     .write(config, out);
             }
+            Language::Zig => {
+                write!(out, "{}{} = ", config.style.zig_def(), self.export_name());
+                Field::from_type(self.aliased.clone()).write(config, out);
+            }
         }
 
         out.write(";");

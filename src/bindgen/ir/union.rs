@@ -279,9 +279,14 @@ impl Source for Union {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
+            Language::Zig => out.write(config.style.zig_def()),
         }
 
-        out.write("union");
+        if config.language == Language::Zig {
+            write!(out, "{} = extern union", self.export_name());
+        } else {
+            out.write("union");
+        }
 
         // Cython supports `packed` on structs (see comments there), but not on unions.
         if config.language != Language::Cython {
@@ -302,7 +307,9 @@ impl Source for Union {
         }
 
         if config.language != Language::C || config.style.generate_tag() {
-            write!(out, " {}", self.export_name);
+            if config.language != Language::Zig {
+                write!(out, " {}", self.export_name);
+            }
         }
 
         out.open_brace();
@@ -313,7 +320,14 @@ impl Source for Union {
             out.new_line();
         }
 
-        out.write_vertical_source_list(&self.fields, ListType::Cap(";"));
+        out.write_vertical_source_list(
+            &self.fields,
+            ListType::Cap(if config.language != Language::Zig {
+                ";"
+            } else {
+                ","
+            }),
+        );
         if config.language == Language::Cython && self.fields.is_empty() {
             out.write("pass");
         }

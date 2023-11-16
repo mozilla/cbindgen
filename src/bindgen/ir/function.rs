@@ -232,14 +232,20 @@ impl Source for Function {
             func.documentation.write(config, out);
 
             if func.extern_decl {
-                out.write("extern ");
-            } else {
-                if let Some(ref prefix) = prefix {
-                    write!(out, "{} ", prefix);
+                if config.language == Language::Zig {
+                    out.write("extern fn");
                 }
-                if func.annotations.must_use(config) {
-                    if let Some(ref anno) = config.function.must_use {
-                        write!(out, "{} ", anno);
+            } else {
+                if config.language == Language::Zig {
+                    out.write("pub extern fn");
+                } else {
+                    if let Some(ref prefix) = prefix {
+                        write!(out, "{} ", prefix);
+                    }
+                    if func.annotations.must_use(config) {
+                        if let Some(ref anno) = config.function.must_use {
+                            write!(out, "{} ", anno);
+                        }
                     }
                 }
                 if let Some(note) = func
@@ -279,16 +285,21 @@ impl Source for Function {
             func.documentation.write(config, out);
 
             if func.extern_decl {
-                out.write("extern ");
-            } else {
-                if let Some(ref prefix) = prefix {
-                    write!(out, "{}", prefix);
-                    out.new_line();
+                out.write("pub extern ");
+                if config.language == Language::Zig {
+                    out.write("fn");
                 }
-                if func.annotations.must_use(config) {
-                    if let Some(ref anno) = config.function.must_use {
-                        write!(out, "{}", anno);
-                        out.new_line();
+            } else {
+                if config.language == Language::Zig {
+                    out.write("pub extern fn");
+                } else {
+                    if let Some(ref prefix) = prefix {
+                        write!(out, "{} ", prefix);
+                    }
+                    if func.annotations.must_use(config) {
+                        if let Some(ref anno) = config.function.must_use {
+                            write!(out, "{} ", anno);
+                        }
                     }
                 }
                 if let Some(note) = func

@@ -194,6 +194,106 @@ impl PrimitiveType {
         }
     }
 
+    pub fn to_repr_zig(&self) -> &'static str {
+        match *self {
+            PrimitiveType::Bool => "bool",
+            PrimitiveType::Void => "anyopaque",
+            PrimitiveType::Char => "u8",
+            PrimitiveType::SChar => "i8",
+            PrimitiveType::UChar => "u8",
+            PrimitiveType::Char32 => "u32",
+            PrimitiveType::Integer {
+                kind,
+                signed,
+                zeroable: _,
+            } => match kind {
+                IntKind::Short => {
+                    if signed {
+                        "c_short"
+                    } else {
+                        "c_ushort"
+                    }
+                }
+                IntKind::Int => {
+                    if signed {
+                        "c_int"
+                    } else {
+                        "c_uint"
+                    }
+                }
+                IntKind::Long => {
+                    if signed {
+                        "c_long"
+                    } else {
+                        "c_ulong"
+                    }
+                }
+                IntKind::LongLong => {
+                    if signed {
+                        "c_longlong"
+                    } else {
+                        "c_ulonglong"
+                    }
+                }
+                IntKind::SizeT => {
+                    if signed {
+                        "ssize_t"
+                    } else {
+                        "size_t"
+                    }
+                }
+                IntKind::Size => {
+                    if signed {
+                        "isize"
+                    } else {
+                        "usize"
+                    }
+                }
+                IntKind::B8 => {
+                    if signed {
+                        "i8"
+                    } else {
+                        "u8"
+                    }
+                }
+                IntKind::B16 => {
+                    if signed {
+                        "i16"
+                    } else {
+                        "u16"
+                    }
+                }
+                IntKind::B32 => {
+                    if signed {
+                        "i32"
+                    } else {
+                        "u32"
+                    }
+                }
+                IntKind::B64 => {
+                    if signed {
+                        "i64"
+                    } else {
+                        "u64"
+                    }
+                }
+            },
+            PrimitiveType::Float => "f32",
+            PrimitiveType::Double => "f64",
+            PrimitiveType::PtrDiffT => "ptrdiff_t",
+            PrimitiveType::VaList => {
+                #[cfg(target_os = "windows")]
+                {
+                    "va_list"
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    "..."
+                }
+            }
+        }
+    }
+
     pub fn to_repr_c(&self, config: &Config) -> &'static str {
         match *self {
             PrimitiveType::Void => "void",

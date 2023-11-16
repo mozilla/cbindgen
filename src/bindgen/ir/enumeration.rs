@@ -656,7 +656,11 @@ impl Item for Enum {
 
 impl Source for Enum {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        let size = self.repr.ty.map(|ty| ty.to_primitive().to_repr_c(config));
+        let size = if config.language == Language::Zig {
+            self.repr.ty.map(|ty| ty.to_primitive().to_repr_zig())
+        } else {
+            self.repr.ty.map(|ty| ty.to_primitive().to_repr_c(config))
+        };
         let has_data = self.tag.is_some();
         let inline_tag_field = Self::inline_tag_field(&self.repr);
         let tag_name = self.tag_name();
@@ -821,6 +825,9 @@ impl Enum {
                     write!(out, "{}enum {}", config.style.cython_def(), tag_name);
                 }
             }
+            Language::Zig => {
+                write!(out, "{}{} = enum", config.style.zig_def(), tag_name);
+            }
         }
         out.open_brace();
 
@@ -849,7 +856,7 @@ impl Enum {
                 out.write("#ifndef __cplusplus");
             }
 
-            if config.language != Language::Cxx {
+            if config.language != Language::Cxx && config.language != Language::Zig {
                 out.new_line();
                 write!(out, "{} {} {};", config.language.typedef(), prim, tag_name);
             }
@@ -875,6 +882,14 @@ impl Enum {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
             Language::C | Language::Cxx => {}
             Language::Cython => out.write(config.style.cython_def()),
+            Language::Zig => {
+                write!(
+                    out,
+                    "{}{} = extern ",
+                    config.style.zig_def(),
+                    self.export_name()
+                );
+            }
         }
 
         out.write(if inline_tag_field { "union" } else { "struct" });
@@ -892,7 +907,7 @@ impl Enum {
             write!(out, " {} ", note);
         }
 
-        if config.language != Language::C || config.style.generate_tag() {
+        if config.language != Language::C || config.language != Language::Zig || config.style.generate_tag() {
             write!(out, " {}", self.export_name());
         }
 
@@ -954,7 +969,11 @@ impl Enum {
             out.write("enum ");
         }
 
-        write!(out, "{} tag;", tag_name);
+        if config.language != Language::Zig {
+            write!(out, "{} tag;", tag_name);
+        } else {
+            write!(out, "tag: {},", tag_name);
+        }
 
         if wrap_tag {
             out.close_brace(true);
@@ -991,20 +1010,31 @@ impl Enum {
                     // support unnamed structs.
                     // For the same reason with Cython we can omit per-variant tags (the first
                     // field) to avoid extra noise, the main `tag` is enough in this case.
-                    if config.language != Language::Cython {
+                    if config.language != Language::Cython && config.language != Language::Zig {
                         out.write("struct");
                         out.open_brace();
                     }
                     let start_field =
                         usize::from(inline_tag_field && config.language == Language::Cython);
-                    out.write_vertical_source_list(&body.fields[start_field..], ListType::Cap(";"));
-                    if config.language != Language::Cython {
+                    out.write_vertical_source_list(
+                        &body.fields[start_field..],
+                        ListType::Cap(if config.language != Language::Zig {
+                            ";"
+                        } else {
+                            ","
+                        }),
+                    );
+                    if config.language != Language::Cython && config.language != Language::Zig {
                         out.close_brace(true);
                     }
+                } else if config.language == Language::Zig {
+                    write!(out, "{}: {},", name, body.export_name());
                 } else if config.style.generate_typedef() || config.language == Language::Cython {
                     write!(out, "{} {};", body.export_name(), name);
                 } else {
-                    write!(out, "struct {} {};", body.export_name(), name);
+                    if config.language != Language::Zig {
+                        write!(out, "struct {} {};", body.export_name(), name);
+                    }
                 }
                 if config.language != Language::Cython {
                     condition.write_after(config, out);

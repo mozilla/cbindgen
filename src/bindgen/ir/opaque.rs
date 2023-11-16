@@ -169,6 +169,11 @@ impl Source for OpaqueItem {
                 out.write("pass");
                 out.close_brace(false);
             }
+            Language::Zig => {
+                write!(out,"const {} = opaque", self.export_name());
+                out.open_brace();
+                out.close_brace(true);
+            }
         }
 
         condition.write_after(config, out);

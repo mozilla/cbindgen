@@ -1,0 +1,1 @@
+extern fn root() anyopaque;

@@ -489,7 +489,7 @@ impl Literal {
                         return write!(out, "{}", known);
                     }
                     let path_separator = match config.language {
-                        Language::Cython | Language::C => "_",
+                        Language::Cython | Language::Zig | Language::C => "_",
                         Language::Cxx => {
                             if config.structure.associated_constants_in_body {
                                 "::"
@@ -548,6 +548,7 @@ impl Literal {
                     Language::C => write!(out, "({})", export_name),
                     Language::Cxx => write!(out, "{}", export_name),
                     Language::Cython => write!(out, "<{}>", export_name),
+                    Language::Zig => write!(out, ":{} = .", export_name),
                 }
 
                 write!(out, "{{ ");
@@ -565,6 +566,7 @@ impl Literal {
                             Language::Cxx => write!(out, "/* .{} = */ ", ordered_key),
                             Language::C => write!(out, ".{} = ", ordered_key),
                             Language::Cython => {}
+                            Language::Zig => write!(out, ".{} = ", ordered_key),
                         }
                         lit.write(config, out);
                     }
@@ -805,6 +807,17 @@ impl Constant {
                 // but still useful as documentation, so we write it as a comment.
                 write!(out, " {} # = ", name);
                 value.write(config, out);
+            }
+            Language::Zig => {
+                out.write(config.style.zig_def());
+                self.ty.write(config, out);
+                if let Literal::Struct { .. } = &self.value {
+                    write!(out, "{} ", name);
+                } else {
+                    write!(out, "{} = ", name);
+                }
+                value.write(config, out);
+                write!(out, ";");
             }
         }
 
