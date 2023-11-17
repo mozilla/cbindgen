@@ -637,11 +637,11 @@ impl Enum {
     pub(crate) fn write_tag_enum<
         F: Write,
         LB: LanguageBackend,
-        WV: Fn(&LB, &mut SourceWriter<F>, &EnumVariant),
+        WV: Fn(&mut LB, &mut SourceWriter<F>, &EnumVariant),
     >(
         &self,
         config: &Config,
-        language_backend: &LB,
+        language_backend: &mut LB,
         out: &mut SourceWriter<F>,
         size: Option<&str>,
         write_variant: WV,
@@ -809,7 +809,7 @@ impl Enum {
     pub(crate) fn write_variant_defs<F: Write, LB: LanguageBackend>(
         &self,
         config: &Config,
-        language_backend: &LB, // TODO probably need only one of Config/LanguageBackend
+        language_backend: &mut LB, // TODO probably need only one of Config/LanguageBackend
         out: &mut SourceWriter<F>,
     ) {
         for variant in &self.variants {
@@ -870,11 +870,11 @@ impl Enum {
     pub(crate) fn write_variant_fields<
         F: Write,
         LB: LanguageBackend,
-        WF: Fn(&LB, &mut SourceWriter<F>, &Field),
+        WF: Fn(&mut LB, &mut SourceWriter<F>, &Field),
     >(
         &self,
         config: &Config,
-        language_backend: &LB,
+        language_backend: &mut LB,
         out: &mut SourceWriter<F>,
         inline_tag_field: bool,
         write_field: WF,
@@ -933,7 +933,7 @@ impl Enum {
     fn write_derived_functions_enum<F: Write, LB: LanguageBackend>(
         &self,
         config: &Config,
-        language_backend: &LB,
+        language_backend: &mut LB,
         out: &mut SourceWriter<F>,
     ) {
         let has_data = self.tag.is_some();
@@ -1089,11 +1089,11 @@ impl Enum {
     pub(crate) fn write_derived_functions_data<
         F: Write,
         LB: LanguageBackend,
-        WF: Fn(&LB, &mut SourceWriter<F>, &Field),
+        WF: Fn(&mut LB, &mut SourceWriter<F>, &Field),
     >(
         &self,
         config: &Config,
-        language_backend: &LB,
+        language_backend: &mut LB,
         out: &mut SourceWriter<F>,
         tag_name: &str,
         write_field: WF,

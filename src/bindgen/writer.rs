@@ -78,7 +78,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     /// written.
     pub fn try_write<T>(&mut self, func: T, max_line_length: usize) -> bool
     where
-        T: Fn(&mut MeasureWriter),
+        T: FnOnce(&mut MeasureWriter),
     {
         if self.line_length > max_line_length {
             return false;
@@ -211,10 +211,10 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     pub fn write_horizontal_source_list<
         LB: LanguageBackend,
         S,
-        WF: Fn(&LB, &mut SourceWriter<F>, &S),
+        WF: Fn(&mut LB, &mut SourceWriter<F>, &S),
     >(
         &mut self,
-        language_backend: &LB,
+        language_backend: &mut LB,
         items: &[S],
         list_type: ListType<'_>,
         writer: WF,
@@ -238,10 +238,10 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     pub fn write_vertical_source_list<
         LB: LanguageBackend,
         S,
-        WF: Fn(&LB, &mut SourceWriter<F>, &S),
+        WF: Fn(&mut LB, &mut SourceWriter<F>, &S),
     >(
         &mut self,
-        language_backend: &LB,
+        language_backend: &mut LB,
         items: &[S],
         list_type: ListType<'_>,
         writer: WF,
