@@ -3,11 +3,11 @@ use crate::bindgen::ir::{
     Field, Function, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
     Typedef, Union,
 };
-use crate::bindgen::language_backend::{LanguageBackend, NamespaceOperation};
+use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::DocumentationLength;
 use crate::bindgen::Layout;
-use crate::bindgen::{cdecl, Config};
+use crate::bindgen::{cdecl, Bindings, Config};
 use std::io::Write;
 
 pub struct CythonLanguageBackend<'a> {
@@ -19,7 +19,7 @@ impl<'a> CythonLanguageBackend<'a> {
         Self { config }
     }
 
-    fn write_enum_variant<W: Write>(&self, out: &mut SourceWriter<W>, u: &EnumVariant) {
+    fn write_enum_variant<W: Write>(&mut self, out: &mut SourceWriter<W>, u: &EnumVariant) {
         self.write_documentation(out, &u.documentation);
         write!(out, "{}", u.export_name);
         if let Some(discriminant) = &u.discriminant {
@@ -34,7 +34,7 @@ impl<'a> CythonLanguageBackend<'a> {
         out.write(",");
     }
 
-    fn write_field<W: Write>(&self, out: &mut SourceWriter<W>, f: &Field) {
+    fn write_field<W: Write>(&mut self, out: &mut SourceWriter<W>, f: &Field) {
         // Cython doesn't support conditional fields.
         // let condition = f.cfg.to_condition(self.config);
 
@@ -50,7 +50,7 @@ impl<'a> CythonLanguageBackend<'a> {
 }
 
 impl LanguageBackend for CythonLanguageBackend<'_> {
-    fn write_headers<W: Write>(&self, out: &mut SourceWriter<W>) {
+    fn write_headers<W: Write>(&mut self, out: &mut SourceWriter<W>) {
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
             write!(out, "{}", f);
@@ -108,20 +108,20 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         }
     }
 
-    fn open_close_namespaces<W: Write>(&self, op: NamespaceOperation, out: &mut SourceWriter<W>) {
-        if op == NamespaceOperation::Open {
-            out.new_line();
-            let header = &self.config.cython.header.as_deref().unwrap_or("*");
-            write!(out, "cdef extern from {}", header);
-            out.open_brace();
-        } else {
-            out.close_brace(false);
-        }
+    fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>) {
+        out.new_line();
+        let header = &self.config.cython.header.as_deref().unwrap_or("*");
+        write!(out, "cdef extern from {}", header);
+        out.open_brace();
     }
 
-    fn write_footers<W: Write>(&self, _out: &mut SourceWriter<W>) {}
+    fn close_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>) {
+        out.close_brace(false);
+    }
 
-    fn write_enum<W: Write>(&self, out: &mut SourceWriter<W>, e: &Enum) {
+    fn write_footers<W: Write>(&mut self, _out: &mut SourceWriter<W>) {}
+
+    fn write_enum<W: Write>(&mut self, out: &mut SourceWriter<W>, e: &Enum) {
         let size = e.repr.ty.map(|ty| ty.to_primitive().to_repr_c(self.config));
         let has_data = e.tag.is_some();
         let inline_tag_field = Enum::inline_tag_field(&e.repr);
@@ -162,7 +162,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_struct<W: Write>(&self, out: &mut SourceWriter<W>, s: &Struct) {
+    fn write_struct<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Struct) {
         if s.is_transparent {
             let typedef = Typedef {
                 path: s.path.clone(),
@@ -243,7 +243,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_union<W: Write>(&self, out: &mut SourceWriter<W>, u: &Union) {
+    fn write_union<W: Write>(&mut self, out: &mut SourceWriter<W>, u: &Union) {
         let condition = u.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
@@ -279,7 +279,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_opaque_item<W: Write>(&self, out: &mut SourceWriter<W>, o: &OpaqueItem) {
+    fn write_opaque_item<W: Write>(&mut self, out: &mut SourceWriter<W>, o: &OpaqueItem) {
         let condition = o.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
@@ -300,7 +300,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_type_def<W: Write>(&self, out: &mut SourceWriter<W>, t: &Typedef) {
+    fn write_type_def<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Typedef) {
         let condition = t.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
@@ -318,7 +318,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_static<W: Write>(&self, out: &mut SourceWriter<W>, s: &Static) {
+    fn write_static<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Static) {
         out.write("extern ");
         if let Type::Ptr { is_const: true, .. } = s.ty {
         } else if !s.mutable {
@@ -328,10 +328,10 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         out.write(";");
     }
 
-    fn write_function<W: Write>(&self, out: &mut SourceWriter<W>, f: &Function) {
+    fn write_function<W: Write>(&mut self, out: &mut SourceWriter<W>, f: &Function) {
         fn write_1<W: Write>(
             func: &Function,
-            language_backend: &CythonLanguageBackend,
+            language_backend: &mut CythonLanguageBackend,
             out: &mut SourceWriter<W>,
         ) {
             let prefix = language_backend.config.function.prefix(&func.annotations);
@@ -387,7 +387,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
 
         fn write_2<W: Write>(
             func: &Function,
-            language_backend: &CythonLanguageBackend,
+            language_backend: &mut CythonLanguageBackend,
             out: &mut SourceWriter<W>,
         ) {
             let prefix = language_backend.config.function.prefix(&func.annotations);
@@ -448,18 +448,19 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
             Layout::Horizontal => write_1(f, self, out),
             Layout::Vertical => write_2(f, self, out),
             Layout::Auto => {
-                if !out.try_write(|out| write_1(f, self, out), self.config.line_length) {
+                let max_line_length = self.config.line_length;
+                if !out.try_write(|out| write_1(f, self, out), max_line_length) {
                     write_2(f, self, out)
                 }
             }
         }
     }
 
-    fn write_type<W: Write>(&self, out: &mut SourceWriter<W>, t: &Type) {
+    fn write_type<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Type) {
         cdecl::write_type(self, out, t, self.config);
     }
 
-    fn write_documentation<W: Write>(&self, out: &mut SourceWriter<W>, d: &Documentation) {
+    fn write_documentation<W: Write>(&mut self, out: &mut SourceWriter<W>, d: &Documentation) {
         if d.doc_comment.is_empty() || !&self.config.documentation {
             return;
         }
@@ -476,7 +477,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         }
     }
 
-    fn write_literal<W: Write>(&self, out: &mut SourceWriter<W>, l: &Literal) {
+    fn write_literal<W: Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal) {
         match l {
             Literal::Expr(v) => match &**v {
                 "true" => write!(out, "True"),
@@ -547,6 +548,18 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
                 }
                 write!(out, " }}");
             }
+        }
+    }
+
+    fn write_functions<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
+        self.write_functions_default(out, b);
+
+        if b.globals.is_empty()
+            && b.constants.is_empty()
+            && b.items.is_empty()
+            && b.functions.is_empty()
+        {
+            out.write("pass");
         }
     }
 }

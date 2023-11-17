@@ -194,7 +194,7 @@ impl CDecl {
 
     fn write<F: Write, LB: LanguageBackend>(
         &self,
-        language_backend: &LB,
+        language_backend: &mut LB,
         out: &mut SourceWriter<F>,
         ident: Option<&str>,
         config: &Config,
@@ -305,7 +305,7 @@ impl CDecl {
                     }
 
                     fn write_vertical<F: Write, LB: LanguageBackend>(
-                        language_backend: &LB,
+                        language_backend: &mut LB,
                         out: &mut SourceWriter<F>,
                         config: &Config,
                         args: &[(Option<String>, CDecl)],
@@ -327,7 +327,7 @@ impl CDecl {
                     }
 
                     fn write_horizontal<F: Write, LB: LanguageBackend>(
-                        language_backend: &LB,
+                        language_backend: &mut LB,
                         out: &mut SourceWriter<F>,
                         config: &Config,
                         args: &[(Option<String>, CDecl)],
@@ -372,7 +372,7 @@ impl CDecl {
 }
 
 pub fn write_func<F: Write, LB: LanguageBackend>(
-    language_backend: &LB,
+    language_backend: &mut LB,
     out: &mut SourceWriter<F>,
     f: &Function,
     layout: Layout,
@@ -382,7 +382,7 @@ pub fn write_func<F: Write, LB: LanguageBackend>(
 }
 
 pub fn write_field<F: Write, LB: LanguageBackend>(
-    language_backend: &LB,
+    language_backend: &mut LB,
     out: &mut SourceWriter<F>,
     t: &Type,
     ident: &str,
@@ -392,7 +392,7 @@ pub fn write_field<F: Write, LB: LanguageBackend>(
 }
 
 pub fn write_type<F: Write, LB: LanguageBackend>(
-    language_backend: &LB,
+    language_backend: &mut LB,
     out: &mut SourceWriter<F>,
     t: &Type,
     config: &Config,

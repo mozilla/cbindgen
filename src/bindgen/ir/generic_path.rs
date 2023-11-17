@@ -97,7 +97,7 @@ impl GenericParams {
 
     pub(crate) fn write_internal<F: Write, LB: LanguageBackend>(
         &self,
-        language_backend: &LB,
+        language_backend: &mut LB,
         config: &Config,
         out: &mut SourceWriter<F>,
         with_default: bool,
@@ -130,7 +130,7 @@ impl GenericParams {
 
     pub fn write_with_default<F: Write, LB: LanguageBackend>(
         &self,
-        language_backend: &LB,
+        language_backend: &mut LB,
         config: &Config,
         out: &mut SourceWriter<F>,
     ) {

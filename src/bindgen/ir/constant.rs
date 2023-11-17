@@ -595,7 +595,7 @@ impl Constant {
     pub fn write_declaration<F: Write, LB: LanguageBackend>(
         &self,
         config: &Config,
-        language_backend: &LB,
+        language_backend: &mut LB,
         out: &mut SourceWriter<F>,
         associated_to_struct: &Struct,
     ) {
@@ -617,7 +617,7 @@ impl Constant {
     pub fn write<F: Write, LB: LanguageBackend>(
         &self,
         config: &Config,
-        language_backend: &LB,
+        language_backend: &mut LB,
         out: &mut SourceWriter<F>,
         associated_to_struct: Option<&Struct>,
     ) {

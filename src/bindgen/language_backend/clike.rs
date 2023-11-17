@@ -3,10 +3,10 @@ use crate::bindgen::ir::{
     Field, Function, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct,
     ToCondition, Type, Typedef, Union,
 };
-use crate::bindgen::language_backend::{LanguageBackend, NamespaceOperation};
+use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{ListType, SourceWriter};
-use crate::bindgen::{cdecl, Config, Language, Layout};
+use crate::bindgen::{cdecl, Bindings, Config, Language, Layout};
 use crate::bindgen::{DocumentationLength, DocumentationStyle};
 use std::io::Write;
 
@@ -19,7 +19,7 @@ impl<'a> CLikeLanguageBackend<'a> {
         Self { config }
     }
 
-    fn write_enum_variant<W: Write>(&self, out: &mut SourceWriter<W>, u: &EnumVariant) {
+    fn write_enum_variant<W: Write>(&mut self, out: &mut SourceWriter<W>, u: &EnumVariant) {
         let condition = u.cfg.to_condition(self.config);
 
         condition.write_before(self.config, out);
@@ -35,7 +35,7 @@ impl<'a> CLikeLanguageBackend<'a> {
         condition.write_after(self.config, out);
     }
 
-    fn write_field<W: Write>(&self, out: &mut SourceWriter<W>, f: &Field) {
+    fn write_field<W: Write>(&mut self, out: &mut SourceWriter<W>, f: &Field) {
         let condition = f.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
@@ -55,13 +55,59 @@ impl<'a> CLikeLanguageBackend<'a> {
         }
     }
 
-    fn write_generic_param<W: Write>(&self, out: &mut SourceWriter<W>, g: &GenericParams) {
+    fn write_generic_param<W: Write>(&mut self, out: &mut SourceWriter<W>, g: &GenericParams) {
         g.write_internal(self, self.config, out, false);
+    }
+
+    fn open_close_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>, open: bool) {
+        let mut namespaces =
+            if self.config.language != Language::Cxx && !self.config.cpp_compatible_c() {
+                vec![]
+            } else {
+                let mut ret = vec![];
+                if let Some(ref namespace) = self.config.namespace {
+                    ret.push(&**namespace);
+                }
+                if let Some(ref namespaces) = self.config.namespaces {
+                    for namespace in namespaces {
+                        ret.push(&**namespace);
+                    }
+                }
+                ret
+            };
+
+        if namespaces.is_empty() {
+            return;
+        }
+
+        if !open {
+            namespaces.reverse();
+        }
+
+        if self.config.cpp_compatible_c() {
+            out.new_line_if_not_start();
+            out.write("#ifdef __cplusplus");
+        }
+
+        for namespace in namespaces {
+            out.new_line();
+            if open {
+                write!(out, "namespace {} {{", namespace)
+            } else {
+                write!(out, "}} // namespace {}", namespace)
+            }
+        }
+
+        out.new_line();
+        if self.config.cpp_compatible_c() {
+            out.write("#endif // __cplusplus");
+            out.new_line();
+        }
     }
 }
 
 impl LanguageBackend for CLikeLanguageBackend<'_> {
-    fn write_headers<W: Write>(&self, out: &mut SourceWriter<W>) {
+    fn write_headers<W: Write>(&mut self, out: &mut SourceWriter<W>) {
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
             write!(out, "{}", f);
@@ -163,52 +209,15 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         }
     }
 
-    fn open_close_namespaces<W: Write>(&self, op: NamespaceOperation, out: &mut SourceWriter<W>) {
-        let mut namespaces =
-            if self.config.language != Language::Cxx && !self.config.cpp_compatible_c() {
-                vec![]
-            } else {
-                let mut ret = vec![];
-                if let Some(ref namespace) = self.config.namespace {
-                    ret.push(&**namespace);
-                }
-                if let Some(ref namespaces) = self.config.namespaces {
-                    for namespace in namespaces {
-                        ret.push(&**namespace);
-                    }
-                }
-                ret
-            };
-
-        if namespaces.is_empty() {
-            return;
-        }
-
-        if op == NamespaceOperation::Close {
-            namespaces.reverse();
-        }
-
-        if self.config.cpp_compatible_c() {
-            out.new_line_if_not_start();
-            out.write("#ifdef __cplusplus");
-        }
-
-        for namespace in namespaces {
-            out.new_line();
-            match op {
-                NamespaceOperation::Open => write!(out, "namespace {} {{", namespace),
-                NamespaceOperation::Close => write!(out, "}} // namespace {}", namespace),
-            }
-        }
-
-        out.new_line();
-        if self.config.cpp_compatible_c() {
-            out.write("#endif // __cplusplus");
-            out.new_line();
-        }
+    fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>) {
+        self.open_close_namespaces(out, true);
     }
 
-    fn write_footers<W: Write>(&self, out: &mut SourceWriter<W>) {
+    fn close_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>) {
+        self.open_close_namespaces(out, false)
+    }
+
+    fn write_footers<W: Write>(&mut self, out: &mut SourceWriter<W>) {
         if let Some(f) = self.config.include_guard() {
             out.new_line_if_not_start();
             if self.config.language == Language::C {
@@ -220,7 +229,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         }
     }
 
-    fn write_enum<W: Write>(&self, out: &mut SourceWriter<W>, e: &Enum) {
+    fn write_enum<W: Write>(&mut self, out: &mut SourceWriter<W>, e: &Enum) {
         let size = e.repr.ty.map(|ty| ty.to_primitive().to_repr_c(self.config));
         let has_data = e.tag.is_some();
         let inline_tag_field = Enum::inline_tag_field(&e.repr);
@@ -294,7 +303,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_struct<W: Write>(&self, out: &mut SourceWriter<W>, s: &Struct) {
+    fn write_struct<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Struct) {
         if s.is_transparent {
             let typedef = Typedef {
                 path: s.path.clone(),
@@ -390,21 +399,26 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
                 out.new_line();
 
-                let arg_renamer = |name: &str| {
-                    self.config
-                        .function
-                        .rename_args
-                        .apply(name, IdentifierType::FunctionArg)
-                        .into_owned()
-                };
+                let renamed_fields: Vec<_> = s
+                    .fields
+                    .iter()
+                    .map(|field| {
+                        self.config
+                            .function
+                            .rename_args
+                            .apply(&field.name, IdentifierType::FunctionArg)
+                            .into_owned()
+                    })
+                    .collect();
                 write!(out, "{}(", s.export_name());
                 let vec: Vec<_> = s
                     .fields
                     .iter()
-                    .map(|field| {
+                    .zip(&renamed_fields)
+                    .map(|(field, renamed)| {
                         Field::from_name_and_type(
                             // const-ref args to constructor
-                            format!("const& {}", arg_renamer(&field.name)),
+                            format!("const& {}", renamed),
                             field.ty.clone(),
                         )
                     })
@@ -421,7 +435,8 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 let vec: Vec<_> = s
                     .fields
                     .iter()
-                    .map(|field| format!("{}({})", field.name, arg_renamer(&field.name)))
+                    .zip(&renamed_fields)
+                    .map(|(field, renamed)| format!("{}({})", field.name, renamed))
                     .collect();
                 out.write_vertical_source_list(self, &vec[..], ListType::Join(","), |_, out, s| {
                     write!(out, "{}", s)
@@ -631,7 +646,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_union<W: Write>(&self, out: &mut SourceWriter<W>, u: &Union) {
+    fn write_union<W: Write>(&mut self, out: &mut SourceWriter<W>, u: &Union) {
         let condition = u.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
@@ -699,7 +714,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_opaque_item<W: Write>(&self, out: &mut SourceWriter<W>, o: &OpaqueItem) {
+    fn write_opaque_item<W: Write>(&mut self, out: &mut SourceWriter<W>, o: &OpaqueItem) {
         let condition = o.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
@@ -725,7 +740,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_type_def<W: Write>(&self, out: &mut SourceWriter<W>, t: &Typedef) {
+    fn write_type_def<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Typedef) {
         let condition = t.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
@@ -753,7 +768,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
-    fn write_static<W: Write>(&self, out: &mut SourceWriter<W>, s: &Static) {
+    fn write_static<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Static) {
         out.write("extern ");
         if let Type::Ptr { is_const: true, .. } = s.ty {
         } else if !s.mutable {
@@ -763,10 +778,10 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         out.write(";");
     }
 
-    fn write_function<W: Write>(&self, out: &mut SourceWriter<W>, f: &Function) {
+    fn write_function<W: Write>(&mut self, out: &mut SourceWriter<W>, f: &Function) {
         fn write_1<W: Write>(
             func: &Function,
-            language_backend: &CLikeLanguageBackend,
+            language_backend: &mut CLikeLanguageBackend,
             out: &mut SourceWriter<W>,
         ) {
             let prefix = language_backend.config.function.prefix(&func.annotations);
@@ -822,7 +837,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         fn write_2<W: Write>(
             func: &Function,
-            language_backend: &CLikeLanguageBackend,
+            language_backend: &mut CLikeLanguageBackend,
             out: &mut SourceWriter<W>,
         ) {
             let prefix = language_backend.config.function.prefix(&func.annotations);
@@ -884,18 +899,19 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             Layout::Horizontal => write_1(f, self, out),
             Layout::Vertical => write_2(f, self, out),
             Layout::Auto => {
-                if !out.try_write(|out| write_1(f, self, out), self.config.line_length) {
+                let max_line_length = self.config.line_length;
+                if !out.try_write(|out| write_1(f, self, out), max_line_length) {
                     write_2(f, self, out)
                 }
             }
         }
     }
 
-    fn write_type<W: Write>(&self, out: &mut SourceWriter<W>, t: &Type) {
+    fn write_type<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Type) {
         cdecl::write_type(self, out, t, self.config);
     }
 
-    fn write_documentation<W: Write>(&self, out: &mut SourceWriter<W>, d: &Documentation) {
+    fn write_documentation<W: Write>(&mut self, out: &mut SourceWriter<W>, d: &Documentation) {
         if d.doc_comment.is_empty() || !self.config.documentation {
             return;
         }
@@ -961,7 +977,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         }
     }
 
-    fn write_literal<W: Write>(&self, out: &mut SourceWriter<W>, l: &Literal) {
+    fn write_literal<W: Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal) {
         match l {
             Literal::Expr(v) => match (&**v, self.config.language) {
                 ("true", Language::Cython) => write!(out, "True"),
@@ -1050,6 +1066,64 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     }
                 }
                 write!(out, " }}");
+            }
+        }
+    }
+
+    fn write_globals<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
+        // Override default method to open various blocs containing both globals and functions
+        // these blocks are closed in [`write_functions`] that is also overridden
+        if !b.functions.is_empty() || !b.globals.is_empty() {
+            if b.config.cpp_compatible_c() {
+                out.new_line_if_not_start();
+                out.write("#ifdef __cplusplus");
+            }
+
+            if b.config.language == Language::Cxx {
+                if let Some(ref using_namespaces) = b.config.using_namespaces {
+                    for namespace in using_namespaces {
+                        out.new_line();
+                        write!(out, "using namespace {};", namespace);
+                    }
+                    out.new_line();
+                }
+            }
+
+            if b.config.language == Language::Cxx || b.config.cpp_compatible_c() {
+                out.new_line();
+                out.write("extern \"C\" {");
+                out.new_line();
+            }
+
+            if b.config.cpp_compatible_c() {
+                out.write("#endif // __cplusplus");
+                out.new_line();
+            }
+
+            self.write_globals_default(out, b);
+        }
+    }
+
+    fn write_functions<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
+        // Override default method to close various blocs containing both globals and functions
+        // these blocks are opened in [`write_globals`] that is also overridden
+        if !b.functions.is_empty() || !b.globals.is_empty() {
+            self.write_functions_default(out, b);
+
+            if b.config.cpp_compatible_c() {
+                out.new_line();
+                out.write("#ifdef __cplusplus");
+            }
+
+            if b.config.language == Language::Cxx || b.config.cpp_compatible_c() {
+                out.new_line();
+                out.write("} // extern \"C\"");
+                out.new_line();
+            }
+
+            if b.config.cpp_compatible_c() {
+                out.write("#endif // __cplusplus");
+                out.new_line();
             }
         }
     }
