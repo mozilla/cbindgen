@@ -19,7 +19,7 @@ exclude = [
 ]
 
 [dependencies]
-clap = { version = "~4.3", optional = true }
+clap = { version = "4.3", optional = true }
 indexmap = "2.1.0"
 log = "0.4"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
