@@ -1010,8 +1010,15 @@ pub struct Config {
     pub only_target_dependencies: bool,
     /// Configuration options specific to Cython.
     pub cython: CythonConfig,
+    #[doc(hidden)]
     #[serde(skip)]
-    pub(crate) config_path: Option<StdPathBuf>,
+    /// Internal field for tracking from which file the config was loaded.
+    ///
+    /// Users should not set this field explicitly. Making the field private
+    /// prevents users from filling the struct with `..Default::default()`,
+    /// and creating a new InternalConfig struct would require more breaking
+    /// changes to our public API.
+    pub config_path: Option<StdPathBuf>,
 }
 
 impl Default for Config {
