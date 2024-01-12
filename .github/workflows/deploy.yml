@@ -39,7 +39,7 @@ jobs:
       id: tagName
       run: |
         VERSION=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
-        echo "::set-output name=version::$VERSION"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
         # Steps to extract the last release notes from CHANGES:
         #   1. Remove the first three lines
         #   2. Stop at the next heading level
