@@ -7,9 +7,11 @@ use crate::bindgen::Bindings;
 
 use std::io::Write;
 
+mod cdynamic;
 mod clike;
 mod cython;
 
+pub use cdynamic::*;
 pub use clike::CLikeLanguageBackend;
 pub use cython::CythonLanguageBackend;
 
