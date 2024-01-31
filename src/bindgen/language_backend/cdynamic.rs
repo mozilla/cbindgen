@@ -46,7 +46,7 @@ struct CBindgenSymbolLookupIface {
     void* module;
     void* (*find_symbol)(void* module, const char* symbol_name);
     void* (*opt_find_function)(void* module, const char* function_name);
-}
+};
 #  endif
 
 #  ifndef CBINDGEN_LOADER_{{API_STRUCT_NAME}}_DEFINED
@@ -407,7 +407,7 @@ fn quick_generate_result() {
     }) {
         let mut config = crate::Config::default();
         let file_name = std::path::Path::new(file.file_name().unwrap());
-        let out_file_name = temp_dir.join(file_name.with_extension(".c"));
+        let out_file_name = temp_dir.join(file_name.with_extension("c"));
         config.language = crate::bindgen::Language::C;
 
         crate::Builder::new()
