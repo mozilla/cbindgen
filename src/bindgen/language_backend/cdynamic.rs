@@ -58,10 +58,7 @@ impl CDynamicBindingConfig {
 
 /* -------------------------------------- Language Backend -------------------------------------- */
 
-/// Differentiate loader macro name, since the user may not want to see other modules' loader
-/// methods.
-const DYN_TRAILER_TEMPLATE: &str = r##"
-#ifdef INCLUDE_CBINDGEN_LOADER_{{API_STRUCT_NAME}}
+const IFACE_DEFINITION: &str = r##"
 #  ifndef CBINDGEN_LOADER_LOOKUP_INTERFACE_DEFINED
 #  define CBINDGEN_LOADER_LOOKUP_INTERFACE_DEFINED
 struct CBindgenSymbolLookupIface {
@@ -70,6 +67,12 @@ struct CBindgenSymbolLookupIface {
     void* (*opt_find_function)(void* module, const char* function_name);
 };
 #  endif
+"##;
+
+/// Differentiate loader macro name, since the user may not want to see other modules' loader
+/// methods.
+const DYN_TRAILER_TEMPLATE: &str = r##"
+#ifdef INCLUDE_CBINDGEN_LOADER_{{API_STRUCT_NAME}}
 
 #  ifndef CBINDGEN_LOADER_{{API_STRUCT_NAME}}_DEFINED
 #  define CBINDGEN_LOADER_{{API_STRUCT_NAME}}_DEFINED
@@ -335,6 +338,16 @@ impl LanguageBackend for CDynamicBindingBackend {
         let mut inner = CLikeLanguageBackend::new(&b.config);
 
         inner.write_headers(out);
+
+        // Before opening namespace, add
+        out.new_line();
+        out.write_fmt(format_args!(
+            "#ifdef INCLUDE_CBINDGEN_LOADER_{}",
+            self.struct_name
+        ));
+        out.write(IFACE_DEFINITION);
+        out.write("#endif\n");
+
         inner.open_namespaces(out);
         inner.write_primitive_constants(out, b);
         inner.write_non_primitive_constants(out, b);
