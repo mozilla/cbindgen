@@ -50,8 +50,8 @@ struct CBindgenSymbolLookupIface {
 }
 
 inline int {{API_LOADER_FUNCTION_NAME}} (
-    {{API_STRUCT_NAME}}* api,
-    CBindgenSymbolLookupIface* module
+    struct {{API_STRUCT_NAME}}* api,
+    struct CBindgenSymbolLookupIface* module
 ) {
     int notfound = 0;
     void* mod = module->module;
