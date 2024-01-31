@@ -1,12 +1,14 @@
-use std::{cell::RefCell, io::Write};
+use std::{borrow::Cow, cell::RefCell, collections::HashMap, io::Write};
 
 use crate::{
+    bindgen::Config,
+    bindgen::RenameRule,
     bindgen::{
         cdecl,
         ir::{Cfg, ConditionWrite as _, ToCondition as _, Type},
+        rename::IdentifierType,
         writer::SourceWriter,
     },
-    Config,
 };
 
 use super::{CLikeLanguageBackend, LanguageBackend};
@@ -32,6 +34,28 @@ pub struct CDynamicBindingConfig {
     /// Since the loader method just inline static function which is conditionally activated by
     /// preprocessor macro definition, it's just okay to rename the generated
     pub loader_function_name_override: Option<String>,
+
+    /// Symbol renaming lookup table. Symbols can be renamed freely, since the renaming symbols here
+    /// is just name of identifiers which will be bound into the original symbol name.
+    pub symbol_renames: HashMap<String, String>,
+
+    /// Symbol rename rules which is applied as fallback, which don't have any specific
+    /// `symbol_renames` rule
+    pub symbol_rename_all: Option<RenameRule>,
+}
+
+impl CDynamicBindingConfig {
+    fn rename_struct_field<'a>(&'a self, name: &'a str) -> Cow<str> {
+        self.symbol_renames
+            .get(name)
+            .map(|x| Cow::Borrowed(x.as_str()))
+            .unwrap_or_else(|| {
+                self.symbol_rename_all
+                    .as_ref()
+                    .map(|x| x.apply(name, IdentifierType::StructMember))
+                    .unwrap_or_else(|| Cow::Borrowed(name))
+            })
+    }
 }
 
 /* -------------------------------------- Language Backend -------------------------------------- */
@@ -131,7 +155,13 @@ impl CDynamicBindingBackend {
                     inner
                         .borrow_mut()
                         .write_documentation(out, &item.documentation);
-                    cdecl::write_field(this, out, &ty, &item.export_name, &b.config);
+
+                    let ident = this
+                        .config
+                        .rename_struct_field(&item.export_name)
+                        .into_owned();
+
+                    cdecl::write_field(this, out, &ty, &ident, &b.config);
                 });
             },
         );
@@ -151,7 +181,13 @@ impl CDynamicBindingBackend {
                     inner
                         .borrow_mut()
                         .write_documentation(out, &item.documentation);
-                    cdecl::write_field(this, out, &ty, item.path.name(), &b.config);
+
+                    let ident = this
+                        .config
+                        .rename_struct_field(item.path.name())
+                        .into_owned();
+
+                    cdecl::write_field(this, out, &ty, &ident, &b.config);
                 });
             },
         );
@@ -179,13 +215,17 @@ impl CDynamicBindingBackend {
             |this, out, item| {
                 Self::run_in_cond(out, &b.config, &item.cfg, |out| {
                     // Generates `api->NAME = (PTR_TYPE)fsym("SYMBOL_NAME");`
+                    let ident = this
+                        .config
+                        .rename_struct_field(&item.export_name)
+                        .into_owned();
 
-                    out.write_fmt(format_args!("api->{} = (", item.export_name));
+                    out.write_fmt(format_args!("api->{} = (", ident));
 
                     let ty = wrap_in_pointer(&item.ty, !item.mutable);
                     cdecl::write_type(this, out, &ty, &b.config);
 
-                    out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.export_name));
+                    out.write_fmt(format_args!(")fsym(mod, \"{}\");", ident));
                 })
             },
         );
@@ -202,12 +242,17 @@ impl CDynamicBindingBackend {
             |this, out, item| {
                 // Generates `api->NAME = (PTR_TYPE)ffunc("SYMBOL_NAME");`
                 Self::run_in_cond(out, &b.config, &item.cfg, |out| {
-                    out.write_fmt(format_args!("api->{} = (", item.path.name()));
+                    let ident = this
+                        .config
+                        .rename_struct_field(item.path.name())
+                        .into_owned();
+
+                    out.write_fmt(format_args!("api->{} = (", ident));
 
                     let ty = make_func_ptr(item);
                     cdecl::write_type(this, out, &ty, &b.config);
 
-                    out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.path.name()));
+                    out.write_fmt(format_args!(")fsym(mod, \"{}\");", ident));
                 })
             },
         );
