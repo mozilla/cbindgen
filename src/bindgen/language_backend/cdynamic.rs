@@ -40,14 +40,17 @@ pub struct CDynamicBindingConfig {
 /// methods.
 const DYN_TRAILER_TEMPLATE: &str = r##"
 #ifdef INCLUDE_CBINDGEN_LOADER_{{API_STRUCT_NAME}}
-#ifndef CBINDGEN_LOADER_{{API_STRUCT_NAME}}_DEFINED
-#define CBINDGEN_LOADER_{{API_STRUCT_NAME}}_DEFINED
-
+#  ifndef CBINDGEN_LOADER_LOOKUP_INTERFACE_DEFINED
+#  define CBINDGEN_LOADER_LOOKUP_INTERFACE_DEFINED
 struct CBindgenSymbolLookupIface {
     void* module;
     void* (*find_symbol)(void* module, const char* symbol_name);
     void* (*opt_find_function)(void* module, const char* function_name);
 }
+#  endif
+
+#  ifndef CBINDGEN_LOADER_{{API_STRUCT_NAME}}_DEFINED
+#  define CBINDGEN_LOADER_{{API_STRUCT_NAME}}_DEFINED
 
 inline int {{API_LOADER_FUNCTION_NAME}} (
     struct {{API_STRUCT_NAME}}* api,
@@ -69,7 +72,7 @@ inline int {{API_LOADER_FUNCTION_NAME}} (
     return notfound;
 }
 
-#endif
+#  endif
 #endif
 "##;
 
@@ -171,7 +174,9 @@ impl CDynamicBindingBackend {
                     let ty = wrap_in_pointer(&item.ty);
                     cdecl::write_type(this, out, &ty, &b.config);
 
-                    out.write_fmt(format_args!(")fsym(mod, \"{}\");\n", item.export_name));
+                    out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.export_name));
+                    out.new_line();
+
                     out.write_fmt(format_args!("notfound += (int)!api->{}", item.export_name));
                 })
             },
@@ -195,6 +200,7 @@ impl CDynamicBindingBackend {
 
                     out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.path.name()));
                     out.new_line();
+
                     out.write_fmt(format_args!("notfound += (int)!api->{}", item.path.name()));
                 })
             },
