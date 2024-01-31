@@ -269,7 +269,8 @@ impl CDynamicBindingBackend {
                 .chain(b.globals.iter().map(|x| (x.export_name.as_str(), &x.cfg)))
                 .collect::<Vec<_>>(),
             crate::bindgen::writer::ListType::Cap(";"),
-            |_this, out, (ident, cfg)| {
+            |this, out, (ident, cfg)| {
+                let ident = this.config.rename_struct_field(ident);
                 Self::run_in_cond(out, &b.config, cfg, |out| {
                     out.write_fmt(format_args!("notfound += (int)!api->{}", ident));
                 })
