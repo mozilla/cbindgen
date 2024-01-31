@@ -123,15 +123,15 @@ impl CDynamicBindingBackend {
             self,
             &b.globals,
             crate::bindgen::writer::ListType::Cap(";"),
-            |this, out, s| {
-                Self::run_in_cond(out, &b.config, &s.cfg, |out| {
-                    let ty = wrap_in_pointer(&s.ty);
+            |this, out, item| {
+                Self::run_in_cond(out, &b.config, &item.cfg, |out| {
+                    let ty = wrap_in_pointer(&item.ty, !item.mutable);
 
                     // TODO: support annotation?
                     inner
                         .borrow_mut()
-                        .write_documentation(out, &s.documentation);
-                    cdecl::write_field(this, out, &ty, &s.export_name, &b.config);
+                        .write_documentation(out, &item.documentation);
+                    cdecl::write_field(this, out, &ty, &item.export_name, &b.config);
                 });
             },
         );
@@ -182,18 +182,16 @@ impl CDynamicBindingBackend {
 
                     out.write_fmt(format_args!("api->{} = (", item.export_name));
 
-                    let ty = wrap_in_pointer(&item.ty);
+                    let ty = wrap_in_pointer(&item.ty, !item.mutable);
                     cdecl::write_type(this, out, &ty, &b.config);
 
                     out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.export_name));
-                    out.new_line();
-
-                    out.write_fmt(format_args!("notfound += (int)!api->{}", item.export_name));
                 })
             },
         );
 
         if !b.globals.is_empty() {
+            body_writer.new_line();
             body_writer.new_line();
         }
 
@@ -210,9 +208,27 @@ impl CDynamicBindingBackend {
                     cdecl::write_type(this, out, &ty, &b.config);
 
                     out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.path.name()));
-                    out.new_line();
+                })
+            },
+        );
 
-                    out.write_fmt(format_args!("notfound += (int)!api->{}", item.path.name()));
+        if !b.functions.is_empty() {
+            body_writer.new_line();
+            body_writer.new_line();
+        }
+
+        // Write verifier
+        body_writer.write_vertical_source_list(
+            self,
+            &b.functions
+                .iter()
+                .map(|x| (x.path.name(), &x.cfg))
+                .chain(b.globals.iter().map(|x| (x.export_name.as_str(), &x.cfg)))
+                .collect::<Vec<_>>(),
+            crate::bindgen::writer::ListType::Cap(";"),
+            |_this, out, (ident, cfg)| {
+                Self::run_in_cond(out, &b.config, cfg, |out| {
+                    out.write_fmt(format_args!("notfound += (int)!api->{}", ident));
                 })
             },
         );
@@ -382,10 +398,10 @@ impl LanguageBackend for CDynamicBindingBackend {
     }
 }
 
-fn wrap_in_pointer(ty: &crate::bindgen::ir::Type) -> crate::bindgen::ir::Type {
+fn wrap_in_pointer(ty: &crate::bindgen::ir::Type, constness: bool) -> crate::bindgen::ir::Type {
     crate::bindgen::ir::Type::Ptr {
         ty: Box::new(ty.clone()),
-        is_const: false,
+        is_const: constness,
         is_nullable: false,
         is_ref: false,
     }
@@ -429,6 +445,7 @@ fn quick_generate_result() {
             .write_with_backend(
                 std::fs::File::options()
                     .write(true)
+                    .truncate(true)
                     .create(true)
                     .open(out_file_name)
                     .unwrap(),
