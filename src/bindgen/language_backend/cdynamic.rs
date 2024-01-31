@@ -41,7 +41,7 @@ pub struct CDynamicBindingConfig {
 
     /// Symbol rename rules which is applied as fallback, which don't have any specific
     /// `symbol_renames` rule
-    pub symbol_rename_all: Option<RenameRule>,
+    pub symbol_rename_all: RenameRule,
 }
 
 impl CDynamicBindingConfig {
@@ -51,9 +51,7 @@ impl CDynamicBindingConfig {
             .map(|x| Cow::Borrowed(x.as_str()))
             .unwrap_or_else(|| {
                 self.symbol_rename_all
-                    .as_ref()
-                    .map(|x| x.apply(name, IdentifierType::StructMember))
-                    .unwrap_or_else(|| Cow::Borrowed(name))
+                    .apply(name, IdentifierType::StructMember)
             })
     }
 }
