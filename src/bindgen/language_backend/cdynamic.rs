@@ -88,8 +88,19 @@ impl CDynamicBindingBackend {
     where
         S: Into<String>,
     {
+        fn verify_ident(s: &str) {
+            assert!(!s.is_empty() && s.chars().all(|x| x.is_ascii_alphanumeric() || x == '_'));
+        }
+
+        let ident: String = api_struct_name.into();
+        verify_ident(&ident);
+
+        if let Some(ref name) = config.loader_function_name_override {
+            verify_ident(name);
+        }
+
         Self {
-            struct_name: api_struct_name.into(),
+            struct_name: ident,
             config,
         }
     }
