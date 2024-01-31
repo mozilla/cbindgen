@@ -159,7 +159,7 @@ impl CDynamicBindingBackend {
                         .rename_struct_field(&item.export_name)
                         .into_owned();
 
-                    cdecl::write_field(this, out, &ty, &ident, &b.config);
+                    cdecl::write_field(*inner.borrow_mut(), out, &ty, &ident, &b.config);
                 });
             },
         );
@@ -185,7 +185,7 @@ impl CDynamicBindingBackend {
                         .rename_struct_field(item.path.name())
                         .into_owned();
 
-                    cdecl::write_field(this, out, &ty, &ident, &b.config);
+                    cdecl::write_field(*inner.borrow_mut(), out, &ty, &ident, &b.config);
                 });
             },
         );
@@ -199,11 +199,14 @@ impl CDynamicBindingBackend {
         &mut self,
         out: &mut SourceWriter<W>,
         b: &crate::Bindings,
-        _inner: &mut CLikeLanguageBackend,
+        inner: &mut CLikeLanguageBackend,
     ) {
         let mut body = Vec::<u8>::with_capacity(256);
         let mut body_writer = SourceWriter::new(&mut body, b);
         body_writer.push_set_spaces(8);
+
+        // This refcell is just workaround to avoid borrow checker complaint.
+        let inner = RefCell::new(inner);
 
         // api, notfound, mod, ffunc, fsym
         body_writer.write_vertical_source_list(
@@ -221,7 +224,7 @@ impl CDynamicBindingBackend {
                     out.write_fmt(format_args!("api->{} = (", ident));
 
                     let ty = wrap_in_pointer(&item.ty, !item.mutable);
-                    cdecl::write_type(this, out, &ty, &b.config);
+                    cdecl::write_type(*inner.borrow_mut(), out, &ty, &b.config);
 
                     out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.export_name));
                 })
@@ -248,7 +251,7 @@ impl CDynamicBindingBackend {
                     out.write_fmt(format_args!("api->{} = (", ident));
 
                     let ty = make_func_ptr(item);
-                    cdecl::write_type(this, out, &ty, &b.config);
+                    cdecl::write_type(*inner.borrow_mut(), out, &ty, &b.config);
 
                     out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.path.name()));
                 })
@@ -322,8 +325,11 @@ impl LanguageBackend for CDynamicBindingBackend {
     ) where
         Self: Sized,
     {
-        if b.config.language != crate::bindgen::Language::C {
-            panic!("This backend only supports C language generation")
+        if !matches!(
+            b.config.language,
+            crate::bindgen::Language::C | crate::bindgen::Language::Cxx
+        ) {
+            panic!("This backend only supports C/C++ language generation")
         }
 
         let mut inner = CLikeLanguageBackend::new(&b.config);
@@ -478,8 +484,8 @@ fn quick_generate_result() {
     }) {
         let mut config = crate::Config::default();
         let file_name = std::path::Path::new(file.file_name().unwrap());
-        let out_file_name = temp_dir.join(file_name.with_extension("c"));
-        config.language = crate::bindgen::Language::C;
+        let out_file_name = temp_dir.join(file_name.with_extension("cpp"));
+        config.language = crate::bindgen::Language::Cxx;
 
         crate::Builder::new()
             .with_config(config)
