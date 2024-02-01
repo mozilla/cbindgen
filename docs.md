@@ -267,8 +267,6 @@ pub mod my_uninteresting_mod; // This won't be scanned by cbindgen.
 
 cbindgen will usually emit all items it finds, as instructed by the parse and export config sections. This annotation will make cbindgen skip this item from the output, while still being aware of it. This is useful for a) suppressing "Can't find" errors and b) emitting `struct my_struct` for types in a different header (rather than a bare `my_struct`).
 
-There is no equivalent config for this annotation - by comparison, the export exclude config will cause cbindgen to not be aware of the item at all.
-
 Note that cbindgen will still traverse `no-export` structs that are `repr(C)` to emit types present in the fields. You will need to manually exclude those types in your config if desired.
 
 ```
@@ -578,6 +576,10 @@ include = ["MyOrphanStruct", "MyGreatTypeRename"]
 # A list of items to not include in the generated bindings
 # default: []
 exclude = ["Bad"]
+
+# A list of items to not export in the generated bindings
+# default: []
+no_export = ["Inner"]
 
 # A prefix to add before the name of every item
 # default: no prefix is added

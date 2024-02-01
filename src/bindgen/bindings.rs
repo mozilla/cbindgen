@@ -363,6 +363,16 @@ impl Bindings {
                 continue;
             }
 
+            if self
+                .config
+                .export
+                .no_export
+                .iter()
+                .any(|i| i == item.deref().export_name())
+            {
+                continue;
+            }
+
             out.new_line_if_not_start();
             match *item {
                 ItemContainer::Constant(..) => unreachable!(),
