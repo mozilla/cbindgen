@@ -229,7 +229,7 @@ impl CDynamicBindingBackend {
                     let ty = wrap_in_pointer(&item.ty, !item.mutable);
                     cdecl::write_type(*inner.borrow_mut(), out, &ty, &b.config);
 
-                    out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.export_name));
+                    out.write_fmt(format_args!(")fsym(mod, \"{}\")", item.export_name));
                 })
             },
         );
@@ -256,7 +256,7 @@ impl CDynamicBindingBackend {
                     let ty = make_func_ptr(item);
                     cdecl::write_type(*inner.borrow_mut(), out, &ty, &b.config);
 
-                    out.write_fmt(format_args!(")fsym(mod, \"{}\");", item.path.name()));
+                    out.write_fmt(format_args!(")fsym(mod, \"{}\")", item.path.name()));
                 })
             },
         );
