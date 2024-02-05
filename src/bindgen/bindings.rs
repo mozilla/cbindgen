@@ -210,7 +210,7 @@ impl Bindings {
         }
     }
 
-    pub fn write_with_backend<F: Write, LB: LanguageBackend>(
+    fn write_with_backend<F: Write, LB: LanguageBackend>(
         &self,
         file: F,
         language_backend: &mut LB,
