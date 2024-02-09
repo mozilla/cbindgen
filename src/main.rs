@@ -48,6 +48,10 @@ fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
         config.only_target_dependencies = true;
     }
 
+    if matches.is_present("package-version") {
+        config.package_version = true;
+    }
+
     if let Some(style) = matches.value_of("style") {
         config.style = match style {
             "Both" => Style::Both,
@@ -162,6 +166,11 @@ fn main() {
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
                 .possible_values(["c++", "C++", "c", "C", "cython", "Cython"]),
+        )
+        .arg(
+            Arg::new("package-version")
+            .long("package-version")
+            .help("Include the package version in the header comment")
         )
         .arg(
             Arg::new("cpp-compat")
