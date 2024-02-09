@@ -361,6 +361,7 @@ impl Builder {
                 Default::default(),
                 Default::default(),
                 true,
+                String::new(),
             ));
         }
 
@@ -405,6 +406,7 @@ impl Builder {
             result.typedefs,
             result.functions,
             result.source_files,
+            result.package_version,
         )
         .generate()
     }
