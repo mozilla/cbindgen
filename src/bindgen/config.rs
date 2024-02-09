@@ -919,6 +919,8 @@ pub struct Config {
     /// This option is useful when using cbindgen with tools such as python's cffi which
     /// doesn't understand include directives
     pub no_includes: bool,
+    // Package version: True if the package version should appear as a comment in the .h file
+    pub package_version: bool,
     /// Optional text to output at major sections to deter manual editing
     pub autogen_warning: Option<String>,
     /// Include a comment with the version of cbindgen used to generate the file
@@ -1040,6 +1042,7 @@ impl Default for Config {
             autogen_warning: None,
             include_version: false,
             no_includes: false,
+            package_version: false,
             namespace: None,
             namespaces: None,
             using_namespaces: None,

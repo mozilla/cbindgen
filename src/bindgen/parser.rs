@@ -81,6 +81,13 @@ pub(crate) fn parse_lib(lib: Cargo, config: &Config) -> ParseResult {
     let binding_crate = context.lib.as_ref().unwrap().binding_crate_ref();
     context.parse_crate(&binding_crate)?;
     context.out.source_files = context.cache_src.keys().map(|k| k.to_owned()).collect();
+    context.out.package_version = context
+        .lib
+        .as_ref()
+        .unwrap()
+        .binding_crate_ref()
+        .version
+        .unwrap();
     Ok(context.out)
 }
 
@@ -409,6 +416,7 @@ pub struct Parse {
     pub typedefs: ItemMap<Typedef>,
     pub functions: Vec<Function>,
     pub source_files: Vec<FilePathBuf>,
+    pub package_version: String,
 }
 
 impl Parse {
@@ -423,6 +431,7 @@ impl Parse {
             typedefs: ItemMap::default(),
             functions: Vec::new(),
             source_files: Vec::new(),
+            package_version: String::new(),
         }
     }
 
@@ -471,6 +480,7 @@ impl Parse {
         self.typedefs.extend_with(&other.typedefs);
         self.functions.extend_from_slice(&other.functions);
         self.source_files.extend_from_slice(&other.source_files);
+        self.package_version = other.package_version.clone();
     }
 
     fn load_syn_crate_mod<'a>(
