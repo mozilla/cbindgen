@@ -49,6 +49,10 @@ fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
         config.only_target_dependencies = true;
     }
 
+    if matches.get_flag("package-version") {
+        config.package_version = true;
+    }
+
     match matches.try_get_one::<String>("style") {
         Ok(Some(style)) => {
             config.style = bindgen::Style::from_str(style).unwrap();
@@ -162,6 +166,12 @@ fn main() {
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
                 .value_parser(["c++", "C++", "c", "C", "cython", "Cython"]),
+        )
+        .arg(
+            Arg::new("package-version")
+                .long("package-version")
+                .action(ArgAction::SetTrue)
+                .help("Include the package version in the header comment")
         )
         .arg(
             Arg::new("cpp-compat")
