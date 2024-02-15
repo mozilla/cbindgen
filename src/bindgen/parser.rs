@@ -116,7 +116,7 @@ impl<'a> Parser<'a> {
             .expand
             .crates
             .iter()
-            .any(|name| name == pkg_name)
+            .any(|name| name.matches_name(pkg_name))
         {
             return true;
         }
@@ -145,7 +145,7 @@ impl<'a> Parser<'a> {
         self.parsed_crates.insert(pkg.name.clone());
 
         // Check if we should use cargo expand for this crate
-        if self.config.parse.expand.crates.contains(&pkg.name) {
+        if self.config.parse.expand.must_expand(pkg) {
             self.parse_expand_crate(pkg)?;
         } else {
             // Parse the crate before the dependencies otherwise the same-named idents we

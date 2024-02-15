@@ -10,10 +10,10 @@ use std::{fmt, fs, path::Path as StdPath, path::PathBuf as StdPathBuf};
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
 use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
-use crate::bindgen::ir::annotation::AnnotationSet;
 use crate::bindgen::ir::path::Path;
 use crate::bindgen::ir::repr::ReprAlign;
 pub use crate::bindgen::rename::RenameRule;
+use crate::{bindgen::cargo::PackageRef, bindgen::ir::annotation::AnnotationSet};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -757,7 +757,7 @@ deserialize_enum_str!(Profile);
 #[serde(default)]
 pub struct ParseExpandConfig {
     /// The names of crates to parse with `rustc -Zunpretty=expanded`
-    pub crates: Vec<String>,
+    pub crates: Vec<CrateMatcher>,
     /// Whether to enable all the features when expanding.
     pub all_features: bool,
     /// Whether to use the default feature set when expanding.
@@ -767,6 +767,48 @@ pub struct ParseExpandConfig {
     pub features: Option<Vec<String>>,
     /// Controls whether or not to pass `--release` when expanding.
     pub profile: Profile,
+}
+
+impl ParseExpandConfig {
+    /// Decide if a crate must be expanded or not based on matching.
+    pub fn must_expand(&self, pkg: &PackageRef) -> bool {
+        for matcher in &self.crates {
+            match matcher {
+                CrateMatcher::Name(name) => {
+                    if *name == pkg.name {
+                        return true;
+                    }
+                }
+                CrateMatcher::NameWithVersion { name, version } => {
+                    if let Some(pkg_version) = &pkg.version {
+                        if *name == pkg.name && *version == *pkg_version {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        false
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(untagged)]
+pub enum CrateMatcher {
+    Name(String),
+    NameWithVersion { name: String, version: String },
+}
+
+impl CrateMatcher {
+    pub fn matches_name(&self, other: &str) -> bool {
+        match self {
+            CrateMatcher::Name(name) => name == other,
+            CrateMatcher::NameWithVersion { name, .. } => name == other,
+        }
+    }
 }
 
 impl Default for ParseExpandConfig {
@@ -802,7 +844,7 @@ fn retrocomp_parse_expand_config_deserialize<'de, D: Deserializer<'de>>(
 
         fn visit_seq<A: SeqAccess<'de>>(self, seq: A) -> Result<Self::Value, A::Error> {
             let crates =
-                <Vec<String> as Deserialize>::deserialize(SeqAccessDeserializer::new(seq))?;
+                <Vec<CrateMatcher> as Deserialize>::deserialize(SeqAccessDeserializer::new(seq))?;
             Ok(ParseExpandConfig {
                 crates,
                 all_features: true,

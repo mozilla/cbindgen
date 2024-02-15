@@ -6,7 +6,7 @@ use std::path;
 
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::cargo::Cargo;
-use crate::bindgen::config::{Braces, Config, Language, Profile, Style};
+use crate::bindgen::config::{Braces, Config, CrateMatcher, Language, Profile, Style};
 use crate::bindgen::error::Error;
 use crate::bindgen::library::Library;
 use crate::bindgen::parser::{self, Parse};
@@ -214,8 +214,20 @@ impl Builder {
     }
 
     #[allow(unused)]
-    pub fn with_parse_expand<S: AsRef<str>>(mut self, expand: &[S]) -> Builder {
-        self.config.parse.expand.crates = expand.iter().map(|x| String::from(x.as_ref())).collect();
+    pub fn with_parse_expand<S1: AsRef<str>, S2: AsRef<str>>(
+        mut self,
+        expand: &[(S1, Option<S2>)],
+    ) -> Builder {
+        self.config.parse.expand.crates = expand
+            .iter()
+            .map(|(s1, s2)| match s2 {
+                Some(s2) => CrateMatcher::NameWithVersion {
+                    name: String::from(s1.as_ref()),
+                    version: String::from(s2.as_ref()),
+                },
+                None => CrateMatcher::Name(String::from(s1.as_ref())),
+            })
+            .collect();
         self
     }
 
