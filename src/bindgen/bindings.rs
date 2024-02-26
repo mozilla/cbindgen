@@ -228,7 +228,7 @@ impl Bindings {
             out.new_line_if_not_start();
             write!(
                 out,
-                "/*Package version: {}*/",
+                "/* Package version: {} */",
                 self.package_version,
             );
             out.new_line();
