@@ -68,6 +68,21 @@ impl Bindings {
         }
     }
 
+    #[allow(unused)]
+    pub fn constants(&self) -> &[Constant] {
+        &self.constants
+    }
+
+    #[allow(unused)]
+    pub fn items(&self) -> &[ItemContainer] {
+        &self.items
+    }
+
+    #[allow(unused)]
+    pub fn functions(&self) -> &[Function] {
+        &self.functions
+    }
+
     // FIXME(emilio): What to do when the configuration doesn't match?
     pub fn struct_is_transparent(&self, path: &BindgenPath) -> bool {
         let mut any = false;
@@ -308,6 +323,7 @@ impl Bindings {
                     out.new_line();
                     out.close_brace(false);
                 }
+                Language::Custom(_) => unreachable!()
             }
         }
 
@@ -337,6 +353,15 @@ impl Bindings {
     pub fn write<F: Write>(&self, file: F) {
         if self.noop {
             return;
+        }
+
+        match &self.config.language {
+            Language::Custom(custom_language) => {
+                let mut file = file;
+                custom_language.write(&mut file, self, &self.config).unwrap();
+                return;
+            },
+            _ => {}
         }
 
         let mut out = SourceWriter::new(file, self);

@@ -3,7 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::path;
+use std::rc::Rc;
 
+use crate::bindgen::CustomLanguage;
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::cargo::Cargo;
 use crate::bindgen::config::{Braces, Config, Language, Profile, Style};
@@ -146,6 +148,12 @@ impl Builder {
     #[allow(unused)]
     pub fn with_language(mut self, language: Language) -> Builder {
         self.config.language = language;
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_custom_language(mut self, language: impl CustomLanguage) -> Builder {
+        self.config.language = Language::Custom(Rc::new(language));
         self
     }
 

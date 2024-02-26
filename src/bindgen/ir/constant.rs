@@ -475,7 +475,7 @@ impl Literal {
 
     pub(crate) fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         match self {
-            Literal::Expr(v) => match (&**v, config.language) {
+            Literal::Expr(v) => match (&**v, &config.language) {
                 ("true", Language::Cython) => write!(out, "True"),
                 ("false", Language::Cython) => write!(out, "False"),
                 (v, _) => write!(out, "{}", v),
@@ -488,7 +488,7 @@ impl Literal {
                     if let Some(known) = to_known_assoc_constant(path, name) {
                         return write!(out, "{}", known);
                     }
-                    let path_separator = match config.language {
+                    let path_separator = match &config.language {
                         Language::Cython | Language::C => "_",
                         Language::Cxx => {
                             if config.structure.associated_constants_in_body {
@@ -496,7 +496,8 @@ impl Literal {
                             } else {
                                 "_"
                             }
-                        }
+                        },
+                        Language::Custom(_) => unreachable!()
                     };
                     write!(out, "{}{}", export_name, path_separator)
                 }
@@ -548,6 +549,7 @@ impl Literal {
                     Language::C => write!(out, "({})", export_name),
                     Language::Cxx => write!(out, "{}", export_name),
                     Language::Cython => write!(out, "<{}>", export_name),
+                    Language::Custom(_) => unreachable!()
                 }
 
                 write!(out, "{{ ");
@@ -565,6 +567,7 @@ impl Literal {
                             Language::Cxx => write!(out, "/* .{} = */ ", ordered_key),
                             Language::C => write!(out, ".{} = ", ordered_key),
                             Language::Cython => {}
+                            Language::Custom(_) => unreachable!()
                         }
                         lit.write(config, out);
                     }
@@ -805,7 +808,8 @@ impl Constant {
                 // but still useful as documentation, so we write it as a comment.
                 write!(out, " {} # = ", name);
                 value.write(config, out);
-            }
+            },
+            Language::Custom(_) => unreachable!(),
         }
 
         condition.write_after(config, out);

@@ -4,12 +4,14 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
+use std::rc::Rc;
 use std::str::FromStr;
 use std::{fmt, fs, path::Path as StdPath, path::PathBuf as StdPathBuf};
 
 use serde::de::value::{MapAccessDeserializer, SeqAccessDeserializer};
 use serde::de::{Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
+use crate::Bindings;
 use crate::bindgen::ir::annotation::AnnotationSet;
 use crate::bindgen::ir::path::Path;
 use crate::bindgen::ir::repr::ReprAlign;
@@ -17,13 +19,37 @@ pub use crate::bindgen::rename::RenameRule;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+pub trait CustomLanguage: 'static + std::fmt::Debug {
+    fn write(
+        &self,
+        file: &mut dyn std::io::Write,
+        bindings: &Bindings,
+        config: &Config
+    ) -> std::io::Result<()>;
+}
+
 /// A language type to generate bindings for.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub enum Language {
     Cxx,
     C,
     Cython,
+    Custom(Rc<dyn CustomLanguage>)
 }
+
+impl PartialEq for Language {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Language::Cxx, Language::Cxx) => true,
+            (Language::C, Language::C) => true,
+            (Language::Cython, Language::Cython) => true,
+            (Language::Custom(a), Language::Custom(b)) => Rc::ptr_eq(a, b),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for Language {}
 
 impl FromStr for Language {
     type Err = String;
@@ -54,6 +80,7 @@ impl Language {
         match self {
             Language::Cxx | Language::C => "typedef",
             Language::Cython => "ctypedef",
+            Language::Custom(_) => unreachable!(),
         }
     }
 }

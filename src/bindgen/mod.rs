@@ -45,7 +45,7 @@ mod config;
 mod declarationtyperesolver;
 mod dependencies;
 mod error;
-mod ir;
+pub mod ir;
 mod library;
 mod mangle;
 mod monomorph;
@@ -63,3 +63,4 @@ pub use self::builder::Builder;
 pub use self::config::Profile; // disambiguate with cargo::Profile
 pub use self::config::*;
 pub use self::error::Error;
+//pub use self::declarationtyperesolver::DeclarationType;

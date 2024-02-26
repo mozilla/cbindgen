@@ -195,10 +195,11 @@ impl Source for Typedef {
                 self.aliased.write(config, out);
             }
             Language::C | Language::Cython => {
-                write!(out, "{} ", config.language.typedef());
+                write!(out, "{} ", config.language.clone().typedef());
                 Field::from_name_and_type(self.export_name().to_owned(), self.aliased.clone())
                     .write(config, out);
-            }
+            },
+            Language::Custom(_) => unreachable!(),
         }
 
         out.write(";");
