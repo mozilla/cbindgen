@@ -46,6 +46,7 @@ mod declarationtyperesolver;
 mod dependencies;
 mod error;
 mod ir;
+mod language_backend;
 mod library;
 mod mangle;
 mod monomorph;
@@ -63,3 +64,13 @@ pub use self::builder::Builder;
 pub use self::config::Profile; // disambiguate with cargo::Profile
 pub use self::config::*;
 pub use self::error::Error;
+
+pub mod backends {
+    #![allow(unused)] // Expose customized backend
+
+    // pub use super::language_backend::LanguageBackend;
+    // - Does not expose backend trait itself implementable;
+
+    pub use super::language_backend::CDynamicBindingBackend;
+    pub use super::language_backend::CDynamicBindingConfig;
+}
