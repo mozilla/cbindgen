@@ -41,6 +41,7 @@ struct CDecl {
     declarators: Vec<CDeclarator>,
     type_ctype: Option<DeclarationType>,
     deprecated: Option<String>,
+    must_remove_name: bool,
 }
 
 impl CDecl {
@@ -52,6 +53,7 @@ impl CDecl {
             declarators: Vec::new(),
             type_ctype: None,
             deprecated: None,
+            must_remove_name: false,
         }
     }
 
@@ -90,10 +92,8 @@ impl CDecl {
             .args
             .iter()
             .map(|arg| {
-                (
-                    arg.name.clone(),
-                    CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref(), config),
-                )
+                let decl = CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref(), config);
+                (arg.name.clone().filter(|_| !decl.must_remove_name), decl)
             })
             .collect();
         self.declarators.push(CDeclarator::Func {
@@ -148,6 +148,15 @@ impl CDecl {
                 );
                 self.type_name = p.to_repr_c(config).to_string();
             }
+            Type::VarArgs => match config.function.varargs {
+                super::VarargsRule::VaList => {
+                    self.type_name = "va_list".into();
+                }
+                super::VarargsRule::DotDotDot => {
+                    self.type_name = "...".into();
+                    self.must_remove_name = true;
+                }
+            },
             Type::Ptr {
                 ref ty,
                 is_nullable,
