@@ -1,3 +1,7 @@
+# unreleased
+
+      * Revert: The `Config` struct now has a private member.
+
 # 0.26.0
 
       * Fix swapping of `>>=` and `<<=` in constants.
