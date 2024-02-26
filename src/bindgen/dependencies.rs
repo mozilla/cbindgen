@@ -7,6 +7,8 @@ use std::collections::HashSet;
 
 use crate::bindgen::ir::{ItemContainer, Path};
 
+use super::library::Library;
+
 /// A dependency list is used for gathering what order to output the types.
 #[derive(Default)]
 pub struct Dependencies {
@@ -19,6 +21,24 @@ impl Dependencies {
         Dependencies {
             order: Vec::new(),
             items: HashSet::new(),
+        }
+    }
+
+    pub fn add_path(&mut self, library: &Library, path: &Path) {
+        if let Some(items) = library.get_items(path) {
+            if !self.items.contains(path) {
+                self.items.insert(path.clone());
+
+                for item in &items {
+                    item.deref().add_dependencies(library, self);
+                }
+                self.order.extend(items);
+            }
+        } else {
+            warn!(
+                "Can't find {}. This usually means that this type was incompatible or not found.",
+                path
+            );
         }
     }
 
