@@ -81,7 +81,13 @@ pub(crate) fn parse_lib(lib: Cargo, config: &Config) -> ParseResult {
     let binding_crate = context.lib.as_ref().unwrap().binding_crate_ref();
     context.parse_crate(&binding_crate)?;
     context.out.source_files = context.cache_src.keys().map(|k| k.to_owned()).collect();
-    context.out.package_version = context.lib.as_ref().unwrap().binding_crate_ref().version.unwrap();
+    context.out.package_version = context
+        .lib
+        .as_ref()
+        .unwrap()
+        .binding_crate_ref()
+        .version
+        .unwrap();
     Ok(context.out)
 }
 

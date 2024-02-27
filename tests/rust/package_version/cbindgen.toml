@@ -1,0 +1,11 @@
+package_version = true
+header = "/* Text to put at the beginning of the file. Probably a license. */"
+autogen_warning = "/* Test autogen warning */"
+trailer = "/* Text to put at the end of the file. */"
+after_includes = "/* Text after includes */"
+
+[parse.expand]
+crates = ["package_version"]
+features = ["cbindgen"]
+
+

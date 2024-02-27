@@ -1,0 +1,7 @@
+[package]
+name = "package_version"
+version = "0.1.0"
+authors = ["hitbear"]
+
+[features]
+cbindgen = []

@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::io::Write;
 
 use syn::ext::IdentExt;
-use syn::{self, UnOp};
+use syn::UnOp;
 
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;

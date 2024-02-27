@@ -212,9 +212,30 @@ impl Bindings {
             return;
         }
 
+        if self.config.package_version {
+            out.new_line_if_not_start();
+            match self.config.language {
+                Language::C | Language::Cxx => {
+                    write!(out, "/* Package version: {} */", self.package_version,);
+                }
+                Language::Cython => {
+                    write!(out, "''' Package version: {} '''", self.package_version,);
+                }
+            }
+
+            out.new_line();
+        }
+
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
-            write!(out, "{}", f);
+            match self.config.language {
+                Language::C | Language::Cxx => {
+                    write!(out, "{}", f);
+                }
+                Language::Cython => {
+                    write!(out, "{}", self.cython_comment(f));
+                }
+            }
             out.new_line();
         }
         if let Some(f) = self.config.include_guard() {
@@ -224,15 +245,6 @@ impl Bindings {
             write!(out, "#define {}", f);
             out.new_line();
         }
-        if self.config.package_version {
-            out.new_line_if_not_start();
-            write!(
-                out,
-                "/* Package version: {} */",
-                self.package_version,
-            );
-            out.new_line();
-        }
         if self.config.pragma_once && self.config.language != Language::Cython {
             out.new_line_if_not_start();
             write!(out, "#pragma once");
@@ -240,16 +252,35 @@ impl Bindings {
         }
         if self.config.include_version {
             out.new_line_if_not_start();
-            write!(
-                out,
-                "/* Generated with cbindgen:{} */",
-                crate::bindgen::config::VERSION
-            );
+            match self.config.language {
+                Language::C | Language::Cxx => {
+                    write!(
+                        out,
+                        "/* Generated with cbindgen:{} */",
+                        crate::bindgen::config::VERSION
+                    );
+                }
+                Language::Cython => {
+                    write!(
+                        out,
+                        "''' Generated with cbindgen:{} '''",
+                        crate::bindgen::config::VERSION
+                    );
+                }
+            }
+
             out.new_line();
         }
         if let Some(ref f) = self.config.autogen_warning {
             out.new_line_if_not_start();
-            write!(out, "{}", f);
+            match self.config.language {
+                Language::C | Language::Cxx => {
+                    write!(out, "{}", f);
+                }
+                Language::Cython => {
+                    write!(out, "{}", self.cython_comment(f));
+                }
+            }
             out.new_line();
         }
 
@@ -341,9 +372,29 @@ impl Bindings {
         }
 
         if let Some(ref line) = self.config.after_includes {
-            write!(out, "{}", line);
+            match self.config.language {
+                Language::C | Language::Cxx => {
+                    write!(out, "{}", line);
+                }
+                Language::Cython => {
+                    write!(out, "{}", self.cython_comment(line));
+                }
+            }
             out.new_line();
         }
+    }
+
+    pub fn cython_comment(&self, str: &String) -> String {
+        if Some(0) == str.find("/*") {
+            let mut cython_comment = String::from("'''") + str.trim_start_matches("/*");
+            if cython_comment.ends_with("*/") {
+                let end_comment = String::from("'''");
+                cython_comment = cython_comment.trim_end_matches("*/").to_owned() + &end_comment;
+                return cython_comment;
+            }
+            return cython_comment;
+        }
+        str.to_string()
     }
 
     pub fn write<F: Write>(&self, file: F) {
@@ -474,7 +525,14 @@ impl Bindings {
         }
         if let Some(ref f) = self.config.trailer {
             out.new_line_if_not_start();
-            write!(out, "{}", f);
+            match self.config.language {
+                Language::C | Language::Cxx => {
+                    write!(out, "{}", f);
+                }
+                Language::Cython => {
+                    write!(out, "{}", self.cython_comment(f));
+                }
+            }
             if !f.ends_with('\n') {
                 out.new_line();
             }

@@ -26,6 +26,7 @@ fn run_cbindgen(
     cpp_compat: bool,
     style: Option<Style>,
     generate_depfile: bool,
+    package_version: bool,
 ) -> (Vec<u8>, Option<String>) {
     assert!(
         !(output.is_none() && generate_depfile),
@@ -56,6 +57,10 @@ fn run_cbindgen(
         Language::Cython => {
             command.arg("--lang").arg("cython");
         }
+    }
+
+    if package_version {
+        command.arg("--package-version");
     }
 
     if let Some(style) = style {
@@ -200,6 +205,7 @@ fn run_compile_test(
     cpp_compat: bool,
     style: Option<Style>,
     cbindgen_outputs: &mut HashSet<Vec<u8>>,
+    package_version: bool,
 ) {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let tests_path = Path::new(&crate_dir).join("tests");
@@ -248,6 +254,7 @@ fn run_compile_test(
         cpp_compat,
         style,
         generate_depfile,
+        package_version,
     );
     if generate_depfile {
         let depfile = depfile_contents.expect("No depfile generated");
@@ -329,6 +336,7 @@ fn test_file(name: &'static str, filename: &'static str) {
                 *cpp_compat,
                 Some(*style),
                 &mut cbindgen_outputs,
+                false,
             );
         }
     }
@@ -341,6 +349,7 @@ fn test_file(name: &'static str, filename: &'static str) {
         /* cpp_compat = */ false,
         None,
         &mut HashSet::new(),
+        false,
     );
 
     // `Style::Both` should be identical to `Style::Tag` for Cython.
@@ -354,6 +363,7 @@ fn test_file(name: &'static str, filename: &'static str) {
             /* cpp_compat = */ false,
             Some(*style),
             &mut cbindgen_outputs,
+            false,
         );
     }
 }
