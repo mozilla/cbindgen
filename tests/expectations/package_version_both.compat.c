@@ -2,8 +2,6 @@
 
 /* Text to put at the beginning of the file. Probably a license. */
 
-/* Test autogen warning */
-
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

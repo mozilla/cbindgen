@@ -216,10 +216,10 @@ impl Bindings {
             out.new_line_if_not_start();
             match self.config.language {
                 Language::C | Language::Cxx => {
-                    write!(out, "/* Package version: {} */", self.package_version,);
+                    write!(out, "/* Package version: {} */", self.package_version);
                 }
                 Language::Cython => {
-                    write!(out, "''' Package version: {} '''", self.package_version,);
+                    write!(out, "''' Package version: {} '''", self.package_version);
                 }
             }
 
@@ -273,14 +273,7 @@ impl Bindings {
         }
         if let Some(ref f) = self.config.autogen_warning {
             out.new_line_if_not_start();
-            match self.config.language {
-                Language::C | Language::Cxx => {
-                    write!(out, "{}", f);
-                }
-                Language::Cython => {
-                    write!(out, "{}", self.cython_comment(f));
-                }
-            }
+            write!(out, "{}", f);
             out.new_line();
         }
 

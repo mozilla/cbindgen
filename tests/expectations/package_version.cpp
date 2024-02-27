@@ -2,8 +2,6 @@
 
 /* Text to put at the beginning of the file. Probably a license. */
 
-/* Test autogen warning */
-
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
