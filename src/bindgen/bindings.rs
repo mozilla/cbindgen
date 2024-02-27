@@ -228,14 +228,7 @@ impl Bindings {
 
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
-            match self.config.language {
-                Language::C | Language::Cxx => {
-                    write!(out, "{}", f);
-                }
-                Language::Cython => {
-                    write!(out, "{}", self.cython_comment(f));
-                }
-            }
+            write!(out, "{}", f);
             out.new_line();
         }
         if let Some(f) = self.config.include_guard() {
@@ -365,29 +358,9 @@ impl Bindings {
         }
 
         if let Some(ref line) = self.config.after_includes {
-            match self.config.language {
-                Language::C | Language::Cxx => {
-                    write!(out, "{}", line);
-                }
-                Language::Cython => {
-                    write!(out, "{}", self.cython_comment(line));
-                }
-            }
+            write!(out, "{}", line);
             out.new_line();
         }
-    }
-
-    pub fn cython_comment(&self, str: &String) -> String {
-        if Some(0) == str.find("/*") {
-            let mut cython_comment = String::from("'''") + str.trim_start_matches("/*");
-            if cython_comment.ends_with("*/") {
-                let end_comment = String::from("'''");
-                cython_comment = cython_comment.trim_end_matches("*/").to_owned() + &end_comment;
-                return cython_comment;
-            }
-            return cython_comment;
-        }
-        str.to_string()
     }
 
     pub fn write<F: Write>(&self, file: F) {
@@ -518,14 +491,7 @@ impl Bindings {
         }
         if let Some(ref f) = self.config.trailer {
             out.new_line_if_not_start();
-            match self.config.language {
-                Language::C | Language::Cxx => {
-                    write!(out, "{}", f);
-                }
-                Language::Cython => {
-                    write!(out, "{}", self.cython_comment(f));
-                }
-            }
+            write!(out, "{}", f);
             if !f.ends_with('\n') {
                 out.new_line();
             }
