@@ -384,7 +384,7 @@ impl Builder {
         }
 
         if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
-            let lockfile = self.lockfile.as_ref().and_then(|p| p.to_str());
+            let lockfile = self.lockfile.as_deref();
 
             let cargo = Cargo::load(
                 &lib_dir,
