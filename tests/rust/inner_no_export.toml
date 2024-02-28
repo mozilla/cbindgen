@@ -1,0 +1,12 @@
+cpp_compat = true
+language = "C"
+no_includes = true
+sys_includes = ["stdint.h", "stddef.h", "stdbool.h"]
+
+[parse]
+parse_deps = true
+
+[export]
+no_export = [
+  "Inner",
+]
