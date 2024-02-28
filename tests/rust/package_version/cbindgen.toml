@@ -1,7 +1,1 @@
 package_version = true
-
-[parse.expand]
-crates = ["package_version"]
-features = ["cbindgen"]
-
-

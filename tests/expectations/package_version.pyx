@@ -9,6 +9,6 @@ cdef extern from *:
 cdef extern from *:
 
   ctypedef struct Foo:
-    pass
+    uint64_t bar;
 
   void doit(const Foo*);

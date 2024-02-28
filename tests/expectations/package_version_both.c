@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 typedef struct Foo {
-
+  uint64_t bar;
 } Foo;
 
 void doit(const struct Foo*);

@@ -1,6 +1,5 @@
 #[repr(C)]
 pub struct Foo {
-    #[cfg(not(feature = "cbindgen"))]
     bar: u64,
 }
 

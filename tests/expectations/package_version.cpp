@@ -7,7 +7,7 @@
 #include <new>
 
 struct Foo {
-
+  uint64_t bar;
 };
 
 extern "C" {
