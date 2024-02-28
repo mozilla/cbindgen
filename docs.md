@@ -573,11 +573,15 @@ usize_is_size_t = true
 # default: []
 include = ["MyOrphanStruct", "MyGreatTypeRename"]
 
-# A list of items to not include in the generated bindings
+# A list of items to not include in the generated bindings. The items won't get parsed
+# at all.
+#
 # default: []
 exclude = ["Bad"]
 
-# A list of items to not export in the generated bindings
+# A list of items to not export in the generated bindings. The items will still get
+# parsed.
+#
 # default: []
 no_export = ["Inner"]
 
