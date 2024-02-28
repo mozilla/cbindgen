@@ -3,8 +3,9 @@ pub mod inner {
     pub struct Inner;
 }
 
+#[repr(C)]
 pub struct Outer {
-    inner: inner::Inner,
+    inner: *mut inner::Inner,
 }
 
 #[no_mangle]
