@@ -12,8 +12,8 @@ use crate::bindgen::config::{Config, Language, Layout};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation, GenericPath, Path,
-    ToCondition, Type,
+    AnnotationSet, AssocTypeResolver, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation,
+    GenericPath, Path, ToCondition, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
@@ -216,6 +216,14 @@ impl Function {
                 };
                 arg.array_length = ptrs_as_arrays.get(name).cloned();
             }
+        }
+    }
+
+    pub fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        self.ret.resolve_assoc_types(resolver);
+
+        for arg in self.args.iter_mut() {
+            arg.ty.resolve_assoc_types(resolver);
         }
     }
 }

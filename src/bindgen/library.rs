@@ -10,7 +10,9 @@ use crate::bindgen::config::{Config, Language, SortKey};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
-use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
+use crate::bindgen::ir::{
+    AssocTypeId, Constant, Enum, Function, Item, ItemContainer, ItemMap, Type,
+};
 use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::ItemType;
@@ -27,6 +29,7 @@ pub struct Library {
     typedefs: ItemMap<Typedef>,
     functions: Vec<Function>,
     source_files: Vec<PathBuf>,
+    assoc_types: HashMap<AssocTypeId, Type>,
 }
 
 impl Library {
@@ -42,6 +45,7 @@ impl Library {
         typedefs: ItemMap<Typedef>,
         functions: Vec<Function>,
         source_files: Vec<PathBuf>,
+        assoc_types: HashMap<AssocTypeId, Type>,
     ) -> Library {
         Library {
             config,
@@ -54,10 +58,13 @@ impl Library {
             typedefs,
             functions,
             source_files,
+            assoc_types,
         }
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
+        self.replace_assoc_types();
+
         self.transfer_annotations();
         self.simplify_standard_types();
 
@@ -441,6 +448,43 @@ impl Library {
             .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         for x in &mut self.functions {
             x.mangle_paths(&monomorphs);
+        }
+    }
+
+    // Replace all associated types with concrete types
+    fn replace_assoc_types(&mut self) {
+        let assoc_map = &self.assoc_types;
+
+        self.constants.for_all_items_mut(|const_| {
+            const_.resolve_assoc_types(assoc_map);
+        });
+
+        self.globals.for_all_items_mut(|static_| {
+            static_.resolve_assoc_types(assoc_map);
+        });
+
+        self.enums.for_all_items_mut(|enum_| {
+            enum_.resolve_assoc_types(assoc_map);
+        });
+
+        self.structs.for_all_items_mut(|struct_| {
+            struct_.resolve_assoc_types(assoc_map);
+        });
+
+        self.unions.for_all_items_mut(|union_| {
+            union_.resolve_assoc_types(assoc_map);
+        });
+
+        self.opaque_items.for_all_items_mut(|opaque_item| {
+            opaque_item.resolve_assoc_types(assoc_map);
+        });
+
+        self.typedefs.for_all_items_mut(|typedef| {
+            typedef.resolve_assoc_types(assoc_map);
+        });
+
+        for func in self.functions.iter_mut() {
+            func.resolve_assoc_types(assoc_map);
         }
     }
 }

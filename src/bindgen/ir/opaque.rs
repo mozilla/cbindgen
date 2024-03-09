@@ -8,8 +8,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, ToCondition,
+    AnnotationSet, AssocTypeResolver, Cfg, ConditionWrite, Documentation, GenericArgument,
+    GenericParams, Item, ItemContainer, Path, ToCondition,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -134,6 +134,10 @@ impl Item for OpaqueItem {
         );
 
         out.insert_opaque(self, monomorph, generic_values.to_owned());
+    }
+
+    fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        self.generic_params.resolve_assoc_types(resolver);
     }
 }
 

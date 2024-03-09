@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::io::Write;
 
 use syn::ext::IdentExt;
@@ -11,7 +12,7 @@ use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
+use crate::bindgen::ir::{AssocTypeId, GenericArgument, GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::utilities::IterHelpers;
@@ -344,7 +345,7 @@ impl ConstExpr {
                 Ok(ConstExpr::Value(val))
             }
             syn::Expr::Path(ref path) => {
-                let generic_path = GenericPath::load(&path.path)?;
+                let generic_path = GenericPath::load(&path.path, path.qself.as_ref())?;
                 Ok(ConstExpr::Name(generic_path.export_name().to_owned()))
             }
             _ => Err(format!("can't handle const expression {:?}", expr)),
@@ -408,6 +409,8 @@ pub enum Type {
     },
 }
 
+pub type AssocTypeResolver = HashMap<AssocTypeId, Type>;
+
 impl Type {
     pub fn const_ref_to(ty: &Self) -> Self {
         Type::Ptr {
@@ -470,7 +473,7 @@ impl Type {
                 }
             }
             syn::Type::Path(ref path) => {
-                let generic_path = GenericPath::load(&path.path)?;
+                let generic_path = GenericPath::load(&path.path, path.qself.as_ref())?;
 
                 if generic_path.name() == "PhantomData" || generic_path.name() == "PhantomPinned" {
                     return Ok(None);
@@ -1000,6 +1003,34 @@ impl Type {
             Type::Primitive(ref p) => p.can_cmp_eq(),
             Type::Array(..) => false,
             Type::FuncPtr { .. } => true,
+        }
+    }
+
+    // Search and replace specific associated types with concrete types
+    pub fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        match self {
+            Type::Ptr { ty: ty_, .. } => {
+                ty_.resolve_assoc_types(resolver);
+            }
+            Type::Array(ty_, _) => {
+                ty_.resolve_assoc_types(resolver);
+            }
+            Type::FuncPtr { ret, args, .. } => {
+                ret.resolve_assoc_types(resolver);
+                for (_, ty_) in args {
+                    ty_.resolve_assoc_types(resolver);
+                }
+            }
+            Type::Path(generic_path) => {
+                if let Some(id) = generic_path.assoc() {
+                    if let Some(concrete) = resolver.get(id) {
+                        *self = concrete.clone();
+                    } else {
+                        warn!("{id:?}: Unknown associated type");
+                    }
+                }
+            }
+            Type::Primitive(_) => {}
         }
     }
 }

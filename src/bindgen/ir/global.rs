@@ -8,7 +8,9 @@ use crate::bindgen::cdecl;
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Path, Type};
+use crate::bindgen::ir::{
+    AnnotationSet, AssocTypeResolver, Cfg, Documentation, Item, ItemContainer, Path, Type,
+};
 use crate::bindgen::library::Library;
 use crate::bindgen::writer::{Source, SourceWriter};
 
@@ -105,6 +107,10 @@ impl Item for Static {
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ty.add_dependencies(library, out);
+    }
+
+    fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        self.ty.resolve_assoc_types(resolver);
     }
 }
 
