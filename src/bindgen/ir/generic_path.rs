@@ -7,8 +7,9 @@ use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use crate::bindgen::ir::{ConstExpr, Path, Type};
+use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::utilities::IterHelpers;
-use crate::bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::writer::SourceWriter;
 
 #[derive(Debug, Clone)]
 pub enum GenericParamType {
@@ -94,8 +95,9 @@ impl GenericParams {
             .collect()
     }
 
-    fn write_internal<F: Write>(
+    pub(crate) fn write_internal<F: Write, LB: LanguageBackend>(
         &self,
+        language_backend: &mut LB,
         config: &Config,
         out: &mut SourceWriter<F>,
         with_default: bool,
@@ -114,7 +116,7 @@ impl GenericParams {
                         }
                     }
                     GenericParamType::Const(ref ty) => {
-                        cdecl::write_field(out, ty, item.name.name(), config);
+                        cdecl::write_field(language_backend, out, ty, item.name.name(), config);
                         if with_default {
                             write!(out, " = 0");
                         }
@@ -126,8 +128,13 @@ impl GenericParams {
         }
     }
 
-    pub fn write_with_default<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.write_internal(config, out, true);
+    pub fn write_with_default<F: Write, LB: LanguageBackend>(
+        &self,
+        language_backend: &mut LB,
+        config: &Config,
+        out: &mut SourceWriter<F>,
+    ) {
+        self.write_internal(language_backend, config, out, true);
     }
 }
 
@@ -136,12 +143,6 @@ impl Deref for GenericParams {
 
     fn deref(&self) -> &[GenericParam] {
         &self.0
-    }
-}
-
-impl Source for GenericParams {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        self.write_internal(config, out, false);
     }
 }
 
@@ -181,15 +182,6 @@ impl GenericArgument {
         match *self {
             GenericArgument::Type(ref mut ty) => ty.rename_for_config(config, generic_params),
             GenericArgument::Const(ref mut expr) => expr.rename_for_config(config),
-        }
-    }
-}
-
-impl Source for GenericArgument {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        match *self {
-            GenericArgument::Type(ref ty) => ty.write(config, out),
-            GenericArgument::Const(ref expr) => expr.write(config, out),
         }
     }
 }

@@ -3,11 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::borrow::Cow;
-use std::io::Write;
 
 use syn::ext::IdentExt;
 
-use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -15,7 +13,6 @@ use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::utilities::IterHelpers;
-use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrimitiveType {
@@ -377,12 +374,6 @@ impl ConstExpr {
             ConstExpr::Value(_) => {}
         }
         self.clone()
-    }
-}
-
-impl Source for ConstExpr {
-    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        write!(out, "{}", self.as_str());
     }
 }
 
@@ -1001,17 +992,5 @@ impl Type {
             Type::Array(..) => false,
             Type::FuncPtr { .. } => true,
         }
-    }
-}
-
-impl Source for String {
-    fn write<F: Write>(&self, _config: &Config, out: &mut SourceWriter<F>) {
-        write!(out, "{}", self);
-    }
-}
-
-impl Source for Type {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        cdecl::write_type(out, self, config);
     }
 }
