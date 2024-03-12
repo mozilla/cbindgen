@@ -361,6 +361,7 @@ impl Builder {
                 Default::default(),
                 Default::default(),
                 true,
+                Default::default(),
             ));
         }
 
@@ -373,6 +374,8 @@ impl Builder {
         for x in &self.srcs {
             result.extend_with(&parser::parse_src(x, &self.config)?);
         }
+
+        let binding_crate_lib_name;
 
         if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
             let lockfile = self.lockfile.as_deref();
@@ -387,9 +390,14 @@ impl Builder {
                 /* existing_metadata = */ None,
             )?;
 
+            binding_crate_lib_name = cargo.binding_crate_lib_name().to_string();
+
             result.extend_with(&parser::parse_lib(cargo, &self.config)?);
         } else if let Some(cargo) = self.lib_cargo.clone() {
+            binding_crate_lib_name = cargo.binding_crate_lib_name().to_string();
             result.extend_with(&parser::parse_lib(cargo, &self.config)?);
+        } else {
+            binding_crate_lib_name = String::new()
         }
 
         result.source_files.extend_from_slice(self.srcs.as_slice());
@@ -405,6 +413,7 @@ impl Builder {
             result.typedefs,
             result.functions,
             result.source_files,
+            binding_crate_lib_name,
         )
         .generate()
     }

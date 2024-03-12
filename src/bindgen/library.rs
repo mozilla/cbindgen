@@ -27,6 +27,7 @@ pub struct Library {
     typedefs: ItemMap<Typedef>,
     functions: Vec<Function>,
     source_files: Vec<PathBuf>,
+    binding_crate_lib_name: String,
 }
 
 impl Library {
@@ -42,6 +43,7 @@ impl Library {
         typedefs: ItemMap<Typedef>,
         functions: Vec<Function>,
         source_files: Vec<PathBuf>,
+        binding_crate_lib_name: String,
     ) -> Library {
         Library {
             config,
@@ -54,6 +56,7 @@ impl Library {
             typedefs,
             functions,
             source_files,
+            binding_crate_lib_name,
         }
     }
 
@@ -141,6 +144,7 @@ impl Library {
             functions,
             self.source_files,
             false,
+            self.binding_crate_lib_name,
         ))
     }
 

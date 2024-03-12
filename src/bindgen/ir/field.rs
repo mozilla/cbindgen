@@ -1,12 +1,7 @@
-use std::io::Write;
-
 use syn::ext::IdentExt;
 
-use crate::bindgen::cdecl;
-use crate::bindgen::config::{Config, Language};
-use crate::bindgen::ir::{AnnotationSet, Cfg, ConditionWrite};
-use crate::bindgen::ir::{Documentation, Path, ToCondition, Type};
-use crate::bindgen::writer::{Source, SourceWriter};
+use crate::bindgen::ir::{AnnotationSet, Cfg};
+use crate::bindgen::ir::{Documentation, Path, Type};
 
 #[derive(Debug, Clone)]
 pub struct Field {
@@ -46,35 +41,5 @@ impl Field {
         } else {
             None
         })
-    }
-}
-
-impl Source for Field {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        // Cython doesn't support conditional fields.
-        let condition = self.cfg.to_condition(config);
-        if config.language != Language::Cython {
-            condition.write_before(config, out);
-        }
-
-        self.documentation.write(config, out);
-        cdecl::write_field(out, &self.ty, &self.name, config);
-        // Cython extern declarations don't manage layouts, layouts are defined entierly by the
-        // corresponding C code. So we can omit bitfield sizes which are not supported by Cython.
-        if config.language != Language::Cython {
-            if let Some(bitfield) = self.annotations.atom("bitfield") {
-                write!(out, ": {}", bitfield.unwrap_or_default());
-            }
-        }
-
-        if config.language != Language::Cython {
-            condition.write_after(config, out);
-            // FIXME(#634): `write_vertical_source_list` should support
-            // configuring list elements natively. For now we print a newline
-            // here to avoid printing `#endif;` with semicolon.
-            if condition.is_some() {
-                out.new_line();
-            }
-        }
     }
 }
