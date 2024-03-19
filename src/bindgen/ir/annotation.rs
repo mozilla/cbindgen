@@ -43,6 +43,7 @@ pub enum DeprecatedNoteKind {
     Function,
     Struct,
     Enum,
+    EnumVariant,
 }
 
 impl AnnotationSet {
@@ -76,6 +77,9 @@ impl AnnotationSet {
         if note.is_empty() {
             return Some(Cow::Borrowed(match kind {
                 DeprecatedNoteKind::Enum => config.enumeration.deprecated.as_deref()?,
+                DeprecatedNoteKind::EnumVariant => {
+                    config.enumeration.deprecated_variant.as_deref()?
+                }
                 DeprecatedNoteKind::Function => config.function.deprecated.as_deref()?,
                 DeprecatedNoteKind::Struct => config.structure.deprecated.as_deref()?,
             }));
@@ -83,6 +87,7 @@ impl AnnotationSet {
 
         let format = match kind {
             DeprecatedNoteKind::Enum => &config.enumeration.deprecated_with_note,
+            DeprecatedNoteKind::EnumVariant => &config.enumeration.deprecated_variant_with_note,
             DeprecatedNoteKind::Function => &config.function.deprecated_with_note,
             DeprecatedNoteKind::Struct => &config.structure.deprecated_with_note,
         }

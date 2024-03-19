@@ -586,6 +586,10 @@ pub struct EnumConfig {
     pub deprecated: Option<String>,
     /// The way to annotation this function as #[deprecated] with notes
     pub deprecated_with_note: Option<String>,
+    /// The way to annotate this enum variant as #[deprecated] without notes
+    pub deprecated_variant: Option<String>,
+    /// The way to annotate this enum variant as #[deprecated] with notes
+    pub deprecated_variant_with_note: Option<String>,
     /// Whether to generate destructors of tagged enums.
     pub derive_tagged_enum_destructor: bool,
     /// Whether to generate copy-constructors of tagged enums.
@@ -619,6 +623,8 @@ impl Default for EnumConfig {
             must_use: None,
             deprecated: None,
             deprecated_with_note: None,
+            deprecated_variant: None,
+            deprecated_variant_with_note: None,
             derive_tagged_enum_destructor: false,
             derive_tagged_enum_copy_constructor: false,
             derive_tagged_enum_copy_assignment: false,

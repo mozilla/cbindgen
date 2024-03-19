@@ -933,6 +933,23 @@ deprecated = "DEPRECATED_ENUM"
 # default: nothing is emitted for deprecated enums
 deprecated_with_notes = "DEPRECATED_ENUM_WITH_NOTE"
 
+# An optional string that should come after the name of any enum variant which has been
+# marked as `#[deprecated]` without note. For instance, "__attribute__((deprecated))"
+# would be a reasonable value if targeting gcc/clang. A more portable solution would
+# involve emitting the name of a macro which you define in a platform-specific
+# way. e.g. "DEPRECATED_ENUM_VARIANT"
+# default: nothing is emitted for deprecated enum variants
+deprecated_variant = "DEPRECATED_ENUM_VARIANT"
+
+# An optional string that should come after the name of any enum variant which has been
+# marked as `#[deprecated(note = "reason")]`. `{}` will be replaced with the
+# double-quoted string. For instance, "__attribute__((deprecated({})))" would be a
+# reasonable value if targeting gcc/clang. A more portable solution would involve
+# emitting the name of a macro which you define in a platform-specific
+# way. e.g. "DEPRECATED_ENUM_WITH_NOTE(note)"
+# default: nothing is emitted for deprecated enum variants
+deprecated_variant_with_notes = "DEPRECATED_ENUM_VARIANT_WITH_NOTE({})"
+
 # Whether enums with fields should generate destructors. This exists so that generic
 # enums can be properly instantiated with payloads that are C++ types with
 # destructors. This isn't necessary for structs because C++ has rules to

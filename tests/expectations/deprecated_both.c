@@ -1,9 +1,11 @@
 #define DEPRECATED_FUNC __attribute__((deprecated))
 #define DEPRECATED_STRUCT __attribute__((deprecated))
 #define DEPRECATED_ENUM __attribute__((deprecated))
+#define DEPRECATED_ENUM_VARIANT __attribute__((deprecated))
 #define DEPRECATED_FUNC_WITH_NOTE(...) __attribute__((deprecated(__VA_ARGS__)))
 #define DEPRECATED_STRUCT_WITH_NOTE(...) __attribute__((deprecated(__VA_ARGS__)))
 #define DEPRECATED_ENUM_WITH_NOTE(...) __attribute__((deprecated(__VA_ARGS__)))
+#define DEPRECATED_ENUM_VARIANT_WITH_NOTE(...) __attribute__((deprecated(__VA_ARGS__)))
 
 
 #include <stdarg.h>
@@ -21,6 +23,14 @@ enum DEPRECATED_ENUM_WITH_NOTE("This is a note") DeprecatedEnumWithNote {
 };
 typedef int32_t DeprecatedEnumWithNote;
 
+enum EnumWithDeprecatedVariants {
+  C = 0,
+  D DEPRECATED_ENUM_VARIANT = 1,
+  E DEPRECATED_ENUM_VARIANT_WITH_NOTE("This is a note") = 2,
+  F DEPRECATED_ENUM_VARIANT_WITH_NOTE("This is a note") = 3,
+};
+typedef int32_t EnumWithDeprecatedVariants;
+
 typedef struct DEPRECATED_STRUCT DeprecatedStruct {
   int32_t a;
 } DeprecatedStruct;
@@ -28,6 +38,35 @@ typedef struct DEPRECATED_STRUCT DeprecatedStruct {
 typedef struct DEPRECATED_STRUCT_WITH_NOTE("This is a note") DeprecatedStructWithNote {
   int32_t a;
 } DeprecatedStructWithNote;
+
+enum EnumWithDeprecatedStructVariants_Tag {
+  Foo,
+  Bar DEPRECATED_ENUM_VARIANT,
+  Baz DEPRECATED_ENUM_VARIANT_WITH_NOTE("This is a note"),
+};
+typedef uint8_t EnumWithDeprecatedStructVariants_Tag;
+
+typedef struct DEPRECATED_STRUCT Bar_Body {
+  EnumWithDeprecatedStructVariants_Tag tag;
+  uint8_t x;
+  int16_t y;
+} Bar_Body;
+
+typedef struct DEPRECATED_STRUCT_WITH_NOTE("This is a note") Baz_Body {
+  EnumWithDeprecatedStructVariants_Tag tag;
+  uint8_t x;
+  uint8_t y;
+} Baz_Body;
+
+typedef union EnumWithDeprecatedStructVariants {
+  EnumWithDeprecatedStructVariants_Tag tag;
+  struct {
+    EnumWithDeprecatedStructVariants_Tag foo_tag;
+    int16_t foo;
+  };
+  Bar_Body bar;
+  Baz_Body baz;
+} EnumWithDeprecatedStructVariants;
 
 DEPRECATED_FUNC void deprecated_without_note(void);
 
@@ -42,5 +81,7 @@ void deprecated_with_note_which_requires_to_be_escaped(void);
 
 void dummy(DeprecatedEnum a,
            DeprecatedEnumWithNote b,
-           struct DeprecatedStruct c,
-           struct DeprecatedStructWithNote d);
+           EnumWithDeprecatedVariants c,
+           struct DeprecatedStruct d,
+           struct DeprecatedStructWithNote e,
+           union EnumWithDeprecatedStructVariants f);

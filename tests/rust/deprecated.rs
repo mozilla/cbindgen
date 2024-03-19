@@ -30,6 +30,26 @@ pub enum DeprecatedEnumWithNote {
     B = 0,
 }
 
+#[repr(i32)]
+pub enum EnumWithDeprecatedVariants {
+    C = 0,
+    #[deprecated]
+    D = 1,
+    #[deprecated(note = "This is a note")]
+    E = 2,
+    #[deprecated(note = "This is a note", since = "1.0.0")]
+    F = 3,
+}
+
+#[repr(u8)]
+enum EnumWithDeprecatedStructVariants {
+    Foo(i16),
+    #[deprecated]
+    Bar { x: u8, y: i16 },
+    #[deprecated(note = "This is a note")]
+    Baz { x: u8, y: u8 },
+}
+
 #[repr(C)]
 #[deprecated]
 pub struct DeprecatedStruct {
@@ -46,7 +66,9 @@ pub struct DeprecatedStructWithNote {
 pub extern "C" fn dummy(
     a: DeprecatedEnum,
     b: DeprecatedEnumWithNote,
-    c: DeprecatedStruct,
-    d: DeprecatedStructWithNote,
+    c: EnumWithDeprecatedVariants,
+    d: DeprecatedStruct,
+    e: DeprecatedStructWithNote,
+    f: EnumWithDeprecatedStructVariants,
 ) -> void {
 }
