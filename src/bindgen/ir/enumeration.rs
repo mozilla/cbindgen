@@ -301,6 +301,15 @@ impl Source for EnumVariant {
         }
         self.documentation.write(config, out);
         write!(out, "{}", self.export_name);
+
+        if let Some(note) = self
+            .body
+            .annotations()
+            .deprecated_note(config, DeprecatedNoteKind::EnumVariant)
+        {
+            write!(out, " {}", note);
+        }
+
         if let Some(discriminant) = &self.discriminant {
             if config.language == Language::Cython {
                 // For extern Cython declarations the enumerator value is ignored,
