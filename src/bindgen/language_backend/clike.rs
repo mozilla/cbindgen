@@ -1,12 +1,12 @@
 use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, Function, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct,
-    ToCondition, Type, Typedef, Union,
+    Field, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
+    Typedef, Union,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{ListType, SourceWriter};
-use crate::bindgen::{cdecl, Bindings, Config, Language, Layout};
+use crate::bindgen::{cdecl, Bindings, Config, Language};
 use crate::bindgen::{DocumentationLength, DocumentationStyle};
 use std::io::Write;
 
@@ -780,6 +780,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
     }
 
     fn write_static<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Static) {
+        self.write_documentation(out, &s.documentation);
         out.write("extern ");
         if let Type::Ptr { is_const: true, .. } = s.ty {
         } else if !s.mutable {
@@ -787,135 +788,6 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         }
         cdecl::write_field(self, out, &s.ty, &s.export_name, self.config);
         out.write(";");
-    }
-
-    fn write_function<W: Write>(&mut self, out: &mut SourceWriter<W>, f: &Function) {
-        fn write_1<W: Write>(
-            func: &Function,
-            language_backend: &mut CLikeLanguageBackend,
-            out: &mut SourceWriter<W>,
-        ) {
-            let prefix = language_backend.config.function.prefix(&func.annotations);
-            let postfix = language_backend.config.function.postfix(&func.annotations);
-
-            let condition = func.cfg.to_condition(language_backend.config);
-            condition.write_before(language_backend.config, out);
-
-            language_backend.write_documentation(out, &func.documentation);
-
-            if func.extern_decl {
-                out.write("extern ");
-            } else {
-                if let Some(ref prefix) = prefix {
-                    write!(out, "{} ", prefix);
-                }
-                if func.annotations.must_use(language_backend.config) {
-                    if let Some(ref anno) = language_backend.config.function.must_use {
-                        write!(out, "{} ", anno);
-                    }
-                }
-                if let Some(note) = func
-                    .annotations
-                    .deprecated_note(language_backend.config, DeprecatedNoteKind::Function)
-                {
-                    write!(out, "{} ", note);
-                }
-            }
-            cdecl::write_func(
-                language_backend,
-                out,
-                func,
-                Layout::Horizontal,
-                language_backend.config,
-            );
-
-            if !func.extern_decl {
-                if let Some(ref postfix) = postfix {
-                    write!(out, " {}", postfix);
-                }
-            }
-
-            if let Some(ref swift_name_macro) = language_backend.config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name(language_backend.config) {
-                    write!(out, " {}({})", swift_name_macro, swift_name);
-                }
-            }
-
-            out.write(";");
-
-            condition.write_after(language_backend.config, out);
-        }
-
-        fn write_2<W: Write>(
-            func: &Function,
-            language_backend: &mut CLikeLanguageBackend,
-            out: &mut SourceWriter<W>,
-        ) {
-            let prefix = language_backend.config.function.prefix(&func.annotations);
-            let postfix = language_backend.config.function.postfix(&func.annotations);
-
-            let condition = func.cfg.to_condition(language_backend.config);
-
-            condition.write_before(language_backend.config, out);
-
-            language_backend.write_documentation(out, &func.documentation);
-
-            if func.extern_decl {
-                out.write("extern ");
-            } else {
-                if let Some(ref prefix) = prefix {
-                    write!(out, "{}", prefix);
-                    out.new_line();
-                }
-                if func.annotations.must_use(language_backend.config) {
-                    if let Some(ref anno) = language_backend.config.function.must_use {
-                        write!(out, "{}", anno);
-                        out.new_line();
-                    }
-                }
-                if let Some(note) = func
-                    .annotations
-                    .deprecated_note(language_backend.config, DeprecatedNoteKind::Function)
-                {
-                    write!(out, "{}", note);
-                    out.new_line();
-                }
-            }
-            cdecl::write_func(
-                language_backend,
-                out,
-                func,
-                Layout::Vertical,
-                language_backend.config,
-            );
-            if !func.extern_decl {
-                if let Some(ref postfix) = postfix {
-                    out.new_line();
-                    write!(out, "{}", postfix);
-                }
-            }
-
-            if let Some(ref swift_name_macro) = language_backend.config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name(language_backend.config) {
-                    write!(out, " {}({})", swift_name_macro, swift_name);
-                }
-            }
-
-            out.write(";");
-
-            condition.write_after(language_backend.config, out);
-        }
-
-        match self.config.function.args {
-            Layout::Horizontal => write_1(f, self, out),
-            Layout::Vertical => write_2(f, self, out),
-            Layout::Auto => {
-                let max_line_length = self.config.line_length;
-                if !out.try_write(|out| write_1(f, self, out), max_line_length) {
-                    write_2(f, self, out)
-                }
-            }
-        }
     }
 
     fn write_type<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Type) {
@@ -1116,7 +988,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
     }
 
     fn write_functions<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
-        // Override default method to close various blocs containing both globals and functions
+        // Override default method to close various blocks containing both globals and functions
         // these blocks are opened in [`write_globals`] that is also overridden
         if !b.functions.is_empty() || !b.globals.is_empty() {
             self.write_functions_default(out, b);

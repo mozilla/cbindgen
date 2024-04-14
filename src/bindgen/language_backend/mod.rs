@@ -1,9 +1,10 @@
 use crate::bindgen::ir::{
-    Documentation, Enum, Function, ItemContainer, Literal, OpaqueItem, Static, Struct, Type,
-    Typedef, Union,
+    cfg::ConditionWrite, DeprecatedNoteKind, Documentation, Enum, Function, ItemContainer, Literal,
+    OpaqueItem, Static, Struct, ToCondition, Type, Typedef, Union,
 };
 use crate::bindgen::writer::SourceWriter;
-use crate::bindgen::Bindings;
+use crate::bindgen::{cdecl, Bindings, Layout};
+use crate::Config;
 
 use std::io::Write;
 
@@ -13,7 +14,7 @@ mod cython;
 pub use clike::CLikeLanguageBackend;
 pub use cython::CythonLanguageBackend;
 
-pub trait LanguageBackend {
+pub trait LanguageBackend: Sized {
     fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>);
     fn close_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>);
     fn write_headers<W: Write>(&self, out: &mut SourceWriter<W>, package_version: &str);
@@ -24,40 +25,111 @@ pub trait LanguageBackend {
     fn write_opaque_item<W: Write>(&mut self, out: &mut SourceWriter<W>, o: &OpaqueItem);
     fn write_type_def<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Typedef);
     fn write_static<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Static);
-    fn write_function<W: Write>(&mut self, out: &mut SourceWriter<W>, f: &Function);
+
+    fn write_function<W: Write>(
+        &mut self,
+        config: &Config,
+        out: &mut SourceWriter<W>,
+        f: &Function,
+    ) {
+        match config.function.args {
+            Layout::Horizontal => {
+                self.write_function_with_layout(config, out, f, Layout::Horizontal)
+            }
+            Layout::Vertical => self.write_function_with_layout(config, out, f, Layout::Vertical),
+            Layout::Auto => {
+                let max_line_length = config.line_length;
+                if !out.try_write(
+                    |out| self.write_function_with_layout(config, out, f, Layout::Horizontal),
+                    max_line_length,
+                ) {
+                    self.write_function_with_layout(config, out, f, Layout::Vertical);
+                }
+            }
+        }
+    }
+
+    fn write_function_with_layout<W: Write>(
+        &mut self,
+        config: &Config,
+        out: &mut SourceWriter<W>,
+        func: &Function,
+        layout: Layout,
+    ) {
+        let prefix = config.function.prefix(&func.annotations);
+        let postfix = config.function.postfix(&func.annotations);
+
+        let condition = func.cfg.to_condition(config);
+        condition.write_before(config, out);
+
+        self.write_documentation(out, &func.documentation);
+
+        fn write_space<W: Write>(layout: Layout, out: &mut SourceWriter<W>) {
+            if layout == Layout::Vertical {
+                out.new_line();
+            } else {
+                out.write(" ")
+            }
+        }
+        if func.extern_decl {
+            out.write("extern ");
+        } else {
+            if let Some(ref prefix) = prefix {
+                write!(out, "{}", prefix);
+                write_space(layout, out);
+            }
+            if func.annotations.must_use(config) {
+                if let Some(ref anno) = config.function.must_use {
+                    write!(out, "{}", anno);
+                    write_space(layout, out);
+                }
+            }
+            if let Some(note) = func
+                .annotations
+                .deprecated_note(config, DeprecatedNoteKind::Function)
+            {
+                write!(out, "{}", note);
+                write_space(layout, out);
+            }
+        }
+        cdecl::write_func(self, out, func, layout, config);
+
+        if !func.extern_decl {
+            if let Some(ref postfix) = postfix {
+                write_space(layout, out);
+                write!(out, "{}", postfix);
+            }
+        }
+
+        if let Some(ref swift_name_macro) = config.function.swift_name_macro {
+            if let Some(swift_name) = func.swift_name(config) {
+                // XXX Should this account for `layout`?
+                write!(out, " {}({})", swift_name_macro, swift_name);
+            }
+        }
+
+        out.write(";");
+        condition.write_after(config, out);
+    }
+
     fn write_type<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Type);
     fn write_documentation<W: Write>(&mut self, out: &mut SourceWriter<W>, d: &Documentation);
     fn write_literal<W: Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal);
 
-    fn write_bindings<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings)
-    where
-        Self: Sized,
-    {
+    fn write_bindings<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         self.write_headers(out, &b.package_version);
-
         self.open_namespaces(out);
-
         self.write_primitive_constants(out, b);
-
         self.write_items(out, b);
-
         self.write_non_primitive_constants(out, b);
-
         self.write_globals(out, b);
-
         self.write_functions(out, b);
-
         self.close_namespaces(out);
-
         self.write_footers(out);
-
         self.write_trailer(out, b);
     }
 
-    fn write_primitive_constants<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings)
-    where
-        Self: Sized,
-    {
+    fn write_primitive_constants<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         for constant in &b.constants {
             if constant.uses_only_primitive_types() {
                 out.new_line_if_not_start();
@@ -92,10 +164,7 @@ pub trait LanguageBackend {
         }
     }
 
-    fn write_non_primitive_constants<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings)
-    where
-        Self: Sized,
-    {
+    fn write_non_primitive_constants<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         for constant in &b.constants {
             if !constant.uses_only_primitive_types() {
                 out.new_line_if_not_start();
@@ -124,7 +193,7 @@ pub trait LanguageBackend {
     fn write_functions_default<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         for function in &b.functions {
             out.new_line_if_not_start();
-            self.write_function(out, function);
+            self.write_function(&b.config, out, function);
             out.new_line();
         }
     }
