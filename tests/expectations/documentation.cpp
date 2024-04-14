@@ -6,6 +6,9 @@
 
 extern "C" {
 
+/// Some docs.
+extern const uint32_t FOO;
+
 /// The root of all evil.
 ///
 /// But at least it contains some more documentation as someone would expect
