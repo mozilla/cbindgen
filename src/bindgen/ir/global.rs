@@ -110,6 +110,7 @@ impl Item for Static {
 
 impl Source for Static {
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        self.documentation.write(config, out);
         out.write("extern ");
         if let Type::Ptr { is_const: true, .. } = self.ty {
         } else if !self.mutable {
