@@ -180,6 +180,15 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn no_export_item<S: AsRef<str>>(mut self, item_name: S) -> Builder {
+        self.config
+            .export
+            .no_export
+            .push(String::from(item_name.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
     pub fn rename_item<S: AsRef<str>>(mut self, from: S, to: S) -> Builder {
         self.config
             .export

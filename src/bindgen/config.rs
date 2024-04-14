@@ -327,6 +327,8 @@ pub struct ExportConfig {
     pub include: Vec<String>,
     /// A list of items to not include in the generated bindings
     pub exclude: Vec<String>,
+    /// A list of items to not export in the generated bindings
+    pub no_export: Vec<String>,
     /// Table of name conversions to apply to item names
     pub rename: HashMap<String, String>,
     /// Table of raw strings to prepend to the body of items.
