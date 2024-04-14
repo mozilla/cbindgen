@@ -607,6 +607,8 @@ pub struct EnumConfig {
     /// Whether to generate empty, private default-constructors for tagged
     /// enums.
     pub private_default_tagged_enum_constructor: bool,
+    /// Whether to only output a single tag enum for generic tagged enums.
+    pub merge_generic_tags: bool,
 }
 
 impl Default for EnumConfig {
@@ -631,6 +633,7 @@ impl Default for EnumConfig {
             derive_ostream: false,
             enum_class: true,
             private_default_tagged_enum_constructor: false,
+            merge_generic_tags: false,
         }
     }
 }
