@@ -23,10 +23,7 @@ impl<'a> CythonLanguageBackend<'a> {
         if let Some(discriminant) = &u.discriminant {
             // For extern Cython declarations the enumerator value is ignored,
             // but still useful as documentation, so we write it as a comment.
-            out.write(" #");
-
-            out.write(" = ");
-
+            out.write(" # = ");
             self.write_literal(out, discriminant);
         }
         out.write(",");
@@ -41,9 +38,6 @@ impl<'a> CythonLanguageBackend<'a> {
 
         // Cython extern declarations don't manage layouts, layouts are defined entierly by the
         // corresponding C code. So we can omit bitfield sizes which are not supported by Cython.
-        // if let Some(bitfield) = f.annotations.atom("bitfield") {
-        //
-        // }
     }
 }
 

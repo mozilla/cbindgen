@@ -111,6 +111,231 @@ impl<'a> CLikeLanguageBackend<'a> {
             out.new_line();
         }
     }
+
+    fn generate_typedef(&self) -> bool {
+        self.config.language == Language::C && self.config.style.generate_typedef()
+    }
+
+    fn write_derived_cpp_ops<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Struct) {
+        let mut wrote_start_newline = false;
+
+        if self.config.structure.derive_constructor(&s.annotations) && !s.fields.is_empty() {
+            if !wrote_start_newline {
+                wrote_start_newline = true;
+                out.new_line();
+            }
+
+            out.new_line();
+
+            let renamed_fields: Vec<_> = s
+                .fields
+                .iter()
+                .map(|field| {
+                    self.config
+                        .function
+                        .rename_args
+                        .apply(&field.name, IdentifierType::FunctionArg)
+                        .into_owned()
+                })
+                .collect();
+            write!(out, "{}(", s.export_name());
+            let vec: Vec<_> = s
+                .fields
+                .iter()
+                .zip(&renamed_fields)
+                .map(|(field, renamed)| {
+                    Field::from_name_and_type(
+                        // const-ref args to constructor
+                        format!("const& {}", renamed),
+                        field.ty.clone(),
+                    )
+                })
+                .collect();
+            out.write_vertical_source_list(self, &vec[..], ListType::Join(","), Self::write_field);
+            write!(out, ")");
+            out.new_line();
+            write!(out, "  : ");
+            let vec: Vec<_> = s
+                .fields
+                .iter()
+                .zip(&renamed_fields)
+                .map(|(field, renamed)| format!("{}({})", field.name, renamed))
+                .collect();
+            out.write_vertical_source_list(self, &vec[..], ListType::Join(","), |_, out, s| {
+                write!(out, "{}", s)
+            });
+            out.new_line();
+            write!(out, "{{}}");
+            out.new_line();
+        }
+
+        let other = self
+            .config
+            .function
+            .rename_args
+            .apply("other", IdentifierType::FunctionArg);
+
+        if s.annotations
+            .bool("internal-derive-bitflags")
+            .unwrap_or(false)
+        {
+            assert_eq!(s.fields.len(), 1);
+            let bits = &s.fields[0].name;
+            if !wrote_start_newline {
+                wrote_start_newline = true;
+                out.new_line();
+            }
+            let constexpr_prefix = if self.config.constant.allow_constexpr {
+                "constexpr "
+            } else {
+                ""
+            };
+
+            out.new_line();
+            write!(out, "{}explicit operator bool() const", constexpr_prefix);
+            out.open_brace();
+            write!(out, "return !!{bits};");
+            out.close_brace(false);
+
+            out.new_line();
+            write!(
+                out,
+                "{}{} operator~() const",
+                constexpr_prefix,
+                s.export_name()
+            );
+            out.open_brace();
+            write!(
+                out,
+                "return {} {{ static_cast<decltype({bits})>(~{bits}) }};",
+                s.export_name()
+            );
+            out.close_brace(false);
+            s.emit_bitflags_binop(constexpr_prefix, '|', &other, out);
+            s.emit_bitflags_binop(constexpr_prefix, '&', &other, out);
+            s.emit_bitflags_binop(constexpr_prefix, '^', &other, out);
+        }
+
+        // Generate a serializer function that allows dumping this struct
+        // to an std::ostream. It's defined as a friend function inside the
+        // struct definition, and doesn't need the `inline` keyword even
+        // though it's implemented right in the generated header file.
+        if self.config.structure.derive_ostream(&s.annotations) {
+            if !wrote_start_newline {
+                wrote_start_newline = true;
+                out.new_line();
+            }
+
+            out.new_line();
+            let stream = self
+                .config
+                .function
+                .rename_args
+                .apply("stream", IdentifierType::FunctionArg);
+            let instance = self
+                .config
+                .function
+                .rename_args
+                .apply("instance", IdentifierType::FunctionArg);
+            write!(
+                out,
+                "friend std::ostream& operator<<(std::ostream& {}, const {}& {})",
+                stream,
+                s.export_name(),
+                instance,
+            );
+            out.open_brace();
+            write!(out, "return {} << \"{{ \"", stream);
+            let vec: Vec<_> = s
+                .fields
+                .iter()
+                .map(|x| format!(" << \"{}=\" << {}.{}", x.name, instance, x.name))
+                .collect();
+            out.write_vertical_source_list(
+                self,
+                &vec[..],
+                ListType::Join(" << \", \""),
+                |_, out, s| write!(out, "{}", s),
+            );
+            out.write(" << \" }\";");
+            out.close_brace(false);
+        }
+
+        let skip_fields = s.has_tag_field as usize;
+
+        macro_rules! emit_op {
+            ($op_name:expr, $op:expr, $conjuc:expr) => {{
+                if !wrote_start_newline {
+                    #[allow(unused_assignments)]
+                    {
+                        wrote_start_newline = true;
+                    }
+                    out.new_line();
+                }
+
+                out.new_line();
+
+                if let Some(Some(attrs)) = s.annotations.atom(concat!($op_name, "-attributes")) {
+                    write!(out, "{} ", attrs);
+                }
+
+                write!(
+                    out,
+                    "bool operator{}(const {}& {}) const",
+                    $op,
+                    s.export_name(),
+                    other
+                );
+                out.open_brace();
+                out.write("return ");
+                let vec: Vec<_> = s
+                    .fields
+                    .iter()
+                    .skip(skip_fields)
+                    .map(|field| format!("{} {} {}.{}", field.name, $op, other, field.name))
+                    .collect();
+                out.write_vertical_source_list(
+                    self,
+                    &vec[..],
+                    ListType::Join(&format!(" {}", $conjuc)),
+                    |_, out, s| write!(out, "{}", s),
+                );
+                out.write(";");
+                out.close_brace(false);
+            }};
+        }
+
+        if self.config.structure.derive_eq(&s.annotations) && s.can_derive_eq() {
+            emit_op!("eq", "==", "&&");
+        }
+        if self.config.structure.derive_neq(&s.annotations) && s.can_derive_eq() {
+            emit_op!("neq", "!=", "||");
+        }
+        if self.config.structure.derive_lt(&s.annotations)
+            && s.fields.len() == 1
+            && s.fields[0].ty.can_cmp_order()
+        {
+            emit_op!("lt", "<", "&&");
+        }
+        if self.config.structure.derive_lte(&s.annotations)
+            && s.fields.len() == 1
+            && s.fields[0].ty.can_cmp_order()
+        {
+            emit_op!("lte", "<=", "&&");
+        }
+        if self.config.structure.derive_gt(&s.annotations)
+            && s.fields.len() == 1
+            && s.fields[0].ty.can_cmp_order()
+        {
+            emit_op!("gt", ">", "&&");
+        }
+        if self.config.structure.derive_gte(&s.annotations)
+            && s.fields.len() == 1
+            && s.fields[0].ty.can_cmp_order()
+        {
+            emit_op!("gte", ">=", "&&");
+        }
+    }
 }
 
 impl LanguageBackend for CLikeLanguageBackend<'_> {
@@ -303,7 +528,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             }
 
             // Close the struct or union opened either at (*) or at (**).
-            if self.config.language == Language::C && self.config.style.generate_typedef() {
+            if self.generate_typedef() {
                 out.close_brace(false);
                 write!(out, " {};", e.export_name);
             } else {
@@ -349,10 +574,8 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         //   typedef struct {
         // C with Both as style:
         //   typedef struct Name {
-        match self.config.language {
-            Language::C if self.config.style.generate_typedef() => out.write("typedef "),
-            Language::C | Language::Cxx => {}
-            _ => unreachable!(),
+        if self.generate_typedef() {
+            out.write("typedef ");
         }
 
         out.write("struct");
@@ -400,230 +623,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         out.write_vertical_source_list(self, &s.fields, ListType::Cap(";"), Self::write_field);
 
         if self.config.language == Language::Cxx {
-            let mut wrote_start_newline = false;
-
-            if self.config.structure.derive_constructor(&s.annotations) && !s.fields.is_empty() {
-                if !wrote_start_newline {
-                    wrote_start_newline = true;
-                    out.new_line();
-                }
-
-                out.new_line();
-
-                let renamed_fields: Vec<_> = s
-                    .fields
-                    .iter()
-                    .map(|field| {
-                        self.config
-                            .function
-                            .rename_args
-                            .apply(&field.name, IdentifierType::FunctionArg)
-                            .into_owned()
-                    })
-                    .collect();
-                write!(out, "{}(", s.export_name());
-                let vec: Vec<_> = s
-                    .fields
-                    .iter()
-                    .zip(&renamed_fields)
-                    .map(|(field, renamed)| {
-                        Field::from_name_and_type(
-                            // const-ref args to constructor
-                            format!("const& {}", renamed),
-                            field.ty.clone(),
-                        )
-                    })
-                    .collect();
-                out.write_vertical_source_list(
-                    self,
-                    &vec[..],
-                    ListType::Join(","),
-                    Self::write_field,
-                );
-                write!(out, ")");
-                out.new_line();
-                write!(out, "  : ");
-                let vec: Vec<_> = s
-                    .fields
-                    .iter()
-                    .zip(&renamed_fields)
-                    .map(|(field, renamed)| format!("{}({})", field.name, renamed))
-                    .collect();
-                out.write_vertical_source_list(self, &vec[..], ListType::Join(","), |_, out, s| {
-                    write!(out, "{}", s)
-                });
-                out.new_line();
-                write!(out, "{{}}");
-                out.new_line();
-            }
-
-            let other = self
-                .config
-                .function
-                .rename_args
-                .apply("other", IdentifierType::FunctionArg);
-
-            if s.annotations
-                .bool("internal-derive-bitflags")
-                .unwrap_or(false)
-            {
-                assert_eq!(s.fields.len(), 1);
-                let bits = &s.fields[0].name;
-                if !wrote_start_newline {
-                    wrote_start_newline = true;
-                    out.new_line();
-                }
-                let constexpr_prefix = if self.config.constant.allow_constexpr {
-                    "constexpr "
-                } else {
-                    ""
-                };
-
-                out.new_line();
-                write!(out, "{}explicit operator bool() const", constexpr_prefix);
-                out.open_brace();
-                write!(out, "return !!{bits};");
-                out.close_brace(false);
-
-                out.new_line();
-                write!(
-                    out,
-                    "{}{} operator~() const",
-                    constexpr_prefix,
-                    s.export_name()
-                );
-                out.open_brace();
-                write!(
-                    out,
-                    "return {} {{ static_cast<decltype({bits})>(~{bits}) }};",
-                    s.export_name()
-                );
-                out.close_brace(false);
-                s.emit_bitflags_binop(constexpr_prefix, '|', &other, out);
-                s.emit_bitflags_binop(constexpr_prefix, '&', &other, out);
-                s.emit_bitflags_binop(constexpr_prefix, '^', &other, out);
-            }
-
-            // Generate a serializer function that allows dumping this struct
-            // to an std::ostream. It's defined as a friend function inside the
-            // struct definition, and doesn't need the `inline` keyword even
-            // though it's implemented right in the generated header file.
-            if self.config.structure.derive_ostream(&s.annotations) {
-                if !wrote_start_newline {
-                    wrote_start_newline = true;
-                    out.new_line();
-                }
-
-                out.new_line();
-                let stream = self
-                    .config
-                    .function
-                    .rename_args
-                    .apply("stream", IdentifierType::FunctionArg);
-                let instance = self
-                    .config
-                    .function
-                    .rename_args
-                    .apply("instance", IdentifierType::FunctionArg);
-                write!(
-                    out,
-                    "friend std::ostream& operator<<(std::ostream& {}, const {}& {})",
-                    stream,
-                    s.export_name(),
-                    instance,
-                );
-                out.open_brace();
-                write!(out, "return {} << \"{{ \"", stream);
-                let vec: Vec<_> = s
-                    .fields
-                    .iter()
-                    .map(|x| format!(" << \"{}=\" << {}.{}", x.name, instance, x.name))
-                    .collect();
-                out.write_vertical_source_list(
-                    self,
-                    &vec[..],
-                    ListType::Join(" << \", \""),
-                    |_, out, s| write!(out, "{}", s),
-                );
-                out.write(" << \" }\";");
-                out.close_brace(false);
-            }
-
-            let skip_fields = s.has_tag_field as usize;
-
-            macro_rules! emit_op {
-                ($op_name:expr, $op:expr, $conjuc:expr) => {{
-                    if !wrote_start_newline {
-                        #[allow(unused_assignments)]
-                        {
-                            wrote_start_newline = true;
-                        }
-                        out.new_line();
-                    }
-
-                    out.new_line();
-
-                    if let Some(Some(attrs)) = s.annotations.atom(concat!($op_name, "-attributes"))
-                    {
-                        write!(out, "{} ", attrs);
-                    }
-
-                    write!(
-                        out,
-                        "bool operator{}(const {}& {}) const",
-                        $op,
-                        s.export_name(),
-                        other
-                    );
-                    out.open_brace();
-                    out.write("return ");
-                    let vec: Vec<_> = s
-                        .fields
-                        .iter()
-                        .skip(skip_fields)
-                        .map(|field| format!("{} {} {}.{}", field.name, $op, other, field.name))
-                        .collect();
-                    out.write_vertical_source_list(
-                        self,
-                        &vec[..],
-                        ListType::Join(&format!(" {}", $conjuc)),
-                        |_, out, s| write!(out, "{}", s),
-                    );
-                    out.write(";");
-                    out.close_brace(false);
-                }};
-            }
-
-            if self.config.structure.derive_eq(&s.annotations) && s.can_derive_eq() {
-                emit_op!("eq", "==", "&&");
-            }
-            if self.config.structure.derive_neq(&s.annotations) && s.can_derive_eq() {
-                emit_op!("neq", "!=", "||");
-            }
-            if self.config.structure.derive_lt(&s.annotations)
-                && s.fields.len() == 1
-                && s.fields[0].ty.can_cmp_order()
-            {
-                emit_op!("lt", "<", "&&");
-            }
-            if self.config.structure.derive_lte(&s.annotations)
-                && s.fields.len() == 1
-                && s.fields[0].ty.can_cmp_order()
-            {
-                emit_op!("lte", "<=", "&&");
-            }
-            if self.config.structure.derive_gt(&s.annotations)
-                && s.fields.len() == 1
-                && s.fields[0].ty.can_cmp_order()
-            {
-                emit_op!("gt", ">", "&&");
-            }
-            if self.config.structure.derive_gte(&s.annotations)
-                && s.fields.len() == 1
-                && s.fields[0].ty.can_cmp_order()
-            {
-                emit_op!("gte", ">=", "&&");
-            }
+            self.write_derived_cpp_ops(out, s);
         }
 
         // Emit the post_body section, if relevant
@@ -642,7 +642,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             }
         }
 
-        if self.config.language == Language::C && self.config.style.generate_typedef() {
+        if self.generate_typedef() {
             out.close_brace(false);
             write!(out, " {};", s.export_name());
         } else {
@@ -672,10 +672,8 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         //   typedef union {
         // C with Both as style:
         //   typedef union Name {
-        match self.config.language {
-            Language::C if self.config.style.generate_typedef() => out.write("typedef "),
-            Language::C | Language::Cxx => {}
-            _ => unreachable!(),
+        if self.generate_typedef() {
+            out.write("typedef ");
         }
 
         out.write("union");
@@ -715,7 +713,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             out.write_raw_block(body);
         }
 
-        if self.config.language == Language::C && self.config.style.generate_typedef() {
+        if self.generate_typedef() {
             out.close_brace(false);
             write!(out, " {};", u.export_name);
         } else {
@@ -733,19 +731,15 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         o.generic_params.write_with_default(self, self.config, out);
 
-        match self.config.language {
-            Language::C if self.config.style.generate_typedef() => {
-                write!(
-                    out,
-                    "typedef struct {} {};",
-                    o.export_name(),
-                    o.export_name()
-                );
-            }
-            Language::C | Language::Cxx => {
-                write!(out, "struct {};", o.export_name());
-            }
-            _ => unreachable!(),
+        if self.generate_typedef() {
+            write!(
+                out,
+                "typedef struct {} {};",
+                o.export_name(),
+                o.export_name()
+            );
+        } else {
+            write!(out, "struct {};", o.export_name());
         }
 
         condition.write_after(self.config, out);
@@ -759,19 +753,15 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_generic_param(out, &t.generic_params);
 
-        match self.config.language {
-            Language::Cxx => {
-                write!(out, "using {} = ", t.export_name());
-                self.write_type(out, &t.aliased);
-            }
-            Language::C => {
-                write!(out, "{} ", self.config.language.typedef());
-                self.write_field(
-                    out,
-                    &Field::from_name_and_type(t.export_name().to_owned(), t.aliased.clone()),
-                )
-            }
-            _ => unreachable!(),
+        if self.config.language == Language::Cxx {
+            write!(out, "using {} = ", t.export_name());
+            self.write_type(out, &t.aliased);
+        } else {
+            write!(out, "{} ", self.config.language.typedef());
+            self.write_field(
+                out,
+                &Field::from_name_and_type(t.export_name().to_owned(), t.aliased.clone()),
+            );
         }
 
         out.write(";");
@@ -862,11 +852,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
     fn write_literal<W: Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal) {
         match l {
-            Literal::Expr(v) => match (&**v, self.config.language) {
-                ("true", Language::Cython) => write!(out, "True"),
-                ("false", Language::Cython) => write!(out, "False"),
-                (v, _) => write!(out, "{}", v),
-            },
+            Literal::Expr(v) => write!(out, "{}", v),
             Literal::Path {
                 ref associated_to,
                 ref name,
@@ -875,15 +861,12 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     if let Some(known) = to_known_assoc_constant(path, name) {
                         return write!(out, "{}", known);
                     }
-                    let path_separator = match self.config.language {
-                        Language::Cython | Language::C => "_",
-                        Language::Cxx => {
-                            if self.config.structure.associated_constants_in_body {
-                                "::"
-                            } else {
-                                "_"
-                            }
-                        }
+                    let path_separator = if self.config.language == Language::C {
+                        "_"
+                    } else if self.config.structure.associated_constants_in_body {
+                        "::"
+                    } else {
+                        "_"
                     };
                     write!(out, "{}{}", export_name, path_separator)
                 }
@@ -923,10 +906,10 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 fields,
                 path,
             } => {
-                match self.config.language {
-                    Language::C => write!(out, "({})", export_name),
-                    Language::Cxx => write!(out, "{}", export_name),
-                    _ => unreachable!(),
+                if self.config.language == Language::C {
+                    write!(out, "({})", export_name);
+                } else {
+                    write!(out, "{}", export_name);
                 }
 
                 write!(out, "{{ ");
@@ -937,13 +920,14 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     if let Some(lit) = fields.get(ordered_key) {
                         if !is_first_field {
                             write!(out, ", ");
-                        } else {
-                            is_first_field = false;
                         }
-                        match self.config.language {
-                            Language::Cxx => write!(out, "/* .{} = */ ", ordered_key),
-                            Language::C => write!(out, ".{} = ", ordered_key),
-                            _ => unreachable!(),
+                        is_first_field = false;
+                        if self.config.language == Language::Cxx {
+                            // TODO: Some C++ versions (c++20?) now support designated
+                            // initializers, consider generating them.
+                            write!(out, "/* .{} = */ ", ordered_key);
+                        } else {
+                            write!(out, ".{} = ", ordered_key);
                         }
                         self.write_literal(out, lit);
                     }
