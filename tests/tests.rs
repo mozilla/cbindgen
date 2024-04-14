@@ -56,7 +56,8 @@ fn run_cbindgen(
         }
         Language::Cython => {
             command.arg("--lang").arg("cython");
-        }
+        },
+        Language::Custom(_) => unreachable!(),
     }
 
     if package_version {
@@ -121,6 +122,7 @@ fn compile(
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
         Language::Cython => env::var("CYTHON").unwrap_or_else(|_| "cython".to_owned()),
+        Language::Custom(_) => unreachable!(),
     };
 
     let file_name = cbindgen_output
@@ -182,7 +184,8 @@ fn compile(
             command.arg("-3");
             command.arg("-o").arg(&object);
             command.arg(cbindgen_output);
-        }
+        },
+        Language::Custom(_) => unreachable!(),
     }
 
     println!("Running: {:?}", command);
@@ -228,6 +231,7 @@ fn run_compile_test(
         // is extension-sensitive and won't work on them, so we use implementation files (`.pyx`)
         // in the test suite.
         Language::Cython => ".pyx",
+        Language::Custom(_) => unreachable!(),
     };
 
     let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();
@@ -250,7 +254,7 @@ fn run_compile_test(
     let (cbindgen_output, depfile_contents) = run_cbindgen(
         path,
         output_file,
-        language,
+        language.clone(),
         cpp_compat,
         style,
         generate_depfile,
@@ -298,7 +302,7 @@ fn run_compile_test(
             &generated_file,
             &tests_path,
             tmp_dir,
-            language,
+            language.clone(),
             style,
             skip_warning_as_error,
         );

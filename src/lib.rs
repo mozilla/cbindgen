@@ -14,7 +14,7 @@ extern crate quote;
 extern crate syn;
 extern crate toml;
 
-mod bindgen;
+pub mod bindgen;
 
 pub use crate::bindgen::*;
 
