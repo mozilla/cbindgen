@@ -134,7 +134,7 @@ impl FromStr for Braces {
 deserialize_enum_str!(Braces);
 
 /// A type of layout to use when generating long lines of code.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Layout {
     Horizontal,
     Vertical,

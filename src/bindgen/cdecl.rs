@@ -184,7 +184,7 @@ impl CDecl {
                 });
                 self.declarators.push(CDeclarator::Func {
                     args,
-                    layout: config.function.args.clone(),
+                    layout: config.function.args,
                     never_return: *never_return,
                 });
                 self.build_type(ret, false, config);
