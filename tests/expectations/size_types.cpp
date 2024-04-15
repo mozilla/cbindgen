@@ -21,4 +21,4 @@ extern "C" {
 
 void root(Usize, Isize, UE, IE);
 
-} // extern "C"
+}  // extern "C"

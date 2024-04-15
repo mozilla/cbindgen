@@ -18,5 +18,5 @@ void root(void);
 void trunk(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

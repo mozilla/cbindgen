@@ -20,4 +20,4 @@ extern "C" {
 ///Should break to next paragraph
 void root();
 
-} // extern "C"
+}  // extern "C"

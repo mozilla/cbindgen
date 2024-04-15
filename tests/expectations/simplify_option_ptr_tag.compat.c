@@ -33,5 +33,5 @@ void root(const struct Opaque *a,
           void (*f)(const struct Opaque*));
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

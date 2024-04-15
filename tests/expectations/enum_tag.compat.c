@@ -316,8 +316,8 @@ void root(struct Opaque *opaque,
           struct R r);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus
 
 #if 0
 ''' '

@@ -44,8 +44,8 @@ extern "C" {
 void root(struct TypeInfo x);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus
 
 #if 0
 ''' '

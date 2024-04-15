@@ -28,5 +28,5 @@ extern "C" {
 void root(struct ABC a1, struct BAC a2);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

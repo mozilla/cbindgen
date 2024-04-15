@@ -22,4 +22,4 @@ extern "C" {
 
 void root(FontWeight w);
 
-} // extern "C"
+}  // extern "C"

@@ -18,5 +18,5 @@ extern "C" {
 void my_function(MyCallback a, MyOtherCallback b);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

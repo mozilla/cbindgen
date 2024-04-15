@@ -16,4 +16,4 @@ extern "C" {
 
 void my_function(MyCallback a, MyOtherCallback b);
 
-} // extern "C"
+}  // extern "C"

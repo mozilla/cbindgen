@@ -22,4 +22,4 @@ void loop_forever() NO_RETURN_ATTR;
 
 uint8_t normal_return(Example arg, void (*other)(uint8_t) NO_RETURN_ATTR);
 
-} // extern "C"
+}  // extern "C"

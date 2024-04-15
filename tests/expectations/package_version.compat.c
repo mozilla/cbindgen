@@ -16,5 +16,5 @@ extern "C" {
 void doit(const Foo*);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

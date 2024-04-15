@@ -28,5 +28,5 @@ Outer_1 one(void);
 Outer_2 two(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

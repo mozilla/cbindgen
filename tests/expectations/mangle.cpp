@@ -20,4 +20,4 @@ extern "C" {
 
 void root(Boo x, Bar y);
 
-} // extern "C"
+}  // extern "C"

@@ -100,5 +100,5 @@ extern "C" {
 void foo(H h, I i, J j, K k);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

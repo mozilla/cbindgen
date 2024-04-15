@@ -29,4 +29,4 @@ extern const uint32_t FOO;
 ///
 void root();
 
-} // extern "C"
+}  // extern "C"

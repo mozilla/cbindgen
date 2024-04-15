@@ -89,4 +89,4 @@ void dummy(DeprecatedEnum a,
            DeprecatedStructWithNote e,
            EnumWithDeprecatedStructVariants f);
 
-} // extern "C"
+}  // extern "C"

@@ -12,4 +12,4 @@ void pointer_test(const uint64_t *a);
 
 void print_from_rust();
 
-} // extern "C"
+}  // extern "C"

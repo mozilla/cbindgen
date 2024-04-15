@@ -55,4 +55,4 @@ void nullable_const_ptr(const Pointers<uint64_t> *arg);
 
 void nullable_mut_ptr(Pointers<uint64_t> *arg);
 
-} // extern "C"
+}  // extern "C"

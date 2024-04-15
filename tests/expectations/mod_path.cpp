@@ -14,4 +14,4 @@ extern "C" {
 
 void export_me(ExportMe *val);
 
-} // extern "C"
+}  // extern "C"

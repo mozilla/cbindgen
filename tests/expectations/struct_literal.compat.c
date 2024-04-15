@@ -25,5 +25,5 @@ extern "C" {
 void root(Foo x, Bar bar);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

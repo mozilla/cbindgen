@@ -18,4 +18,4 @@ void destroy_parens_parser(Parser<40, 41> *p);
 
 void init_braces_parser(Parser<123, 125> *p, uint8_t *buf, uintptr_t len);
 
-} // extern "C"
+}  // extern "C"

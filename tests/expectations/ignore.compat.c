@@ -10,5 +10,5 @@ extern "C" {
 void no_ignore_root(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

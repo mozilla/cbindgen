@@ -23,4 +23,4 @@ extern "C" {
 
 void root(Foo x, Bar bar);
 
-} // extern "C"
+}  // extern "C"

@@ -21,5 +21,5 @@ extern "C" {
 void root(struct Book *a);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

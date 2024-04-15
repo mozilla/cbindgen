@@ -149,4 +149,4 @@ extern "C" {
 
 void root(A x, B y, C z, F f, H h);
 
-} // extern "C"
+}  // extern "C"

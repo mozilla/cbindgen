@@ -44,7 +44,7 @@ extern "C" {
 
 void root(TypeInfo x);
 
-} // extern "C"
+}  // extern "C"
 
 #if 0
 ''' '

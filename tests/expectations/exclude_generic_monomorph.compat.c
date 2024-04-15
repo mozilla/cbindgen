@@ -32,5 +32,5 @@ extern "C" {
 void root(Bar f);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

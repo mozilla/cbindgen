@@ -17,4 +17,4 @@ extern void bar(Normal a);
 
 extern int32_t baz();
 
-} // extern "C"
+}  // extern "C"

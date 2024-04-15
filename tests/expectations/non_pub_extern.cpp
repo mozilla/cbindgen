@@ -14,4 +14,4 @@ void first();
 
 void renamed();
 
-} // extern "C"
+}  // extern "C"

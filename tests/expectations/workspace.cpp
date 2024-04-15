@@ -14,4 +14,4 @@ extern "C" {
 
 void consume_ext(ExtType _ext);
 
-} // extern "C"
+}  // extern "C"

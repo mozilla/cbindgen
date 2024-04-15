@@ -9,4 +9,4 @@ extern "C" {
 /// The root of all evil.
 void root();
 
-} // extern "C"
+}  // extern "C"

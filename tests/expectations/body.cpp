@@ -103,4 +103,4 @@ void root(MyFancyStruct s,
           MyCLikeEnum_Prepended cp,
           MyUnion_Prepended up);
 
-} // extern "C"
+}  // extern "C"

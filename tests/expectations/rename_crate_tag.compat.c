@@ -45,5 +45,5 @@ void renamed_func(struct RenamedTy a);
 void no_extern_func(struct ContainsNoExternTy a);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

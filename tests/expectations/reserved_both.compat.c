@@ -97,5 +97,5 @@ void root(struct A a,
           float float_);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

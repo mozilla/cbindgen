@@ -81,4 +81,4 @@ extern "C" {
 
 void root(StyleAlignFlags flags, StyleNativeTileId tile);
 
-} // extern "C"
+}  // extern "C"

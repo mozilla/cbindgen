@@ -16,5 +16,5 @@ extern "C" {
 void export_me(struct ExportMe *val);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

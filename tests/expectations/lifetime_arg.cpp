@@ -28,4 +28,4 @@ extern "C" {
 
 void root(A _a, E _e);
 
-} // extern "C"
+}  // extern "C"

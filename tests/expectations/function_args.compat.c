@@ -14,5 +14,5 @@ void pointer_test(const uint64_t *a);
 void print_from_rust(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

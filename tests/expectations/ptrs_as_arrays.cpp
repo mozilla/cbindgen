@@ -16,4 +16,4 @@ void ptr_as_array_wrong_syntax(uint32_t *arg, const uint32_t *v, const uint32_t*
 
 void ptr_as_array_unnamed(uint32_t*, const uint32_t*);
 
-} // extern "C"
+}  // extern "C"

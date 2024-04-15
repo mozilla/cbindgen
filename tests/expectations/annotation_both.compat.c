@@ -87,5 +87,5 @@ extern "C" {
 void root(struct A x, struct B y, C z, union F f, struct H h);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

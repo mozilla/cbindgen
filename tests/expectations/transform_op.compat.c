@@ -166,5 +166,5 @@ void foo(const StyleFoo_i32 *foo,
          const StyleTaz *taz);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -22,5 +22,5 @@ extern "C" {
 void root(struct Opaque *a, union Normal b, union NormalWithZST c);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

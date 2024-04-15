@@ -38,4 +38,4 @@ void drop_box(Box<int32_t> x);
 
 void drop_box_opt(Option<Box<int32_t>> x);
 
-} // extern "C"
+}  // extern "C"

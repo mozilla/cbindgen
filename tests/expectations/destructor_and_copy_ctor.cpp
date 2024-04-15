@@ -709,4 +709,4 @@ void root(const Foo<uint32_t> *a,
           const Tazzzz *f,
           const Qux *g);
 
-} // extern "C"
+}  // extern "C"

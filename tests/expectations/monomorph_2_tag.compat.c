@@ -26,5 +26,5 @@ void foo(struct List_A a);
 void bar(struct List_B b);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

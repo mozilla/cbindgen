@@ -115,5 +115,5 @@ void dummy(DeprecatedEnum a,
            union EnumWithDeprecatedStructVariants f);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

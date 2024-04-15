@@ -20,4 +20,4 @@ extern "C" {
 
 void root(Opaque *a, Normal b, NormalWithZST c);
 
-} // extern "C"
+}  // extern "C"

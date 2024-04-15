@@ -16,4 +16,4 @@ void cbindgen();
 
 void root(Foo a);
 
-} // extern "C"
+}  // extern "C"

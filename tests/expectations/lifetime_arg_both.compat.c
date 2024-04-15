@@ -28,5 +28,5 @@ extern "C" {
 void root(struct A _a, struct E _e);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

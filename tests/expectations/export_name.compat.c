@@ -10,5 +10,5 @@ extern "C" {
 void do_the_thing_with_export_name(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

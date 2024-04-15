@@ -18,5 +18,5 @@ void cbindgen(void);
 void root(Foo a);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

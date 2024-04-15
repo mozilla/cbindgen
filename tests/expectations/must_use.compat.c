@@ -40,5 +40,5 @@ extern "C" {
 MUST_USE_FUNC MaybeOwnedPtr_i32 maybe_consume(OwnedPtr_i32 input);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

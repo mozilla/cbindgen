@@ -97,4 +97,4 @@ extern "C" {
 
 Foo root(Bar aBar);
 
-} // extern "C"
+}  // extern "C"

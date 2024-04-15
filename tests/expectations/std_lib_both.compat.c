@@ -18,5 +18,5 @@ void root(const struct Vec_String *a,
           const struct Result_i32__String *c);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -36,4 +36,4 @@ extern "C" {
 
 void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, PREFIX_AbsoluteFontWeight z);
 
-} // extern "C"
+}  // extern "C"

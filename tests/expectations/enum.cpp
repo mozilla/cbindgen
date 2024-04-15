@@ -253,7 +253,7 @@ void root(Opaque *opaque,
           Q q,
           R r);
 
-} // extern "C"
+}  // extern "C"
 
 #if 0
 ''' '

@@ -48,5 +48,5 @@ void root(struct NonZeroTest test,
           const struct Option_i64 *j);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

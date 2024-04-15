@@ -15,5 +15,5 @@ extern "C" {
 void root(struct Dummy d);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -18,5 +18,5 @@ void test_screaming_snake_case(int32_t FOO_BAR);
 void test_gecko_case(int32_t aFooBar);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

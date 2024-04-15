@@ -14,4 +14,4 @@ extern "C" {
 
 void doit(const Foo*);
 
-} // extern "C"
+}  // extern "C"

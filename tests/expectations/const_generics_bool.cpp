@@ -34,4 +34,4 @@ HashTable<Str, uint64_t, true> *new_map();
 
 void map_for_each(const HashTable<Str, uint64_t, true> *map, MapCallback callback);
 
-} // extern "C"
+}  // extern "C"

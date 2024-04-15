@@ -36,5 +36,5 @@ void root(struct Opaque *a,
           struct TupleNamed e);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

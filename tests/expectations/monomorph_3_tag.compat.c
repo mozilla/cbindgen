@@ -47,5 +47,5 @@ void root(union Foo_i32 a,
           Indirection_f32 h);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -16,5 +16,5 @@ void extra_debug_fn(void);
 void root(struct Foo a);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

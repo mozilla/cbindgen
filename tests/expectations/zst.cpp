@@ -13,4 +13,4 @@ extern "C" {
 
 void *root(const void *ptr, TraitObject t);
 
-} // extern "C"
+}  // extern "C"

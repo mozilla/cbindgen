@@ -19,4 +19,4 @@ extern "C" {
 
 void root(const Vec<String> *a, const Option<int32_t> *b, const Result<int32_t, String> *c);
 
-} // extern "C"
+}  // extern "C"

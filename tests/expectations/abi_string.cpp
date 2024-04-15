@@ -10,4 +10,4 @@ void c();
 
 void c_unwind();
 
-} // extern "C"
+}  // extern "C"

@@ -12,6 +12,6 @@ extern "C" {
 
 void root();
 
-} // extern "C"
+}  // extern "C"
 
-#endif // INCLUDE_GUARD_H
+#endif  // INCLUDE_GUARD_H

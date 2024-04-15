@@ -23,5 +23,5 @@ extern "C" {
 void root(struct FontWeight w);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

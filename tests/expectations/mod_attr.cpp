@@ -40,4 +40,4 @@ void foo(const Foo *foo);
 void bar(const Bar *bar);
 #endif
 
-} // extern "C"
+}  // extern "C"

@@ -55,5 +55,5 @@ extern "C" {
 bool push_item(DisplayItem item);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

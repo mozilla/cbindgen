@@ -31,5 +31,5 @@ extern "C" {
 void root(int32_t *s, PinTest p);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

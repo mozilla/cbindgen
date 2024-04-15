@@ -47,4 +47,4 @@ void root(NonZeroTest test,
           int64_t i,
           const Option<int64_t> *j);
 
-} // extern "C"
+}  // extern "C"

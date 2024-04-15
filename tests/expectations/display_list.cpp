@@ -48,4 +48,4 @@ extern "C" {
 
 bool push_item(DisplayItem item);
 
-} // extern "C"
+}  // extern "C"

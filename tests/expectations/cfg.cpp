@@ -236,4 +236,4 @@ extern int32_t foo();
 extern void bar(Normal a);
 #endif
 
-} // extern "C"
+}  // extern "C"

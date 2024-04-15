@@ -76,4 +76,4 @@ extern "C" {
 
 void root(A a, B b, C c, E e, F f, int32_t namespace_, float float_);
 
-} // extern "C"
+}  // extern "C"

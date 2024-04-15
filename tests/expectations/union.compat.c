@@ -22,5 +22,5 @@ extern "C" {
 void root(Opaque *a, Normal b, NormalWithZST c);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

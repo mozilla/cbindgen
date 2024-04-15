@@ -8,4 +8,4 @@ extern "C" {
 
 void no_ignore_root();
 
-} // extern "C"
+}  // extern "C"

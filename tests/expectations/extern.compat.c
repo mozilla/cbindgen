@@ -19,5 +19,5 @@ extern void bar(Normal a);
 extern int32_t baz(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

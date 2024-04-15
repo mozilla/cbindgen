@@ -28,5 +28,5 @@ extern const Enum STATIC;
 void fn(struct Struct arg);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

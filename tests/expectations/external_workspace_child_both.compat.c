@@ -14,5 +14,5 @@ extern "C" {
 void consume_ext(struct ExtType _ext);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

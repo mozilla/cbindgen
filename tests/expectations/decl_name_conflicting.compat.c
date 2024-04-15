@@ -26,5 +26,5 @@ extern "C" {
 void root(BindGroupLayoutEntry entry);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -43,4 +43,4 @@ void renamed_func(RenamedTy a);
 
 void no_extern_func(ContainsNoExternTy a);
 
-} // extern "C"
+}  // extern "C"

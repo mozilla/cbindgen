@@ -13,4 +13,4 @@ extern "C" {
 
 void root(const HasBitfields*);
 
-} // extern "C"
+}  // extern "C"
