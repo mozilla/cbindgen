@@ -96,6 +96,11 @@ typedef struct {
   ;
 } ConditionalField;
 
+typedef struct {
+  int32_t x;
+  float y;
+} Normal;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -109,6 +114,14 @@ void root(BarHandle a, C c);
 #endif
 
 void cond(ConditionalField a);
+
+#if defined(PLATFORM_WIN)
+extern int32_t foo(void);
+#endif
+
+#if defined(PLATFORM_WIN)
+extern void bar(Normal a);
+#endif
 
 #ifdef __cplusplus
 } // extern "C"

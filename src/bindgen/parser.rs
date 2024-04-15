@@ -605,6 +605,7 @@ impl Parse {
             return;
         }
 
+        let mod_cfg = Cfg::append(mod_cfg, Cfg::load(&item.attrs));
         for foreign_item in &item.items {
             if let syn::ForeignItem::Fn(ref function) = *foreign_item {
                 if !config
@@ -618,7 +619,14 @@ impl Parse {
                     return;
                 }
                 let path = Path::new(function.sig.ident.unraw().to_string());
-                match Function::load(path, None, &function.sig, true, &function.attrs, mod_cfg) {
+                match Function::load(
+                    path,
+                    None,
+                    &function.sig,
+                    true,
+                    &function.attrs,
+                    mod_cfg.as_ref(),
+                ) {
                     Ok(func) => {
                         info!("Take {}::{}.", crate_name, &function.sig.ident);
 
