@@ -101,13 +101,13 @@ impl<'a> CLikeLanguageBackend<'a> {
             if open {
                 write!(out, "namespace {} {{", namespace)
             } else {
-                write!(out, "}} // namespace {}", namespace)
+                write!(out, "}}  // namespace {}", namespace)
             }
         }
 
         out.new_line();
         if self.config.cpp_compatible_c() {
-            out.write("#endif // __cplusplus");
+            out.write("#endif  // __cplusplus");
             out.new_line();
         }
     }
@@ -457,9 +457,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         if let Some(f) = self.config.include_guard() {
             out.new_line_if_not_start();
             if self.config.language == Language::C {
-                write!(out, "#endif /* {} */", f);
+                write!(out, "#endif  /* {} */", f);
             } else {
-                write!(out, "#endif // {}", f);
+                write!(out, "#endif  // {}", f);
             }
             out.new_line();
         }
@@ -984,12 +984,12 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
             if b.config.language == Language::Cxx || b.config.cpp_compatible_c() {
                 out.new_line();
-                out.write("} // extern \"C\"");
+                out.write("}  // extern \"C\"");
                 out.new_line();
             }
 
             if b.config.cpp_compatible_c() {
-                out.write("#endif // __cplusplus");
+                out.write("#endif  // __cplusplus");
                 out.new_line();
             }
         }
