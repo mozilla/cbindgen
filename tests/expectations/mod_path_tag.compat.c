@@ -11,10 +11,10 @@ struct ExportMe {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void export_me(struct ExportMe *val);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

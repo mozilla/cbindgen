@@ -39,13 +39,13 @@ typedef struct TypeInfo {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct TypeInfo x);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #if 0
 ''' '

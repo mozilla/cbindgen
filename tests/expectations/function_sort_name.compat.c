@@ -5,7 +5,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void A(void);
 
@@ -17,4 +17,4 @@ void D(void);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

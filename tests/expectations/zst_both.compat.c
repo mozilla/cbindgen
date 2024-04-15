@@ -10,10 +10,10 @@ typedef struct TraitObject {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void *root(const void *ptr, struct TraitObject t);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

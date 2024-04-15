@@ -18,10 +18,10 @@ struct FontWeight {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct FontWeight w);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

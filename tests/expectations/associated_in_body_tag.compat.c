@@ -58,10 +58,10 @@ struct StyleNativeTileId {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct StyleAlignFlags flags, struct StyleNativeTileId tile);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

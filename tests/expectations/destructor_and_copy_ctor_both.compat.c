@@ -10,14 +10,14 @@
 enum FillRule
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   A,
   B,
 };
 #ifndef __cplusplus
 typedef uint8_t FillRule;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 /**
  * This will have a destructor manually implemented via variant_body, and
@@ -45,7 +45,7 @@ typedef struct OwnedSlice_i32 {
 enum Foo_u32_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Bar_u32,
   Polygon1_u32,
@@ -56,7 +56,7 @@ enum Foo_u32_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t Foo_u32_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct Slice3_Body_u32 {
   FillRule fill;
@@ -93,7 +93,7 @@ typedef struct Polygon_i32 {
 enum Baz_i32_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Bar2_i32,
   Polygon21_i32,
@@ -104,7 +104,7 @@ enum Baz_i32_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t Baz_i32_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct Slice23_Body_i32 {
   Baz_i32_Tag tag;
@@ -139,7 +139,7 @@ typedef union Baz_i32 {
 enum Taz_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Bar3,
   Taz1,
@@ -147,7 +147,7 @@ enum Taz_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t Taz_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef union Taz {
   Taz_Tag tag;
@@ -164,14 +164,14 @@ typedef union Taz {
 enum Tazz_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Bar4,
   Taz2,
 };
 #ifndef __cplusplus
 typedef uint8_t Tazz_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef union Tazz {
   Tazz_Tag tag;
@@ -184,14 +184,14 @@ typedef union Tazz {
 enum Tazzz_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Bar5,
   Taz5,
 };
 #ifndef __cplusplus
 typedef uint8_t Tazzz_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef union Tazzz {
   Tazzz_Tag tag;
@@ -204,14 +204,14 @@ typedef union Tazzz {
 enum Tazzzz_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Taz6,
   Taz7,
 };
 #ifndef __cplusplus
 typedef uint8_t Tazzzz_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef union Tazzzz {
   Tazzzz_Tag tag;
@@ -228,14 +228,14 @@ typedef union Tazzzz {
 enum Qux_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Qux1,
   Qux2,
 };
 #ifndef __cplusplus
 typedef uint8_t Qux_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef union Qux {
   Qux_Tag tag;
@@ -251,7 +251,7 @@ typedef union Qux {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(const struct Foo_u32 *a,
           const union Baz_i32 *b,
@@ -263,4 +263,4 @@ void root(const struct Foo_u32 *a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

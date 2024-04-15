@@ -36,7 +36,7 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(Foo a);
 
@@ -46,4 +46,4 @@ void no_extern_func(ContainsNoExternTy a);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

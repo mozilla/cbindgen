@@ -8,14 +8,14 @@
 enum C_E
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   x = 0,
   y = 1,
 };
 #ifndef __cplusplus
 typedef uint8_t C_E;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct C_A C_A;
 
@@ -37,7 +37,7 @@ typedef struct C_A C_F;
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 extern const int32_t G;
 
@@ -45,4 +45,4 @@ void root(const struct C_A *a, struct C_AwesomeB b, struct C_C c, union C_D d, C
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

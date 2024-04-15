@@ -5,7 +5,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void unnamed(const uint64_t*);
 
@@ -15,4 +15,4 @@ void print_from_rust(void);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

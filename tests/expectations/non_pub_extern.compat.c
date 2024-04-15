@@ -5,7 +5,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 extern const uint32_t FIRST;
 
@@ -17,4 +17,4 @@ void renamed(void);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 namespace constants {
 namespace test {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #define FOO 10
 
@@ -18,15 +18,15 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(Foo x);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #ifdef __cplusplus
-} // namespace test
-} // namespace constants
-#endif // __cplusplus
+}  // namespace test
+}  // namespace constants
+#endif  // __cplusplus

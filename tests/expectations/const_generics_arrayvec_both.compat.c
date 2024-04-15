@@ -10,10 +10,10 @@ typedef struct ArrayVec_____u8__100 {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 int32_t push(struct ArrayVec_____u8__100 *v, uint8_t *elem);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

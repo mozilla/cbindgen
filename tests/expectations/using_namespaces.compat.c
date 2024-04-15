@@ -5,18 +5,18 @@
 
 #ifdef __cplusplus
 namespace root {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(void);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #ifdef __cplusplus
-} // namespace root
-#endif // __cplusplus
+}  // namespace root
+#endif  // __cplusplus

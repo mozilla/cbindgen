@@ -27,7 +27,7 @@ typedef uint32_t TransparentPrimitiveWithAssociatedConstants;
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(TransparentComplexWrappingStructTuple a,
           TransparentPrimitiveWrappingStructTuple b,
@@ -40,4 +40,4 @@ void root(TransparentComplexWrappingStructTuple a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

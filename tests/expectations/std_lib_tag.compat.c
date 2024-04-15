@@ -11,7 +11,7 @@ struct Vec_String;
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(const struct Vec_String *a,
           const struct Option_i32 *b,
@@ -19,4 +19,4 @@ void root(const struct Vec_String *a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

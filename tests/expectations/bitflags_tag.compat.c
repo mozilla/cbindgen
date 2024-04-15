@@ -61,7 +61,7 @@ struct OutOfLine {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct AlignFlags flags,
           struct DebugFlags bigger_flags,
@@ -70,4 +70,4 @@ void root(struct AlignFlags flags,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

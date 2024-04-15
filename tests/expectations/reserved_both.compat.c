@@ -16,13 +16,13 @@ typedef struct B {
 enum C_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   D,
 };
 #ifndef __cplusplus
 typedef uint8_t C_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct D_Body {
   int32_t namespace_;
@@ -39,14 +39,14 @@ typedef struct C {
 enum E_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Double,
   Float,
 };
 #ifndef __cplusplus
 typedef uint8_t E_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct E {
   E_Tag tag;
@@ -63,14 +63,14 @@ typedef struct E {
 enum F_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   double_,
   float_,
 };
 #ifndef __cplusplus
 typedef uint8_t F_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct F {
   F_Tag tag;
@@ -86,7 +86,7 @@ typedef struct F {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct A a,
           struct B b,
@@ -98,4 +98,4 @@ void root(struct A a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

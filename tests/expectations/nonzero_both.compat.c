@@ -33,7 +33,7 @@ typedef struct NonZeroTest {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct NonZeroTest test,
           uint8_t a,
@@ -49,4 +49,4 @@ void root(struct NonZeroTest test,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

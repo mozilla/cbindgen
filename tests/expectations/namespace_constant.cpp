@@ -20,4 +20,4 @@ void root(Foo x);
 
 } // extern "C"
 
-} // namespace constants
+}  // namespace constants

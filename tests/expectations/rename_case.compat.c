@@ -5,7 +5,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void test_camel_case(int32_t fooBar);
 
@@ -19,4 +19,4 @@ void test_gecko_case(int32_t aFooBar);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

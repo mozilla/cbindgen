@@ -3,4 +3,4 @@
 
 void root(void);
 
-#endif /* INCLUDE_GUARD_H */
+#endif  /* INCLUDE_GUARD_H */

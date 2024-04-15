@@ -21,7 +21,7 @@ typedef struct Outer_2 {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 struct Outer_1 one(void);
 
@@ -29,4 +29,4 @@ struct Outer_2 two(void);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

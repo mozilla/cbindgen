@@ -95,7 +95,7 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(TypedLength_f32__UnknownUnit length_a,
           TypedLength_f32__LayoutUnit length_b,
@@ -122,4 +122,4 @@ void root(TypedLength_f32__UnknownUnit length_a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

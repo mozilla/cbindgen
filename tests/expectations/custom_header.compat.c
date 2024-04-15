@@ -5,13 +5,13 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(void);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #if 0
 # This is a simple test to ensure that trailers do not cause extra newlines in files

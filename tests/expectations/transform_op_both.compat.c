@@ -16,7 +16,7 @@ typedef struct StylePoint_f32 {
 enum StyleFoo_i32_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Foo_i32,
   Bar_i32,
@@ -25,7 +25,7 @@ enum StyleFoo_i32_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t StyleFoo_i32_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct StyleFoo_Body_i32 {
   StyleFoo_i32_Tag tag;
@@ -109,7 +109,7 @@ typedef struct StyleBar_u32 {
 enum StyleBaz_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Baz1,
   Baz2,
@@ -117,7 +117,7 @@ enum StyleBaz_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t StyleBaz_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef union StyleBaz {
   StyleBaz_Tag tag;
@@ -134,7 +134,7 @@ typedef union StyleBaz {
 enum StyleTaz_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Taz1,
   Taz2,
@@ -142,7 +142,7 @@ enum StyleTaz_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t StyleTaz_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct StyleTaz {
   StyleTaz_Tag tag;
@@ -158,7 +158,7 @@ typedef struct StyleTaz {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void foo(const union StyleFoo_i32 *foo,
          const struct StyleBar_i32 *bar,
@@ -167,4 +167,4 @@ void foo(const union StyleFoo_i32 *foo,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

@@ -963,7 +963,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             }
 
             if b.config.cpp_compatible_c() {
-                out.write("#endif // __cplusplus");
+                out.write("#endif  // __cplusplus");
                 out.new_line();
             }
 

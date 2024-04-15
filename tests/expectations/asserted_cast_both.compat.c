@@ -12,7 +12,7 @@ typedef struct I I;
 enum H_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   H_Foo,
   H_Bar,
@@ -20,7 +20,7 @@ enum H_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t H_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct H_Bar_Body {
   uint8_t x;
@@ -40,7 +40,7 @@ typedef struct H {
 enum J_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   J_Foo,
   J_Bar,
@@ -48,7 +48,7 @@ enum J_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t J_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct J_Bar_Body {
   uint8_t x;
@@ -68,7 +68,7 @@ typedef struct J {
 enum K_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   K_Foo,
   K_Bar,
@@ -76,7 +76,7 @@ enum K_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t K_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct K_Bar_Body {
   K_Tag tag;
@@ -95,10 +95,10 @@ typedef union K {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void foo(struct H h, struct I i, struct J j, union K k);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

@@ -11,7 +11,7 @@ typedef struct {
 enum Bar_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Baz,
   Bazz,
@@ -20,7 +20,7 @@ enum Bar_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t Bar_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct {
   Bar_Tag tag;
@@ -48,10 +48,10 @@ typedef union {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 Foo root(Bar aBar);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

@@ -5,7 +5,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void ptr_as_array(uint32_t n, const uint32_t arg[3], const uint64_t *v);
 
@@ -19,4 +19,4 @@ void ptr_as_array_unnamed(uint32_t*, const uint32_t*);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

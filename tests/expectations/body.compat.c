@@ -85,7 +85,7 @@ typedef union {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(MyFancyStruct s,
           MyFancyEnum e,
@@ -98,4 +98,4 @@ void root(MyFancyStruct s,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

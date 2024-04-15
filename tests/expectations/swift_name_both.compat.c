@@ -17,7 +17,7 @@ typedef struct PointerToOpaque {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void rust_print_hello_world(void) CF_SWIFT_NAME(rust_print_hello_world());
 
@@ -59,4 +59,4 @@ void PointerToOpaque_sayHello(struct PointerToOpaque self) CF_SWIFT_NAME(Pointer
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

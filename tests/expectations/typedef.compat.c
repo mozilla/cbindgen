@@ -12,10 +12,10 @@ typedef Foo_i32__i32 IntFoo_i32;
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(IntFoo_i32 a);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

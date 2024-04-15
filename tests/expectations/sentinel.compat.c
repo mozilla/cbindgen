@@ -6,7 +6,7 @@
 enum A
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   A_A1,
   A_A2,
@@ -18,12 +18,12 @@ enum A
 };
 #ifndef __cplusplus
 typedef uint8_t A;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum B
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   B_B1,
   B_B2,
@@ -35,12 +35,12 @@ enum B
 };
 #ifndef __cplusplus
 typedef uint8_t B;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum C_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   C_C1,
   C_C2,
@@ -52,7 +52,7 @@ enum C_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t C_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct {
   C_Tag tag;
@@ -72,10 +72,10 @@ typedef union {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(A a, B b, C c);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

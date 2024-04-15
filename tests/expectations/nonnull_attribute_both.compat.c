@@ -35,7 +35,7 @@ typedef struct Pointers_u64 {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void value_arg(struct References arg);
 
@@ -57,4 +57,4 @@ void nullable_mut_ptr(struct Pointers_u64 *arg);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

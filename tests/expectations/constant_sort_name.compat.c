@@ -9,7 +9,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 extern const uint8_t C;
 
@@ -17,4 +17,4 @@ extern const uint8_t D;
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

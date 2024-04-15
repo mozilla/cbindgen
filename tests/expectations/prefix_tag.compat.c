@@ -16,7 +16,7 @@ typedef int32_t PREFIX_ValuedLenArray[22];
 enum PREFIX_AbsoluteFontWeight_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Weight,
   Normal,
@@ -24,7 +24,7 @@ enum PREFIX_AbsoluteFontWeight_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t PREFIX_AbsoluteFontWeight_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 union PREFIX_AbsoluteFontWeight {
   PREFIX_AbsoluteFontWeight_Tag tag;
@@ -36,10 +36,10 @@ union PREFIX_AbsoluteFontWeight {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, union PREFIX_AbsoluteFontWeight z);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

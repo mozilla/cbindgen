@@ -20,7 +20,7 @@ using Box = T*;
 enum A
 #ifdef __cplusplus
   : uint64_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   a1 = 0,
   a2 = 2,
@@ -29,12 +29,12 @@ enum A
 };
 #ifndef __cplusplus
 typedef uint64_t A;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum B
 #ifdef __cplusplus
   : uint32_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   b1 = 0,
   b2 = 2,
@@ -43,12 +43,12 @@ enum B
 };
 #ifndef __cplusplus
 typedef uint32_t B;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum C
 #ifdef __cplusplus
   : uint16_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   c1 = 0,
   c2 = 2,
@@ -57,12 +57,12 @@ enum C
 };
 #ifndef __cplusplus
 typedef uint16_t C;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum D
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   d1 = 0,
   d2 = 2,
@@ -71,12 +71,12 @@ enum D
 };
 #ifndef __cplusplus
 typedef uint8_t D;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum E
 #ifdef __cplusplus
   : uintptr_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   e1 = 0,
   e2 = 2,
@@ -85,12 +85,12 @@ enum E
 };
 #ifndef __cplusplus
 typedef uintptr_t E;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum F
 #ifdef __cplusplus
   : intptr_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   f1 = 0,
   f2 = 2,
@@ -99,7 +99,7 @@ enum F
 };
 #ifndef __cplusplus
 typedef intptr_t F;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef enum L {
   l1,
@@ -111,7 +111,7 @@ typedef enum L {
 enum M
 #ifdef __cplusplus
   : int8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   m1 = -1,
   m2 = 0,
@@ -119,7 +119,7 @@ enum M
 };
 #ifndef __cplusplus
 typedef int8_t M;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef enum N {
   n1,
@@ -131,7 +131,7 @@ typedef enum N {
 enum O
 #ifdef __cplusplus
   : int8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   o1,
   o2,
@@ -140,7 +140,7 @@ enum O
 };
 #ifndef __cplusplus
 typedef int8_t O;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct J J;
 
@@ -151,7 +151,7 @@ typedef struct Opaque Opaque;
 enum G_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Foo,
   Bar,
@@ -159,7 +159,7 @@ enum G_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t G_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct Bar_Body {
   G_Tag tag;
@@ -200,7 +200,7 @@ typedef struct H {
 enum ExI_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   ExI_Foo,
   ExI_Bar,
@@ -208,7 +208,7 @@ enum ExI_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t ExI_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct ExI_Bar_Body {
   uint8_t x;
@@ -228,14 +228,14 @@ typedef struct ExI {
 enum P_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   P0,
   P1,
 };
 #ifndef __cplusplus
 typedef uint8_t P_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct P1_Body {
   uint8_t _0;
@@ -293,7 +293,7 @@ typedef struct R {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct Opaque *opaque,
           A a,
@@ -317,7 +317,7 @@ void root(struct Opaque *opaque,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #if 0
 ''' '

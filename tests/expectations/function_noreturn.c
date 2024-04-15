@@ -7,8 +7,8 @@
     #define NO_RETURN_ATTR __attribute__ ((noreturn))
   #else // __GNUC__
     #define NO_RETURN_ATTR
-  #endif // __GNUC__
-#endif // NO_RETURN_ATTR
+  #endif  // __GNUC__
+#endif  // NO_RETURN_ATTR
 
 
 typedef struct {

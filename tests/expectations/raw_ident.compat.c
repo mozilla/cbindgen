@@ -6,14 +6,14 @@
 enum Enum
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   a,
   b,
 };
 #ifndef __cplusplus
 typedef uint8_t Enum;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct {
   Enum field;
@@ -21,7 +21,7 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 extern const Enum STATIC;
 
@@ -29,4 +29,4 @@ void fn(Struct arg);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

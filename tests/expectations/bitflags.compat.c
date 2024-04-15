@@ -61,7 +61,7 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(AlignFlags flags,
           DebugFlags bigger_flags,
@@ -70,4 +70,4 @@ void root(AlignFlags flags,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

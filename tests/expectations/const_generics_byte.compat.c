@@ -15,7 +15,7 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void init_parens_parser(Parser_40__41 *p, uint8_t *buf, uintptr_t len);
 
@@ -25,4 +25,4 @@ void init_braces_parser(Parser_123__125 *p, uint8_t *buf, uintptr_t len);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

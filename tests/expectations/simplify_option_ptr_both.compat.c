@@ -23,7 +23,7 @@ typedef union Bar {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(const struct Opaque *a,
           struct Opaque *b,
@@ -34,4 +34,4 @@ void root(const struct Opaque *a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

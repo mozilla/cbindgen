@@ -20,7 +20,7 @@ typedef struct {
 enum DisplayItem_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Fill,
   Image,
@@ -28,7 +28,7 @@ enum DisplayItem_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t DisplayItem_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct {
   DisplayItem_Tag tag;
@@ -50,10 +50,10 @@ typedef union {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 bool push_item(DisplayItem item);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

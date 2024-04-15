@@ -19,10 +19,10 @@ struct Foo_u64 {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(int32_t *arg, struct Foo_u64 *foo, struct Opaque **d);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

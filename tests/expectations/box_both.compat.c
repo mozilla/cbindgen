@@ -27,7 +27,7 @@ typedef struct MyStruct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(const Foo *a, const struct MyStruct *with_box);
 
@@ -37,4 +37,4 @@ void drop_box_opt(int32_t *x);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

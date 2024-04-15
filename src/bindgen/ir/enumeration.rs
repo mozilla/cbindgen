@@ -668,7 +668,7 @@ impl Enum {
                         out.new_line();
                         write!(out, "  : {}", prim);
                         out.new_line();
-                        out.write("#endif // __cplusplus");
+                        out.write("#endif  // __cplusplus");
                         out.new_line();
                     }
                 } else {
@@ -756,7 +756,7 @@ impl Enum {
 
             if config.cpp_compatible_c() {
                 out.new_line_if_not_start();
-                out.write("#endif // __cplusplus");
+                out.write("#endif  // __cplusplus");
             }
         }
 

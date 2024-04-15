@@ -15,7 +15,7 @@ DEF M_32 = 0
 enum BarType
 #ifdef __cplusplus
   : uint32_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   A,
   B,
@@ -23,14 +23,14 @@ enum BarType
 };
 #ifndef __cplusplus
 typedef uint32_t BarType;
-#endif // __cplusplus
+#endif  // __cplusplus
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
 enum FooType
 #ifdef __cplusplus
   : uint32_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   A,
   B,
@@ -38,7 +38,7 @@ enum FooType
 };
 #ifndef __cplusplus
 typedef uint32_t FooType;
-#endif // __cplusplus
+#endif  // __cplusplus
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -52,7 +52,7 @@ struct FooHandle {
 enum C_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   C1,
   C2,
@@ -65,7 +65,7 @@ enum C_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t C_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #if defined(PLATFORM_UNIX)
 struct C5_Body {
@@ -103,7 +103,7 @@ struct Normal {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
 void root(struct FooHandle a, union C c);
@@ -125,4 +125,4 @@ extern void bar(struct Normal a);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

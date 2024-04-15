@@ -8,7 +8,7 @@
 enum E
 #ifdef __cplusplus
   : int8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   A = 1,
   B = -1,
@@ -20,14 +20,14 @@ enum E
 };
 #ifndef __cplusplus
 typedef int8_t E;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(const E*);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

@@ -6,14 +6,14 @@
 enum BindingType
 #ifdef __cplusplus
   : uint32_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Buffer = 0,
   NotBuffer = 1,
 };
 #ifndef __cplusplus
 typedef uint32_t BindingType;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 struct BindGroupLayoutEntry {
   BindingType ty;
@@ -21,10 +21,10 @@ struct BindGroupLayoutEntry {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct BindGroupLayoutEntry entry);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

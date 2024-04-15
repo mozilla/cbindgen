@@ -35,7 +35,7 @@ typedef struct Tuple_f32__f32 Indirection_f32;
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct Foo_i32 a,
           struct Foo_f32 b,
@@ -48,4 +48,4 @@ void root(struct Foo_i32 a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

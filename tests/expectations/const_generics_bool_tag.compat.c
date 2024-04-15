@@ -29,7 +29,7 @@ typedef void (*MapCallback)(Str key, uint64_t val);
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 MySet *new_set(void);
 
@@ -41,4 +41,4 @@ void map_for_each(const struct HashTable_Str__u64__true *map, MapCallback callba
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

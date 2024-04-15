@@ -35,7 +35,7 @@ typedef Tuple_f32__f32 Indirection_f32;
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(Foo_i32 a,
           Foo_f32 b,
@@ -48,4 +48,4 @@ void root(Foo_i32 a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

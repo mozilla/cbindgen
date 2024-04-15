@@ -32,7 +32,7 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(const Foo *a, const MyStruct *with_manual_drop);
 
@@ -40,4 +40,4 @@ void take(Point with_manual_drop);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

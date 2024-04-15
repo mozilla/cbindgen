@@ -16,29 +16,29 @@
 enum DEPRECATED_ENUM DeprecatedEnum
 #ifdef __cplusplus
   : int32_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   A = 0,
 };
 #ifndef __cplusplus
 typedef int32_t DeprecatedEnum;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum DEPRECATED_ENUM_WITH_NOTE("This is a note") DeprecatedEnumWithNote
 #ifdef __cplusplus
   : int32_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   B = 0,
 };
 #ifndef __cplusplus
 typedef int32_t DeprecatedEnumWithNote;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 enum EnumWithDeprecatedVariants
 #ifdef __cplusplus
   : int32_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   C = 0,
   D DEPRECATED_ENUM_VARIANT = 1,
@@ -47,7 +47,7 @@ enum EnumWithDeprecatedVariants
 };
 #ifndef __cplusplus
 typedef int32_t EnumWithDeprecatedVariants;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 struct DEPRECATED_STRUCT DeprecatedStruct {
   int32_t a;
@@ -60,7 +60,7 @@ struct DEPRECATED_STRUCT_WITH_NOTE("This is a note") DeprecatedStructWithNote {
 enum EnumWithDeprecatedStructVariants_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Foo,
   Bar DEPRECATED_ENUM_VARIANT,
@@ -68,7 +68,7 @@ enum EnumWithDeprecatedStructVariants_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t EnumWithDeprecatedStructVariants_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 struct DEPRECATED_STRUCT Bar_Body {
   EnumWithDeprecatedStructVariants_Tag tag;
@@ -94,7 +94,7 @@ union EnumWithDeprecatedStructVariants {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 DEPRECATED_FUNC void deprecated_without_note(void);
 
@@ -116,4 +116,4 @@ void dummy(DeprecatedEnum a,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

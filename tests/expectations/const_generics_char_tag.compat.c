@@ -11,10 +11,10 @@ struct TakeUntil_0 {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 struct TakeUntil_0 until_nul(const uint8_t *start, uintptr_t len);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

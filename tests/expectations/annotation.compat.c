@@ -6,14 +6,14 @@
 enum C
 #ifdef __cplusplus
   : uint32_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   X = 2,
   Y,
 };
 #ifndef __cplusplus
 typedef uint32_t C;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct {
   int32_t m0;
@@ -27,7 +27,7 @@ typedef struct {
 enum F_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Foo,
   Bar,
@@ -35,7 +35,7 @@ enum F_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t F_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct {
   F_Tag tag;
@@ -55,7 +55,7 @@ typedef union {
 enum H_Tag
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Hello,
   There,
@@ -63,7 +63,7 @@ enum H_Tag
 };
 #ifndef __cplusplus
 typedef uint8_t H_Tag;
-#endif // __cplusplus
+#endif  // __cplusplus
 
 typedef struct {
   uint8_t x;
@@ -82,10 +82,10 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(A x, B y, C z, F f, H h);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

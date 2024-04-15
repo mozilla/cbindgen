@@ -3,12 +3,12 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(void);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus
 
-#endif /* INCLUDE_GUARD_H */
+#endif  /* INCLUDE_GUARD_H */

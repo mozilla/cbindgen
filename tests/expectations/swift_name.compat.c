@@ -17,7 +17,7 @@ typedef struct {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void rust_print_hello_world(void) CF_SWIFT_NAME(rust_print_hello_world());
 
@@ -59,4 +59,4 @@ void PointerToOpaque_sayHello(PointerToOpaque self) CF_SWIFT_NAME(PointerToOpaqu
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

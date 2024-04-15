@@ -6,11 +6,11 @@
 enum StyleOnlyThisShouldBeGenerated
 #ifdef __cplusplus
   : uint8_t
-#endif // __cplusplus
+#endif  // __cplusplus
  {
   Foo,
   Bar,
 };
 #ifndef __cplusplus
 typedef uint8_t StyleOnlyThisShouldBeGenerated;
-#endif // __cplusplus
+#endif  // __cplusplus

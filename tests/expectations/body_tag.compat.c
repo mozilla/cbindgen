@@ -85,7 +85,7 @@ union MyUnion_Prepended {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void root(struct MyFancyStruct s,
           struct MyFancyEnum e,
@@ -98,4 +98,4 @@ void root(struct MyFancyStruct s,
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

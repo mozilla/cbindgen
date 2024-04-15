@@ -474,13 +474,13 @@ no_includes = false
 #
 # #ifdef __cplusplus
 # extern "C" {
-# #endif // __cplusplus
+# #endif  // __cplusplus
 #
 # // Generated functions.
 #
 # #ifdef __cplusplus
 # } // extern "C"
-# #endif // __cplusplus
+# #endif  // __cplusplus
 #
 # If the language is not C this option won't have any effect.
 #

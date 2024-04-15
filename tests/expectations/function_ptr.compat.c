@@ -13,10 +13,10 @@ typedef void (*MyOtherCallback)(uintptr_t a,
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 void my_function(MyCallback a, MyOtherCallback b);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus

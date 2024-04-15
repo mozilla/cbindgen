@@ -14,4 +14,4 @@ void root();
 
 } // extern "C"
 
-} // namespace root
+}  // namespace root

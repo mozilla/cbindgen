@@ -10,7 +10,7 @@ typedef struct Normal {
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 extern int32_t foo(void);
 
@@ -20,4 +20,4 @@ extern int32_t baz(void);
 
 #ifdef __cplusplus
 } // extern "C"
-#endif // __cplusplus
+#endif  // __cplusplus
