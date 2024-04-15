@@ -600,7 +600,7 @@ impl Parse {
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemForeignMod,
     ) {
-        if !item.abi.is_c() {
+        if !item.abi.is_c() && !item.abi.is_omitted() {
             info!("Skip {} - (extern block must be extern C).", crate_name);
             return;
         }

@@ -11,3 +11,5 @@ struct Normal {
 extern int32_t foo(void);
 
 extern void bar(struct Normal a);
+
+extern int32_t baz(void);
