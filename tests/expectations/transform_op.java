@@ -73,13 +73,14 @@ interface Bindings extends Library {
   }
 
 
+
   class StyleFoo_i32 extends IntegerType {
     public StyleFoo_i32() {
-      super(4);
+      super(4, true);
     }
 
     public StyleFoo_i32(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public StyleFoo_i32(Pointer p) {
@@ -103,22 +104,26 @@ interface Bindings extends Library {
     }
 
     public StyleFoo_i32 getValue() {
-      return new StyleFoo_i32(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new StyleFoo_i32(p.getInt(0));
     }
 
     public void setValue(StyleFoo_i32 value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class StyleBar_i32 extends IntegerType {
     public StyleBar_i32() {
-      super(4);
+      super(4, true);
     }
 
     public StyleBar_i32(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public StyleBar_i32(Pointer p) {
@@ -142,14 +147,17 @@ interface Bindings extends Library {
     }
 
     public StyleBar_i32 getValue() {
-      return new StyleBar_i32(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new StyleBar_i32(p.getInt(0));
     }
 
     public void setValue(StyleBar_i32 value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"x", "y"})
@@ -183,13 +191,14 @@ interface Bindings extends Library {
   }
 
 
+
   class StyleBar_u32 extends IntegerType {
     public StyleBar_u32() {
-      super(4);
+      super(4, true);
     }
 
     public StyleBar_u32(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public StyleBar_u32(Pointer p) {
@@ -213,22 +222,26 @@ interface Bindings extends Library {
     }
 
     public StyleBar_u32 getValue() {
-      return new StyleBar_u32(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new StyleBar_u32(p.getInt(0));
     }
 
     public void setValue(StyleBar_u32 value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class StyleBaz extends IntegerType {
     public StyleBaz() {
-      super(4);
+      super(4, true);
     }
 
     public StyleBaz(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public StyleBaz(Pointer p) {
@@ -251,22 +264,26 @@ interface Bindings extends Library {
     }
 
     public StyleBaz getValue() {
-      return new StyleBaz(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new StyleBaz(p.getInt(0));
     }
 
     public void setValue(StyleBaz value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class StyleTaz extends IntegerType {
     public StyleTaz() {
-      super(4);
+      super(4, true);
     }
 
     public StyleTaz(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public StyleTaz(Pointer p) {
@@ -289,14 +306,17 @@ interface Bindings extends Library {
     }
 
     public StyleTaz getValue() {
-      return new StyleTaz(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new StyleTaz(p.getInt(0));
     }
 
     public void setValue(StyleTaz value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void foo(StyleFoo_i32ByReference foo, 
            StyleBar_i32ByReference bar, 

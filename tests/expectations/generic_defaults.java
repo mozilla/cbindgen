@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class Foo_i16 extends IntegerType {
     public Foo_i16() {
-      super(2);
+      super(2, false);
     }
 
     public Foo_i16(long value) {
-      super(2, value);
+      super(2, value, false);
     }
 
     public Foo_i16(Pointer p) {
@@ -35,22 +36,26 @@ interface Bindings extends Library {
     }
 
     public Foo_i16 getValue() {
-      return new Foo_i16(getPointer().getShort(0));
+      Pointer p = getPointer();
+      return new Foo_i16(p.getShort(0));
     }
 
     public void setValue(Foo_i16 value) {
-      getPointer().setShort(0, (short)value.intValue());
+      Pointer p = getPointer();
+      p.setShort(0, (short)value.intValue());
     }
 
   }
 
+
+
   class Foo_i32 extends IntegerType {
     public Foo_i32() {
-      super(4);
+      super(4, false);
     }
 
     public Foo_i32(long value) {
-      super(4, value);
+      super(4, value, false);
     }
 
     public Foo_i32(Pointer p) {
@@ -70,14 +75,17 @@ interface Bindings extends Library {
     }
 
     public Foo_i32 getValue() {
-      return new Foo_i32(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Foo_i32(p.getInt(0));
     }
 
     public void setValue(Foo_i32 value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"f", "p"})
@@ -111,13 +119,14 @@ interface Bindings extends Library {
   }
 
 
+
   class Foo_i64 extends IntegerType {
     public Foo_i64() {
-      super(8);
+      super(8, false);
     }
 
     public Foo_i64(long value) {
-      super(8, value);
+      super(8, value, false);
     }
 
     public Foo_i64(Pointer p) {
@@ -137,14 +146,17 @@ interface Bindings extends Library {
     }
 
     public Foo_i64 getValue() {
-      return new Foo_i64(getPointer().getLong(0));
+      Pointer p = getPointer();
+      return new Foo_i64(p.getLong(0));
     }
 
     public void setValue(Foo_i64 value) {
-      getPointer().setLong(0, value.longValue());
+      Pointer p = getPointer();
+      p.setLong(0, value.longValue());
     }
 
   }
+
 
   class Baz_i64 extends Foo_i64 {
     public Baz_i64() {

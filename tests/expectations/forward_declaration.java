@@ -22,7 +22,7 @@ interface Bindings extends Library {
     }
 
     public PointerByReference fields;
-    public NativeLong num_fields;
+    public _Size num_fields;
 
   }
 
@@ -37,18 +37,19 @@ interface Bindings extends Library {
     }
 
     public PointerByReference fields;
-    public NativeLong num_fields;
+    public _Size num_fields;
 
   }
 
 
+
   class TypeData extends IntegerType {
     public TypeData() {
-      super(4);
+      super(4, true);
     }
 
     public TypeData(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public TypeData(Pointer p) {
@@ -70,14 +71,17 @@ interface Bindings extends Library {
     }
 
     public TypeData getValue() {
-      return new TypeData(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new TypeData(p.getInt(0));
     }
 
     public void setValue(TypeData value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"data"})
@@ -110,6 +114,43 @@ interface Bindings extends Library {
 
 
   void root(TypeInfo x);
+
+  class _Size extends IntegerType {
+    public _Size() {
+      super(Native.POINTER_SIZE, true);
+    }
+
+    public _Size(long value) {
+      super(Native.POINTER_SIZE, value, true);
+    }
+
+    public _Size(Pointer p) {
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+  }
+
+  class _SizeByReference extends ByReference {
+    public _SizeByReference() {
+      super(Native.POINTER_SIZE);
+    }
+
+    public _SizeByReference(Pointer p) {
+      super(Native.POINTER_SIZE);
+      setPointer(p);
+    }
+
+    public _Size getValue() {
+      Pointer p = getPointer();
+      return new _Size(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+    public void setValue(_Size value) {
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
+    }
+
+  }
 
 }
 

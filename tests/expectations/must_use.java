@@ -10,13 +10,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class MaybeOwnedPtr_i32 extends IntegerType {
     public MaybeOwnedPtr_i32() {
-      super(4);
+      super(4, true);
     }
 
     public MaybeOwnedPtr_i32(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public MaybeOwnedPtr_i32(Pointer p) {
@@ -38,14 +39,17 @@ interface Bindings extends Library {
     }
 
     public MaybeOwnedPtr_i32 getValue() {
-      return new MaybeOwnedPtr_i32(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new MaybeOwnedPtr_i32(p.getInt(0));
     }
 
     public void setValue(MaybeOwnedPtr_i32 value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"ptr"})

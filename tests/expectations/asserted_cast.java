@@ -27,13 +27,14 @@ interface Bindings extends Library {
     }
   }
 
+
   class H extends IntegerType {
     public H() {
-      super(4);
+      super(4, true);
     }
 
     public H(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public H(Pointer p) {
@@ -56,22 +57,26 @@ interface Bindings extends Library {
     }
 
     public H getValue() {
-      return new H(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new H(p.getInt(0));
     }
 
     public void setValue(H value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class J extends IntegerType {
     public J() {
-      super(4);
+      super(4, true);
     }
 
     public J(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public J(Pointer p) {
@@ -94,22 +99,26 @@ interface Bindings extends Library {
     }
 
     public J getValue() {
-      return new J(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new J(p.getInt(0));
     }
 
     public void setValue(J value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class K extends IntegerType {
     public K() {
-      super(4);
+      super(4, true);
     }
 
     public K(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public K(Pointer p) {
@@ -132,14 +141,17 @@ interface Bindings extends Library {
     }
 
     public K getValue() {
-      return new K(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new K(p.getInt(0));
     }
 
     public void setValue(K value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void foo(H h, I i, J j, K k);
 

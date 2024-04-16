@@ -10,13 +10,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class BarType extends IntegerType {
     public BarType() {
-      super(4);
+      super(4, true);
     }
 
     public BarType(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public BarType(Pointer p) {
@@ -39,22 +40,26 @@ interface Bindings extends Library {
     }
 
     public BarType getValue() {
-      return new BarType(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new BarType(p.getInt(0));
     }
 
     public void setValue(BarType value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class FooType extends IntegerType {
     public FooType() {
-      super(4);
+      super(4, true);
     }
 
     public FooType(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public FooType(Pointer p) {
@@ -77,14 +82,17 @@ interface Bindings extends Library {
     }
 
     public FooType getValue() {
-      return new FooType(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new FooType(p.getInt(0));
     }
 
     public void setValue(FooType value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"ty", "x", "y"})
@@ -120,13 +128,14 @@ interface Bindings extends Library {
   }
 
 
+
   class C extends IntegerType {
     public C() {
-      super(4);
+      super(4, true);
     }
 
     public C(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public C(Pointer p) {
@@ -150,14 +159,17 @@ interface Bindings extends Library {
     }
 
     public C getValue() {
-      return new C(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new C(p.getInt(0));
     }
 
     public void setValue(C value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"ty", "x", "y"})

@@ -21,8 +21,8 @@ interface Bindings extends Library {
     }
 
     public ByteByReference start;
-    public NativeLong len;
-    public NativeLong point;
+    public _Size len;
+    public _Size point;
 
   }
 
@@ -37,12 +37,49 @@ interface Bindings extends Library {
     }
 
     public ByteByReference start;
-    public NativeLong len;
-    public NativeLong point;
+    public _Size len;
+    public _Size point;
 
   }
 
 
-  TakeUntil_0 until_nul(ByteByReference start, NativeLong len);
+  TakeUntil_0 until_nul(ByteByReference start, _Size len);
+
+  class _Size extends IntegerType {
+    public _Size() {
+      super(Native.POINTER_SIZE, true);
+    }
+
+    public _Size(long value) {
+      super(Native.POINTER_SIZE, value, true);
+    }
+
+    public _Size(Pointer p) {
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+  }
+
+  class _SizeByReference extends ByReference {
+    public _SizeByReference() {
+      super(Native.POINTER_SIZE);
+    }
+
+    public _SizeByReference(Pointer p) {
+      super(Native.POINTER_SIZE);
+      setPointer(p);
+    }
+
+    public _Size getValue() {
+      Pointer p = getPointer();
+      return new _Size(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+    public void setValue(_Size value) {
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
+    }
+
+  }
 
 }

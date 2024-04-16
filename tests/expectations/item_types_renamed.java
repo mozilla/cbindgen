@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class StyleOnlyThisShouldBeGenerated extends IntegerType {
     public StyleOnlyThisShouldBeGenerated() {
-      super(4);
+      super(4, true);
     }
 
     public StyleOnlyThisShouldBeGenerated(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public StyleOnlyThisShouldBeGenerated(Pointer p) {
@@ -37,13 +38,16 @@ interface Bindings extends Library {
     }
 
     public StyleOnlyThisShouldBeGenerated getValue() {
-      return new StyleOnlyThisShouldBeGenerated(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new StyleOnlyThisShouldBeGenerated(p.getInt(0));
     }
 
     public void setValue(StyleOnlyThisShouldBeGenerated value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 }

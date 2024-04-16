@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class E extends IntegerType {
     public E() {
-      super(4);
+      super(4, true);
     }
 
     public E(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public E(Pointer p) {
@@ -36,14 +37,17 @@ interface Bindings extends Library {
     }
 
     public E getValue() {
-      return new E(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new E(p.getInt(0));
     }
 
     public void setValue(E value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"field"})
@@ -75,13 +79,14 @@ interface Bindings extends Library {
   }
 
 
+
   class A extends IntegerType {
     public A() {
-      super(1);
+      super(1, true);
     }
 
     public A(long value) {
-      super(1, value);
+      super(1, value, true);
     }
 
     public A(Pointer p) {
@@ -101,14 +106,17 @@ interface Bindings extends Library {
     }
 
     public A getValue() {
-      return new A(getPointer().getByte(0));
+      Pointer p = getPointer();
+      return new A(p.getByte(0));
     }
 
     public void setValue(A value) {
-      getPointer().setByte(0, (byte)value.intValue());
+      Pointer p = getPointer();
+      p.setByte(0, (byte)value.intValue());
     }
 
   }
+
 
   /* Unsupported literal for constant C1 */
 

@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class IE extends IntegerType {
     public IE() {
-      super(4);
+      super(4, true);
     }
 
     public IE(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public IE(Pointer p) {
@@ -36,22 +37,26 @@ interface Bindings extends Library {
     }
 
     public IE getValue() {
-      return new IE(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new IE(p.getInt(0));
     }
 
     public void setValue(IE value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class UE extends IntegerType {
     public UE() {
-      super(4);
+      super(4, true);
     }
 
     public UE(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public UE(Pointer p) {
@@ -72,84 +77,95 @@ interface Bindings extends Library {
     }
 
     public UE getValue() {
-      return new UE(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new UE(p.getInt(0));
     }
 
     public void setValue(UE value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class Usize extends IntegerType {
     public Usize() {
-      super(Native.SIZE_T_SIZE);
+      super(Native.POINTER_SIZE, true);
     }
 
     public Usize(long value) {
-      super(Native.SIZE_T_SIZE, value);
+      super(Native.POINTER_SIZE, value, true);
     }
 
     public Usize(Pointer p) {
-      this(p.getNativeLong(0).longValue());
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
     }
 
   }
 
   class UsizeByReference extends ByReference {
     public UsizeByReference() {
-      super(Native.SIZE_T_SIZE);
+      super(Native.POINTER_SIZE);
     }
 
     public UsizeByReference(Pointer p) {
-      super(Native.SIZE_T_SIZE);
+      super(Native.POINTER_SIZE);
       setPointer(p);
     }
 
     public Usize getValue() {
-      return new Usize(getPointer().getNativeLong(0).longValue());
+      Pointer p = getPointer();
+      return new Usize(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
     }
 
     public void setValue(Usize value) {
-      getPointer().setNativeLong(0, new NativeLong(value.longValue()));
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
     }
 
   }
 
+
+
   class Isize extends IntegerType {
     public Isize() {
-      super(Native.SIZE_T_SIZE);
+      super(Native.POINTER_SIZE, false);
     }
 
     public Isize(long value) {
-      super(Native.SIZE_T_SIZE, value);
+      super(Native.POINTER_SIZE, value, false);
     }
 
     public Isize(Pointer p) {
-      this(p.getNativeLong(0).longValue());
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
     }
 
   }
 
   class IsizeByReference extends ByReference {
     public IsizeByReference() {
-      super(Native.SIZE_T_SIZE);
+      super(Native.POINTER_SIZE);
     }
 
     public IsizeByReference(Pointer p) {
-      super(Native.SIZE_T_SIZE);
+      super(Native.POINTER_SIZE);
       setPointer(p);
     }
 
     public Isize getValue() {
-      return new Isize(getPointer().getNativeLong(0).longValue());
+      Pointer p = getPointer();
+      return new Isize(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
     }
 
     public void setValue(Isize value) {
-      getPointer().setNativeLong(0, new NativeLong(value.longValue()));
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
     }
 
   }
+
 
   void root(Usize arg0, Isize arg1, UE arg2, IE arg3);
 

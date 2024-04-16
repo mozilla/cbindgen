@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class C extends IntegerType {
     public C() {
-      super(4);
+      super(4, true);
     }
 
     public C(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public C(Pointer p) {
@@ -37,14 +38,17 @@ interface Bindings extends Library {
     }
 
     public C getValue() {
-      return new C(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new C(p.getInt(0));
     }
 
     public void setValue(C value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"_0"})
@@ -120,7 +124,7 @@ interface Bindings extends Library {
     }
 
     public byte List;
-    public NativeLong Of;
+    public _Size Of;
     public B Things;
 
   }
@@ -136,19 +140,20 @@ interface Bindings extends Library {
     }
 
     public byte List;
-    public NativeLong Of;
+    public _Size Of;
     public B Things;
 
   }
 
 
+
   class F extends IntegerType {
     public F() {
-      super(4);
+      super(4, true);
     }
 
     public F(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public F(Pointer p) {
@@ -171,22 +176,26 @@ interface Bindings extends Library {
     }
 
     public F getValue() {
-      return new F(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new F(p.getInt(0));
     }
 
     public void setValue(F value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class H extends IntegerType {
     public H() {
-      super(4);
+      super(4, true);
     }
 
     public H(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public H(Pointer p) {
@@ -209,22 +218,26 @@ interface Bindings extends Library {
     }
 
     public H getValue() {
-      return new H(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new H(p.getInt(0));
     }
 
     public void setValue(H value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class I extends IntegerType {
     public I() {
-      super(4);
+      super(4, true);
     }
 
     public I(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public I(Pointer p) {
@@ -246,15 +259,55 @@ interface Bindings extends Library {
     }
 
     public I getValue() {
-      return new I(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new I(p.getInt(0));
     }
 
     public void setValue(I value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
   void root(A a, B b, C c, D d, F f, H h, I i);
+
+  class _Size extends IntegerType {
+    public _Size() {
+      super(Native.POINTER_SIZE, true);
+    }
+
+    public _Size(long value) {
+      super(Native.POINTER_SIZE, value, true);
+    }
+
+    public _Size(Pointer p) {
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+  }
+
+  class _SizeByReference extends ByReference {
+    public _SizeByReference() {
+      super(Native.POINTER_SIZE);
+    }
+
+    public _SizeByReference(Pointer p) {
+      super(Native.POINTER_SIZE);
+      setPointer(p);
+    }
+
+    public _Size getValue() {
+      Pointer p = getPointer();
+      return new _Size(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+    public void setValue(_Size value) {
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
+    }
+
+  }
 
 }

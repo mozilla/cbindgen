@@ -20,7 +20,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public boolean a;
+    public _Boolean a;
     public int b;
 
   }
@@ -35,19 +35,20 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public boolean a;
+    public _Boolean a;
     public int b;
 
   }
 
 
+
   class Bar extends IntegerType {
     public Bar() {
-      super(4);
+      super(4, true);
     }
 
     public Bar(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Bar(Pointer p) {
@@ -71,15 +72,57 @@ interface Bindings extends Library {
     }
 
     public Bar getValue() {
-      return new Bar(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Bar(p.getInt(0));
     }
 
     public void setValue(Bar value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
   Foo root(Bar aBar);
+
+  class _Boolean extends IntegerType {
+    public _Boolean() {
+      super(1, true);
+    }
+
+    public _Boolean(long value) {
+      super(1, value, true);
+    }
+
+    public _Boolean(Pointer p) {
+      this(p.getByte(0));
+    }
+
+    public static final _Boolean FALSE = new _Boolean(0);
+    public static final _Boolean TRUE = new _Boolean(1);
+  }
+
+  class _BooleanByReference extends ByReference {
+    public _BooleanByReference() {
+      super(1);
+    }
+
+    public _BooleanByReference(Pointer p) {
+      super(1);
+      setPointer(p);
+    }
+
+    public _Boolean getValue() {
+      Pointer p = getPointer();
+      return new _Boolean(p.getByte(0));
+    }
+
+    public void setValue(_Boolean value) {
+      Pointer p = getPointer();
+      p.setByte(0, (byte)value.intValue());
+    }
+
+  }
 
 }

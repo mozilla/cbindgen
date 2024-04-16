@@ -12,13 +12,14 @@ interface Bindings extends Library {
   /* Unsupported literal for constant C_H */
 
 
+
   class C_E extends IntegerType {
     public C_E() {
-      super(4);
+      super(4, true);
     }
 
     public C_E(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public C_E(Pointer p) {
@@ -40,14 +41,17 @@ interface Bindings extends Library {
     }
 
     public C_E getValue() {
-      return new C_E(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new C_E(p.getInt(0));
     }
 
     public void setValue(C_E value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   class C_A extends PointerType {
     public C_A() {

@@ -73,13 +73,14 @@ interface Bindings extends Library {
   }
 
 
+
   class C extends IntegerType {
     public C() {
-      super(4);
+      super(4, true);
     }
 
     public C(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public C(Pointer p) {
@@ -100,22 +101,26 @@ interface Bindings extends Library {
     }
 
     public C getValue() {
-      return new C(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new C(p.getInt(0));
     }
 
     public void setValue(C value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class E extends IntegerType {
     public E() {
-      super(4);
+      super(4, true);
     }
 
     public E(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public E(Pointer p) {
@@ -137,22 +142,26 @@ interface Bindings extends Library {
     }
 
     public E getValue() {
-      return new E(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new E(p.getInt(0));
     }
 
     public void setValue(E value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class F extends IntegerType {
     public F() {
-      super(4);
+      super(4, true);
     }
 
     public F(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public F(Pointer p) {
@@ -174,14 +183,17 @@ interface Bindings extends Library {
     }
 
     public F getValue() {
-      return new F(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new F(p.getInt(0));
     }
 
     public void setValue(F value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void root(A a, B b, C c, E e, F f, int namespace_, float float_);
 

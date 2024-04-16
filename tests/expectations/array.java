@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class Foo extends IntegerType {
     public Foo() {
-      super(4);
+      super(4, true);
     }
 
     public Foo(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Foo(Pointer p) {
@@ -36,14 +37,17 @@ interface Bindings extends Library {
     }
 
     public Foo getValue() {
-      return new Foo(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Foo(p.getInt(0));
     }
 
     public void setValue(Foo value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void root(Foo a);
 

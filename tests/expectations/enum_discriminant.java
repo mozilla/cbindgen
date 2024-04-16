@@ -12,13 +12,14 @@ interface Bindings extends Library {
   /* Unsupported literal for constant FOURTY_FOUR */
 
 
+
   class E extends IntegerType {
     public E() {
-      super(4);
+      super(4, true);
     }
 
     public E(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public E(Pointer p) {
@@ -45,14 +46,17 @@ interface Bindings extends Library {
     }
 
     public E getValue() {
-      return new E(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new E(p.getInt(0));
     }
 
     public void setValue(E value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void root(EByReference arg0);
 

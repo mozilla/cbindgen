@@ -18,7 +18,7 @@ interface Bindings extends Library {
   }
 
   interface C extends Callback {
-    boolean invoke(int arg0, int arg1);
+    _Boolean invoke(int arg0, int arg1);
   }
 
   interface D extends Callback {
@@ -192,11 +192,50 @@ interface Bindings extends Library {
   }
 
   interface P extends Callback {
-    void invoke(int named1st, boolean arg1, boolean named3rd, int arg3);
+    void invoke(int named1st, _Boolean arg1, _Boolean named3rd, int arg3);
   }
 
   Callback O();
 
   void root(A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n, P p);
+
+  class _Boolean extends IntegerType {
+    public _Boolean() {
+      super(1, true);
+    }
+
+    public _Boolean(long value) {
+      super(1, value, true);
+    }
+
+    public _Boolean(Pointer p) {
+      this(p.getByte(0));
+    }
+
+    public static final _Boolean FALSE = new _Boolean(0);
+    public static final _Boolean TRUE = new _Boolean(1);
+  }
+
+  class _BooleanByReference extends ByReference {
+    public _BooleanByReference() {
+      super(1);
+    }
+
+    public _BooleanByReference(Pointer p) {
+      super(1);
+      setPointer(p);
+    }
+
+    public _Boolean getValue() {
+      Pointer p = getPointer();
+      return new _Boolean(p.getByte(0));
+    }
+
+    public void setValue(_Boolean value) {
+      Pointer p = getPointer();
+      p.setByte(0, (byte)value.intValue());
+    }
+
+  }
 
 }

@@ -54,13 +54,14 @@ interface Bindings extends Library {
     }
   }
 
+
   class PREFIX_AbsoluteFontWeight extends IntegerType {
     public PREFIX_AbsoluteFontWeight() {
-      super(4);
+      super(4, true);
     }
 
     public PREFIX_AbsoluteFontWeight(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public PREFIX_AbsoluteFontWeight(Pointer p) {
@@ -83,14 +84,17 @@ interface Bindings extends Library {
     }
 
     public PREFIX_AbsoluteFontWeight getValue() {
-      return new PREFIX_AbsoluteFontWeight(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new PREFIX_AbsoluteFontWeight(p.getInt(0));
     }
 
     public void setValue(PREFIX_AbsoluteFontWeight value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void root(PREFIX_NamedLenArray x, PREFIX_ValuedLenArray y, PREFIX_AbsoluteFontWeight z);
 

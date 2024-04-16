@@ -12,6 +12,9 @@ use std::io::Write;
 pub struct JavaJnaLanguageBackend<'a> {
     config: &'a Config,
     binding_lib_crate_name: String,
+    seen_size: bool,
+    seen_size_t: bool,
+    seen_boolean: bool,
 }
 
 impl<'a> JavaJnaLanguageBackend<'a> {
@@ -19,6 +22,9 @@ impl<'a> JavaJnaLanguageBackend<'a> {
         Self {
             config,
             binding_lib_crate_name,
+            seen_size: false,
+            seen_size_t: false,
+            seen_boolean: false,
         }
     }
 }
@@ -30,8 +36,8 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             .config
             .java_jna
             .interface_name
-            .clone()
-            .unwrap_or("Bindings".to_string());
+            .as_deref()
+            .unwrap_or("Bindings");
 
         write!(out, "enum {}Singleton", name);
         out.open_brace();
@@ -60,6 +66,44 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
     }
 
     fn close_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>) {
+        if self.seen_size {
+            self.write_integer_type(
+                out,
+                &Documentation::none(),
+                "_Size",
+                JnaIntegerType::Size,
+                false,
+                None,
+                |_, _| {},
+            )
+        }
+        if self.seen_size_t {
+            self.write_integer_type(
+                out,
+                &Documentation::none(),
+                "_SizeT",
+                JnaIntegerType::SizeT,
+                false,
+                None,
+                |_, _| {},
+            )
+        }
+        if self.seen_boolean {
+            self.write_integer_type(
+                out,
+                &Documentation::none(),
+                "_Boolean",
+                JnaIntegerType::Byte,
+                false,
+                None,
+                |_, out| {
+                    out.new_line();
+                    write!(out, "public static final _Boolean FALSE = new _Boolean(0);");
+                    out.new_line();
+                    write!(out, "public static final _Boolean TRUE = new _Boolean(1);");
+                },
+            )
+        }
         out.close_brace(false);
     }
 
@@ -98,10 +142,12 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             out.new_line();
         }
 
-        out.write("import com.sun.jna.*;");
-        out.new_line();
-        out.write("import com.sun.jna.ptr.*;");
-        out.new_line();
+        if !self.config.no_includes {
+            out.write("import com.sun.jna.*;");
+            out.new_line();
+            out.write("import com.sun.jna.ptr.*;");
+            out.new_line();
+        }
     }
 
     fn write_footers<W: Write>(&mut self, _: &mut SourceWriter<W>) {}
@@ -112,7 +158,8 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             &e.documentation,
             &e.export_name,
             JnaIntegerType::Int, /* enum are most of the time the same size as ints */
-            &e.annotations.deprecated,
+            false,
+            e.annotations.deprecated.as_deref(),
             |lb, out| {
                 let mut current_discriminant = 0;
                 for variant in &e.variants {
@@ -143,7 +190,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             let field = s.fields.first();
             match field {
                 Some(Field {
-                    ty: Type::Primitive(PrimitiveType::Integer { kind, .. }),
+                    ty: Type::Primitive(PrimitiveType::Integer { kind, signed, .. }),
                     ..
                 }) => {
                     self.write_integer_type(
@@ -151,7 +198,8 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                         &s.documentation,
                         &s.export_name,
                         JnaIntegerType::from_kind(kind),
-                        &s.annotations.deprecated,
+                        *signed,
+                        s.annotations.deprecated.as_deref(),
                         |lb, out| {
                             for (constant, assoc_struct) in constants {
                                 constant.write(lb.config, lb, out, Some(assoc_struct));
@@ -172,7 +220,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                             name: &s.export_name,
                             superclass: path.export_name(),
                             interface: "Structure.ByValue",
-                            deprecated: &s.annotations.deprecated,
+                            deprecated: s.annotations.deprecated.as_deref(),
                         },
                     );
                     self.write_jna_struct(
@@ -184,7 +232,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                             name: &format!("{}ByReference", s.export_name()),
                             superclass: path.export_name(),
                             interface: "Structure.ByReference",
-                            deprecated: &s.annotations.deprecated,
+                            deprecated: s.annotations.deprecated.as_deref(),
                         },
                     );
                 }
@@ -194,7 +242,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 }) => self.write_pointer_type(
                     out,
                     &s.documentation,
-                    &s.annotations.deprecated,
+                    s.annotations.deprecated.as_deref(),
                     s.export_name(),
                 ),
                 _ => not_implemented(s, out),
@@ -209,7 +257,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     name: &s.export_name,
                     superclass: "Structure",
                     interface: "Structure.ByValue",
-                    deprecated: &s.annotations.deprecated,
+                    deprecated: s.annotations.deprecated.as_deref(),
                 },
             );
             self.write_jna_struct(
@@ -221,7 +269,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     name: &format!("{}ByReference", s.export_name),
                     superclass: "Structure",
                     interface: "Structure.ByReference",
-                    deprecated: &s.annotations.deprecated,
+                    deprecated: s.annotations.deprecated.as_deref(),
                 },
             );
         }
@@ -237,7 +285,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 name: &u.export_name,
                 superclass: "Union",
                 interface: "Structure.ByValue",
-                deprecated: &u.annotations.deprecated,
+                deprecated: u.annotations.deprecated.as_deref(),
             },
         );
         self.write_jna_struct(
@@ -249,7 +297,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 name: &format!("{}ByReference", &u.export_name),
                 superclass: "Union",
                 interface: "Structure.ByReference",
-                deprecated: &u.annotations.deprecated,
+                deprecated: u.annotations.deprecated.as_deref(),
             },
         );
     }
@@ -258,7 +306,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         self.write_pointer_type(
             out,
             &o.documentation,
-            &o.annotations.deprecated,
+            o.annotations.deprecated.as_deref(),
             &o.export_name,
         );
     }
@@ -321,14 +369,15 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 out.close_brace(false);
             }
             Type::Primitive(primitive) => match primitive {
-                PrimitiveType::Integer { kind, .. } => {
+                PrimitiveType::Integer { kind, signed, .. } => {
                     let jna_type = JnaIntegerType::from_kind(kind);
                     self.write_integer_type(
                         out,
                         &t.documentation,
                         &t.export_name,
                         jna_type,
-                        &t.annotations.deprecated,
+                        *signed,
+                        t.annotations.deprecated.as_deref(),
                         |_, _| {},
                     )
                 }
@@ -337,13 +386,13 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
             Type::Ptr { .. } => self.write_pointer_type(
                 out,
                 &t.documentation,
-                &t.annotations.deprecated,
+                t.annotations.deprecated.as_deref(),
                 &t.export_name,
             ),
             Type::Array(_, _) => self.write_pointer_type(
                 out,
                 &t.documentation,
-                &t.annotations.deprecated,
+                t.annotations.deprecated.as_deref(),
                 &t.export_name,
             ),
         }
@@ -360,7 +409,7 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
         f: &Function,
     ) {
         self.write_documentation(out, &f.documentation);
-        self.write_deprecated(out, &f.annotations.deprecated);
+        self.write_deprecated(out, f.annotations.deprecated.as_deref());
         self.write_type(out, &f.ret);
         write!(out, " {}(", f.path.name());
 
@@ -390,7 +439,11 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 Type::Primitive(primitive) => {
                     let typ = match primitive {
                         PrimitiveType::Void => "Pointer",
-                        PrimitiveType::Bool => "Pointer",
+                        PrimitiveType::Bool => {
+                            self.seen_boolean = true;
+                            // let's not use java's boolean as it has a 4 byte size instead of 1 byte
+                            "_Boolean"
+                        }
                         PrimitiveType::Char => "ByteByReference",
                         PrimitiveType::SChar => "ByteByReference",
                         PrimitiveType::UChar => "ByteByReference",
@@ -399,20 +452,24 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                         PrimitiveType::Double => "DoubleByReference",
                         PrimitiveType::VaList => "PointerByReference",
                         PrimitiveType::PtrDiffT => "PointerByReference",
-                        PrimitiveType::Integer { kind, .. } => {
-                            match kind {
-                                IntKind::Short => "ShortByReference",
-                                IntKind::Int => "IntByReference",
-                                IntKind::Long => "NativeLongByReference",
-                                IntKind::LongLong => "LongByReference",
-                                IntKind::SizeT => "NativeLongByReference", // TODO probably not right
-                                IntKind::Size => "NativeLongByReference", // TODO probably not right
-                                IntKind::B8 => "ByteByReference",
-                                IntKind::B16 => "ShortByReference",
-                                IntKind::B32 => "IntByReference",
-                                IntKind::B64 => "LongByReference",
+                        PrimitiveType::Integer { kind, .. } => match kind {
+                            IntKind::Short => "ShortByReference",
+                            IntKind::Int => "IntByReference",
+                            IntKind::Long => "NativeLongByReference",
+                            IntKind::LongLong => "LongByReference",
+                            IntKind::SizeT => {
+                                self.seen_size_t = true;
+                                "_SizeTByReference"
                             }
-                        }
+                            IntKind::Size => {
+                                self.seen_size = true;
+                                "_SizeByReference"
+                            }
+                            IntKind::B8 => "ByteByReference",
+                            IntKind::B16 => "ShortByReference",
+                            IntKind::B32 => "IntByReference",
+                            IntKind::B64 => "LongByReference",
+                        },
                     };
                     write!(out, "{typ}")
                 }
@@ -424,10 +481,14 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                 write!(out, "{}", path.export_name())
             }
             Type::Primitive(primitive) => {
-                //https://github.com/java-native-access/jna/blob/master/www/Mappings.md
+                // https://github.com/java-native-access/jna/blob/master/www/Mappings.md
                 let typ = match primitive {
                     PrimitiveType::Void => "void",
-                    PrimitiveType::Bool => "boolean",
+                    PrimitiveType::Bool => {
+                        self.seen_boolean = true;
+                        // let's not use java's boolean as it has a 4 byte size instead of 1 byte
+                        "_Boolean"
+                    }
                     PrimitiveType::Char => "byte",
                     PrimitiveType::SChar => "byte",
                     PrimitiveType::UChar => "byte",
@@ -436,20 +497,24 @@ impl LanguageBackend for JavaJnaLanguageBackend<'_> {
                     PrimitiveType::Double => "double",
                     PrimitiveType::VaList => "Pointer",
                     PrimitiveType::PtrDiffT => "Pointer",
-                    PrimitiveType::Integer { kind, .. } => {
-                        match kind {
-                            IntKind::Short => "short",
-                            IntKind::Int => "int",
-                            IntKind::Long => "NativeLong",
-                            IntKind::LongLong => "long",
-                            IntKind::SizeT => "NativeLong", // TODO probably not right
-                            IntKind::Size => "NativeLong",  // TODO probably not right
-                            IntKind::B8 => "byte",
-                            IntKind::B16 => "short",
-                            IntKind::B32 => "int",
-                            IntKind::B64 => "long",
+                    PrimitiveType::Integer { kind, .. } => match kind {
+                        IntKind::Short => "short",
+                        IntKind::Int => "int",
+                        IntKind::Long => "NativeLong",
+                        IntKind::LongLong => "long",
+                        IntKind::SizeT => {
+                            self.seen_size_t = true;
+                            "_SizeT"
                         }
-                    }
+                        IntKind::Size => {
+                            self.seen_size = true;
+                            "_Size"
+                        }
+                        IntKind::B8 => "byte",
+                        IntKind::B16 => "short",
+                        IntKind::B32 => "int",
+                        IntKind::B64 => "long",
+                    },
                 };
                 write!(out, "{typ}")
             }
@@ -496,6 +561,7 @@ enum JnaIntegerType {
     NativeLong,
     Long,
     SizeT,
+    Size,
 }
 
 impl JnaIntegerType {
@@ -507,28 +573,33 @@ impl JnaIntegerType {
             JnaIntegerType::NativeLong => "Native.LONG_SIZE",
             JnaIntegerType::Long => "8",
             JnaIntegerType::SizeT => "Native.SIZE_T_SIZE",
+            JnaIntegerType::Size => "Native.POINTER_SIZE",
         }
     }
 
     pub fn set_method(&self) -> &str {
         match self {
-            JnaIntegerType::Byte => "setByte(0, (byte)value.intValue())",
-            JnaIntegerType::Short => "setShort(0, (short)value.intValue())",
-            JnaIntegerType::Int => "setInt(0, value.intValue())",
-            JnaIntegerType::NativeLong | JnaIntegerType::SizeT => {
-                "setNativeLong(0, new NativeLong(value.longValue()))"
+            JnaIntegerType::Byte => "p.setByte(0, (byte)value.intValue());",
+            JnaIntegerType::Short => "p.setShort(0, (short)value.intValue());",
+            JnaIntegerType::Int => "p.setInt(0, value.intValue());",
+            JnaIntegerType::NativeLong => {
+                "p.setNativeLong(0, new NativeLong(value.longValue()));"
             }
-            JnaIntegerType::Long => "setLong(0, value.longValue())",
+            JnaIntegerType::SizeT => "if (Native.SIZE_T_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }",
+            JnaIntegerType::Size => "if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }",
+            JnaIntegerType::Long => "p.setLong(0, value.longValue());",
         }
     }
 
     pub fn get_method(&self) -> &str {
         match self {
-            JnaIntegerType::Byte => "getByte(0)",
-            JnaIntegerType::Short => "getShort(0)",
-            JnaIntegerType::Int => "getInt(0)",
-            JnaIntegerType::NativeLong | JnaIntegerType::SizeT => "getNativeLong(0).longValue()",
-            JnaIntegerType::Long => "getLong(0)",
+            JnaIntegerType::Byte => "p.getByte(0)",
+            JnaIntegerType::Short => "p.getShort(0)",
+            JnaIntegerType::Int => "p.getInt(0)",
+            JnaIntegerType::NativeLong => "p.getNativeLong(0).longValue()",
+            JnaIntegerType::SizeT => "Native.SIZE_T_SIZE == 8 ? p.getLong(0) : p.getInt(0)",
+            JnaIntegerType::Size => "Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0)",
+            JnaIntegerType::Long => "p.getLong(0)",
         }
     }
 
@@ -539,7 +610,7 @@ impl JnaIntegerType {
             IntKind::Long => JnaIntegerType::NativeLong,
             IntKind::LongLong => JnaIntegerType::Long,
             IntKind::SizeT => JnaIntegerType::SizeT,
-            IntKind::Size => JnaIntegerType::SizeT,
+            IntKind::Size => JnaIntegerType::Size,
             IntKind::B8 => JnaIntegerType::Byte,
             IntKind::B16 => JnaIntegerType::Short,
             IntKind::B32 => JnaIntegerType::Int,
@@ -555,7 +626,7 @@ struct JnaStruct<'a> {
     name: &'a str,
     superclass: &'a str,
     interface: &'a str,
-    deprecated: &'a Option<String>,
+    deprecated: Option<&'a str>,
 }
 
 struct IndexedFunctionArg<'a> {
@@ -565,11 +636,7 @@ struct IndexedFunctionArg<'a> {
 }
 
 impl JavaJnaLanguageBackend<'_> {
-    fn write_deprecated<F: Write>(
-        &mut self,
-        out: &mut SourceWriter<F>,
-        deprecated: &Option<String>,
-    ) {
+    fn write_deprecated<F: Write>(&mut self, out: &mut SourceWriter<F>, deprecated: Option<&str>) {
         if let Some(deprecated) = deprecated {
             if !deprecated.is_empty() {
                 out.write("/**");
@@ -714,29 +781,32 @@ impl JavaJnaLanguageBackend<'_> {
         documentation: &Documentation,
         name: &str,
         jna_underlying_type: JnaIntegerType,
-        deprecated: &Option<String>,
+        signed: bool,
+        deprecated: Option<&str>,
         extra: F,
     ) {
         let size = jna_underlying_type.size();
+        let unsigned = !signed;
+        out.new_line_if_not_start();
         self.write_documentation(out, documentation);
         self.write_deprecated(out, deprecated);
         write!(out, "class {} extends IntegerType", name);
         out.open_brace();
         write!(out, "public {}()", name);
         out.open_brace();
-        write!(out, "super({size});");
+        write!(out, "super({size}, {unsigned});");
         out.close_brace(false);
         out.new_line();
         out.new_line();
         write!(out, "public {}(long value)", name);
         out.open_brace();
-        write!(out, "super({size}, value);");
+        write!(out, "super({size}, value, {unsigned});");
         out.close_brace(false);
         out.new_line();
         out.new_line();
         write!(out, "public {}(Pointer p)", name);
         out.open_brace();
-        write!(out, "this(p.{});", jna_underlying_type.get_method(),);
+        write!(out, "this({});", jna_underlying_type.get_method(),);
         out.close_brace(false);
         out.new_line();
         extra(self, out);
@@ -762,9 +832,11 @@ impl JavaJnaLanguageBackend<'_> {
         out.new_line();
         write!(out, "public {name} getValue()");
         out.open_brace();
+        write!(out, "Pointer p = getPointer();");
+        out.new_line();
         write!(
             out,
-            "return new {}(getPointer().{});",
+            "return new {}({});",
             name,
             jna_underlying_type.get_method()
         );
@@ -773,17 +845,20 @@ impl JavaJnaLanguageBackend<'_> {
         out.new_line();
         write!(out, "public void setValue({name} value)");
         out.open_brace();
-        write!(out, "getPointer().{};", jna_underlying_type.set_method());
+        write!(out, "Pointer p = getPointer();");
+        out.new_line();
+        write!(out, "{}", jna_underlying_type.set_method());
         out.close_brace(false);
         out.new_line();
         out.close_brace(false);
+        out.new_line();
     }
 
     fn write_pointer_type<W: Write>(
         &mut self,
         out: &mut SourceWriter<W>,
         documentation: &Documentation,
-        deprecated: &Option<String>,
+        deprecated: Option<&str>,
         name: &str,
     ) {
         self.write_documentation(out, documentation);

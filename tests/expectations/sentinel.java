@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class A extends IntegerType {
     public A() {
-      super(4);
+      super(4, true);
     }
 
     public A(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public A(Pointer p) {
@@ -43,22 +44,26 @@ interface Bindings extends Library {
     }
 
     public A getValue() {
-      return new A(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new A(p.getInt(0));
     }
 
     public void setValue(A value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class B extends IntegerType {
     public B() {
-      super(4);
+      super(4, true);
     }
 
     public B(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public B(Pointer p) {
@@ -86,22 +91,26 @@ interface Bindings extends Library {
     }
 
     public B getValue() {
-      return new B(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new B(p.getInt(0));
     }
 
     public void setValue(B value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class C extends IntegerType {
     public C() {
-      super(4);
+      super(4, true);
     }
 
     public C(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public C(Pointer p) {
@@ -129,14 +138,17 @@ interface Bindings extends Library {
     }
 
     public C getValue() {
-      return new C(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new C(p.getInt(0));
     }
 
     public void setValue(C value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void root(A a, B b, C c);
 

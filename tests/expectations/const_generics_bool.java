@@ -38,8 +38,8 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong num_buckets;
-    public NativeLong capacity;
+    public _Size num_buckets;
+    public _Size capacity;
     public ByteByReference occupied;
     public StrByReference keys;
     public ByteByReference vals;
@@ -56,8 +56,8 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong num_buckets;
-    public NativeLong capacity;
+    public _Size num_buckets;
+    public _Size capacity;
     public ByteByReference occupied;
     public StrByReference keys;
     public ByteByReference vals;
@@ -98,8 +98,8 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong num_buckets;
-    public NativeLong capacity;
+    public _Size num_buckets;
+    public _Size capacity;
     public ByteByReference occupied;
     public StrByReference keys;
     public LongByReference vals;
@@ -116,8 +116,8 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong num_buckets;
-    public NativeLong capacity;
+    public _Size num_buckets;
+    public _Size capacity;
     public ByteByReference occupied;
     public StrByReference keys;
     public LongByReference vals;
@@ -136,5 +136,42 @@ interface Bindings extends Library {
   HashTable_Str__u64__trueByReference new_map();
 
   void map_for_each(HashTable_Str__u64__trueByReference map, MapCallback callback);
+
+  class _Size extends IntegerType {
+    public _Size() {
+      super(Native.POINTER_SIZE, true);
+    }
+
+    public _Size(long value) {
+      super(Native.POINTER_SIZE, value, true);
+    }
+
+    public _Size(Pointer p) {
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+  }
+
+  class _SizeByReference extends ByReference {
+    public _SizeByReference() {
+      super(Native.POINTER_SIZE);
+    }
+
+    public _SizeByReference(Pointer p) {
+      super(Native.POINTER_SIZE);
+      setPointer(p);
+    }
+
+    public _Size getValue() {
+      Pointer p = getPointer();
+      return new _Size(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+    public void setValue(_Size value) {
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
+    }
+
+  }
 
 }

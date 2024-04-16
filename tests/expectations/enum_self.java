@@ -39,13 +39,14 @@ interface Bindings extends Library {
   }
 
 
+
   class Bar extends IntegerType {
     public Bar() {
-      super(4);
+      super(4, true);
     }
 
     public Bar(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Bar(Pointer p) {
@@ -68,14 +69,17 @@ interface Bindings extends Library {
     }
 
     public Bar getValue() {
-      return new Bar(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Bar(p.getInt(0));
     }
 
     public void setValue(Bar value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void root(Bar b);
 

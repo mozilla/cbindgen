@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class TransparentStruct extends IntegerType {
     public TransparentStruct() {
-      super(1);
+      super(1, true);
     }
 
     public TransparentStruct(long value) {
-      super(1, value);
+      super(1, value, true);
     }
 
     public TransparentStruct(Pointer p) {
@@ -35,27 +36,31 @@ interface Bindings extends Library {
     }
 
     public TransparentStruct getValue() {
-      return new TransparentStruct(getPointer().getByte(0));
+      Pointer p = getPointer();
+      return new TransparentStruct(p.getByte(0));
     }
 
     public void setValue(TransparentStruct value) {
-      getPointer().setByte(0, (byte)value.intValue());
+      Pointer p = getPointer();
+      p.setByte(0, (byte)value.intValue());
     }
 
   }
+
   /* Unsupported literal for constant ASSOC_STRUCT_FOO */
 
   public static final TransparentStruct ASSOC_STRUCT_BAR  = new TransparentStruct(2);
 
 
 
+
   class TransparentTupleStruct extends IntegerType {
     public TransparentTupleStruct() {
-      super(1);
+      super(1, true);
     }
 
     public TransparentTupleStruct(long value) {
-      super(1, value);
+      super(1, value, true);
     }
 
     public TransparentTupleStruct(Pointer p) {
@@ -75,14 +80,17 @@ interface Bindings extends Library {
     }
 
     public TransparentTupleStruct getValue() {
-      return new TransparentTupleStruct(getPointer().getByte(0));
+      Pointer p = getPointer();
+      return new TransparentTupleStruct(p.getByte(0));
     }
 
     public void setValue(TransparentTupleStruct value) {
-      getPointer().setByte(0, (byte)value.intValue());
+      Pointer p = getPointer();
+      p.setByte(0, (byte)value.intValue());
     }
 
   }
+
 
   public static final TransparentStruct STRUCT_FOO  = new TransparentStruct(4);
 

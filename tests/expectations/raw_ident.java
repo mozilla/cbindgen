@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class Enum extends IntegerType {
     public Enum() {
-      super(4);
+      super(4, true);
     }
 
     public Enum(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Enum(Pointer p) {
@@ -37,14 +38,17 @@ interface Bindings extends Library {
     }
 
     public Enum getValue() {
-      return new Enum(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Enum(p.getInt(0));
     }
 
     public void setValue(Enum value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"field"})

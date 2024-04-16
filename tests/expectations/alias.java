@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class Status extends IntegerType {
     public Status() {
-      super(4);
+      super(4, true);
     }
 
     public Status(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Status(Pointer p) {
@@ -37,14 +38,17 @@ interface Bindings extends Library {
     }
 
     public Status getValue() {
-      return new Status(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Status(p.getInt(0));
     }
 
     public void setValue(Status value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"a", "b"})
@@ -182,13 +186,14 @@ interface Bindings extends Library {
     }
   }
 
+
   class Unit extends IntegerType {
     public Unit() {
-      super(4);
+      super(4, false);
     }
 
     public Unit(long value) {
-      super(4, value);
+      super(4, value, false);
     }
 
     public Unit(Pointer p) {
@@ -208,14 +213,17 @@ interface Bindings extends Library {
     }
 
     public Unit getValue() {
-      return new Unit(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Unit(p.getInt(0));
     }
 
     public void setValue(Unit value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   class SpecialStatus extends Status {
     public SpecialStatus() {

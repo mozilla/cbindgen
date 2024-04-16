@@ -147,7 +147,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -162,7 +162,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -179,7 +179,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -194,7 +194,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -211,7 +211,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -226,7 +226,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -243,7 +243,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -258,7 +258,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -275,7 +275,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -290,7 +290,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -307,7 +307,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -322,7 +322,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong arg1;
+    public _Size arg1;
     public ByteByReference arg2;
 
   }
@@ -339,7 +339,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong variant1;
+    public _Size variant1;
     public ByteByReference variant2;
 
   }
@@ -354,7 +354,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong variant1;
+    public _Size variant1;
     public ByteByReference variant2;
 
   }
@@ -371,7 +371,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong variant1;
+    public _Size variant1;
     public ByteByReference variant2;
 
   }
@@ -386,7 +386,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong variant1;
+    public _Size variant1;
     public ByteByReference variant2;
 
   }
@@ -403,7 +403,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong variant1;
+    public _Size variant1;
     public ByteByReference variant2;
 
   }
@@ -418,7 +418,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong variant1;
+    public _Size variant1;
     public ByteByReference variant2;
 
   }
@@ -435,7 +435,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong variant1;
+    public _Size variant1;
     public ByteByReference variant2;
 
   }
@@ -450,10 +450,47 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong variant1;
+    public _Size variant1;
     public ByteByReference variant2;
 
   }
 
+
+  class _Size extends IntegerType {
+    public _Size() {
+      super(Native.POINTER_SIZE, true);
+    }
+
+    public _Size(long value) {
+      super(Native.POINTER_SIZE, value, true);
+    }
+
+    public _Size(Pointer p) {
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+  }
+
+  class _SizeByReference extends ByReference {
+    public _SizeByReference() {
+      super(Native.POINTER_SIZE);
+    }
+
+    public _SizeByReference(Pointer p) {
+      super(Native.POINTER_SIZE);
+      setPointer(p);
+    }
+
+    public _Size getValue() {
+      Pointer p = getPointer();
+      return new _Size(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+    public void setValue(_Size value) {
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
+    }
+
+  }
 
 }

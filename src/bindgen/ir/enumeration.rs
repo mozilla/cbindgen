@@ -729,7 +729,7 @@ impl Enum {
                     write!(out, "{}enum {}", config.style.cython_def(), tag_name);
                 }
             }
-            _ => unimplemented!(),
+            Language::JavaJna => unreachable!("the java-jna backend does not use this enum impl"),
         }
         out.open_brace();
 

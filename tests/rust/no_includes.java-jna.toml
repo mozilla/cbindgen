@@ -1,0 +1,5 @@
+no_includes = true
+header = """
+import com.sun.jna.*; // manually added
+import com.sun.jna.ptr.*; // manually added
+"""

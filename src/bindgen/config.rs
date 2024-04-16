@@ -47,9 +47,6 @@ impl FromStr for Language {
             "Java-JNA" => Ok(Language::JavaJna),
             "Java-Jna" => Ok(Language::JavaJna),
             "java-jna" => Ok(Language::JavaJna),
-            "JavaJNA" => Ok(Language::JavaJna),
-            "JavaJna" => Ok(Language::JavaJna),
-            "javajna" => Ok(Language::JavaJna),
             _ => Err(format!("Unrecognized Language: '{}'.", s)),
         }
     }
@@ -61,18 +58,10 @@ impl Display for Language {
             f,
             "{}",
             match self {
-                Language::Cxx => {
-                    "cxx"
-                }
-                Language::C => {
-                    "c"
-                }
-                Language::Cython => {
-                    "cython"
-                }
-                Language::JavaJna => {
-                    "java-jna"
-                }
+                Language::Cxx => "cxx",
+                Language::C => "c",
+                Language::Cython => "cython",
+                Language::JavaJna => "java-jna",
             }
         )
     }
@@ -85,7 +74,9 @@ impl Language {
         match self {
             Language::Cxx | Language::C => "typedef",
             Language::Cython => "ctypedef",
-            _ => unimplemented!(),
+            Language::JavaJna => {
+                unreachable!("the java-jna backend does not use this typedef impl")
+            }
         }
     }
 }

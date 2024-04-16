@@ -10,13 +10,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class FillRule extends IntegerType {
     public FillRule() {
-      super(4);
+      super(4, true);
     }
 
     public FillRule(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public FillRule(Pointer p) {
@@ -38,14 +39,17 @@ interface Bindings extends Library {
     }
 
     public FillRule getValue() {
-      return new FillRule(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new FillRule(p.getInt(0));
     }
 
     public void setValue(FillRule value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
 
@@ -63,7 +67,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong len;
+    public _Size len;
     public IntByReference ptr;
 
   }
@@ -83,7 +87,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong len;
+    public _Size len;
     public IntByReference ptr;
 
   }
@@ -137,7 +141,7 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong len;
+    public _Size len;
     public IntByReference ptr;
 
   }
@@ -157,19 +161,20 @@ interface Bindings extends Library {
       super(p);
     }
 
-    public NativeLong len;
+    public _Size len;
     public IntByReference ptr;
 
   }
 
 
+
   class Foo_u32 extends IntegerType {
     public Foo_u32() {
-      super(4);
+      super(4, true);
     }
 
     public Foo_u32(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Foo_u32(Pointer p) {
@@ -195,14 +200,17 @@ interface Bindings extends Library {
     }
 
     public Foo_u32 getValue() {
-      return new Foo_u32(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Foo_u32(p.getInt(0));
     }
 
     public void setValue(Foo_u32 value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"fill", "coordinates"})
@@ -236,13 +244,14 @@ interface Bindings extends Library {
   }
 
 
+
   class Baz_i32 extends IntegerType {
     public Baz_i32() {
-      super(4);
+      super(4, true);
     }
 
     public Baz_i32(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Baz_i32(Pointer p) {
@@ -268,22 +277,26 @@ interface Bindings extends Library {
     }
 
     public Baz_i32 getValue() {
-      return new Baz_i32(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Baz_i32(p.getInt(0));
     }
 
     public void setValue(Baz_i32 value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class Taz extends IntegerType {
     public Taz() {
-      super(4);
+      super(4, true);
     }
 
     public Taz(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Taz(Pointer p) {
@@ -306,22 +319,26 @@ interface Bindings extends Library {
     }
 
     public Taz getValue() {
-      return new Taz(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Taz(p.getInt(0));
     }
 
     public void setValue(Taz value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class Tazz extends IntegerType {
     public Tazz() {
-      super(4);
+      super(4, true);
     }
 
     public Tazz(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Tazz(Pointer p) {
@@ -343,22 +360,26 @@ interface Bindings extends Library {
     }
 
     public Tazz getValue() {
-      return new Tazz(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Tazz(p.getInt(0));
     }
 
     public void setValue(Tazz value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class Tazzz extends IntegerType {
     public Tazzz() {
-      super(4);
+      super(4, true);
     }
 
     public Tazzz(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Tazzz(Pointer p) {
@@ -380,22 +401,26 @@ interface Bindings extends Library {
     }
 
     public Tazzz getValue() {
-      return new Tazzz(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Tazzz(p.getInt(0));
     }
 
     public void setValue(Tazzz value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class Tazzzz extends IntegerType {
     public Tazzzz() {
-      super(4);
+      super(4, true);
     }
 
     public Tazzzz(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Tazzzz(Pointer p) {
@@ -417,22 +442,26 @@ interface Bindings extends Library {
     }
 
     public Tazzzz getValue() {
-      return new Tazzzz(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Tazzzz(p.getInt(0));
     }
 
     public void setValue(Tazzzz value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class Qux extends IntegerType {
     public Qux() {
-      super(4);
+      super(4, true);
     }
 
     public Qux(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public Qux(Pointer p) {
@@ -454,14 +483,17 @@ interface Bindings extends Library {
     }
 
     public Qux getValue() {
-      return new Qux(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new Qux(p.getInt(0));
     }
 
     public void setValue(Qux value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void root(Foo_u32ByReference a, 
             Baz_i32ByReference b, 
@@ -470,5 +502,42 @@ interface Bindings extends Library {
             TazzzByReference e, 
             TazzzzByReference f, 
             QuxByReference g);
+
+  class _Size extends IntegerType {
+    public _Size() {
+      super(Native.POINTER_SIZE, true);
+    }
+
+    public _Size(long value) {
+      super(Native.POINTER_SIZE, value, true);
+    }
+
+    public _Size(Pointer p) {
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+  }
+
+  class _SizeByReference extends ByReference {
+    public _SizeByReference() {
+      super(Native.POINTER_SIZE);
+    }
+
+    public _SizeByReference(Pointer p) {
+      super(Native.POINTER_SIZE);
+      setPointer(p);
+    }
+
+    public _Size getValue() {
+      Pointer p = getPointer();
+      return new _Size(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+    public void setValue(_Size value) {
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
+    }
+
+  }
 
 }

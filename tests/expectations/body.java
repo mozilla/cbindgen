@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class MyCLikeEnum extends IntegerType {
     public MyCLikeEnum() {
-      super(4);
+      super(4, true);
     }
 
     public MyCLikeEnum(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public MyCLikeEnum(Pointer p) {
@@ -38,22 +39,26 @@ interface Bindings extends Library {
     }
 
     public MyCLikeEnum getValue() {
-      return new MyCLikeEnum(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new MyCLikeEnum(p.getInt(0));
     }
 
     public void setValue(MyCLikeEnum value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class MyCLikeEnum_Prepended extends IntegerType {
     public MyCLikeEnum_Prepended() {
-      super(4);
+      super(4, true);
     }
 
     public MyCLikeEnum_Prepended(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public MyCLikeEnum_Prepended(Pointer p) {
@@ -76,14 +81,17 @@ interface Bindings extends Library {
     }
 
     public MyCLikeEnum_Prepended getValue() {
-      return new MyCLikeEnum_Prepended(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new MyCLikeEnum_Prepended(p.getInt(0));
     }
 
     public void setValue(MyCLikeEnum_Prepended value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"i"})
@@ -115,13 +123,14 @@ interface Bindings extends Library {
   }
 
 
+
   class MyFancyEnum extends IntegerType {
     public MyFancyEnum() {
-      super(4);
+      super(4, true);
     }
 
     public MyFancyEnum(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public MyFancyEnum(Pointer p) {
@@ -144,14 +153,17 @@ interface Bindings extends Library {
     }
 
     public MyFancyEnum getValue() {
-      return new MyFancyEnum(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new MyFancyEnum(p.getInt(0));
     }
 
     public void setValue(MyFancyEnum value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"f", "u"})
@@ -215,13 +227,14 @@ interface Bindings extends Library {
   }
 
 
+
   class MyFancyEnum_Prepended extends IntegerType {
     public MyFancyEnum_Prepended() {
-      super(4);
+      super(4, true);
     }
 
     public MyFancyEnum_Prepended(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public MyFancyEnum_Prepended(Pointer p) {
@@ -244,14 +257,17 @@ interface Bindings extends Library {
     }
 
     public MyFancyEnum_Prepended getValue() {
-      return new MyFancyEnum_Prepended(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new MyFancyEnum_Prepended(p.getInt(0));
     }
 
     public void setValue(MyFancyEnum_Prepended value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"f", "u"})

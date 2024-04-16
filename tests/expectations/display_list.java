@@ -81,13 +81,14 @@ interface Bindings extends Library {
   }
 
 
+
   class DisplayItem extends IntegerType {
     public DisplayItem() {
-      super(4);
+      super(4, true);
     }
 
     public DisplayItem(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public DisplayItem(Pointer p) {
@@ -110,15 +111,57 @@ interface Bindings extends Library {
     }
 
     public DisplayItem getValue() {
-      return new DisplayItem(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new DisplayItem(p.getInt(0));
     }
 
     public void setValue(DisplayItem value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
-  boolean push_item(DisplayItem item);
+
+  _Boolean push_item(DisplayItem item);
+
+  class _Boolean extends IntegerType {
+    public _Boolean() {
+      super(1, true);
+    }
+
+    public _Boolean(long value) {
+      super(1, value, true);
+    }
+
+    public _Boolean(Pointer p) {
+      this(p.getByte(0));
+    }
+
+    public static final _Boolean FALSE = new _Boolean(0);
+    public static final _Boolean TRUE = new _Boolean(1);
+  }
+
+  class _BooleanByReference extends ByReference {
+    public _BooleanByReference() {
+      super(1);
+    }
+
+    public _BooleanByReference(Pointer p) {
+      super(1);
+      setPointer(p);
+    }
+
+    public _Boolean getValue() {
+      Pointer p = getPointer();
+      return new _Boolean(p.getByte(0));
+    }
+
+    public void setValue(_Boolean value) {
+      Pointer p = getPointer();
+      p.setByte(0, (byte)value.intValue());
+    }
+
+  }
 
 }

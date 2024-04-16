@@ -9,13 +9,14 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   class C extends IntegerType {
     public C() {
-      super(4);
+      super(4, true);
     }
 
     public C(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public C(Pointer p) {
@@ -37,14 +38,17 @@ interface Bindings extends Library {
     }
 
     public C getValue() {
-      return new C(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new C(p.getInt(0));
     }
 
     public void setValue(C value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Structure.FieldOrder({"m0"})
@@ -108,13 +112,14 @@ interface Bindings extends Library {
   }
 
 
+
   class F extends IntegerType {
     public F() {
-      super(4);
+      super(4, true);
     }
 
     public F(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public F(Pointer p) {
@@ -137,22 +142,26 @@ interface Bindings extends Library {
     }
 
     public F getValue() {
-      return new F(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new F(p.getInt(0));
     }
 
     public void setValue(F value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class H extends IntegerType {
     public H() {
-      super(4);
+      super(4, true);
     }
 
     public H(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public H(Pointer p) {
@@ -175,14 +184,17 @@ interface Bindings extends Library {
     }
 
     public H getValue() {
-      return new H(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new H(p.getInt(0));
     }
 
     public void setValue(H value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   void root(A x, B y, C z, F f, H h);
 

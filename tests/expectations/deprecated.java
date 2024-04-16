@@ -9,14 +9,15 @@ enum BindingsSingleton {
 interface Bindings extends Library {
   Bindings INSTANCE = BindingsSingleton.INSTANCE.lib;
 
+
   @Deprecated
   class DeprecatedEnum extends IntegerType {
     public DeprecatedEnum() {
-      super(4);
+      super(4, true);
     }
 
     public DeprecatedEnum(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public DeprecatedEnum(Pointer p) {
@@ -37,14 +38,18 @@ interface Bindings extends Library {
     }
 
     public DeprecatedEnum getValue() {
-      return new DeprecatedEnum(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new DeprecatedEnum(p.getInt(0));
     }
 
     public void setValue(DeprecatedEnum value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
+
 
   /**
    * @deprecated This is a note
@@ -52,11 +57,11 @@ interface Bindings extends Library {
   @Deprecated
   class DeprecatedEnumWithNote extends IntegerType {
     public DeprecatedEnumWithNote() {
-      super(4);
+      super(4, true);
     }
 
     public DeprecatedEnumWithNote(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public DeprecatedEnumWithNote(Pointer p) {
@@ -77,22 +82,26 @@ interface Bindings extends Library {
     }
 
     public DeprecatedEnumWithNote getValue() {
-      return new DeprecatedEnumWithNote(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new DeprecatedEnumWithNote(p.getInt(0));
     }
 
     public void setValue(DeprecatedEnumWithNote value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
 
+
+
   class EnumWithDeprecatedVariants extends IntegerType {
     public EnumWithDeprecatedVariants() {
-      super(4);
+      super(4, true);
     }
 
     public EnumWithDeprecatedVariants(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public EnumWithDeprecatedVariants(Pointer p) {
@@ -116,14 +125,17 @@ interface Bindings extends Library {
     }
 
     public EnumWithDeprecatedVariants getValue() {
-      return new EnumWithDeprecatedVariants(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new EnumWithDeprecatedVariants(p.getInt(0));
     }
 
     public void setValue(EnumWithDeprecatedVariants value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
 
   @Deprecated
@@ -195,13 +207,14 @@ interface Bindings extends Library {
   }
 
 
+
   class EnumWithDeprecatedStructVariants extends IntegerType {
     public EnumWithDeprecatedStructVariants() {
-      super(4);
+      super(4, true);
     }
 
     public EnumWithDeprecatedStructVariants(long value) {
-      super(4, value);
+      super(4, value, true);
     }
 
     public EnumWithDeprecatedStructVariants(Pointer p) {
@@ -224,14 +237,17 @@ interface Bindings extends Library {
     }
 
     public EnumWithDeprecatedStructVariants getValue() {
-      return new EnumWithDeprecatedStructVariants(getPointer().getInt(0));
+      Pointer p = getPointer();
+      return new EnumWithDeprecatedStructVariants(p.getInt(0));
     }
 
     public void setValue(EnumWithDeprecatedStructVariants value) {
-      getPointer().setInt(0, value.intValue());
+      Pointer p = getPointer();
+      p.setInt(0, value.intValue());
     }
 
   }
+
 
   @Deprecated
   void deprecated_without_note();

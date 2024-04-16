@@ -21,7 +21,7 @@ interface Bindings extends Library {
     }
 
     public ByteByReference buf;
-    public NativeLong len;
+    public _Size len;
 
   }
 
@@ -36,7 +36,7 @@ interface Bindings extends Library {
     }
 
     public ByteByReference buf;
-    public NativeLong len;
+    public _Size len;
 
   }
 
@@ -53,7 +53,7 @@ interface Bindings extends Library {
     }
 
     public ByteByReference buf;
-    public NativeLong len;
+    public _Size len;
 
   }
 
@@ -68,15 +68,52 @@ interface Bindings extends Library {
     }
 
     public ByteByReference buf;
-    public NativeLong len;
+    public _Size len;
 
   }
 
 
-  void init_parens_parser(Parser_40__41ByReference p, ByteByReference buf, NativeLong len);
+  void init_parens_parser(Parser_40__41ByReference p, ByteByReference buf, _Size len);
 
   void destroy_parens_parser(Parser_40__41ByReference p);
 
-  void init_braces_parser(Parser_123__125ByReference p, ByteByReference buf, NativeLong len);
+  void init_braces_parser(Parser_123__125ByReference p, ByteByReference buf, _Size len);
+
+  class _Size extends IntegerType {
+    public _Size() {
+      super(Native.POINTER_SIZE, true);
+    }
+
+    public _Size(long value) {
+      super(Native.POINTER_SIZE, value, true);
+    }
+
+    public _Size(Pointer p) {
+      this(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+  }
+
+  class _SizeByReference extends ByReference {
+    public _SizeByReference() {
+      super(Native.POINTER_SIZE);
+    }
+
+    public _SizeByReference(Pointer p) {
+      super(Native.POINTER_SIZE);
+      setPointer(p);
+    }
+
+    public _Size getValue() {
+      Pointer p = getPointer();
+      return new _Size(Native.POINTER_SIZE == 8 ? p.getLong(0) : p.getInt(0));
+    }
+
+    public void setValue(_Size value) {
+      Pointer p = getPointer();
+      if (Native.POINTER_SIZE == 8) { p.setLong(0, value.longValue()); } else { p.setInt(0, value.intValue()); }
+    }
+
+  }
 
 }
