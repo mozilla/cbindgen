@@ -53,5 +53,5 @@ extern "C" {
 struct Foo root(union Bar aBar);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

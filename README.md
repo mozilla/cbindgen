@@ -1,4 +1,4 @@
-# `cbindgen` &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.64%2B-blue.svg?maxAge=3600)](https://github.com/mozilla/cbindgen)
+# `cbindgen` &emsp; [![Build Status]][actions] [![Latest Version]][crates.io] [![Api Rustdoc]][rustdoc] [![Rust](https://img.shields.io/badge/rust-1.70%2B-blue.svg?maxAge=3600)](https://github.com/mozilla/cbindgen)
 
 [Build Status]: https://github.com/mozilla/cbindgen/workflows/cbindgen/badge.svg
 [actions]: https://github.com/mozilla/cbindgen/actions
@@ -7,7 +7,7 @@
 [Api Rustdoc]: https://img.shields.io/badge/api-rustdoc-blue.svg
 [rustdoc]: https://docs.rs/cbindgen
 
-[Read the full user docs here!](docs.md)
+[Read the full user docs here!](https://github.com/mozilla/cbindgen/blob/master/docs.md)
 
 cbindgen creates C/C++11 headers for Rust libraries which expose a public C API.
 
@@ -86,6 +86,7 @@ in production:
 * [webrender](https://searchfox.org/mozilla-central/source/gfx/webrender_bindings) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/gfx/webrender_bindings/webrender_ffi_generated.h))
 * [stylo](https://searchfox.org/mozilla-central/source/layout/style) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/layout/style/ServoStyleConsts.h))
 * [maturin](https://github.com/PyO3/maturin)
+* [tquic](https://github.com/Tencent/tquic) ([generated header](https://github.com/Tencent/tquic/blob/develop/include/tquic.h))
 
 If you're using `cbindgen` and would like to be added to this list, please open
 a pull request!

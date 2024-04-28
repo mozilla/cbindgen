@@ -97,5 +97,5 @@ void root(MyFancyStruct s,
           MyUnion_Prepended up);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

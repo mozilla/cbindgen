@@ -99,4 +99,4 @@ void root(TypedLength<float, UnknownUnit> length_a,
           TypedTransform2D<float, UnknownUnit, LayoutUnit> transform_a,
           TypedTransform2D<float, LayoutUnit, UnknownUnit> transform_b);
 
-} // extern "C"
+}  // extern "C"

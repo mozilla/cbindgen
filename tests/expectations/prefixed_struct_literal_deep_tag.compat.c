@@ -22,5 +22,5 @@ extern "C" {
 void root(struct PREFIXFoo x);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

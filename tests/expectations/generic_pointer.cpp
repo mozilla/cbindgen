@@ -15,4 +15,4 @@ extern "C" {
 
 void root(Boo x);
 
-} // extern "C"
+}  // extern "C"

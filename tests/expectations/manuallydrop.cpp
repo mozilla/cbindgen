@@ -38,4 +38,4 @@ void root(const Foo *a, const MyStruct *with_manual_drop);
 
 void take(ManuallyDrop<Point> with_manual_drop);
 
-} // extern "C"
+}  // extern "C"

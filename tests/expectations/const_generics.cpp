@@ -18,4 +18,4 @@ extern "C" {
 
 void root(Book *a);
 
-} // extern "C"
+}  // extern "C"

@@ -247,4 +247,4 @@ extern "C" {
 
 void foo(H h, I i, J j, K k);
 
-} // extern "C"
+}  // extern "C"

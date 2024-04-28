@@ -45,5 +45,5 @@ void renamed_func(RenamedTy a);
 void no_extern_func(ContainsNoExternTy a);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

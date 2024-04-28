@@ -32,4 +32,4 @@ void root(Foo<int32_t> a,
           Tuple<Foo<float>, float> g,
           Indirection<float> h);
 
-} // extern "C"
+}  // extern "C"

@@ -35,4 +35,4 @@ extern "C" {
 
 MUST_USE_FUNC MaybeOwnedPtr<int32_t> maybe_consume(OwnedPtr<int32_t> input);
 
-} // extern "C"
+}  // extern "C"

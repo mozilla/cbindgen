@@ -51,4 +51,4 @@ extern "C" {
 
 void root(Foo x);
 
-} // extern "C"
+}  // extern "C"

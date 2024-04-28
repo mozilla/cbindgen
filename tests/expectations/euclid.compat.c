@@ -121,5 +121,5 @@ void root(TypedLength_f32__UnknownUnit length_a,
           TypedTransform2D_f32__LayoutUnit__UnknownUnit transform_b);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

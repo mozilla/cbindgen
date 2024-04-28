@@ -16,5 +16,5 @@ void D(void);
 void A(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -33,4 +33,4 @@ extern "C" {
 
 void root(IntFoo x, DoubleFoo y, Unit z, SpecialStatus w);
 
-} // extern "C"
+}  // extern "C"

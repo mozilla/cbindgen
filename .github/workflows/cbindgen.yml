@@ -7,6 +7,9 @@ on:
   pull_request:
     branches:
       - master
+  merge_group:
+    types:
+      - checks_requested
 
 jobs:
   rustfmt-clippy:
@@ -31,7 +34,7 @@ jobs:
 
     - name: Install minimum supported Rust version
       id: msrv
-      uses: dtolnay/rust-toolchain@1.64
+      uses: dtolnay/rust-toolchain@1.70
 
     - name: Build with minimum supported Rust version
       run: |

@@ -17,4 +17,4 @@ extern "C" {
 
 void root(BindGroupLayoutEntry entry);
 
-} // extern "C"
+}  // extern "C"

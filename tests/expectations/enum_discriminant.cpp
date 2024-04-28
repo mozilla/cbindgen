@@ -20,4 +20,4 @@ extern "C" {
 
 void root(const E*);
 
-} // extern "C"
+}  // extern "C"

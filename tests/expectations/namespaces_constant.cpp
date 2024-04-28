@@ -19,7 +19,7 @@ extern "C" {
 
 void root(Foo x);
 
-} // extern "C"
+}  // extern "C"
 
-} // namespace test
-} // namespace constants
+}  // namespace test
+}  // namespace constants

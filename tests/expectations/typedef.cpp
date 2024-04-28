@@ -17,4 +17,4 @@ extern "C" {
 
 void root(IntFoo<int32_t> a);
 
-} // extern "C"
+}  // extern "C"

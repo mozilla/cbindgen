@@ -77,5 +77,5 @@ extern "C" {
 void root(A a, B b, union C c);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

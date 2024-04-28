@@ -14,4 +14,4 @@ extern "C" {
 
 int32_t push(ArrayVec<uint8_t*, 100> *v, uint8_t *elem);
 
-} // extern "C"
+}  // extern "C"

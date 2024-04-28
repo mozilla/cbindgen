@@ -32,5 +32,5 @@ extern "C" {
 void root(const Foo *a, const struct MyStruct *with_maybe_uninit);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

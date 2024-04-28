@@ -361,6 +361,7 @@ impl Builder {
                 Default::default(),
                 Default::default(),
                 true,
+                String::new(),
             ));
         }
 
@@ -375,7 +376,7 @@ impl Builder {
         }
 
         if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
-            let lockfile = self.lockfile.as_ref().and_then(|p| p.to_str());
+            let lockfile = self.lockfile.as_deref();
 
             let cargo = Cargo::load(
                 &lib_dir,
@@ -405,6 +406,7 @@ impl Builder {
             result.typedefs,
             result.functions,
             result.source_files,
+            result.package_version,
         )
         .generate()
     }

@@ -11,5 +11,5 @@ extern "C" {
 void root(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

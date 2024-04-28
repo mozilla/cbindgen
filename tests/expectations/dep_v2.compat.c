@@ -15,5 +15,5 @@ extern "C" {
 uint32_t get_x(const dep_struct *dep_struct);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

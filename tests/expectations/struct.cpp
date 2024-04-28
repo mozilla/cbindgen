@@ -30,4 +30,4 @@ extern "C" {
 
 void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
 
-} // extern "C"
+}  // extern "C"

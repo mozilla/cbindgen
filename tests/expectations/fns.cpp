@@ -18,4 +18,4 @@ void root(Fns _fns);
 
 void no_return();
 
-} // extern "C"
+}  // extern "C"

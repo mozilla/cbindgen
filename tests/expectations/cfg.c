@@ -78,6 +78,11 @@ typedef struct {
   ;
 } ConditionalField;
 
+typedef struct {
+  int32_t x;
+  float y;
+} Normal;
+
 #if (defined(PLATFORM_UNIX) && defined(X11))
 void root(FooHandle a, C c);
 #endif
@@ -87,3 +92,11 @@ void root(BarHandle a, C c);
 #endif
 
 void cond(ConditionalField a);
+
+#if defined(PLATFORM_WIN)
+extern int32_t foo(void);
+#endif
+
+#if defined(PLATFORM_WIN)
+extern void bar(Normal a);
+#endif

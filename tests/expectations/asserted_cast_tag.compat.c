@@ -100,5 +100,5 @@ extern "C" {
 void foo(struct H h, struct I i, struct J j, union K k);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

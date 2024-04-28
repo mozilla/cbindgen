@@ -39,4 +39,4 @@ extern "C" {
 
 void root(const Foo *a, const Bar *b);
 
-} // extern "C"
+}  // extern "C"

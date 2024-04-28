@@ -44,4 +44,4 @@ extern "C" {
 
 void root(Root a);
 
-} // extern "C"
+}  // extern "C"

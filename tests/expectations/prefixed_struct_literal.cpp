@@ -16,4 +16,4 @@ extern "C" {
 
 void root(PREFIXFoo x);
 
-} // extern "C"
+}  // extern "C"

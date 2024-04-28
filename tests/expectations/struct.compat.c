@@ -32,5 +32,5 @@ extern "C" {
 void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

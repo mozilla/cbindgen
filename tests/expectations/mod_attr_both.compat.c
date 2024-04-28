@@ -42,5 +42,5 @@ void bar(const struct Bar *bar);
 #endif
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

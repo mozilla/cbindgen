@@ -19,5 +19,5 @@ extern "C" {
 void root(union Bar b);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -15,4 +15,4 @@ extern "C" {
 
 void root(const StyleA *a, B b);
 
-} // extern "C"
+}  // extern "C"

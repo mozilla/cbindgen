@@ -23,4 +23,4 @@ extern "C" {
 
 void root(int32_t *arg, Foo<uint64_t> *foo, Opaque **d);
 
-} // extern "C"
+}  // extern "C"

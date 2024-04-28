@@ -16,4 +16,4 @@ void export_me(ExportMe *val);
 
 void from_really_nested_mod();
 
-} // extern "C"
+}  // extern "C"

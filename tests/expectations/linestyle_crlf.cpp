@@ -13,4 +13,4 @@ extern "C" {
 
 void root(Dummy d);
 
-} // extern "C"
+}  // extern "C"

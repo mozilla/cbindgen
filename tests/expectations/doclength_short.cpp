@@ -12,4 +12,4 @@ void root();
 /// A little above the root, and a lot more visible, with a run-on sentence
 void trunk();
 
-} // extern "C"
+}  // extern "C"

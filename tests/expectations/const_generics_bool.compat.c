@@ -40,5 +40,5 @@ HashTable_Str__u64__true *new_map(void);
 void map_for_each(const HashTable_Str__u64__true *map, MapCallback callback);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -47,5 +47,5 @@ extern "C" {
 void root(IntFoo x, DoubleFoo y, Unit z, SpecialStatus w);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

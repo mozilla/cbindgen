@@ -97,5 +97,5 @@ void root(struct MyFancyStruct s,
           union MyUnion_Prepended up);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

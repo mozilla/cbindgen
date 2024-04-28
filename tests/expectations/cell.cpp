@@ -20,4 +20,4 @@ extern "C" {
 
 void root(const Foo *a, const MyStruct *with_cell);
 
-} // extern "C"
+}  // extern "C"

@@ -36,7 +36,7 @@ impl Cargo {
     /// need to be parsed.
     pub(crate) fn load(
         crate_dir: &Path,
-        lock_file: Option<&str>,
+        lock_file: Option<&Path>,
         binding_crate_name: Option<&str>,
         use_cargo_lock: bool,
         clean: bool,
@@ -87,7 +87,7 @@ impl Cargo {
     }
 
     pub(crate) fn binding_crate_ref(&self) -> PackageRef {
-        match self.find_pkg_ref(&self.binding_crate_name) {
+        match self.find_pkg_to_generate_bindings_ref(&self.binding_crate_name) {
             Some(pkg_ref) => pkg_ref,
             None => panic!(
                 "Unable to find {} for {:?}",
@@ -180,15 +180,28 @@ impl Cargo {
             .collect()
     }
 
-    /// Finds the package reference in `cargo metadata` that has `package_name`
-    /// ignoring the version.
-    fn find_pkg_ref(&self, package_name: &str) -> Option<PackageRef> {
+    /// Finds the package reference for which we want to generate bindings in `cargo metadata`
+    /// matching on `package_name` and verifying the manifest path matches so that we don't get a
+    /// a dependency with the same name (fix for https://github.com/mozilla/cbindgen/issues/900)
+    fn find_pkg_to_generate_bindings_ref(&self, package_name: &str) -> Option<PackageRef> {
+        // Keep a list of candidates in case the manifest check fails, so that the old behavior
+        // still applies, returning the first package that was found
+        let mut candidates = vec![];
         for package in &self.metadata.packages {
             if package.name_and_version.name == package_name {
-                return Some(package.name_and_version.clone());
+                // If we are sure it is the right package return it
+                if Path::new(package.manifest_path.as_str()) == self.manifest_path {
+                    return Some(package.name_and_version.clone());
+                }
+                // Otherwise note that a package was found
+                candidates.push(package.name_and_version.clone());
             }
         }
-        None
+
+        // If we could not verify the manifest path but we found candidates return the first one if
+        // any, this is the old behavior which did not check for manifest path, kept for backwards
+        // compatibility
+        candidates.into_iter().next()
     }
 
     /// Finds the directory for a specified package reference.

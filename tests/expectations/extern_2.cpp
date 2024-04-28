@@ -10,4 +10,4 @@ void first();
 
 void second();
 
-} // extern "C"
+}  // extern "C"

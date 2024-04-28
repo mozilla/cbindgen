@@ -39,4 +39,4 @@ void root(TransparentComplexWrappingStructTuple a,
           TransparentPrimitiveWithAssociatedConstants g,
           EnumWithAssociatedConstantInImpl h);
 
-} // extern "C"
+}  // extern "C"

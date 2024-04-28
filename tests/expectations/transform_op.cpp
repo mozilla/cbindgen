@@ -390,4 +390,4 @@ void foo(const StyleFoo<int32_t> *foo,
          const StyleBaz *baz,
          const StyleTaz *taz);
 
-} // extern "C"
+}  // extern "C"

@@ -14,4 +14,4 @@ extern const uint8_t C;
 
 extern const uint8_t D;
 
-} // extern "C"
+}  // extern "C"

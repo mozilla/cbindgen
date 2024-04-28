@@ -69,5 +69,5 @@ void root(struct AlignFlags flags,
           struct OutOfLine out_of_line);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

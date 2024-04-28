@@ -39,5 +39,5 @@ void root(TransparentComplexWrappingStructTuple a,
           struct EnumWithAssociatedConstantInImpl h);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

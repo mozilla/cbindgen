@@ -37,4 +37,4 @@ extern "C" {
 
 void root(Bar b);
 
-} // extern "C"
+}  // extern "C"

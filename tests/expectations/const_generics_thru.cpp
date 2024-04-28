@@ -20,4 +20,4 @@ Outer<1> one();
 
 Outer<2> two();
 
-} // extern "C"
+}  // extern "C"

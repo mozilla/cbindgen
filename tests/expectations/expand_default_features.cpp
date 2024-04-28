@@ -14,4 +14,4 @@ void extra_debug_fn();
 
 void root(Foo a);
 
-} // extern "C"
+}  // extern "C"

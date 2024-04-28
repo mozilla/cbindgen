@@ -15,4 +15,4 @@ extern "C" {
 
 TakeUntil<0> until_nul(const uint8_t *start, uintptr_t len);
 
-} // extern "C"
+}  // extern "C"

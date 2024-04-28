@@ -26,4 +26,4 @@ extern "C" {
 
 void root(ABC a1, BAC a2);
 
-} // extern "C"
+}  // extern "C"

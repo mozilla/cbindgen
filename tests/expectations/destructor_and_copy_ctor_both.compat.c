@@ -262,5 +262,5 @@ void root(const struct Foo_u32 *a,
           const union Qux *g);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

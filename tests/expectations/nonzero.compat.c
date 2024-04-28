@@ -48,5 +48,5 @@ void root(NonZeroTest test,
           const Option_i64 *j);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

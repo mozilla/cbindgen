@@ -37,5 +37,5 @@ extern "C" {
 void root(Usize, Isize, UE, IE);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

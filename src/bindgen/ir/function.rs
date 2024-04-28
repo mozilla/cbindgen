@@ -3,24 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::collections::HashMap;
-use std::io::Write;
 
 use syn::ext::IdentExt;
 
-use crate::bindgen::cdecl;
-use crate::bindgen::config::{Config, Language, Layout};
+use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation, GenericPath, Path,
-    ToCondition, Type,
-};
+use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
 use crate::bindgen::utilities::IterHelpers;
-use crate::bindgen::writer::{Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct FunctionArgument {
@@ -215,127 +209,6 @@ impl Function {
                     None => continue,
                 };
                 arg.array_length = ptrs_as_arrays.get(name).cloned();
-            }
-        }
-    }
-}
-
-impl Source for Function {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        fn write_1<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
-            let prefix = config.function.prefix(&func.annotations);
-            let postfix = config.function.postfix(&func.annotations);
-
-            let condition = func.cfg.to_condition(config);
-            condition.write_before(config, out);
-
-            func.documentation.write(config, out);
-
-            if func.extern_decl {
-                if config.language == Language::Zig {
-                    out.write("extern fn");
-                }
-            } else {
-                if config.language == Language::Zig {
-                    out.write("pub extern fn");
-                } else {
-                    if let Some(ref prefix) = prefix {
-                        write!(out, "{} ", prefix);
-                    }
-                    if func.annotations.must_use(config) {
-                        if let Some(ref anno) = config.function.must_use {
-                            write!(out, "{} ", anno);
-                        }
-                    }
-                }
-                if let Some(note) = func
-                    .annotations
-                    .deprecated_note(config, DeprecatedNoteKind::Function)
-                {
-                    write!(out, "{} ", note);
-                }
-            }
-            cdecl::write_func(out, func, Layout::Horizontal, config);
-
-            if !func.extern_decl {
-                if let Some(ref postfix) = postfix {
-                    write!(out, " {}", postfix);
-                }
-            }
-
-            if let Some(ref swift_name_macro) = config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name(config) {
-                    write!(out, " {}({})", swift_name_macro, swift_name);
-                }
-            }
-
-            out.write(";");
-
-            condition.write_after(config, out);
-        }
-
-        fn write_2<W: Write>(func: &Function, config: &Config, out: &mut SourceWriter<W>) {
-            let prefix = config.function.prefix(&func.annotations);
-            let postfix = config.function.postfix(&func.annotations);
-
-            let condition = func.cfg.to_condition(config);
-
-            condition.write_before(config, out);
-
-            func.documentation.write(config, out);
-
-            if func.extern_decl {
-                out.write("pub extern ");
-                if config.language == Language::Zig {
-                    out.write("fn");
-                }
-            } else {
-                if config.language == Language::Zig {
-                    out.write("pub extern fn");
-                } else {
-                    if let Some(ref prefix) = prefix {
-                        write!(out, "{} ", prefix);
-                    }
-                    if func.annotations.must_use(config) {
-                        if let Some(ref anno) = config.function.must_use {
-                            write!(out, "{} ", anno);
-                        }
-                    }
-                }
-                if let Some(note) = func
-                    .annotations
-                    .deprecated_note(config, DeprecatedNoteKind::Function)
-                {
-                    write!(out, "{}", note);
-                    out.new_line();
-                }
-            }
-            cdecl::write_func(out, func, Layout::Vertical, config);
-            if !func.extern_decl {
-                if let Some(ref postfix) = postfix {
-                    out.new_line();
-                    write!(out, "{}", postfix);
-                }
-            }
-
-            if let Some(ref swift_name_macro) = config.function.swift_name_macro {
-                if let Some(swift_name) = func.swift_name(config) {
-                    write!(out, " {}({})", swift_name_macro, swift_name);
-                }
-            }
-
-            out.write(";");
-
-            condition.write_after(config, out);
-        }
-
-        match config.function.args {
-            Layout::Horizontal => write_1(self, config, out),
-            Layout::Vertical => write_2(self, config, out),
-            Layout::Auto => {
-                if !out.try_write(|out| write_1(self, config, out), config.line_length) {
-                    write_2(self, config, out)
-                }
             }
         }
     }

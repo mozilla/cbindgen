@@ -20,4 +20,4 @@ void foo(List<A> a);
 
 void bar(List<B> b);
 
-} // extern "C"
+}  // extern "C"

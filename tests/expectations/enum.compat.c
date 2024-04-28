@@ -316,8 +316,8 @@ void root(Opaque *opaque,
           R r);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus
 
 #if 0
 ''' '

@@ -40,5 +40,5 @@ extern "C" {
 void root(const Foo *a, const Bar *b);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

@@ -17,5 +17,5 @@ extern "C" {
 void root(const struct StyleA *a, struct B b);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

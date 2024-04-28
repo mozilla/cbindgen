@@ -35,4 +35,4 @@ extern const int32_t G;
 
 void root(const C_A *a, C_AwesomeB b, C_C c, C_D d, C_E e, C_F f);
 
-} // extern "C"
+}  // extern "C"

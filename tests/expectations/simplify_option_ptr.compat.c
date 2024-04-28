@@ -28,5 +28,5 @@ extern "C" {
 void root(const Opaque *a, Opaque *b, Foo c, Bar d, Option_____Opaque *e, void (*f)(const Opaque*));
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

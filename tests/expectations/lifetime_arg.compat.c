@@ -28,5 +28,5 @@ extern "C" {
 void root(A _a, E _e);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

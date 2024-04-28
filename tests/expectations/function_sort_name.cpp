@@ -14,4 +14,4 @@ void C();
 
 void D();
 
-} // extern "C"
+}  // extern "C"

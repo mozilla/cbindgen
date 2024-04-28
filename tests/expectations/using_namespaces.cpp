@@ -12,6 +12,6 @@ extern "C" {
 
 void root();
 
-} // extern "C"
+}  // extern "C"
 
-} // namespace root
+}  // namespace root

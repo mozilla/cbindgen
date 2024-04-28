@@ -29,4 +29,4 @@ extern "C" {
 
 void root(Pin<int32_t*> s, PinTest p);
 
-} // extern "C"
+}  // extern "C"

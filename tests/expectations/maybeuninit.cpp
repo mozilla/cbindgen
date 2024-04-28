@@ -31,4 +31,4 @@ extern "C" {
 
 void root(const Foo *a, const MyStruct *with_maybe_uninit);
 
-} // extern "C"
+}  // extern "C"

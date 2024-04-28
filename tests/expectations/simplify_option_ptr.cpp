@@ -27,4 +27,4 @@ extern "C" {
 
 void root(const Opaque *a, Opaque *b, Foo c, Bar d, Option<Opaque*> *e, void (*f)(const Opaque*));
 
-} // extern "C"
+}  // extern "C"

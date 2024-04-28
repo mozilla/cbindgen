@@ -13,3 +13,5 @@ cdef extern from *:
   extern int32_t foo();
 
   extern void bar(Normal a);
+
+  extern int32_t baz();

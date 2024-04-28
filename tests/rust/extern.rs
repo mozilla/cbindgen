@@ -9,3 +9,7 @@ extern "C" {
 
     fn bar(a: Normal);
 }
+
+extern {
+    fn baz() -> i32;
+}

@@ -87,5 +87,5 @@ extern "C" {
 void root(A x, B y, C z, F f, H h);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

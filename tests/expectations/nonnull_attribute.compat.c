@@ -56,5 +56,5 @@ void nullable_const_ptr(const Pointers_u64 *arg);
 void nullable_mut_ptr(Pointers_u64 *arg);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

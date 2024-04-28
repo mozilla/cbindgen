@@ -50,4 +50,4 @@ extern "C" {
 
 void root(A a, B b, C c);
 
-} // extern "C"
+}  // extern "C"

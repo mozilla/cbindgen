@@ -13,4 +13,4 @@ extern "C" {
 
 uint32_t get_x(const dep_struct *dep_struct);
 
-} // extern "C"
+}  // extern "C"

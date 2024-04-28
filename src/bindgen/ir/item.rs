@@ -158,28 +158,13 @@ impl<T: Item + Clone> ItemMap<T> {
     where
         F: Fn(&T) -> bool,
     {
-        let data = mem::take(&mut self.data);
-
-        for (name, container) in data {
-            match container {
-                ItemValue::Cfg(items) => {
-                    let mut new_items = Vec::new();
-                    for item in items {
-                        if !callback(&item) {
-                            new_items.push(item);
-                        }
-                    }
-                    if !new_items.is_empty() {
-                        self.data.insert(name, ItemValue::Cfg(new_items));
-                    }
-                }
-                ItemValue::Single(item) => {
-                    if !callback(&item) {
-                        self.data.insert(name, ItemValue::Single(item));
-                    }
-                }
+        self.data.retain(|_, container| match *container {
+            ItemValue::Cfg(ref mut items) => {
+                items.retain(|item| !callback(item));
+                !items.is_empty()
             }
-        }
+            ItemValue::Single(ref item) => !callback(item),
+        });
     }
 
     pub fn for_all_items<F>(&self, mut callback: F)

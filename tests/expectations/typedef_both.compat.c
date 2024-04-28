@@ -17,5 +17,5 @@ extern "C" {
 void root(IntFoo_i32 a);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

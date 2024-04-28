@@ -16,5 +16,5 @@ void first(void);
 void renamed(void);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

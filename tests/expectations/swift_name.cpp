@@ -59,4 +59,4 @@ PointerToOpaque PointerToOpaque_create(uint8_t times) CF_SWIFT_NAME(PointerToOpa
 
 void PointerToOpaque_sayHello(PointerToOpaque self) CF_SWIFT_NAME(PointerToOpaque.sayHello(self:));
 
-} // extern "C"
+}  // extern "C"

@@ -16,5 +16,5 @@ extern "C" {
 void root(const Vec_String *a, const Option_i32 *b, const Result_i32__String *c);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

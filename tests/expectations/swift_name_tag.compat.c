@@ -58,5 +58,5 @@ struct PointerToOpaque PointerToOpaque_create(uint8_t times) CF_SWIFT_NAME(Point
 void PointerToOpaque_sayHello(struct PointerToOpaque self) CF_SWIFT_NAME(PointerToOpaque.sayHello(self:));
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

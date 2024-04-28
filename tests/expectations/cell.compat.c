@@ -18,5 +18,5 @@ extern "C" {
 void root(const Foo *a, const MyStruct *with_cell);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

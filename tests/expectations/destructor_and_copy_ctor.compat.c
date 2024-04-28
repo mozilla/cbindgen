@@ -262,5 +262,5 @@ void root(const Foo_u32 *a,
           const Qux *g);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

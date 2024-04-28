@@ -163,4 +163,4 @@ void root(AlignFlags flags,
           LargeFlags largest_flags,
           OutOfLine out_of_line);
 
-} // extern "C"
+}  // extern "C"

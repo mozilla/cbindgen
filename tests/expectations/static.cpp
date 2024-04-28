@@ -20,4 +20,4 @@ extern const Bar BAR;
 
 void root();
 
-} // extern "C"
+}  // extern "C"

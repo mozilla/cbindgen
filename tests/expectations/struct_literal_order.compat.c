@@ -28,5 +28,5 @@ extern "C" {
 void root(ABC a1, BAC a2);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus

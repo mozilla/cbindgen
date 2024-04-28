@@ -19,4 +19,4 @@ extern const Enum STATIC;
 
 void fn(Struct arg);
 
-} // extern "C"
+}  // extern "C"

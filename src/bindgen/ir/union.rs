@@ -2,23 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::io::Write;
-
 use syn::ext::IdentExt;
 
-use crate::bindgen::config::{Config, Language, LayoutConfig};
+use crate::bindgen::config::{Config, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, Field, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, ToCondition,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
+    Path, Repr, ReprAlign, ReprStyle,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::utilities::IterHelpers;
-use crate::bindgen::writer::{ListType, Source, SourceWriter};
 
 #[derive(Debug, Clone)]
 pub struct Union {
@@ -256,95 +253,5 @@ impl Item for Union {
         );
 
         out.insert_union(library, self, monomorph, generic_values.to_owned());
-    }
-}
-
-impl Source for Union {
-    fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        let condition = self.cfg.to_condition(config);
-        condition.write_before(config, out);
-
-        self.documentation.write(config, out);
-
-        self.generic_params.write(config, out);
-
-        // The following results in
-        // C++ or C with Tag as style:
-        //   union Name {
-        // C with Type only style:
-        //   typedef union {
-        // C with Both as style:
-        //   typedef union Name {
-        match config.language {
-            Language::C if config.style.generate_typedef() => out.write("typedef "),
-            Language::C | Language::Cxx => {}
-            Language::Cython => out.write(config.style.cython_def()),
-            Language::Zig => out.write(config.style.zig_def()),
-        }
-
-        if config.language == Language::Zig {
-            write!(out, "{} = extern union", self.export_name());
-        } else {
-            out.write("union");
-        }
-
-        // Cython supports `packed` on structs (see comments there), but not on unions.
-        if config.language != Language::Cython {
-            if let Some(align) = self.alignment {
-                match align {
-                    ReprAlign::Packed => {
-                        if let Some(ref anno) = config.layout.packed {
-                            write!(out, " {}", anno);
-                        }
-                    }
-                    ReprAlign::Align(n) => {
-                        if let Some(ref anno) = config.layout.aligned_n {
-                            write!(out, " {}({})", anno, n);
-                        }
-                    }
-                }
-            }
-        }
-
-        if config.language != Language::C || config.style.generate_tag() {
-            if config.language != Language::Zig {
-                write!(out, " {}", self.export_name);
-            }
-        }
-
-        out.open_brace();
-
-        // Emit the pre_body section, if relevant
-        if let Some(body) = config.export.pre_body(&self.path) {
-            out.write_raw_block(body);
-            out.new_line();
-        }
-
-        out.write_vertical_source_list(
-            &self.fields,
-            ListType::Cap(if config.language != Language::Zig {
-                ";"
-            } else {
-                ","
-            }),
-        );
-        if config.language == Language::Cython && self.fields.is_empty() {
-            out.write("pass");
-        }
-
-        // Emit the post_body section, if relevant
-        if let Some(body) = config.export.post_body(&self.path) {
-            out.new_line();
-            out.write_raw_block(body);
-        }
-
-        if config.language == Language::C && config.style.generate_typedef() {
-            out.close_brace(false);
-            write!(out, " {};", self.export_name);
-        } else {
-            out.close_brace(true);
-        }
-
-        condition.write_after(config, out);
     }
 }
