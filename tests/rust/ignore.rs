@@ -28,14 +28,14 @@ pub const NOT_IGNORED_CONST: u32 = 0;
 pub struct StructWithIgnoredImplMembers;
 
 impl StructWithIgnoredImplMembers {
-    /// cbindgen:ignore
+    /// XXX associated method cbindgen:ignore
     #[no_mangle]
     pub extern "C" fn ignored_associated_method() {}
 
     #[no_mangle]
     pub extern "C" fn no_ignore_associated_method() {}
 
-    /// cbindgen:ignore
+    /// XXX associated constant cbindgen:ignore
     pub const IGNORED_INNER_CONST: u32 = 0;
 
     pub const NOT_IGNORED_INNER_CONST: u32 = 0;
