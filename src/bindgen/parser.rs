@@ -541,7 +541,9 @@ impl Parse {
                     if let syn::Type::Path(ref path) = *item_impl.self_ty {
                         if let Some(type_name) = path.path.get_ident() {
                             for method in item_impl.items.iter().filter_map(|item| match item {
-                                syn::ImplItem::Method(method) => Some(method),
+                                syn::ImplItem::Method(method) if !method.should_skip_parsing() => {
+                                    Some(method)
+                                }
                                 _ => None,
                             }) {
                                 self.load_syn_method(
@@ -580,7 +582,11 @@ impl Parse {
         item_impl: &syn::ItemImpl,
     ) {
         let associated_constants = item_impl.items.iter().filter_map(|item| match item {
-            syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
+            syn::ImplItem::Const(ref associated_constant)
+                if !associated_constant.should_skip_parsing() =>
+            {
+                Some(associated_constant)
+            }
             _ => None,
         });
         self.load_syn_assoc_consts(

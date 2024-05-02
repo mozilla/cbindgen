@@ -282,6 +282,7 @@ impl_syn_item_helper!(syn::ItemUse);
 impl_syn_item_helper!(syn::ItemStatic);
 impl_syn_item_helper!(syn::ItemConst);
 impl_syn_item_helper!(syn::ItemFn);
+impl_syn_item_helper!(syn::ImplItemConst);
 impl_syn_item_helper!(syn::ImplItemMethod);
 impl_syn_item_helper!(syn::ItemMod);
 impl_syn_item_helper!(syn::ItemForeignMod);

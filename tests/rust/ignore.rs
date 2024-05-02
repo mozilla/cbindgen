@@ -13,35 +13,40 @@ pub extern "C" fn no_ignore_root() {}
 
 /// cbindgen:ignore
 #[repr(C)]
-pub struct IgnoredStruct {}
+pub struct IgnoreStruct {}
 
-pub struct IgnoredStructImpl;
-
-/// cbindgen:ignore
-impl IgnoredStructImpl {}
+pub struct IgnoreStructWithImpl;
 
 /// cbindgen:ignore
-pub const IGNORED_CONST: u32 = 0;
-
-pub const NOT_IGNORED_CONST: u32 = 0;
-
-pub struct StructWithIgnoredImplMembers;
-
-impl StructWithIgnoredImplMembers {
-    /// XXX associated method cbindgen:ignore
+impl IgnoreStructWithImpl {
     #[no_mangle]
-    pub extern "C" fn ignored_associated_method() {}
+    pub extern "C" fn ignore_associated_method() {}
+
+    pub const IGNORE_INNER_CONST: u32 = 0;
+}
+
+/// cbindgen:ignore
+pub const IGNORE_CONST: u32 = 0;
+
+pub const NO_IGNORE_CONST: u32 = 0;
+
+pub struct NoIgnoreStructWithImpl;
+
+impl NoIgnoreStructWithImpl {
+    /// cbindgen:ignore
+    #[no_mangle]
+    pub extern "C" fn ignore_associated_method() {}
 
     #[no_mangle]
     pub extern "C" fn no_ignore_associated_method() {}
 
-    /// XXX associated constant cbindgen:ignore
-    pub const IGNORED_INNER_CONST: u32 = 0;
+    /// cbindgen:ignore
+    pub const IGNORE_INNER_CONST: u32 = 0;
 
-    pub const NOT_IGNORED_INNER_CONST: u32 = 0;
+    pub const NO_IGNORE_INNER_CONST: u32 = 0;
 }
 
 /// cbindgen:ignore
-enum IgnoredEnum {}
+enum IgnoreEnum {}
 
-enum NotIgnoredEnum {}
+enum NoIgnoreEnum {}

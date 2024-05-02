@@ -6,4 +6,10 @@ cdef extern from *:
 
 cdef extern from *:
 
+  const uint32_t NO_IGNORE_CONST # = 0
+
+  const uint32_t NoIgnoreStructWithImpl_NO_IGNORE_INNER_CONST # = 0
+
   void no_ignore_root();
+
+  void no_ignore_associated_method();
