@@ -11,8 +11,10 @@ use std::path::Path;
 /// Possible errors that can occur during Cargo.toml parsing.
 pub enum Error {
     /// Error during reading of Cargo.toml
+    #[allow(dead_code)]
     Io(io::Error),
     /// Deserialization error
+    #[allow(dead_code)]
     Toml(toml::de::Error),
 }
 

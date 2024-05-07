@@ -480,7 +480,7 @@ impl Parse {
         self.typedefs.extend_with(&other.typedefs);
         self.functions.extend_from_slice(&other.functions);
         self.source_files.extend_from_slice(&other.source_files);
-        self.package_version = other.package_version.clone();
+        self.package_version.clone_from(&other.package_version);
     }
 
     fn load_syn_crate_mod<'a>(

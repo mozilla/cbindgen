@@ -132,7 +132,7 @@ impl Literal {
                 ref mut fields,
             } => {
                 if path.replace_self_with(self_ty) {
-                    *export_name = self_ty.name().to_owned();
+                    self_ty.name().clone_into(export_name);
                 }
                 for ref mut expr in fields.values_mut() {
                     expr.replace_self_with(self_ty);
@@ -151,7 +151,7 @@ impl Literal {
             } => {
                 if let Some((ref mut path, ref mut export_name)) = *associated_to {
                     if path.replace_self_with(self_ty) {
-                        *export_name = self_ty.name().to_owned();
+                        self_ty.name().clone_into(export_name);
                     }
                 }
             }

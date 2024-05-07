@@ -211,7 +211,7 @@ impl GenericPath {
 
     pub fn replace_self_with(&mut self, self_ty: &Path) {
         if self.path.replace_self_with(self_ty) {
-            self.export_name = self_ty.name().to_owned();
+            self_ty.name().clone_into(&mut self.export_name);
         }
         // Caller deals with generics.
     }
