@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "single_crate"
+name = "single_crate_default_config"
 version = "0.1.0"
