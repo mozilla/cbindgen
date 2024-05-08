@@ -100,9 +100,6 @@ fn is_skip_item_attr(attr: &syn::Meta) -> bool {
                 if let syn::Lit::Str(ref content) = name_value.lit {
                     // FIXME(emilio): Maybe should use the general annotation
                     // mechanism, but it seems overkill for this.
-                    if content.value().contains("XXX") {
-                        panic!("*** XXX *** {}", content.value());
-                    }
                     if content.value().trim() == "cbindgen:ignore" {
                         return true;
                     }
