@@ -129,6 +129,28 @@ impl Bindings {
         fields
     }
 
+    /// Lists the exported symbols that can be dynamically linked, i.e. globals and functions.
+    pub fn dynamic_symbols_names(&self) -> Vec<String> {
+        use crate::bindgen::ir::Item;
+
+        let function_names = self.functions.iter().map(|f| f.path().name().to_string());
+        let global_names = self.globals.iter().map(|g| g.export_name().to_string());
+        
+        let mut res = Vec::new();
+        res.extend(function_names);
+        res.extend(global_names);
+        res
+    }
+    
+    pub fn generate_symfile<P: AsRef<path::Path>>(&self, symfile_path: P) {
+        let symbols = self.dynamic_symbols_names();
+        if let Some(dir) = symfile_path.as_ref().parent() {
+            std::fs::create_dir_all(dir).unwrap();
+        }
+        let mut symfile = File::create(symfile_path).unwrap();
+        write!(&mut symfile, "{{\n{};\n}};\n", symbols.join(";\n")).expect("Writing symbol file failed");
+    }
+
     pub fn generate_depfile<P: AsRef<path::Path>>(&self, header_path: P, depfile_path: P) {
         if let Some(dir) = depfile_path.as_ref().parent() {
             if !dir.exists() {
