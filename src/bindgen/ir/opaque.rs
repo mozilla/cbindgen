@@ -78,12 +78,20 @@ impl Item for OpaqueItem {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::OpaqueItem(self.clone())
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
         resolver.add_struct(&self.path);
+    }
+
+    fn generic_params(&self) -> Option<&GenericParams> {
+        Some(&self.generic_params)
     }
 
     fn rename_for_config(&mut self, config: &Config) {
@@ -98,11 +106,7 @@ impl Item for OpaqueItem {
         library: &Library,
         out: &mut Monomorphs,
     ) {
-        assert!(
-            !self.generic_params.is_empty(),
-            "{} is not generic",
-            self.path
-        );
+        assert!(self.is_generic(), "{} is not generic", self.path);
 
         // We can be instantiated with less generic params because of default
         // template parameters, or because of empty types that we remove during
