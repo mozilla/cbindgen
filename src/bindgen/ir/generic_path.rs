@@ -21,6 +21,7 @@ pub enum GenericParamType {
 pub struct GenericParam {
     name: Path,
     ty: GenericParamType,
+    default: Option<GenericArgument>,
 }
 
 impl GenericParam {
@@ -28,20 +29,36 @@ impl GenericParam {
         GenericParam {
             name: Path::new(name),
             ty: GenericParamType::Type,
+            default: None,
         }
     }
 
     pub fn load(param: &syn::GenericParam) -> Result<Option<Self>, String> {
         match *param {
-            syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => Ok(Some(GenericParam {
-                name: Path::new(ident.unraw().to_string()),
-                ty: GenericParamType::Type,
-            })),
+            syn::GenericParam::Type(syn::TypeParam {
+                ref ident,
+                ref default,
+                ..
+            }) => {
+                let default = match default.as_ref().map(Type::load).transpose()? {
+                    None => None,
+                    Some(None) => Err(format!("unsupported generic type default: {:?}", default))?,
+                    Some(Some(ty)) => Some(GenericArgument::Type(ty)),
+                };
+                Ok(Some(GenericParam {
+                    name: Path::new(ident.unraw().to_string()),
+                    ty: GenericParamType::Type,
+                    default,
+                }))
+            }
 
             syn::GenericParam::Lifetime(_) => Ok(None),
 
             syn::GenericParam::Const(syn::ConstParam {
-                ref ident, ref ty, ..
+                ref ident,
+                ref ty,
+                ref default,
+                ..
             }) => match Type::load(ty)? {
                 None => {
                     // A type that evaporates, like PhantomData.
@@ -50,6 +67,11 @@ impl GenericParam {
                 Some(ty) => Ok(Some(GenericParam {
                     name: Path::new(ident.unraw().to_string()),
                     ty: GenericParamType::Const(ty),
+                    default: default
+                        .as_ref()
+                        .map(ConstExpr::load)
+                        .transpose()?
+                        .map(GenericArgument::Const),
                 })),
             },
         }
@@ -81,17 +103,32 @@ impl GenericParams {
         item_name: &str,
         arguments: &'out [GenericArgument],
     ) -> Vec<(&'out Path, &'out GenericArgument)> {
-        assert!(self.len() > 0, "{} is not generic", item_name);
         assert!(
-            self.len() == arguments.len(),
+            self.len() >= arguments.len(),
             "{} has {} params but is being instantiated with {} values",
             item_name,
             self.len(),
             arguments.len(),
         );
         self.iter()
-            .map(|param| param.name())
-            .zip(arguments.iter())
+            .enumerate()
+            .map(|(i, param)| {
+                // Fall back to the GenericParam default if no GenericArgument is available.
+                let arg = arguments
+                    .get(i)
+                    .or(param.default.as_ref())
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "{} with {} params is being instantiated with only {} values, \
+                             and param {} lacks a default value",
+                            item_name,
+                            self.len(),
+                            arguments.len(),
+                            i
+                        )
+                    });
+                (param.name(), arg)
+            })
             .collect()
     }
 
@@ -111,13 +148,18 @@ impl GenericParams {
                 match item.ty {
                     GenericParamType::Type => {
                         write!(out, "typename {}", item.name);
-                        if with_default {
+                        if let Some(GenericArgument::Type(ref ty)) = item.default {
+                            write!(out, " = ");
+                            cdecl::write_type(language_backend, out, ty, config);
+                        } else if with_default {
                             write!(out, " = void");
                         }
                     }
                     GenericParamType::Const(ref ty) => {
                         cdecl::write_field(language_backend, out, ty, item.name.name(), config);
-                        if with_default {
+                        if let Some(GenericArgument::Const(ref expr)) = item.default {
+                            write!(out, " = {}", expr.as_str());
+                        } else if with_default {
                             write!(out, " = 0");
                         }
                     }
