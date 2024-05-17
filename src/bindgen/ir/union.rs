@@ -100,10 +100,6 @@ impl Union {
         }
     }
 
-    pub fn is_generic(&self) -> bool {
-        self.generic_params.len() > 0
-    }
-
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic unions can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
@@ -144,6 +140,10 @@ impl Item for Union {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Union(self.clone())
     }
@@ -156,6 +156,10 @@ impl Item for Union {
         for field in &mut self.fields {
             field.ty.resolve_declaration_types(resolver);
         }
+    }
+
+    fn generic_params(&self) -> &GenericParams {
+        &self.generic_params
     }
 
     fn rename_for_config(&mut self, config: &Config) {

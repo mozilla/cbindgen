@@ -428,11 +428,11 @@ impl Library {
         }
 
         // Remove structs and opaque items that are generic
-        self.opaque_items.filter(|x| x.generic_params.len() > 0);
-        self.structs.filter(|x| x.generic_params.len() > 0);
-        self.unions.filter(|x| x.generic_params.len() > 0);
-        self.enums.filter(|x| x.generic_params.len() > 0);
-        self.typedefs.filter(|x| x.generic_params.len() > 0);
+        self.opaque_items.filter(|x| x.is_generic());
+        self.structs.filter(|x| x.is_generic());
+        self.unions.filter(|x| x.is_generic());
+        self.enums.filter(|x| x.is_generic());
+        self.typedefs.filter(|x| x.is_generic());
 
         // Mangle the paths that remain
         self.unions

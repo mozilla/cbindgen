@@ -574,6 +574,10 @@ impl Item for Constant {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Constant(self.clone())
     }
@@ -588,6 +592,10 @@ impl Item for Constant {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.ty.resolve_declaration_types(resolver);
+    }
+
+    fn generic_params(&self) -> &GenericParams {
+        GenericParams::empty()
     }
 }
 
@@ -671,7 +679,7 @@ impl Constant {
             value = fields.iter().next().unwrap().1
         }
 
-        language_backend.write_documentation(out, &self.documentation);
+        language_backend.write_documentation(out, self.documentation());
 
         let allow_constexpr = config.constant.allow_constexpr && self.value.can_be_constexpr();
         match config.language {

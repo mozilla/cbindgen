@@ -318,7 +318,7 @@ impl Enum {
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
-        if self.generic_params.len() > 0 {
+        if self.is_generic() {
             return;
         }
 
@@ -467,6 +467,10 @@ impl Item for Enum {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Enum(self.clone())
     }
@@ -490,6 +494,10 @@ impl Item for Enum {
         for &mut ref mut var in &mut self.variants {
             var.resolve_declaration_types(resolver);
         }
+    }
+
+    fn generic_params(&self) -> &GenericParams {
+        &self.generic_params
     }
 
     fn rename_for_config(&mut self, config: &Config) {

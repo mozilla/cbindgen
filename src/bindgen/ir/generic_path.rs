@@ -85,7 +85,13 @@ impl GenericParam {
 #[derive(Default, Debug, Clone)]
 pub struct GenericParams(pub Vec<GenericParam>);
 
+static EMPTY_GENERIC_PARAMS: GenericParams = GenericParams(Vec::new());
 impl GenericParams {
+    /// An empty generic params, for convenience.
+    pub fn empty() -> &'static Self {
+        &EMPTY_GENERIC_PARAMS
+    }
+
     pub fn load(generics: &syn::Generics) -> Result<Self, String> {
         let mut params = vec![];
         for param in &generics.params {
