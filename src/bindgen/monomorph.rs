@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::mem;
 
 use crate::bindgen::ir::{
-    Enum, GenericArgument, GenericPath, OpaqueItem, Path, Struct, Typedef, Union,
+    Enum, GenericArgument, GenericPath, Item, OpaqueItem, Path, Struct, Typedef, Union,
 };
 use crate::bindgen::library::Library;
 
@@ -34,7 +34,7 @@ impl Monomorphs {
     ) {
         let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
-        debug_assert!(generic.generic_params.len() > 0);
+        debug_assert!(generic.is_generic());
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
@@ -54,7 +54,7 @@ impl Monomorphs {
     ) {
         let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
-        debug_assert!(generic.generic_params.len() > 0);
+        debug_assert!(generic.is_generic());
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
@@ -74,7 +74,7 @@ impl Monomorphs {
     ) {
         let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
-        debug_assert!(generic.generic_params.len() > 0);
+        debug_assert!(generic.is_generic());
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
@@ -93,7 +93,7 @@ impl Monomorphs {
     ) {
         let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
-        debug_assert!(generic.generic_params.len() > 0);
+        debug_assert!(generic.is_generic());
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements
@@ -110,7 +110,7 @@ impl Monomorphs {
     ) {
         let replacement_path = GenericPath::new(generic.path.clone(), arguments);
 
-        debug_assert!(generic.generic_params.len() > 0);
+        debug_assert!(generic.is_generic());
         debug_assert!(!self.contains(&replacement_path));
 
         self.replacements

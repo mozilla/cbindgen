@@ -102,18 +102,12 @@ impl Typedef {
         }
     }
 
-    pub fn is_generic(&self) -> bool {
-        self.generic_params.len() > 0
-    }
-
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
-        if self.is_generic() {
-            return;
+        if !self.is_generic() {
+            self.aliased.add_monomorphs(library, out);
         }
-
-        self.aliased.add_monomorphs(library, out);
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
@@ -142,6 +136,10 @@ impl Item for Typedef {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Typedef(self.clone())
     }
@@ -152,6 +150,10 @@ impl Item for Typedef {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.aliased.resolve_declaration_types(resolver);
+    }
+
+    fn generic_params(&self) -> Option<&GenericParams> {
+        Some(&self.generic_params)
     }
 
     fn rename_for_config(&mut self, config: &Config) {
