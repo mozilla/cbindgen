@@ -139,6 +139,24 @@ pub trait LanguageBackend: Sized {
         }
     }
 
+    /// If the struct is transparent, emit a typedef of its NZST field type instead.
+    fn write_struct_or_typedef<W: Write>(
+        &mut self,
+        out: &mut SourceWriter<W>,
+        s: &Struct,
+        b: &Bindings,
+    ) {
+        if let Some(typedef) = s.as_typedef() {
+            self.write_type_def(out, &typedef);
+            for constant in &s.associated_constants {
+                out.new_line();
+                constant.write(&b.config, self, out, Some(s));
+            }
+        } else {
+            self.write_struct(out, s);
+        }
+    }
+
     fn write_items<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         for item in &b.items {
             if item
@@ -155,7 +173,7 @@ pub trait LanguageBackend: Sized {
                 ItemContainer::Constant(..) => unreachable!(),
                 ItemContainer::Static(..) => unreachable!(),
                 ItemContainer::Enum(ref x) => self.write_enum(out, x),
-                ItemContainer::Struct(ref x) => self.write_struct(out, x),
+                ItemContainer::Struct(ref x) => self.write_struct_or_typedef(out, x, b),
                 ItemContainer::Union(ref x) => self.write_union(out, x),
                 ItemContainer::OpaqueItem(ref x) => self.write_opaque_item(out, x),
                 ItemContainer::Typedef(ref x) => self.write_type_def(out, x),
