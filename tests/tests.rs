@@ -8,6 +8,8 @@ use std::path::Path;
 use std::process::Command;
 use std::{env, fs, str};
 
+use pretty_assertions::assert_eq;
+
 // Set automatically by cargo for integration tests
 static CBINDGEN_PATH: &str = env!("CARGO_BIN_EXE_cbindgen");
 
@@ -282,8 +284,11 @@ fn run_compile_test(
         }
     } else {
         if env::var_os("CBINDGEN_TEST_VERIFY").is_some() {
+            use std::str::from_utf8;
             let prev_cbindgen_output = fs::read(&generated_file).unwrap();
-            assert_eq!(cbindgen_output, prev_cbindgen_output);
+            let cbindgen_output = from_utf8(&cbindgen_output).unwrap();
+            let prev_cbindgen_output = from_utf8(&prev_cbindgen_output).unwrap();
+            assert_eq!(prev_cbindgen_output, cbindgen_output);
         } else {
             fs::write(&generated_file, &cbindgen_output).unwrap();
         }
