@@ -12,6 +12,7 @@ impl TransparentStruct {
 #[repr(transparent)]
 struct TransparentTupleStruct(u8);
 
+/// cbindgen:transparent-typedef
 #[repr(transparent)]
 struct Wrapper<T> { field: T }
 

@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
+    ItemContainer, Path, Repr, ReprAlign, ReprStyle, TransparentTypeEraser, Type, Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -144,12 +144,6 @@ impl Struct {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
-        }
-    }
-
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
         if self.is_transparent {
@@ -165,6 +159,12 @@ impl Struct {
             }
         }
         None
+    }
+
+    // Transparent structs become typedefs, so try converting to typedef and recurse on that.
+    pub fn as_transparent_alias(&self, generics: &[GenericArgument]) -> Option<Type> {
+        self.as_typedef()
+            .and_then(|t| t.as_transparent_alias(generics))
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -303,6 +303,19 @@ impl Item for Struct {
 
     fn generic_params(&self) -> Option<&GenericParams> {
         Some(&self.generic_params)
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        generics: &[GenericArgument],
+    ) {
+        let generics = self.generic_params.defaulted_generics(generics);
+        let mappings = self.generic_params.call(self.name(), &generics);
+        for field in &mut self.fields {
+            eraser.erase_transparent_types_inplace(library, &mut field.ty, &mappings);
+        }
     }
 
     fn rename_for_config(&mut self, config: &Config) {

@@ -15,12 +15,12 @@ constexpr static const Wrapper<TransparentStruct> TransparentStruct_ASSOC_STRUCT
 using TransparentTupleStruct = uint8_t;
 
 template<typename T>
-using TransparentStructWithErasedField = Wrapper<T>;
+using TransparentStructWithErasedField = T;
 
 constexpr static const TransparentStruct STRUCT_FOO = 4;
 
 constexpr static const TransparentTupleStruct STRUCT_BAR = 5;
 
-constexpr static const Wrapper<TransparentStruct> STRUCT_BAZ = 6;
+constexpr static const TransparentStruct STRUCT_BAZ = 6;
 
 constexpr static const TransparentStructWithErasedField<TransparentStruct> COMPLEX = 7;
