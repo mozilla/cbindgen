@@ -10,8 +10,8 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
-    Type,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
+    Path, Struct, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -68,6 +68,19 @@ impl Typedef {
 
     pub fn simplify_standard_types(&mut self, config: &Config) {
         self.aliased.simplify_standard_types(config);
+    }
+
+    // Used to convert a transparent Struct to a Typedef.
+    pub fn new_from_struct_field(item: &Struct, field: &Field) -> Self {
+        Self {
+            path: item.path().clone(),
+            export_name: item.export_name().to_string(),
+            generic_params: item.generic_params.clone(),
+            aliased: field.ty.clone(),
+            cfg: item.cfg().cloned(),
+            annotations: item.annotations().clone(),
+            documentation: item.documentation().clone(),
+        }
     }
 
     pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {

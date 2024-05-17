@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type,
+    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -122,11 +122,27 @@ impl Struct {
         has_tag_field: bool,
         is_enum_variant_body: bool,
         alignment: Option<ReprAlign>,
-        is_transparent: bool,
+        mut is_transparent: bool,
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
     ) -> Self {
+        // WARNING: Zero-sized transparent structs are legal rust [1], but zero-sized types of any
+        // repr are "best avoided entirely" [2] because they "will be nonsensical or problematic if
+        // passed through the FFI boundary" [3]. Further, because no well-defined underlying native
+        // type exists for a ZST, we cannot emit a typedef and must define an empty struct instead.
+        //
+        // [1] https://github.com/rust-lang/rust/issues/77841#issuecomment-716575747
+        // [2] https://github.com/rust-lang/rust/issues/77841#issuecomment-716796313
+        // [3] https://doc.rust-lang.org/nomicon/other-reprs.html
+        if fields.is_empty() {
+            warn!(
+                "Passing zero-sized struct {} across the FFI boundary is undefined behavior",
+                &path
+            );
+            is_transparent = false;
+        }
+
         let export_name = path.name().to_owned();
         Self {
             path,
@@ -147,6 +163,14 @@ impl Struct {
     pub fn simplify_standard_types(&mut self, config: &Config) {
         for field in &mut self.fields {
             field.ty.simplify_standard_types(config);
+        }
+    }
+
+    /// Attempts to convert this struct to a typedef (only works for transparent structs).
+    pub fn as_typedef(&self) -> Option<Typedef> {
+        match self.fields.first() {
+            Some(field) if self.is_transparent => Some(Typedef::new_from_struct_field(self, field)),
+            _ => None,
         }
     }
 

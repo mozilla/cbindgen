@@ -41,6 +41,11 @@ impl TransparentPrimitiveWithAssociatedConstants {
 #[repr(transparent)]
 struct TransparentPrimitiveWithAssociatedConstants { bits: u32 }
 
+// Transparent zero-sized structs are legal rust, but there's no way to emit a typedef for one, so
+// cbindgen should treat it as repr(C) instead and emit an empty struct definition.
+#[repr(transparent)]
+struct TransparentEmptyStructure;
+
 // Associated constant declared after struct declaration.
 impl TransparentPrimitiveWithAssociatedConstants {
     pub const ONE: TransparentPrimitiveWithAssociatedConstants = TransparentPrimitiveWithAssociatedConstants {
@@ -63,5 +68,6 @@ pub extern "C" fn root(
     e: TransparentComplexWrapper<i32>,
     f: TransparentPrimitiveWrapper<i32>,
     g: TransparentPrimitiveWithAssociatedConstants,
-    h: EnumWithAssociatedConstantInImpl,
+    h: TransparentEmptyStructure,
+    i: EnumWithAssociatedConstantInImpl,
 ) { }

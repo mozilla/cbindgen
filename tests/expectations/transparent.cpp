@@ -26,6 +26,10 @@ using TransparentPrimitiveWithAssociatedConstants = uint32_t;
 constexpr static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ZERO = 0;
 constexpr static const TransparentPrimitiveWithAssociatedConstants TransparentPrimitiveWithAssociatedConstants_ONE = 1;
 
+struct TransparentEmptyStructure {
+
+};
+
 constexpr static const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_TEN = 10;
 
 extern "C" {
@@ -37,6 +41,7 @@ void root(TransparentComplexWrappingStructTuple a,
           TransparentComplexWrapper<int32_t> e,
           TransparentPrimitiveWrapper<int32_t> f,
           TransparentPrimitiveWithAssociatedConstants g,
-          EnumWithAssociatedConstantInImpl h);
+          TransparentEmptyStructure h,
+          EnumWithAssociatedConstantInImpl i);
 
 }  // extern "C"
