@@ -663,14 +663,13 @@ impl Constant {
             Cow::Owned(format!("{}_{}", associated_name, self.export_name()))
         };
 
-        let value = match self.value {
-            Literal::Struct {
-                ref fields,
-                ref path,
-                ..
-            } if out.bindings().struct_is_transparent(path) => fields.iter().next().unwrap().1,
-            _ => &self.value,
-        };
+        let mut value = &self.value;
+        while let Literal::Struct { path, fields, .. } = value {
+            if !out.bindings().struct_is_transparent(path) {
+                break;
+            }
+            value = fields.iter().next().unwrap().1
+        }
 
         language_backend.write_documentation(out, &self.documentation);
 
