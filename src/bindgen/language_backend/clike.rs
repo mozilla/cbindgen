@@ -922,6 +922,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                             write!(out, ", ");
                         }
                         is_first_field = false;
+
                         if self.config.language == Language::Cxx {
                             // TODO: Some C++ versions (c++20?) now support designated
                             // initializers, consider generating them.
@@ -929,7 +930,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                         } else {
                             write!(out, ".{} = ", ordered_key);
                         }
-                        self.write_literal(out, lit);
+                        self.write_literal(out, &lit.value);
                     }
                 }
                 write!(out, " }}");
