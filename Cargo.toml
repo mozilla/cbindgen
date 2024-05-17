@@ -29,7 +29,6 @@ toml = "0.8.8"
 proc-macro2 = "1.0.60"
 quote = "1"
 heck = "0.4"
-pretty_assertions = "1.4.0"
 
 [dependencies.syn]
 version = "1.0.88"
@@ -38,6 +37,7 @@ features = ["clone-impls", "extra-traits", "fold", "full", "parsing", "printing"
 
 [dev-dependencies]
 serial_test = { version = "2.0.0", default-features = false }
+pretty_assertions = "1.4.0"
 
 [features]
 default =  ["clap"]
