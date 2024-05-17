@@ -10,7 +10,9 @@ use crate::bindgen::config::{Config, Language, SortKey};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
-use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
+use crate::bindgen::ir::{
+    Constant, Enum, Function, Item, ItemContainer, ItemMap, TransparentTypeEraser,
+};
 use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::ItemType;
@@ -61,8 +63,9 @@ impl Library {
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
+        let mut eraser = TransparentTypeEraser::default();
+        self.erase_transparent_types(&mut eraser);
         self.transfer_annotations();
-        self.simplify_standard_types();
 
         match self.config.function.sort_by.unwrap_or(self.config.sort_by) {
             SortKey::Name => self.functions.sort_by(|x, y| x.path.cmp(&y.path)),
@@ -70,7 +73,7 @@ impl Library {
         }
 
         if self.config.language != Language::Cxx {
-            self.instantiate_monomorphs();
+            self.instantiate_monomorphs(&mut eraser);
         }
         self.remove_excluded();
         if self.config.language == Language::C {
@@ -170,6 +173,39 @@ impl Library {
 
     pub fn get_config(&self) -> &Config {
         &self.config
+    }
+
+    fn erase_transparent_types_for_items<T: Item + Clone>(
+        &self,
+        eraser: &mut TransparentTypeEraser,
+        items: &ItemMap<T>,
+    ) -> ItemMap<T> {
+        // NOTE: Because `items` is actually a shared reference to `self`, we cannot take it as
+        // mutable. We also cannot `drain` or `take` it first, because then the items would be
+        // unavailable for lookup during the type erasure process. So we mutate a clone, and let the
+        // caller assign the result back after these shared references have died.
+        let mut items = items.clone();
+        items.for_all_items_mut(|item| {
+            item.erase_transparent_types_inplace(self, eraser, &[]);
+        });
+        items
+    }
+
+    fn erase_transparent_types(&mut self, eraser: &mut TransparentTypeEraser) {
+        self.constants = self.erase_transparent_types_for_items(eraser, &self.constants);
+        self.globals = self.erase_transparent_types_for_items(eraser, &self.globals);
+        self.enums = self.erase_transparent_types_for_items(eraser, &self.enums);
+        self.structs = self.erase_transparent_types_for_items(eraser, &self.structs);
+        self.unions = self.erase_transparent_types_for_items(eraser, &self.unions);
+        self.opaque_items = self.erase_transparent_types_for_items(eraser, &self.opaque_items);
+        self.typedefs = self.erase_transparent_types_for_items(eraser, &self.typedefs);
+
+        // Functions do not `impl Item` and are not stored in an `ItemMap`, so do them manually.
+        let mut functions = self.functions.clone();
+        for f in &mut functions {
+            f.erase_transparent_types_inplace(self, eraser);
+        }
+        self.functions = functions;
     }
 
     fn remove_excluded(&mut self) {
@@ -367,30 +403,7 @@ impl Library {
         }
     }
 
-    fn simplify_standard_types(&mut self) {
-        let config = &self.config;
-
-        self.structs.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.enums.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.unions.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.globals.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.typedefs.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        for x in &mut self.functions {
-            x.simplify_standard_types(config);
-        }
-    }
-
-    fn instantiate_monomorphs(&mut self) {
+    fn instantiate_monomorphs(&mut self, eraser: &mut TransparentTypeEraser) {
         // Collect a list of monomorphs
         let mut monomorphs = Monomorphs::default();
 
@@ -411,19 +424,24 @@ impl Library {
         }
 
         // Insert the monomorphs into self
-        for monomorph in monomorphs.drain_structs() {
+        for mut monomorph in monomorphs.drain_structs() {
+            monomorph.erase_transparent_types_inplace(self, eraser, &[]);
             self.structs.try_insert(monomorph);
         }
-        for monomorph in monomorphs.drain_unions() {
+        for mut monomorph in monomorphs.drain_unions() {
+            monomorph.erase_transparent_types_inplace(self, eraser, &[]);
             self.unions.try_insert(monomorph);
         }
-        for monomorph in monomorphs.drain_opaques() {
+        for mut monomorph in monomorphs.drain_opaques() {
+            monomorph.erase_transparent_types_inplace(self, eraser, &[]);
             self.opaque_items.try_insert(monomorph);
         }
-        for monomorph in monomorphs.drain_typedefs() {
+        for mut monomorph in monomorphs.drain_typedefs() {
+            monomorph.erase_transparent_types_inplace(self, eraser, &[]);
             self.typedefs.try_insert(monomorph);
         }
-        for monomorph in monomorphs.drain_enums() {
+        for mut monomorph in monomorphs.drain_enums() {
+            monomorph.erase_transparent_types_inplace(self, eraser, &[]);
             self.enums.try_insert(monomorph);
         }
 

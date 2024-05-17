@@ -9,7 +9,9 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{
+    AnnotationSet, Cfg, Documentation, GenericPath, Path, TransparentTypeEraser, Type,
+};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
@@ -115,13 +117,6 @@ impl Function {
         &self.path
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.ret.simplify_standard_types(config);
-        for arg in &mut self.args {
-            arg.ty.simplify_standard_types(config);
-        }
-    }
-
     pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ret.add_dependencies(library, out);
         for arg in &self.args {
@@ -147,6 +142,18 @@ impl Function {
         self.ret.resolve_declaration_types(resolver);
         for arg in &mut self.args {
             arg.ty.resolve_declaration_types(resolver);
+        }
+    }
+
+    // NOTE: No `generics` arg because Functions do not support generics and do not `impl Item`.
+    pub fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+    ) {
+        eraser.erase_transparent_types_inplace(library, &mut self.ret, &[]);
+        for arg in &mut self.args {
+            eraser.erase_transparent_types_inplace(library, &mut arg.ty, &[]);
         }
     }
 

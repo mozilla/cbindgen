@@ -12,7 +12,7 @@ use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, AnnotationValue, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation, Field,
     GenericArgument, GenericParams, GenericPath, Item, ItemContainer, Literal, Path, Repr,
-    ReprStyle, Struct, ToCondition, Type,
+    ReprStyle, Struct, ToCondition, TransparentTypeEraser, Type,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -244,12 +244,6 @@ impl EnumVariant {
             body,
             cfg,
             documentation,
-        }
-    }
-
-    fn simplify_standard_types(&mut self, config: &Config) {
-        if let VariantBody::Body { ref mut body, .. } = self.body {
-            body.simplify_standard_types(config);
         }
     }
 
@@ -498,6 +492,30 @@ impl Item for Enum {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        generics: &[GenericArgument],
+    ) {
+        let mut skip_inline_tag_field = Self::inline_tag_field(&self.repr);
+        let generics = self.generic_params.defaulted_generics(generics);
+        let mappings = self.generic_params.call(self.name(), &generics);
+        for variant in self.variants.iter_mut() {
+            if let VariantBody::Body { ref mut body, .. } = variant.body {
+                for field in body.fields.iter_mut() {
+                    // Ignore the inline Tag field, if any (it's always first)
+                    if skip_inline_tag_field {
+                        debug!("Skipping inline Tag field {:?}", field);
+                        skip_inline_tag_field = false;
+                    } else {
+                        eraser.erase_transparent_types_inplace(library, &mut field.ty, &mappings);
+                    }
+                }
+            }
+        }
     }
 
     fn rename_for_config(&mut self, config: &Config) {
@@ -1491,12 +1509,6 @@ impl Enum {
                 write!(out, "return *this;");
                 out.close_brace(false);
             }
-        }
-    }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for variant in &mut self.variants {
-            variant.simplify_standard_types(config);
         }
     }
 }
