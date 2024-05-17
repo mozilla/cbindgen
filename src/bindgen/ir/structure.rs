@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type,
+    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -148,6 +148,23 @@ impl Struct {
         for field in &mut self.fields {
             field.ty.simplify_standard_types(config);
         }
+    }
+
+    /// Attempts to convert this struct to a typedef (only works for transparent structs).
+    pub fn as_typedef(&self) -> Option<Typedef> {
+        if self.is_transparent {
+            // NOTE: A `#[repr(transparent)]` struct with 2+ NZT fields fails to compile, but 0
+            // fields is allowed for some strange reason. Don't emit the typedef in that case.
+            if let Some(field) = self.fields.first() {
+                return Some(Typedef::new_from_struct_field(self, field));
+            } else {
+                error!(
+                    "Cannot convert empty transparent struct {} to typedef",
+                    self.name()
+                );
+            }
+        }
+        None
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

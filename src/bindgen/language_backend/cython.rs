@@ -159,24 +159,6 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
     }
 
     fn write_struct<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Struct) {
-        if s.is_transparent {
-            let typedef = Typedef {
-                path: s.path.clone(),
-                export_name: s.export_name.to_owned(),
-                generic_params: s.generic_params.clone(),
-                aliased: s.fields[0].ty.clone(),
-                cfg: s.cfg.clone(),
-                annotations: s.annotations.clone(),
-                documentation: s.documentation.clone(),
-            };
-            self.write_type_def(out, &typedef);
-            for constant in &s.associated_constants {
-                out.new_line();
-                constant.write(self.config, self, out, Some(s));
-            }
-            return;
-        }
-
         let condition = s.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
