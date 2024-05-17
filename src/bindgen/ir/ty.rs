@@ -64,39 +64,69 @@ impl PrimitiveType {
             "f32" => PrimitiveType::Float,
             "f64" => PrimitiveType::Double,
 
-            _ => {
-                let (kind, signed) = match path {
-                    "c_short" => (IntKind::Short, true),
-                    "c_int" => (IntKind::Int, true),
-                    "c_long" => (IntKind::Long, true),
-                    "c_longlong" => (IntKind::LongLong, true),
-                    "ssize_t" => (IntKind::SizeT, true),
-                    "c_ushort" => (IntKind::Short, false),
-                    "c_uint" => (IntKind::Int, false),
-                    "c_ulong" => (IntKind::Long, false),
-                    "c_ulonglong" => (IntKind::LongLong, false),
-                    "size_t" => (IntKind::SizeT, false),
-                    "RawFd" => (IntKind::Int, true),
+            _ => return Self::maybe_integer(path),
+        })
+    }
 
-                    "isize" | "intptr_t" => (IntKind::Size, true),
-                    "usize" | "uintptr_t" => (IntKind::Size, false),
+    // Converts well-known integral types to their respective `PrimitiveType`
+    fn maybe_integer(path: &str) -> Option<PrimitiveType> {
+        let (kind, signed) = match path {
+            "c_short" => (IntKind::Short, true),
+            "c_int" => (IntKind::Int, true),
+            "c_long" => (IntKind::Long, true),
+            "c_longlong" => (IntKind::LongLong, true),
+            "ssize_t" => (IntKind::SizeT, true),
+            "c_ushort" => (IntKind::Short, false),
+            "c_uint" => (IntKind::Int, false),
+            "c_ulong" => (IntKind::Long, false),
+            "c_ulonglong" => (IntKind::LongLong, false),
+            "size_t" => (IntKind::SizeT, false),
+            "RawFd" => (IntKind::Int, true),
 
-                    "u8" | "uint8_t" => (IntKind::B8, false),
-                    "u16" | "uint16_t" => (IntKind::B16, false),
-                    "u32" | "uint32_t" => (IntKind::B32, false),
-                    "u64" | "uint64_t" => (IntKind::B64, false),
-                    "i8" | "int8_t" => (IntKind::B8, true),
-                    "i16" | "int16_t" => (IntKind::B16, true),
-                    "i32" | "int32_t" => (IntKind::B32, true),
-                    "i64" | "int64_t" => (IntKind::B64, true),
-                    _ => return None,
-                };
-                PrimitiveType::Integer {
-                    zeroable: true,
-                    signed,
-                    kind,
-                }
-            }
+            "isize" | "intptr_t" => (IntKind::Size, true),
+            "usize" | "uintptr_t" => (IntKind::Size, false),
+
+            "u8" | "uint8_t" => (IntKind::B8, false),
+            "u16" | "uint16_t" => (IntKind::B16, false),
+            "u32" | "uint32_t" => (IntKind::B32, false),
+            "u64" | "uint64_t" => (IntKind::B64, false),
+            "i8" | "int8_t" => (IntKind::B8, true),
+            "i16" | "int16_t" => (IntKind::B16, true),
+            "i32" | "int32_t" => (IntKind::B32, true),
+            "i64" | "int64_t" => (IntKind::B64, true),
+
+            _ => return Self::maybe_nonzero_integer(path),
+        };
+        Some(PrimitiveType::Integer {
+            zeroable: true,
+            signed,
+            kind,
+        })
+    }
+
+    // Converts well-known typedefs for [`NonZero`] to their respective `PrimitiveType`.
+    //
+    // NOTE: This performs the type erasure directly, as if `NonZero<T>` had been specified, because
+    // it's actually more code to register an erased typedef instead.
+    fn maybe_nonzero_integer(path: &str) -> Option<PrimitiveType> {
+        let (kind, signed) = match path {
+            "NonZeroU8" => (IntKind::B8, false),
+            "NonZeroU16" => (IntKind::B16, false),
+            "NonZeroU32" => (IntKind::B32, false),
+            "NonZeroU64" => (IntKind::B64, false),
+            "NonZeroUSize" => (IntKind::Size, false),
+            "NonZeroI8" => (IntKind::B8, true),
+            "NonZeroI16" => (IntKind::B16, true),
+            "NonZeroI32" => (IntKind::B32, true),
+            "NonZeroI64" => (IntKind::B64, true),
+            "NonZeroISize" => (IntKind::Size, true),
+
+            _ => return None,
+        };
+        Some(PrimitiveType::Integer {
+            zeroable: false,
+            signed,
+            kind,
         })
     }
 
@@ -112,77 +142,27 @@ impl PrimitiveType {
                 kind,
                 signed,
                 zeroable: _,
-            } => match kind {
-                IntKind::Short => {
-                    if signed {
-                        "c_short"
-                    } else {
-                        "c_ushort"
-                    }
-                }
-                IntKind::Int => {
-                    if signed {
-                        "c_int"
-                    } else {
-                        "c_uint"
-                    }
-                }
-                IntKind::Long => {
-                    if signed {
-                        "c_long"
-                    } else {
-                        "c_ulong"
-                    }
-                }
-                IntKind::LongLong => {
-                    if signed {
-                        "c_longlong"
-                    } else {
-                        "c_ulonglong"
-                    }
-                }
-                IntKind::SizeT => {
-                    if signed {
-                        "ssize_t"
-                    } else {
-                        "size_t"
-                    }
-                }
-                IntKind::Size => {
-                    if signed {
-                        "isize"
-                    } else {
-                        "usize"
-                    }
-                }
-                IntKind::B8 => {
-                    if signed {
-                        "i8"
-                    } else {
-                        "u8"
-                    }
-                }
-                IntKind::B16 => {
-                    if signed {
-                        "i16"
-                    } else {
-                        "u16"
-                    }
-                }
-                IntKind::B32 => {
-                    if signed {
-                        "i32"
-                    } else {
-                        "u32"
-                    }
-                }
-                IntKind::B64 => {
-                    if signed {
-                        "i64"
-                    } else {
-                        "u64"
-                    }
-                }
+            } => match (kind, signed) {
+                (IntKind::Short, true) => "c_short",
+                (IntKind::Short, false) => "c_ushort",
+                (IntKind::Int, true) => "c_int",
+                (IntKind::Int, false) => "c_uint",
+                (IntKind::Long, true) => "c_long",
+                (IntKind::Long, false) => "c_ulong",
+                (IntKind::LongLong, true) => "c_longlong",
+                (IntKind::LongLong, false) => "c_ulonglong",
+                (IntKind::SizeT, true) => "ssize_t",
+                (IntKind::SizeT, false) => "size_t",
+                (IntKind::Size, true) => "isize",
+                (IntKind::Size, false) => "usize",
+                (IntKind::B8, true) => "i8",
+                (IntKind::B8, false) => "u8",
+                (IntKind::B16, true) => "i16",
+                (IntKind::B16, false) => "u16",
+                (IntKind::B32, true) => "i32",
+                (IntKind::B32, false) => "u32",
+                (IntKind::B64, true) => "i64",
+                (IntKind::B64, false) => "u64",
             },
             PrimitiveType::Float => "f32",
             PrimitiveType::Double => "f64",
@@ -211,83 +191,29 @@ impl PrimitiveType {
                 kind,
                 signed,
                 zeroable: _,
-            } => match kind {
-                IntKind::Short => {
-                    if signed {
-                        "short"
-                    } else {
-                        "unsigned short"
-                    }
-                }
-                IntKind::Int => {
-                    if signed {
-                        "int"
-                    } else {
-                        "unsigned int"
-                    }
-                }
-                IntKind::Long => {
-                    if signed {
-                        "long"
-                    } else {
-                        "unsigned long"
-                    }
-                }
-                IntKind::LongLong => {
-                    if signed {
-                        "long long"
-                    } else {
-                        "unsigned long long"
-                    }
-                }
-                IntKind::SizeT => {
-                    if signed {
-                        "ssize_t"
-                    } else {
-                        "size_t"
-                    }
-                }
-                IntKind::Size => {
-                    if config.usize_is_size_t {
-                        if signed {
-                            "ptrdiff_t"
-                        } else {
-                            "size_t"
-                        }
-                    } else if signed {
-                        "intptr_t"
-                    } else {
-                        "uintptr_t"
-                    }
-                }
-                IntKind::B8 => {
-                    if signed {
-                        "int8_t"
-                    } else {
-                        "uint8_t"
-                    }
-                }
-                IntKind::B16 => {
-                    if signed {
-                        "int16_t"
-                    } else {
-                        "uint16_t"
-                    }
-                }
-                IntKind::B32 => {
-                    if signed {
-                        "int32_t"
-                    } else {
-                        "uint32_t"
-                    }
-                }
-                IntKind::B64 => {
-                    if signed {
-                        "int64_t"
-                    } else {
-                        "uint64_t"
-                    }
-                }
+            } => match (kind, signed) {
+                (IntKind::Short, true) => "short",
+                (IntKind::Short, false) => "unsigned short",
+                (IntKind::Int, true) => "int",
+                (IntKind::Int, false) => "unsigned int",
+                (IntKind::Long, true) => "long",
+                (IntKind::Long, false) => "unsigned long",
+                (IntKind::LongLong, true) => "long long",
+                (IntKind::LongLong, false) => "unsigned long long",
+                (IntKind::SizeT, true) => "ssize_t",
+                (IntKind::SizeT, false) => "size_t",
+                (IntKind::Size, true) if config.usize_is_size_t => "ptrdiff_t",
+                (IntKind::Size, false) if config.usize_is_size_t => "size_t",
+                (IntKind::Size, true) => "intptr_t",
+                (IntKind::Size, false) => "uintptr_t",
+                (IntKind::B8, true) => "int8_t",
+                (IntKind::B8, false) => "uint8_t",
+                (IntKind::B16, true) => "int16_t",
+                (IntKind::B16, false) => "uint16_t",
+                (IntKind::B32, true) => "int32_t",
+                (IntKind::B32, false) => "uint32_t",
+                (IntKind::B64, true) => "int64_t",
+                (IntKind::B64, false) => "uint64_t",
             },
             PrimitiveType::Float => "float",
             PrimitiveType::Double => "double",
@@ -547,21 +473,19 @@ impl Type {
         }
     }
 
-    pub fn make_zeroable(&self) -> Option<Self> {
-        let (kind, signed) = match *self {
+    pub fn make_zeroable(&self, new_zeroable: bool) -> Option<Self> {
+        match *self {
             Type::Primitive(PrimitiveType::Integer {
-                zeroable: false,
+                zeroable: old_zeroable,
                 kind,
                 signed,
-            }) => (kind, signed),
-            _ => return None,
-        };
-
-        Some(Type::Primitive(PrimitiveType::Integer {
-            kind,
-            signed,
-            zeroable: true,
-        }))
+            }) if old_zeroable != new_zeroable => Some(Type::Primitive(PrimitiveType::Integer {
+                kind,
+                signed,
+                zeroable: new_zeroable,
+            })),
+            _ => None,
+        }
     }
 
     pub fn make_nullable(&self) -> Option<Self> {
@@ -592,42 +516,6 @@ impl Type {
         }
     }
 
-    fn nonzero_to_primitive(&self) -> Option<Self> {
-        let path = match *self {
-            Type::Path(ref p) => p,
-            _ => return None,
-        };
-
-        if !path.generics().is_empty() {
-            return None;
-        }
-
-        let name = path.name();
-        if !name.starts_with("NonZero") {
-            return None;
-        }
-
-        let (kind, signed) = match path.name() {
-            "NonZeroU8" => (IntKind::B8, false),
-            "NonZeroU16" => (IntKind::B16, false),
-            "NonZeroU32" => (IntKind::B32, false),
-            "NonZeroU64" => (IntKind::B64, false),
-            "NonZeroUSize" => (IntKind::Size, false),
-            "NonZeroI8" => (IntKind::B8, true),
-            "NonZeroI16" => (IntKind::B16, true),
-            "NonZeroI32" => (IntKind::B32, true),
-            "NonZeroI64" => (IntKind::B64, true),
-            "NonZeroISize" => (IntKind::Size, true),
-            _ => return None,
-        };
-
-        Some(Type::Primitive(PrimitiveType::Integer {
-            zeroable: false,
-            signed,
-            kind,
-        }))
-    }
-
     fn simplified_type(&self, config: &Config) -> Option<Self> {
         let path = match *self {
             Type::Path(ref p) => p,
@@ -635,7 +523,7 @@ impl Type {
         };
 
         if path.generics().is_empty() {
-            return self.nonzero_to_primitive();
+            return Some(self.clone());
         }
 
         if path.generics().len() != 1 {
@@ -652,21 +540,16 @@ impl Type {
             None => Cow::Borrowed(unsimplified_generic),
         };
         match path.name() {
-            "Option" => {
-                if let Some(nullable) = generic.make_nullable() {
-                    return Some(nullable);
-                }
-                if let Some(zeroable) = generic.make_zeroable() {
-                    return Some(zeroable);
-                }
-                None
-            }
+            "Option" => generic
+                .make_nullable()
+                .or_else(|| generic.make_zeroable(true)),
             "NonNull" => Some(Type::Ptr {
                 ty: Box::new(generic.into_owned()),
                 is_const: false,
                 is_nullable: false,
                 is_ref: false,
             }),
+            "NonZero" => generic.make_zeroable(false),
             "Box" if config.language != Language::Cxx => Some(Type::Ptr {
                 ty: Box::new(generic.into_owned()),
                 is_const: false,
