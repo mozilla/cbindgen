@@ -314,16 +314,22 @@ impl Literal {
                     syn::BinOp::Ne(..) => "!=",
                     syn::BinOp::Ge(..) => ">=",
                     syn::BinOp::Gt(..) => ">",
-                    syn::BinOp::AddEq(..) => "+=",
-                    syn::BinOp::SubEq(..) => "-=",
-                    syn::BinOp::MulEq(..) => "*=",
-                    syn::BinOp::DivEq(..) => "/=",
-                    syn::BinOp::RemEq(..) => "%=",
-                    syn::BinOp::BitXorEq(..) => "^=",
-                    syn::BinOp::BitAndEq(..) => "&=",
-                    syn::BinOp::BitOrEq(..) => "|=",
-                    syn::BinOp::ShlEq(..) => "<<=",
-                    syn::BinOp::ShrEq(..) => ">>=",
+                    syn::BinOp::AddAssign(..) => "+=",
+                    syn::BinOp::SubAssign(..) => "-=",
+                    syn::BinOp::MulAssign(..) => "*=",
+                    syn::BinOp::DivAssign(..) => "/=",
+                    syn::BinOp::RemAssign(..) => "%=",
+                    syn::BinOp::BitXorAssign(..) => "^=",
+                    syn::BinOp::BitAndAssign(..) => "&=",
+                    syn::BinOp::BitOrAssign(..) => "|=",
+                    syn::BinOp::ShlAssign(..) => "<<=",
+                    syn::BinOp::ShrAssign(..) => ">>=",
+                    currently_unknown => {
+                        return Err(format!(
+                            "unsupported binary operator: {:?}",
+                            currently_unknown
+                        ))
+                    }
                 };
                 Ok(Literal::BinOp {
                     left: Box::new(l),

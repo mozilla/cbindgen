@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use syn::ext::IdentExt;
+use syn::parse::Parse;
 
 use crate::bindgen::ir::ty::{IntKind, PrimitiveType};
 
@@ -45,44 +45,76 @@ pub struct Repr {
 
 impl Repr {
     pub fn load(attrs: &[syn::Attribute]) -> Result<Repr, String> {
-        let ids = attrs
+        let mut ids = Vec::new();
+
+        // We want only the `repr` attributes
+        let iter = attrs
             .iter()
+            .filter(|attr| attr.path().is_ident("repr"))
             .filter_map(|attr| {
-                if let syn::Meta::List(syn::MetaList { path, nested, .. }) =
-                    attr.parse_meta().ok()?
-                {
-                    if path.is_ident("repr") {
-                        return Some(nested.into_iter().collect::<Vec<_>>());
-                    }
+                // repr must be a meta list
+                if let syn::Meta::List(meta_list) = &attr.meta {
+                    Some(meta_list)
+                } else {
+                    None
                 }
-                None
-            })
-            .flatten()
-            .filter_map(|meta| match meta {
-                syn::NestedMeta::Meta(syn::Meta::Path(path)) => Some((
-                    path.segments.first().unwrap().ident.unraw().to_string(),
-                    None,
-                )),
-                syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList { path, nested, .. })) => {
-                    Some((
-                        path.segments.first().unwrap().ident.unraw().to_string(),
-                        Some(
-                            nested
-                                .iter()
-                                .filter_map(|meta| match meta {
-                                    // Only used for #[repr(align(...))].
-                                    syn::NestedMeta::Lit(syn::Lit::Int(literal)) => {
-                                        Some(literal.base10_digits().to_string())
-                                    }
-                                    // Only single levels of nesting supported at the moment.
-                                    _ => None,
-                                })
-                                .collect::<Vec<_>>(),
-                        ),
-                    ))
-                }
-                _ => None,
             });
+
+        for meta_list in iter {
+            meta_list
+                .parse_nested_meta(|meta| {
+                    match meta
+                        .path
+                        .get_ident()
+                        .map(|ident| ident.to_string())
+                        .as_deref()
+                    {
+                        Some(
+                            int_kind @ ("u8" | "u16" | "u32" | "u64" | "usize" | "i8" | "i16"
+                            | "i32" | "i64" | "isize"),
+                        ) => ids.push((int_kind.to_string(), None)),
+                        Some(repr @ ("C" | "transparent")) => ids.push((repr.to_owned(), None)),
+                        Some(repr @ "align") => {
+                            let content;
+                            syn::parenthesized!(content in meta.input);
+                            let lit: syn::LitInt = content.parse()?;
+                            ids.push((repr.to_string(), Some(lit.base10_digits().to_string())));
+                        }
+                        Some(repr @ "packed") => {
+                            if meta.input.is_empty() {
+                                ids.push((repr.to_string(), None));
+                            } else {
+                                let content;
+                                syn::parenthesized!(content in meta.input);
+                                let lit: syn::LitInt = content.parse()?;
+                                ids.push((repr.to_string(), Some(lit.base10_digits().to_string())));
+                            }
+                        }
+                        Some(repr) => {
+                            if meta.input.is_empty() {
+                                ids.push((repr.to_string(), None));
+                            } else {
+                                let content;
+                                syn::parenthesized!(content in meta.input);
+
+                                let args: Vec<_> = content
+                                    .parse_terminated(
+                                        proc_macro2::TokenStream::parse,
+                                        syn::Token![,],
+                                    )?
+                                    .into_iter()
+                                    .map(|arg| arg.to_string())
+                                    .collect();
+                                ids.push((repr.to_string(), Some(args.join(","))))
+                            }
+                        }
+                        None => return Err(meta.error("not a identifier")),
+                    }
+
+                    Ok(())
+                })
+                .map_err(|err| format!("{err}"))?;
+        }
 
         let mut repr = Repr::default();
         for id in ids {
@@ -124,20 +156,11 @@ impl Repr {
                     repr.align = Some(align);
                     continue;
                 }
-                ("align", Some(args)) => {
-                    // #[repr(align(...))] only allows a single argument.
-                    if args.len() != 1 {
-                        return Err(format!(
-                            "Unsupported #[repr(align({}))], align must have exactly one argument.",
-                            args.join(", ")
-                        ));
-                    }
+                ("align", Some(arg)) => {
                     // Must be a positive integer.
-                    let align = match args.first().unwrap().parse::<u64>() {
+                    let align = match arg.parse::<u64>() {
                         Ok(align) => align,
-                        Err(_) => {
-                            return Err(format!("Non-numeric #[repr(align({}))].", args.join(", ")))
-                        }
+                        Err(_) => return Err(format!("Non-unsigned #[repr(align({}))].", arg)),
                     };
                     // Must be a power of 2.
                     if !align.is_power_of_two() || align == 0 {
@@ -154,14 +177,10 @@ impl Repr {
                     repr.align = Some(ReprAlign::Align(align));
                     continue;
                 }
-                (path, args) => match args {
+                (path, arg) => match arg {
                     None => return Err(format!("Unsupported #[repr({})].", path)),
-                    Some(args) => {
-                        return Err(format!(
-                            "Unsupported #[repr({}({}))].",
-                            path,
-                            args.join(", ")
-                        ));
+                    Some(arg) => {
+                        return Err(format!("Unsupported #[repr({}({}))].", path, arg));
                     }
                 },
             };

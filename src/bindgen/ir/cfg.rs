@@ -81,6 +81,66 @@ impl fmt::Display for Cfg {
     }
 }
 
+impl syn::parse::Parse for Cfg {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        // get the the path
+        let ident: syn::Ident = input.parse()?;
+
+        // Empty after parsing path: no parameter
+        // So it is a boolean
+        if input.is_empty() {
+            return Ok(Cfg::Boolean(ident.to_string()));
+        }
+
+        // Named
+        if input.peek(syn::Token![=]) {
+            let _: syn::Token![=] = input.parse()?;
+
+            // On named, the right side is always a literal string
+            let lit: syn::LitStr = input.parse()?;
+
+            return Ok(Cfg::Named(ident.to_string(), lit.value()));
+        }
+
+        // We have parameters. So it is one off `not`, `any` or `all`
+        if input.peek(syn::token::Paren) {
+            if ident == "not" {
+                let content;
+                syn::parenthesized!(content in input);
+
+                let cfg: Cfg = content.parse()?;
+
+                if !content.is_empty() {
+                    return Err(content.error("`not` on `cfg` only takes one parameter"));
+                }
+                return Ok(Cfg::Not(Box::new(cfg)));
+            }
+
+            if ident == "any" {
+                let content;
+                syn::parenthesized!(content in input);
+
+                let args = content.parse_terminated(Cfg::parse, syn::Token![,])?;
+                let cfgs = args.into_iter().collect();
+
+                return Ok(Cfg::Any(cfgs));
+            }
+
+            if ident == "all" {
+                let content;
+                syn::parenthesized!(content in input);
+
+                let args = content.parse_terminated(Cfg::parse, syn::Token![,])?;
+                let cfgs = args.into_iter().collect();
+
+                return Ok(Cfg::All(cfgs));
+            }
+        }
+
+        Err(input.error("Failed to parse cfg"))
+    }
+}
+
 impl Cfg {
     pub fn join(cfgs: &[Cfg]) -> Option<Cfg> {
         if cfgs.is_empty() {
@@ -103,12 +163,14 @@ impl Cfg {
         let mut configs = Vec::new();
 
         for attr in attrs {
-            if let Ok(syn::Meta::List(syn::MetaList { path, nested, .. })) = attr.parse_meta() {
-                if !path.is_ident("cfg") || nested.len() != 1 {
+            if let syn::Meta::List(meta @ syn::MetaList { path, .. }) = &attr.meta {
+                if !path.is_ident("cfg") {
                     continue;
                 }
 
-                if let Some(config) = Cfg::load_single(nested.first().unwrap()) {
+                let cfg = meta.parse_args().ok();
+
+                if let Some(config) = cfg {
                     configs.push(config);
                 }
             }
@@ -126,11 +188,11 @@ impl Cfg {
         match syn::parse_str::<syn::Meta>(target) {
             Ok(target) => {
                 // Parsing succeeded using the #[cfg] syntax
-                if let syn::Meta::List(syn::MetaList { path, nested, .. }) = target {
-                    if !path.is_ident("cfg") || nested.len() != 1 {
+                if let syn::Meta::List(meta) = target {
+                    if !meta.path.is_ident("cfg") {
                         return None;
                     }
-                    Cfg::load_single(nested.first().unwrap())
+                    meta.parse_args().ok()
                 } else {
                     None
                 }
@@ -138,61 +200,8 @@ impl Cfg {
             Err(_) => {
                 // Parsing failed using #[cfg], this may be a literal target
                 // name
-                Cfg::load_single(&syn::NestedMeta::Lit(syn::Lit::Str(syn::LitStr::new(
-                    target,
-                    proc_macro2::Span::call_site(),
-                ))))
+                syn::parse_str::<Cfg>(target).ok()
             }
-        }
-    }
-
-    fn load_single(item: &syn::NestedMeta) -> Option<Cfg> {
-        Some(match *item {
-            syn::NestedMeta::Meta(syn::Meta::Path(ref path)) => {
-                Cfg::Boolean(format!("{}", path.segments.first().unwrap().ident))
-            }
-            syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
-                ref path,
-                lit: syn::Lit::Str(ref value),
-                ..
-            })) => Cfg::Named(
-                format!("{}", path.segments.first().unwrap().ident),
-                value.value(),
-            ),
-            syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList {
-                ref path,
-                ref nested,
-                ..
-            })) => {
-                if path.is_ident("any") {
-                    Cfg::Any(Cfg::load_list(nested.iter())?)
-                } else if path.is_ident("all") {
-                    Cfg::All(Cfg::load_list(nested.iter())?)
-                } else if path.is_ident("not") {
-                    if nested.len() != 1 {
-                        return None;
-                    }
-
-                    Cfg::Not(Box::new(Cfg::load_single(&nested[0])?))
-                } else {
-                    return None;
-                }
-            }
-            _ => return None,
-        })
-    }
-
-    fn load_list<'a, I: Iterator<Item = &'a syn::NestedMeta>>(attrs: I) -> Option<Vec<Cfg>> {
-        let mut configs = Vec::new();
-
-        for attr in attrs {
-            configs.push(Cfg::load_single(attr)?);
-        }
-
-        if configs.is_empty() {
-            None
-        } else {
-            Some(configs)
         }
     }
 }
