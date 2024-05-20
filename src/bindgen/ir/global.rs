@@ -36,7 +36,7 @@ impl Static {
         Ok(Static::new(
             path,
             ty.unwrap(),
-            item.mutability.is_some(),
+            matches!(item.mutability, syn::StaticMutability::Mut(_)),
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,
             Documentation::load(&item.attrs),

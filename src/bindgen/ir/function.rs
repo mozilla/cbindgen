@@ -48,6 +48,13 @@ impl Function {
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
         let mut args = sig.inputs.iter().try_skip_map(|x| x.as_argument())?;
+        if sig.variadic.is_some() {
+            args.push(FunctionArgument {
+                name: None,
+                ty: Type::Primitive(super::PrimitiveType::VaList),
+                array_length: None,
+            })
+        }
 
         let (mut ret, never_return) = Type::load_from_output(&sig.output)?;
 
@@ -218,19 +225,25 @@ trait SynFnArgHelpers {
     fn as_argument(&self) -> Result<Option<FunctionArgument>, String>;
 }
 
-fn gen_self_type(receiver: &syn::Receiver) -> Type {
-    let self_ty = Type::Path(GenericPath::self_path());
+fn gen_self_type(receiver: &syn::Receiver) -> Result<Type, String> {
+    let mut self_ty = Type::Path(GenericPath::self_path());
+
+    // Custom self type
+    if receiver.colon_token.is_some() {
+        self_ty = Type::load(receiver.ty.as_ref())?.unwrap_or(self_ty);
+    }
+
     if receiver.reference.is_none() {
-        return self_ty;
+        return Ok(self_ty);
     }
 
     let is_const = receiver.mutability.is_none();
-    Type::Ptr {
+    Ok(Type::Ptr {
         ty: Box::new(self_ty),
         is_const,
         is_nullable: false,
         is_ref: false,
-    }
+    })
 }
 
 impl SynFnArgHelpers for syn::FnArg {
@@ -270,7 +283,7 @@ impl SynFnArgHelpers for syn::FnArg {
             }
             syn::FnArg::Receiver(ref receiver) => Ok(Some(FunctionArgument {
                 name: Some("self".to_string()),
-                ty: gen_self_type(receiver),
+                ty: gen_self_type(receiver)?,
                 array_length: None,
             })),
         }

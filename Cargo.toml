@@ -31,7 +31,7 @@ quote = "1"
 heck = "0.4"
 
 [dependencies.syn]
-version = "1.0.88"
+version = "2.0.64"
 default-features = false
 features = ["clone-impls", "extra-traits", "fold", "full", "parsing", "printing"]
 
