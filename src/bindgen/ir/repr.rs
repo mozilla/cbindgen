@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use syn::parse::Parse;
-
 use crate::bindgen::ir::ty::{IntKind, PrimitiveType};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
@@ -48,72 +46,48 @@ impl Repr {
         let mut ids = Vec::new();
 
         // We want only the `repr` attributes
-        let iter = attrs
-            .iter()
-            .filter(|attr| attr.path().is_ident("repr"))
-            .filter_map(|attr| {
-                // repr must be a meta list
-                if let syn::Meta::List(meta_list) = &attr.meta {
-                    Some(meta_list)
-                } else {
-                    None
-                }
-            });
+        let iter = attrs.iter().filter(|attr| attr.path().is_ident("repr"));
 
-        for meta_list in iter {
-            meta_list
-                .parse_nested_meta(|meta| {
-                    match meta
-                        .path
-                        .get_ident()
-                        .map(|ident| ident.to_string())
-                        .as_deref()
-                    {
-                        Some(
-                            int_kind @ ("u8" | "u16" | "u32" | "u64" | "usize" | "i8" | "i16"
-                            | "i32" | "i64" | "isize"),
-                        ) => ids.push((int_kind.to_string(), None)),
-                        Some(repr @ ("C" | "transparent")) => ids.push((repr.to_owned(), None)),
-                        Some(repr @ "align") => {
-                            let content;
-                            syn::parenthesized!(content in meta.input);
-                            let lit: syn::LitInt = content.parse()?;
-                            ids.push((repr.to_string(), Some(lit.base10_digits().to_string())));
-                        }
-                        Some(repr @ "packed") => {
-                            if meta.input.is_empty() {
-                                ids.push((repr.to_string(), None));
-                            } else {
-                                let content;
-                                syn::parenthesized!(content in meta.input);
-                                let lit: syn::LitInt = content.parse()?;
-                                ids.push((repr.to_string(), Some(lit.base10_digits().to_string())));
-                            }
-                        }
-                        Some(repr) => {
-                            if meta.input.is_empty() {
-                                ids.push((repr.to_string(), None));
-                            } else {
-                                let content;
-                                syn::parenthesized!(content in meta.input);
+        for repr_attr in iter {
+            let reprs = repr_attr
+                .parse_args_with(
+                    syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
+                )
+                .map_err(|err| format!("Invalid `#[repr]` attribute: {err}"))?;
 
-                                let args: Vec<_> = content
-                                    .parse_terminated(
-                                        proc_macro2::TokenStream::parse,
-                                        syn::Token![,],
-                                    )?
-                                    .into_iter()
-                                    .map(|arg| arg.to_string())
-                                    .collect();
-                                ids.push((repr.to_string(), Some(args.join(","))))
-                            }
+            for meta in reprs {
+                match meta {
+                    // #[repr(C)] and #[repr(transparent)] and #[repr(INT)]
+                    syn::Meta::Path(path) => {
+                        if let Some(ident) = path.get_ident() {
+                            let ident_s = ident.to_string();
+                            ids.push((ident_s, None))
+                        } else {
+                            return Err("Invalid `repr` attribute".to_string());
                         }
-                        None => return Err(meta.error("not a identifier")),
                     }
-
-                    Ok(())
-                })
-                .map_err(|err| format!("{err}"))?;
+                    // #[repr(align(N))]
+                    syn::Meta::List(meta) if meta.path.is_ident("align") => {
+                        let lit: syn::LitInt = meta
+                            .parse_args()
+                            .map_err(|err| format!("Invalid align argument: {err}"))?;
+                        ids.push(("align".to_string(), Some(lit.to_string())))
+                    }
+                    // #[repr(packed(N))]
+                    syn::Meta::List(meta) if meta.path.is_ident("packed") => {
+                        // no arguments
+                        if meta.tokens.is_empty() {
+                            ids.push(("packed".to_string(), None))
+                        } else {
+                            let lit: syn::LitInt = meta
+                                .parse_args()
+                                .map_err(|err| format!("Invalid packed argument: {err}"))?;
+                            ids.push(("packed".to_string(), Some(lit.to_string())))
+                        }
+                    }
+                    _ => return Err("Invalid `repr` attribute".to_string()),
+                }
+            }
         }
 
         let mut repr = Repr::default();
