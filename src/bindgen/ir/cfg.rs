@@ -83,61 +83,47 @@ impl fmt::Display for Cfg {
 
 impl syn::parse::Parse for Cfg {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        // get the the path
-        let ident: syn::Ident = input.parse()?;
+        let arg: syn::Meta = input.parse()?;
 
-        // Empty after parsing path: no parameter
-        // So it is a boolean
-        if input.is_empty() {
-            return Ok(Cfg::Boolean(ident.to_string()));
-        }
+        match arg {
+            syn::Meta::Path(path) => path
+                .get_ident()
+                .map(|ident| Cfg::Boolean(ident.to_string()))
+                .ok_or_else(|| input.error("path must be identifier")),
+            syn::Meta::NameValue(syn::MetaNameValue {
+                path,
+                value:
+                    syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(lit),
+                        ..
+                    }),
+                ..
+            }) => path
+                .get_ident()
+                .map(|ident| Cfg::Named(ident.to_string(), lit.value()))
+                .ok_or_else(|| input.error("path must be identifier")),
+            syn::Meta::List(meta) => {
+                if meta.path.is_ident("not") {
+                    let cfg = meta.parse_args()?;
+                    Ok(Cfg::Not(Box::new(cfg)))
+                } else if meta.path.is_ident("all") {
+                    let cfgs = meta.parse_args_with(
+                        syn::punctuated::Punctuated::<Cfg, syn::Token![,]>::parse_terminated,
+                    )?;
 
-        // Named
-        if input.peek(syn::Token![=]) {
-            let _: syn::Token![=] = input.parse()?;
+                    Ok(Cfg::All(cfgs.into_iter().collect()))
+                } else if meta.path.is_ident("any") {
+                    let cfgs = meta.parse_args_with(
+                        syn::punctuated::Punctuated::<Cfg, syn::Token![,]>::parse_terminated,
+                    )?;
 
-            // On named, the right side is always a literal string
-            let lit: syn::LitStr = input.parse()?;
-
-            return Ok(Cfg::Named(ident.to_string(), lit.value()));
-        }
-
-        // We have parameters. So it is one off `not`, `any` or `all`
-        if input.peek(syn::token::Paren) {
-            if ident == "not" {
-                let content;
-                syn::parenthesized!(content in input);
-
-                let cfg: Cfg = content.parse()?;
-
-                if !content.is_empty() {
-                    return Err(content.error("`not` on `cfg` only takes one parameter"));
+                    Ok(Cfg::Any(cfgs.into_iter().collect()))
+                } else {
+                    Err(input.error("invalid list argument"))
                 }
-                return Ok(Cfg::Not(Box::new(cfg)));
             }
-
-            if ident == "any" {
-                let content;
-                syn::parenthesized!(content in input);
-
-                let args = content.parse_terminated(Cfg::parse, syn::Token![,])?;
-                let cfgs = args.into_iter().collect();
-
-                return Ok(Cfg::Any(cfgs));
-            }
-
-            if ident == "all" {
-                let content;
-                syn::parenthesized!(content in input);
-
-                let args = content.parse_terminated(Cfg::parse, syn::Token![,])?;
-                let cfgs = args.into_iter().collect();
-
-                return Ok(Cfg::All(cfgs));
-            }
+            _ => Err(input.error("Failed to parse cfg")),
         }
-
-        Err(input.error("Failed to parse cfg"))
     }
 }
 
@@ -200,7 +186,7 @@ impl Cfg {
             Err(_) => {
                 // Parsing failed using #[cfg], this may be a literal target
                 // name
-                syn::parse_str::<Cfg>(target).ok()
+                Some(Cfg::Boolean(target.clone()))
             }
         }
     }
