@@ -144,6 +144,16 @@ impl Struct {
         }
     }
 
+    pub fn simplify_standard_types(&mut self, config: &Config) {
+        for field in &mut self.fields {
+            field.ty.simplify_standard_types(config);
+        }
+    }
+
+    pub fn is_generic(&self) -> bool {
+        self.generic_params.len() > 0
+    }
+
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
         if self.is_transparent {
@@ -159,12 +169,6 @@ impl Struct {
             }
         }
         None
-    }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
-        }
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -279,10 +283,6 @@ impl Item for Struct {
         &mut self.annotations
     }
 
-    fn documentation(&self) -> &Documentation {
-        &self.documentation
-    }
-
     fn container(&self) -> ItemContainer {
         ItemContainer::Struct(self.clone())
     }
@@ -299,10 +299,6 @@ impl Item for Struct {
         for field in &mut self.fields {
             field.ty.resolve_declaration_types(resolver);
         }
-    }
-
-    fn generic_params(&self) -> Option<&GenericParams> {
-        Some(&self.generic_params)
     }
 
     fn rename_for_config(&mut self, config: &Config) {

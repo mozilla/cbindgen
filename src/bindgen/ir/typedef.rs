@@ -66,6 +66,10 @@ impl Typedef {
         }
     }
 
+    pub fn simplify_standard_types(&mut self, config: &Config) {
+        self.aliased.simplify_standard_types(config);
+    }
+
     // Used to convert a transparent Struct to a Typedef.
     pub fn new_from_struct_field(item: &Struct, field: &Field) -> Self {
         Self {
@@ -75,12 +79,8 @@ impl Typedef {
             aliased: field.ty.clone(),
             cfg: item.cfg().cloned(),
             annotations: item.annotations().clone(),
-            documentation: item.documentation().clone(),
+            documentation: item.documentation.clone(),
         }
-    }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.aliased.simplify_standard_types(config);
     }
 
     pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {
@@ -102,12 +102,18 @@ impl Typedef {
         }
     }
 
+    pub fn is_generic(&self) -> bool {
+        self.generic_params.len() > 0
+    }
+
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
-        if !self.is_generic() {
-            self.aliased.add_monomorphs(library, out);
+        if self.is_generic() {
+            return;
         }
+
+        self.aliased.add_monomorphs(library, out);
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
@@ -136,10 +142,6 @@ impl Item for Typedef {
         &mut self.annotations
     }
 
-    fn documentation(&self) -> &Documentation {
-        &self.documentation
-    }
-
     fn container(&self) -> ItemContainer {
         ItemContainer::Typedef(self.clone())
     }
@@ -150,10 +152,6 @@ impl Item for Typedef {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.aliased.resolve_declaration_types(resolver);
-    }
-
-    fn generic_params(&self) -> Option<&GenericParams> {
-        Some(&self.generic_params)
     }
 
     fn rename_for_config(&mut self, config: &Config) {
