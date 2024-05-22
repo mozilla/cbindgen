@@ -49,6 +49,14 @@ impl Function {
     ) -> Result<Function, String> {
         let mut args = sig.inputs.iter().try_skip_map(|x| x.as_argument())?;
 
+        if let Some(var) = sig.variadic.as_ref() {
+            let arg = var.as_argument()?;
+
+            if let Some(arg) = arg {
+                args.push(arg);
+            }
+        }
+
         let (mut ret, never_return) = Type::load_from_output(&sig.output)?;
 
         if let Some(self_path) = self_type_path {
@@ -270,5 +278,29 @@ impl SynFnArgHelpers for syn::FnArg {
                 array_length: None,
             })),
         }
+    }
+}
+
+impl SynFnArgHelpers for syn::Variadic {
+    fn as_argument(&self) -> Result<Option<FunctionArgument>, String> {
+        let pat = self.pat.clone().map(|p| p.0);
+        let name = match pat.as_deref() {
+            Some(syn::Pat::Wild(..)) => None,
+            Some(syn::Pat::Ident(syn::PatIdent { ref ident, .. })) => {
+                Some(ident.unraw().to_string())
+            }
+            _ => {
+                return Err(format!(
+                    "Parameter has an unsupported argument name: {:?}",
+                    pat
+                ))
+            }
+        };
+
+        Ok(Some(FunctionArgument {
+            name,
+            ty: Type::Primitive(super::PrimitiveType::VaList),
+            array_length: None,
+        }))
     }
 }
