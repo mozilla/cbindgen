@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Struct, TransparentTypeEraser, Type,
+    Path, TransparentTypeEraser, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -69,12 +69,12 @@ impl Typedef {
         }
     }
 
-    // Used to convert a transparent Struct to a Typedef.
-    pub fn new_from_struct_field(item: &Struct, field: &Field) -> Self {
+    // Used to convert a transparent Struct or Enum to a Typedef.
+    pub fn new_from_item_field(item: &impl Item, field: &Field) -> Self {
         Self {
             path: item.path().clone(),
             export_name: item.export_name().to_string(),
-            generic_params: item.generic_params.clone(),
+            generic_params: item.generic_params().clone(),
             aliased: field.ty.clone(),
             cfg: item.cfg().cloned(),
             annotations: item.annotations().clone(),

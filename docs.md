@@ -133,9 +133,11 @@ You can learn about all of the different repr attributes [by reading Rust's refe
 
 * `#[repr(C)]`: give this struct/union/enum the same layout and ABI C would
 * `#[repr(u8, u16, ... etc)]`: give this enum the same layout and ABI as the given integer type
-* `#[repr(transparent)]`: give this single-field struct the same ABI as its field (useful for newtyping integers but keeping the integer ABI)
+* `#[repr(transparent)]`: give this single-field struct or enum the same ABI as its field (useful for newtyping integers but keeping the integer ABI)
 
 cbindgen supports the `#[repr(align(N))]` and `#[repr(packed)]` attributes, but currently does not support `#[repr(packed(N))]`.
+
+cbindgen supports using `repr(transparent)` on single-field structs and single-variant enums with fields. Transparent structs and enums are exported as typedefs that alias the underlying single field's type.
 
 cbindgen also supports using `repr(C)`/`repr(u8)` on non-C-like enums (enums with fields). This gives a C-compatible tagged union layout, as [defined by this RFC 2195][really-tagged-unions]. `repr(C)` will give a simpler layout that is perhaps more intuitive, while `repr(u8)` will produce a more compact layout.
 
@@ -407,9 +409,17 @@ The rest are just local overrides for the same options found in the cbindgen.tom
 
 ### Enum Annotations
 
-* enum-trailing-values=\[variant1, variant2, ...\] -- add the following fieldless enum variants to the end of the enum's definition. These variant names *will* have the enum's renaming rules applied.
+* enum-trailing-values=\[variant1, variant2, ...\] -- add the following fieldless enum variants to
+  the end of the enum's definition. These variant names *will* have the enum's renaming rules
+  applied.
 
-WARNING: if any of these values are ever passed into Rust, behaviour will be Undefined. Rust does not know about them, and will assume they cannot happen.
+  WARNING: if any of these values are ever passed into Rust, behaviour will be Undefined. Rust does
+  not know about them, and will assume they cannot happen.
+
+* transparent-typedef -- when emitting the typedef for a transparent enum, mark it as
+  transparent. All references to the enum will be replaced with the type of its underlying NZST
+  variant field, effectively making the enum invisible on the FFI side. For exmaples of how this
+  works, see [Struct Annotations](#struct-annotations).
 
 The rest are just local overrides for the same options found in the cbindgen.toml:
 

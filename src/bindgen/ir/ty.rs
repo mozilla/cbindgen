@@ -569,6 +569,7 @@ impl Type {
                             ItemContainer::OpaqueItem(o) => o.as_transparent_alias(&generics),
                             ItemContainer::Typedef(t) => t.as_transparent_alias(&generics),
                             ItemContainer::Struct(s) => s.as_transparent_alias(&generics),
+                            ItemContainer::Enum(e) => e.as_transparent_alias(&generics),
                             _ => None,
                         };
                         if let Some(mut ty) = aliased_ty {

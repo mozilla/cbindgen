@@ -136,10 +136,12 @@ impl Struct {
         // [2] https://github.com/rust-lang/rust/issues/77841#issuecomment-716796313
         // [3] https://doc.rust-lang.org/nomicon/other-reprs.html
         if fields.is_empty() {
-            warn!(
-                "Passing zero-sized struct {} across the FFI boundary is undefined behavior",
-                &path
-            );
+            if !is_enum_variant_body {
+                warn!(
+                    "Passing zero-sized struct {} across the FFI boundary is undefined behavior",
+                    &path
+                );
+            }
             is_transparent = false;
         }
 
@@ -163,7 +165,7 @@ impl Struct {
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
         match self.fields.first() {
-            Some(field) if self.is_transparent => Some(Typedef::new_from_struct_field(self, field)),
+            Some(field) if self.is_transparent => Some(Typedef::new_from_item_field(self, field)),
             _ => None,
         }
     }
