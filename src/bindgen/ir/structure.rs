@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type,
+    ItemContainer, Path, Repr, ReprAlign, ReprStyle, TransparentTypeEraser, Type, Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -144,14 +144,27 @@ impl Struct {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
+    /// Attempts to convert this struct to a typedef (only works for transparent structs).
+    pub fn as_typedef(&self) -> Option<Typedef> {
+        if self.is_transparent {
+            // NOTE: A `#[repr(transparent)]` struct with 2+ NZT fields fails to compile, but 0
+            // fields is allowed for some strange reason. Don't emit the typedef in that case.
+            if let Some(field) = self.fields.first() {
+                return Some(Typedef::new_from_struct_field(self, field));
+            } else {
+                error!(
+                    "Cannot convert empty transparent struct {} to typedef",
+                    self.name()
+                );
+            }
         }
+        None
     }
 
-    pub fn is_generic(&self) -> bool {
-        self.generic_params.len() > 0
+    // Transparent structs become typedefs, so try converting to typedef and recurse on that.
+    pub fn as_transparent_alias(&self, generics: &[GenericArgument]) -> Option<Type> {
+        self.as_typedef()
+            .and_then(|t| t.as_transparent_alias(generics))
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -266,6 +279,10 @@ impl Item for Struct {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Struct(self.clone())
     }
@@ -281,6 +298,23 @@ impl Item for Struct {
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         for field in &mut self.fields {
             field.ty.resolve_declaration_types(resolver);
+        }
+    }
+
+    fn generic_params(&self) -> Option<&GenericParams> {
+        Some(&self.generic_params)
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        generics: &[GenericArgument],
+    ) {
+        let generics = self.generic_params.defaulted_generics(generics);
+        let mappings = self.generic_params.call(self.name(), &generics);
+        for field in &mut self.fields {
+            eraser.erase_transparent_types_inplace(library, &mut field.ty, &mappings);
         }
     }
 

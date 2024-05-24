@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::borrow::Cow;
-
 use syn::ext::IdentExt;
 
-use crate::bindgen::config::{Config, Language};
+use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
+use crate::bindgen::ir::{
+    GenericArgument, GenericParams, GenericPath, ItemContainer, Path, TransparentTypeEraser,
+};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::utilities::IterHelpers;
@@ -64,39 +64,69 @@ impl PrimitiveType {
             "f32" => PrimitiveType::Float,
             "f64" => PrimitiveType::Double,
 
-            _ => {
-                let (kind, signed) = match path {
-                    "c_short" => (IntKind::Short, true),
-                    "c_int" => (IntKind::Int, true),
-                    "c_long" => (IntKind::Long, true),
-                    "c_longlong" => (IntKind::LongLong, true),
-                    "ssize_t" => (IntKind::SizeT, true),
-                    "c_ushort" => (IntKind::Short, false),
-                    "c_uint" => (IntKind::Int, false),
-                    "c_ulong" => (IntKind::Long, false),
-                    "c_ulonglong" => (IntKind::LongLong, false),
-                    "size_t" => (IntKind::SizeT, false),
-                    "RawFd" => (IntKind::Int, true),
+            _ => return Self::maybe_integer(path),
+        })
+    }
 
-                    "isize" | "intptr_t" => (IntKind::Size, true),
-                    "usize" | "uintptr_t" => (IntKind::Size, false),
+    // Converts well-known integral types to their respective `PrimitiveType`
+    fn maybe_integer(path: &str) -> Option<PrimitiveType> {
+        let (kind, signed) = match path {
+            "c_short" => (IntKind::Short, true),
+            "c_int" => (IntKind::Int, true),
+            "c_long" => (IntKind::Long, true),
+            "c_longlong" => (IntKind::LongLong, true),
+            "ssize_t" => (IntKind::SizeT, true),
+            "c_ushort" => (IntKind::Short, false),
+            "c_uint" => (IntKind::Int, false),
+            "c_ulong" => (IntKind::Long, false),
+            "c_ulonglong" => (IntKind::LongLong, false),
+            "size_t" => (IntKind::SizeT, false),
+            "RawFd" => (IntKind::Int, true),
 
-                    "u8" | "uint8_t" => (IntKind::B8, false),
-                    "u16" | "uint16_t" => (IntKind::B16, false),
-                    "u32" | "uint32_t" => (IntKind::B32, false),
-                    "u64" | "uint64_t" => (IntKind::B64, false),
-                    "i8" | "int8_t" => (IntKind::B8, true),
-                    "i16" | "int16_t" => (IntKind::B16, true),
-                    "i32" | "int32_t" => (IntKind::B32, true),
-                    "i64" | "int64_t" => (IntKind::B64, true),
-                    _ => return None,
-                };
-                PrimitiveType::Integer {
-                    zeroable: true,
-                    signed,
-                    kind,
-                }
-            }
+            "isize" | "intptr_t" => (IntKind::Size, true),
+            "usize" | "uintptr_t" => (IntKind::Size, false),
+
+            "u8" | "uint8_t" => (IntKind::B8, false),
+            "u16" | "uint16_t" => (IntKind::B16, false),
+            "u32" | "uint32_t" => (IntKind::B32, false),
+            "u64" | "uint64_t" => (IntKind::B64, false),
+            "i8" | "int8_t" => (IntKind::B8, true),
+            "i16" | "int16_t" => (IntKind::B16, true),
+            "i32" | "int32_t" => (IntKind::B32, true),
+            "i64" | "int64_t" => (IntKind::B64, true),
+
+            _ => return Self::maybe_nonzero_integer(path),
+        };
+        Some(PrimitiveType::Integer {
+            zeroable: true,
+            signed,
+            kind,
+        })
+    }
+
+    // Converts well-known typedefs for [`NonZero`] to their respective `PrimitiveType`.
+    //
+    // NOTE: This performs the type erasure directly, as if `NonZero<T>` had been specified, because
+    // it's actually more code to register an erased typedef instead.
+    fn maybe_nonzero_integer(path: &str) -> Option<PrimitiveType> {
+        let (kind, signed) = match path {
+            "NonZeroU8" => (IntKind::B8, false),
+            "NonZeroU16" => (IntKind::B16, false),
+            "NonZeroU32" => (IntKind::B32, false),
+            "NonZeroU64" => (IntKind::B64, false),
+            "NonZeroUSize" => (IntKind::Size, false),
+            "NonZeroI8" => (IntKind::B8, true),
+            "NonZeroI16" => (IntKind::B16, true),
+            "NonZeroI32" => (IntKind::B32, true),
+            "NonZeroI64" => (IntKind::B64, true),
+            "NonZeroISize" => (IntKind::Size, true),
+
+            _ => return None,
+        };
+        Some(PrimitiveType::Integer {
+            zeroable: false,
+            signed,
+            kind,
         })
     }
 
@@ -112,77 +142,27 @@ impl PrimitiveType {
                 kind,
                 signed,
                 zeroable: _,
-            } => match kind {
-                IntKind::Short => {
-                    if signed {
-                        "c_short"
-                    } else {
-                        "c_ushort"
-                    }
-                }
-                IntKind::Int => {
-                    if signed {
-                        "c_int"
-                    } else {
-                        "c_uint"
-                    }
-                }
-                IntKind::Long => {
-                    if signed {
-                        "c_long"
-                    } else {
-                        "c_ulong"
-                    }
-                }
-                IntKind::LongLong => {
-                    if signed {
-                        "c_longlong"
-                    } else {
-                        "c_ulonglong"
-                    }
-                }
-                IntKind::SizeT => {
-                    if signed {
-                        "ssize_t"
-                    } else {
-                        "size_t"
-                    }
-                }
-                IntKind::Size => {
-                    if signed {
-                        "isize"
-                    } else {
-                        "usize"
-                    }
-                }
-                IntKind::B8 => {
-                    if signed {
-                        "i8"
-                    } else {
-                        "u8"
-                    }
-                }
-                IntKind::B16 => {
-                    if signed {
-                        "i16"
-                    } else {
-                        "u16"
-                    }
-                }
-                IntKind::B32 => {
-                    if signed {
-                        "i32"
-                    } else {
-                        "u32"
-                    }
-                }
-                IntKind::B64 => {
-                    if signed {
-                        "i64"
-                    } else {
-                        "u64"
-                    }
-                }
+            } => match (kind, signed) {
+                (IntKind::Short, true) => "c_short",
+                (IntKind::Short, false) => "c_ushort",
+                (IntKind::Int, true) => "c_int",
+                (IntKind::Int, false) => "c_uint",
+                (IntKind::Long, true) => "c_long",
+                (IntKind::Long, false) => "c_ulong",
+                (IntKind::LongLong, true) => "c_longlong",
+                (IntKind::LongLong, false) => "c_ulonglong",
+                (IntKind::SizeT, true) => "ssize_t",
+                (IntKind::SizeT, false) => "size_t",
+                (IntKind::Size, true) => "isize",
+                (IntKind::Size, false) => "usize",
+                (IntKind::B8, true) => "i8",
+                (IntKind::B8, false) => "u8",
+                (IntKind::B16, true) => "i16",
+                (IntKind::B16, false) => "u16",
+                (IntKind::B32, true) => "i32",
+                (IntKind::B32, false) => "u32",
+                (IntKind::B64, true) => "i64",
+                (IntKind::B64, false) => "u64",
             },
             PrimitiveType::Float => "f32",
             PrimitiveType::Double => "f64",
@@ -211,83 +191,29 @@ impl PrimitiveType {
                 kind,
                 signed,
                 zeroable: _,
-            } => match kind {
-                IntKind::Short => {
-                    if signed {
-                        "short"
-                    } else {
-                        "unsigned short"
-                    }
-                }
-                IntKind::Int => {
-                    if signed {
-                        "int"
-                    } else {
-                        "unsigned int"
-                    }
-                }
-                IntKind::Long => {
-                    if signed {
-                        "long"
-                    } else {
-                        "unsigned long"
-                    }
-                }
-                IntKind::LongLong => {
-                    if signed {
-                        "long long"
-                    } else {
-                        "unsigned long long"
-                    }
-                }
-                IntKind::SizeT => {
-                    if signed {
-                        "ssize_t"
-                    } else {
-                        "size_t"
-                    }
-                }
-                IntKind::Size => {
-                    if config.usize_is_size_t {
-                        if signed {
-                            "ptrdiff_t"
-                        } else {
-                            "size_t"
-                        }
-                    } else if signed {
-                        "intptr_t"
-                    } else {
-                        "uintptr_t"
-                    }
-                }
-                IntKind::B8 => {
-                    if signed {
-                        "int8_t"
-                    } else {
-                        "uint8_t"
-                    }
-                }
-                IntKind::B16 => {
-                    if signed {
-                        "int16_t"
-                    } else {
-                        "uint16_t"
-                    }
-                }
-                IntKind::B32 => {
-                    if signed {
-                        "int32_t"
-                    } else {
-                        "uint32_t"
-                    }
-                }
-                IntKind::B64 => {
-                    if signed {
-                        "int64_t"
-                    } else {
-                        "uint64_t"
-                    }
-                }
+            } => match (kind, signed) {
+                (IntKind::Short, true) => "short",
+                (IntKind::Short, false) => "unsigned short",
+                (IntKind::Int, true) => "int",
+                (IntKind::Int, false) => "unsigned int",
+                (IntKind::Long, true) => "long",
+                (IntKind::Long, false) => "unsigned long",
+                (IntKind::LongLong, true) => "long long",
+                (IntKind::LongLong, false) => "unsigned long long",
+                (IntKind::SizeT, true) => "ssize_t",
+                (IntKind::SizeT, false) => "size_t",
+                (IntKind::Size, true) if config.usize_is_size_t => "ptrdiff_t",
+                (IntKind::Size, false) if config.usize_is_size_t => "size_t",
+                (IntKind::Size, true) => "intptr_t",
+                (IntKind::Size, false) => "uintptr_t",
+                (IntKind::B8, true) => "int8_t",
+                (IntKind::B8, false) => "uint8_t",
+                (IntKind::B16, true) => "int16_t",
+                (IntKind::B16, false) => "uint16_t",
+                (IntKind::B32, true) => "int32_t",
+                (IntKind::B32, false) => "uint32_t",
+                (IntKind::B64, true) => "int64_t",
+                (IntKind::B64, false) => "uint64_t",
             },
             PrimitiveType::Float => "float",
             PrimitiveType::Double => "double",
@@ -547,21 +473,19 @@ impl Type {
         }
     }
 
-    pub fn make_zeroable(&self) -> Option<Self> {
-        let (kind, signed) = match *self {
+    pub fn make_zeroable(&self, new_zeroable: bool) -> Option<Self> {
+        match *self {
             Type::Primitive(PrimitiveType::Integer {
-                zeroable: false,
+                zeroable: old_zeroable,
                 kind,
                 signed,
-            }) => (kind, signed),
-            _ => return None,
-        };
-
-        Some(Type::Primitive(PrimitiveType::Integer {
-            kind,
-            signed,
-            zeroable: true,
-        }))
+            }) if old_zeroable != new_zeroable => Some(Type::Primitive(PrimitiveType::Integer {
+                kind,
+                signed,
+                zeroable: new_zeroable,
+            })),
+            _ => None,
+        }
     }
 
     pub fn make_nullable(&self) -> Option<Self> {
@@ -592,100 +516,121 @@ impl Type {
         }
     }
 
-    fn nonzero_to_primitive(&self) -> Option<Self> {
-        let path = match *self {
-            Type::Path(ref p) => p,
-            _ => return None,
-        };
-
-        if !path.generics().is_empty() {
-            return None;
-        }
-
-        let name = path.name();
-        if !name.starts_with("NonZero") {
-            return None;
-        }
-
-        let (kind, signed) = match path.name() {
-            "NonZeroU8" => (IntKind::B8, false),
-            "NonZeroU16" => (IntKind::B16, false),
-            "NonZeroU32" => (IntKind::B32, false),
-            "NonZeroU64" => (IntKind::B64, false),
-            "NonZeroUSize" => (IntKind::Size, false),
-            "NonZeroI8" => (IntKind::B8, true),
-            "NonZeroI16" => (IntKind::B16, true),
-            "NonZeroI32" => (IntKind::B32, true),
-            "NonZeroI64" => (IntKind::B64, true),
-            "NonZeroISize" => (IntKind::Size, true),
-            _ => return None,
-        };
-
-        Some(Type::Primitive(PrimitiveType::Integer {
-            zeroable: false,
-            signed,
-            kind,
-        }))
-    }
-
-    fn simplified_type(&self, config: &Config) -> Option<Self> {
-        let path = match *self {
-            Type::Path(ref p) => p,
-            _ => return None,
-        };
-
-        if path.generics().is_empty() {
-            return self.nonzero_to_primitive();
-        }
-
-        if path.generics().len() != 1 {
-            return None;
-        }
-
-        let unsimplified_generic = match path.generics()[0] {
-            GenericArgument::Type(ref ty) => ty,
-            GenericArgument::Const(_) => return None,
-        };
-
-        let generic = match unsimplified_generic.simplified_type(config) {
-            Some(generic) => Cow::Owned(generic),
-            None => Cow::Borrowed(unsimplified_generic),
-        };
-        match path.name() {
-            "Option" => {
-                if let Some(nullable) = generic.make_nullable() {
-                    return Some(nullable);
+    #[must_use]
+    pub fn erase_transparent_types(
+        &self,
+        library: &Library,
+        mappings: &[(&Path, &GenericArgument)],
+        eraser: &mut TransparentTypeEraser,
+    ) -> Option<Type> {
+        match *self {
+            Type::Ptr {
+                ref ty,
+                is_const,
+                is_nullable,
+                is_ref,
+            } => {
+                if let Some(erased_type) = eraser.erase_transparent_types(library, ty, mappings) {
+                    return Some(Type::Ptr {
+                        ty: Box::new(erased_type),
+                        is_const,
+                        is_nullable,
+                        is_ref,
+                    });
                 }
-                if let Some(zeroable) = generic.make_zeroable() {
-                    return Some(zeroable);
-                }
-                None
             }
-            "NonNull" => Some(Type::Ptr {
-                ty: Box::new(generic.into_owned()),
-                is_const: false,
-                is_nullable: false,
-                is_ref: false,
-            }),
-            "Box" if config.language != Language::Cxx => Some(Type::Ptr {
-                ty: Box::new(generic.into_owned()),
-                is_const: false,
-                is_nullable: false,
-                is_ref: false,
-            }),
-            "Cell" => Some(generic.into_owned()),
-            "ManuallyDrop" | "MaybeUninit" | "Pin" if config.language != Language::Cxx => {
-                Some(generic.into_owned())
-            }
-            _ => None,
-        }
-    }
+            Type::Path(ref path) => {
+                if let Some(mut items) = library.get_items(path.path()) {
+                    if let Some(item) = items.first_mut() {
+                        // First, erase the generic args themselves. This is nice for most Item
+                        // types, but crucial for `OpaqueItem` that would otherwise miss out.
+                        let mut did_erase_generics = false;
+                        let generics: Vec<_> = path
+                            .generics()
+                            .iter()
+                            .map(|g| match g {
+                                GenericArgument::Type(ty) => {
+                                    let erased_ty =
+                                        eraser.erase_transparent_types(library, ty, mappings);
+                                    if erased_ty.is_some() {
+                                        did_erase_generics = true;
+                                    };
+                                    GenericArgument::Type(erased_ty.unwrap_or_else(|| ty.clone()))
+                                }
+                                other => other.clone(),
+                            })
+                            .collect();
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.visit_types(|ty| ty.simplify_standard_types(config));
-        if let Some(ty) = self.simplified_type(config) {
-            *self = ty;
+                        // Replace transparent items with their underlying type and erase it.
+                        let aliased_ty = match item {
+                            ItemContainer::OpaqueItem(o) => o.as_transparent_alias(&generics),
+                            ItemContainer::Typedef(t) => t.as_transparent_alias(&generics),
+                            ItemContainer::Struct(s) => s.as_transparent_alias(&generics),
+                            _ => None,
+                        };
+                        if let Some(mut ty) = aliased_ty {
+                            eraser.erase_transparent_types_inplace(library, &mut ty, mappings);
+                            return Some(ty);
+                        } else if did_erase_generics {
+                            // The type was not transparent, but some of its generics were erased.
+                            let path = GenericPath::new(path.path().clone(), generics);
+                            return Some(Type::Path(path));
+                        }
+                    }
+                } else {
+                    warn!(
+                        "Can't find {}. This usually means that this type was incompatible or \
+                           not found.",
+                        path.path()
+                    );
+                }
+            }
+            Type::Primitive(..) => {} // cannot simplify further
+            Type::Array(ref ty, ref constexpr) => {
+                if let Some(erased_ty) = eraser.erase_transparent_types(library, ty, mappings) {
+                    return Some(Type::Array(Box::new(erased_ty), constexpr.clone()));
+                }
+            }
+            Type::FuncPtr {
+                ref ret,
+                ref args,
+                is_nullable,
+                never_return,
+            } => {
+                // Predict that ret+args will all be erased, but decrement the count whenever we're
+                // wrong. If the count drops to 0, then type erasure was a no-op after all.
+                let mut num_erased = 1 + args.len();
+                let erased_ret = eraser
+                    .erase_transparent_types(library, ret, mappings)
+                    .unwrap_or_else(|| {
+                        num_erased -= 1;
+                        ret.as_ref().clone()
+                    });
+
+                let erased_args = args
+                    .iter()
+                    .map(|(name, ty)| {
+                        let erased_ty = eraser
+                            .erase_transparent_types(library, ty, mappings)
+                            .unwrap_or_else(|| {
+                                num_erased -= 1;
+                                ty.clone()
+                            });
+                        (name.clone(), erased_ty)
+                    })
+                    .collect();
+
+                if num_erased > 0 {
+                    return Some(Type::FuncPtr {
+                        ret: Box::new(erased_ret),
+                        args: erased_args,
+                        is_nullable,
+                        never_return,
+                    });
+                }
+            }
         }
+        None
     }
 
     pub fn replace_self_with(&mut self, self_ty: &Path) {

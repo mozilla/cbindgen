@@ -9,7 +9,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Repr, ReprAlign, ReprStyle,
+    Path, Repr, ReprAlign, ReprStyle, TransparentTypeEraser,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -94,16 +94,6 @@ impl Union {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
-        }
-    }
-
-    pub fn is_generic(&self) -> bool {
-        self.generic_params.len() > 0
-    }
-
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic unions can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
@@ -144,6 +134,10 @@ impl Item for Union {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Union(self.clone())
     }
@@ -155,6 +149,23 @@ impl Item for Union {
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         for field in &mut self.fields {
             field.ty.resolve_declaration_types(resolver);
+        }
+    }
+
+    fn generic_params(&self) -> Option<&GenericParams> {
+        Some(&self.generic_params)
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        generics: &[GenericArgument],
+    ) {
+        let generics = self.generic_params.defaulted_generics(generics);
+        let mappings = self.generic_params.call(self.name(), &generics);
+        for field in &mut self.fields {
+            eraser.erase_transparent_types_inplace(library, &mut field.ty, &mappings);
         }
     }
 

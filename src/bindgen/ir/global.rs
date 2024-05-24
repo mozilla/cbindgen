@@ -5,7 +5,10 @@
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Path, Type};
+use crate::bindgen::ir::{
+    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
+    TransparentTypeEraser, Type,
+};
 use crate::bindgen::library::Library;
 
 #[derive(Debug, Clone)]
@@ -60,10 +63,6 @@ impl Static {
             documentation,
         }
     }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.ty.simplify_standard_types(config);
-    }
 }
 
 impl Item for Static {
@@ -87,6 +86,10 @@ impl Item for Static {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Static(self.clone())
     }
@@ -97,6 +100,19 @@ impl Item for Static {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.ty.resolve_declaration_types(resolver);
+    }
+
+    fn generic_params(&self) -> Option<&GenericParams> {
+        None
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        _generics: &[GenericArgument],
+    ) {
+        eraser.erase_transparent_types_inplace(library, &mut self.ty, &[]);
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {

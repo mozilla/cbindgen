@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+use std::collections::HashMap;
 use std::io::Write;
 use std::ops::Deref;
 
@@ -8,19 +10,21 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use crate::bindgen::ir::{ConstExpr, Path, Type};
 use crate::bindgen::language_backend::LanguageBackend;
+use crate::bindgen::library::Library;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::SourceWriter;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum GenericParamType {
     Type,
     Const(Type),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct GenericParam {
     name: Path,
     ty: GenericParamType,
+    default: Option<GenericArgument>,
 }
 
 impl GenericParam {
@@ -28,20 +32,36 @@ impl GenericParam {
         GenericParam {
             name: Path::new(name),
             ty: GenericParamType::Type,
+            default: None,
         }
     }
 
     pub fn load(param: &syn::GenericParam) -> Result<Option<Self>, String> {
         match *param {
-            syn::GenericParam::Type(syn::TypeParam { ref ident, .. }) => Ok(Some(GenericParam {
-                name: Path::new(ident.unraw().to_string()),
-                ty: GenericParamType::Type,
-            })),
+            syn::GenericParam::Type(syn::TypeParam {
+                ref ident,
+                ref default,
+                ..
+            }) => {
+                let default = match default.as_ref().map(Type::load).transpose()? {
+                    None => None,
+                    Some(None) => Err(format!("unsupported generic type default: {:?}", default))?,
+                    Some(Some(ty)) => Some(GenericArgument::Type(ty)),
+                };
+                Ok(Some(GenericParam {
+                    name: Path::new(ident.unraw().to_string()),
+                    ty: GenericParamType::Type,
+                    default,
+                }))
+            }
 
             syn::GenericParam::Lifetime(_) => Ok(None),
 
             syn::GenericParam::Const(syn::ConstParam {
-                ref ident, ref ty, ..
+                ref ident,
+                ref ty,
+                ref default,
+                ..
             }) => match Type::load(ty)? {
                 None => {
                     // A type that evaporates, like PhantomData.
@@ -50,6 +70,11 @@ impl GenericParam {
                 Some(ty) => Ok(Some(GenericParam {
                     name: Path::new(ident.unraw().to_string()),
                     ty: GenericParamType::Const(ty),
+                    default: default
+                        .as_ref()
+                        .map(ConstExpr::load)
+                        .transpose()?
+                        .map(GenericArgument::Const),
                 })),
             },
         }
@@ -75,23 +100,56 @@ impl GenericParams {
         Ok(GenericParams(params))
     }
 
+    /// If `generics` is empty, create a set of "default" generic arguments, which preserves the
+    /// existing parameter name. Useful to allow `call` to work when no generics are provided.
+    pub fn defaulted_generics<'a>(
+        &self,
+        generics: &'a [GenericArgument],
+    ) -> Cow<'a, [GenericArgument]> {
+        if !self.is_empty() && generics.is_empty() {
+            Cow::Owned(
+                self.iter()
+                    .map(|param| Type::Path(GenericPath::new(param.name.clone(), vec![])))
+                    .map(GenericArgument::Type)
+                    .collect(),
+            )
+        } else {
+            Cow::Borrowed(generics)
+        }
+    }
+
     /// Associate each parameter with an argument.
     pub fn call<'out>(
         &'out self,
         item_name: &str,
         arguments: &'out [GenericArgument],
     ) -> Vec<(&'out Path, &'out GenericArgument)> {
-        assert!(self.len() > 0, "{} is not generic", item_name);
         assert!(
-            self.len() == arguments.len(),
+            self.len() >= arguments.len(),
             "{} has {} params but is being instantiated with {} values",
             item_name,
             self.len(),
             arguments.len(),
         );
         self.iter()
-            .map(|param| param.name())
-            .zip(arguments.iter())
+            .enumerate()
+            .map(|(i, param)| {
+                // Fall back to the GenericParam default if no GenericArgument is available.
+                let arg = arguments
+                    .get(i)
+                    .or(param.default.as_ref())
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "{} with {} params is being instantiated with only {} values, \
+                             and param {} lacks a default value",
+                            item_name,
+                            self.len(),
+                            arguments.len(),
+                            i
+                        )
+                    });
+                (param.name(), arg)
+            })
             .collect()
     }
 
@@ -111,13 +169,18 @@ impl GenericParams {
                 match item.ty {
                     GenericParamType::Type => {
                         write!(out, "typename {}", item.name);
-                        if with_default {
+                        if let Some(GenericArgument::Type(ref ty)) = item.default {
+                            write!(out, " = ");
+                            cdecl::write_type(language_backend, out, ty, config);
+                        } else if with_default {
                             write!(out, " = void");
                         }
                     }
                     GenericParamType::Const(ref ty) => {
                         cdecl::write_field(language_backend, out, ty, item.name.name(), config);
-                        if with_default {
+                        if let Some(GenericArgument::Const(ref expr)) = item.default {
+                            write!(out, " = {}", expr.as_str());
+                        } else if with_default {
                             write!(out, " = 0");
                         }
                     }
@@ -183,6 +246,48 @@ impl GenericArgument {
             GenericArgument::Type(ref mut ty) => ty.rename_for_config(config, generic_params),
             GenericArgument::Const(ref mut expr) => expr.rename_for_config(config),
         }
+    }
+}
+
+/// Helper for erasing transparent types, which memoizes already-seen types to avoid repeated work.
+#[derive(Default)]
+pub struct TransparentTypeEraser {
+    // Remember paths we've already visited, so we don't repeat unnecessary work.
+    // TODO: how to handle recursive types such as `struct Foo { next: Box<Foo> }`?
+    known_types: HashMap<Type, Option<Type>>,
+}
+
+impl TransparentTypeEraser {
+    pub fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        target: &mut Type,
+        mappings: &[(&Path, &GenericArgument)],
+    ) {
+        if let Some(erased_type) = self.erase_transparent_types(library, target, mappings) {
+            *target = erased_type;
+        }
+    }
+
+    #[must_use]
+    pub fn erase_transparent_types(
+        &mut self,
+        library: &Library,
+        target: &Type,
+        mappings: &[(&Path, &GenericArgument)],
+    ) -> Option<Type> {
+        let known_type = self.known_types.get(target);
+        let unknown_type = known_type.is_none();
+        let erased_type = if let Some(ty) = known_type {
+            ty.clone()
+        } else {
+            target.erase_transparent_types(library, mappings, self)
+        };
+        if unknown_type {
+            debug!("Caching erasure of {:?} as {:?}", target, erased_type);
+            self.known_types.insert(target.clone(), erased_type.clone());
+        }
+        erased_type
     }
 }
 

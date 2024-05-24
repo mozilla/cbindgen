@@ -22,7 +22,7 @@ cdef extern from *:
   cdef struct Option_i64:
     pass
 
-  cdef struct NonZeroTest:
+  cdef struct NonZeroAliases:
     uint8_t a;
     uint16_t b;
     uint32_t c;
@@ -34,14 +34,38 @@ cdef extern from *:
     int64_t i;
     const Option_i64 *j;
 
-  void root(NonZeroTest test,
-            uint8_t a,
-            uint16_t b,
-            uint32_t c,
-            uint64_t d,
-            int8_t e,
-            int16_t f,
-            int32_t g,
-            int64_t h,
-            int64_t i,
-            const Option_i64 *j);
+  cdef struct NonZeroGenerics:
+    uint8_t a;
+    uint16_t b;
+    uint32_t c;
+    uint64_t d;
+    int8_t e;
+    int16_t f;
+    int32_t g;
+    int64_t h;
+    int64_t i;
+    const Option_i64 *j;
+
+  void root_nonzero_aliases(NonZeroAliases test,
+                            uint8_t a,
+                            uint16_t b,
+                            uint32_t c,
+                            uint64_t d,
+                            int8_t e,
+                            int16_t f,
+                            int32_t g,
+                            int64_t h,
+                            int64_t i,
+                            const Option_i64 *j);
+
+  void root_nonzero_generics(NonZeroGenerics test,
+                             uint8_t a,
+                             uint16_t b,
+                             uint32_t c,
+                             uint64_t d,
+                             int8_t e,
+                             int16_t f,
+                             int32_t g,
+                             int64_t h,
+                             int64_t i,
+                             const Option_i64 *j);

@@ -7,6 +7,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
+    TransparentTypeEraser, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -55,6 +56,29 @@ impl OpaqueItem {
             documentation,
         }
     }
+
+    // Most transparent well-known types are registered as transparent typedefs at parsing
+    // time. Some well-known generic types can be transparent, but with type-specific semantics that
+    // cannot be captured by a simple transparent typedef. The parser registers them as opaque items
+    // to be handled here.
+    pub fn as_transparent_alias(&self, generics: &[GenericArgument]) -> Option<Type> {
+        if let Some(GenericArgument::Type(ref ty)) = generics.first() {
+            match self.name() {
+                "NonNull" => {
+                    return Some(Type::Ptr {
+                        ty: Box::new(ty.clone()),
+                        is_const: false,
+                        is_nullable: false,
+                        is_ref: false,
+                    })
+                }
+                "NonZero" => return ty.make_zeroable(false),
+                "Option" => return ty.make_nullable().or_else(|| ty.make_zeroable(true)),
+                _ => {}
+            }
+        }
+        None
+    }
 }
 
 impl Item for OpaqueItem {
@@ -78,12 +102,29 @@ impl Item for OpaqueItem {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::OpaqueItem(self.clone())
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
         resolver.add_struct(&self.path);
+    }
+
+    fn generic_params(&self) -> Option<&GenericParams> {
+        Some(&self.generic_params)
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        _library: &Library,
+        _erased: &mut TransparentTypeEraser,
+        _generics: &[GenericArgument],
+    ) {
+        // Nothing to do here, because we don't reference any types.
     }
 
     fn rename_for_config(&mut self, config: &Config) {
@@ -98,11 +139,7 @@ impl Item for OpaqueItem {
         library: &Library,
         out: &mut Monomorphs,
     ) {
-        assert!(
-            !self.generic_params.is_empty(),
-            "{} is not generic",
-            self.path
-        );
+        assert!(self.is_generic(), "{} is not generic", self.path);
 
         // We can be instantiated with less generic params because of default
         // template parameters, or because of empty types that we remove during

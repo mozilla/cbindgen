@@ -13,8 +13,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Struct, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericArgument, GenericParams, Item,
+    ItemContainer, Path, Struct, ToCondition, TransparentTypeEraser, Type,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -574,6 +574,10 @@ impl Item for Constant {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Constant(self.clone())
     }
@@ -588,6 +592,22 @@ impl Item for Constant {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.ty.resolve_declaration_types(resolver);
+    }
+
+    fn generic_params(&self) -> Option<&GenericParams> {
+        None
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        _generics: &[GenericArgument],
+    ) {
+        // NOTE: We also need to simplify the literal initializer value to match the underlying
+        // type, but that is true for all transparent structs (not just transparent-typedef
+        // structs), and is handled by the `write` method below.
+        eraser.erase_transparent_types_inplace(library, &mut self.ty, &[]);
     }
 }
 
@@ -663,16 +683,15 @@ impl Constant {
             Cow::Owned(format!("{}_{}", associated_name, self.export_name()))
         };
 
-        let value = match self.value {
-            Literal::Struct {
-                ref fields,
-                ref path,
-                ..
-            } if out.bindings().struct_is_transparent(path) => fields.iter().next().unwrap().1,
-            _ => &self.value,
-        };
+        let mut value = &self.value;
+        while let Literal::Struct { path, fields, .. } = value {
+            if !out.bindings().struct_is_transparent(path) {
+                break;
+            }
+            value = fields.iter().next().unwrap().1
+        }
 
-        language_backend.write_documentation(out, &self.documentation);
+        language_backend.write_documentation(out, self.documentation());
 
         let allow_constexpr = config.constant.allow_constexpr && self.value.can_be_constexpr();
         match config.language {

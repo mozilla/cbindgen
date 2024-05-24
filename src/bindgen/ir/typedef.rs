@@ -10,8 +10,8 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
-    Type,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
+    Path, Struct, TransparentTypeEraser, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -30,6 +30,9 @@ pub struct Typedef {
 }
 
 impl Typedef {
+    // Name of the annotation that identifies a transparent typedef.
+    pub const TRANSPARENT_TYPEDEF: &'static str = "transparent-typedef";
+
     pub fn load(item: &syn::ItemType, mod_cfg: Option<&Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(&item.ty)? {
             let path = Path::new(item.ident.unraw().to_string());
@@ -66,8 +69,17 @@ impl Typedef {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.aliased.simplify_standard_types(config);
+    // Used to convert a transparent Struct to a Typedef.
+    pub fn new_from_struct_field(item: &Struct, field: &Field) -> Self {
+        Self {
+            path: item.path().clone(),
+            export_name: item.export_name().to_string(),
+            generic_params: item.generic_params.clone(),
+            aliased: field.ty.clone(),
+            cfg: item.cfg().cloned(),
+            annotations: item.annotations().clone(),
+            documentation: item.documentation.clone(),
+        }
     }
 
     pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {
@@ -89,18 +101,27 @@ impl Typedef {
         }
     }
 
-    pub fn is_generic(&self) -> bool {
-        self.generic_params.len() > 0
+    /// Returns the aliased type if this typedef is transparent, else None.
+    pub fn as_transparent_alias(&self, generics: &[GenericArgument]) -> Option<Type> {
+        if self
+            .annotations
+            .bool(Self::TRANSPARENT_TYPEDEF)
+            .unwrap_or(false)
+        {
+            let generics = self.generic_params.defaulted_generics(generics);
+            let mappings = self.generic_params.call(self.name(), &generics);
+            Some(self.aliased.specialize(&mappings))
+        } else {
+            None
+        }
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
-        if self.is_generic() {
-            return;
+        if !self.is_generic() {
+            self.aliased.add_monomorphs(library, out);
         }
-
-        self.aliased.add_monomorphs(library, out);
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
@@ -129,6 +150,10 @@ impl Item for Typedef {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Typedef(self.clone())
     }
@@ -139,6 +164,21 @@ impl Item for Typedef {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.aliased.resolve_declaration_types(resolver);
+    }
+
+    fn generic_params(&self) -> Option<&GenericParams> {
+        Some(&self.generic_params)
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        generics: &[GenericArgument],
+    ) {
+        let generics = self.generic_params.defaulted_generics(generics);
+        let mappings = self.generic_params.call(self.name(), &generics);
+        eraser.erase_transparent_types_inplace(library, &mut self.aliased, &mappings);
     }
 
     fn rename_for_config(&mut self, config: &Config) {
