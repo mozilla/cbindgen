@@ -323,6 +323,7 @@ pub enum Type {
         is_nullable: bool,
         never_return: bool,
     },
+    VarArgs,
 }
 
 impl Type {
@@ -452,9 +453,7 @@ impl Type {
                 }
                 return Err("Tuples are not supported types.".to_owned());
             }
-            syn::Type::Verbatim(ref tokens) if tokens.to_string() == "..." => {
-                Type::Primitive(PrimitiveType::VaList)
-            }
+            syn::Type::Verbatim(ref tokens) if tokens.to_string() == "..." => Type::VarArgs,
             _ => return Err(format!("Unsupported type: {:?}", ty)),
         };
 
@@ -590,6 +589,7 @@ impl Type {
                 }
             }
             Type::Primitive(..) => {}
+            Type::VarArgs => {}
             Type::FuncPtr {
                 ref mut ret,
                 ref mut args,
@@ -618,6 +618,9 @@ impl Type {
                     return None;
                 }
                 Type::FuncPtr { .. } => {
+                    return None;
+                }
+                Type::VarArgs => {
                     return None;
                 }
             };
@@ -657,6 +660,7 @@ impl Type {
                 Type::Path(specialized)
             }
             Type::Primitive(ref primitive) => Type::Primitive(primitive.clone()),
+            Type::VarArgs => Type::VarArgs,
             Type::Array(ref ty, ref constant) => Type::Array(
                 Box::new(ty.specialize(mappings)),
                 constant.specialize(mappings),
@@ -718,6 +722,7 @@ impl Type {
                 }
             }
             Type::Primitive(_) => {}
+            Type::VarArgs => {}
             Type::Array(ref ty, _) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
@@ -754,6 +759,7 @@ impl Type {
                 }
             }
             Type::Primitive(_) => {}
+            Type::VarArgs => {}
             Type::Array(ref ty, _) => {
                 ty.add_monomorphs(library, out);
             }
@@ -777,6 +783,7 @@ impl Type {
                 ty.rename_for_config(config, generic_params);
             }
             Type::Primitive(_) => {}
+            Type::VarArgs => {}
             Type::Array(ref mut ty, ref mut len) => {
                 ty.rename_for_config(config, generic_params);
                 len.rename_for_config(config);
@@ -803,6 +810,7 @@ impl Type {
                 generic_path.resolve_declaration_types(resolver);
             }
             Type::Primitive(_) => {}
+            Type::VarArgs => {}
             Type::Array(ref mut ty, _) => {
                 ty.resolve_declaration_types(resolver);
             }
@@ -840,6 +848,7 @@ impl Type {
                 }
             }
             Type::Primitive(_) => {}
+            Type::VarArgs => {}
             Type::Array(ref mut ty, _) => {
                 ty.mangle_paths(monomorphs);
             }
@@ -864,6 +873,7 @@ impl Type {
             Type::Primitive(ref p) => p.can_cmp_order(),
             Type::Array(..) => false,
             Type::FuncPtr { .. } => false,
+            Type::VarArgs => false,
         }
     }
 
@@ -874,6 +884,7 @@ impl Type {
             Type::Primitive(ref p) => p.can_cmp_eq(),
             Type::Array(..) => false,
             Type::FuncPtr { .. } => true,
+            Type::VarArgs => false,
         }
     }
 }

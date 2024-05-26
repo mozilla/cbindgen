@@ -430,6 +430,18 @@ pub struct FunctionConfig {
     pub sort_by: Option<SortKey>,
     /// Optional text to output after functions which return `!`.
     pub no_return: Option<String>,
+    /// How `va: ...` should be translated.
+    pub varargs: VarargsRule,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+pub enum VarargsRule {
+    #[default]
+    VaList,
+
+    DotDotDot,
 }
 
 impl Default for FunctionConfig {
@@ -445,6 +457,7 @@ impl Default for FunctionConfig {
             swift_name_macro: None,
             sort_by: None,
             no_return: None,
+            varargs: VarargsRule::VaList,
         }
     }
 }
