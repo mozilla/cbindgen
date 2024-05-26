@@ -363,11 +363,16 @@ impl Type {
 
                 // TODO(emilio): we could make these use is_ref: true.
                 let is_const = reference.mutability.is_none();
-                Type::Ptr {
-                    ty: Box::new(converted),
-                    is_const,
-                    is_nullable: false,
-                    is_ref: false,
+                match &converted {
+                    Type::Array(_x, _y) => {
+                        converted
+                    },
+                    _ => Type::Ptr {
+                        ty: Box::new(converted),
+                        is_const,
+                        is_nullable: false,
+                        is_ref: true, // Must be true when Type is reference
+                    }
                 }
             }
             syn::Type::Ptr(ref pointer) => {
