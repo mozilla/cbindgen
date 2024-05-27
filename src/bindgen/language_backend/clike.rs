@@ -915,7 +915,6 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 write!(out, "{{ ");
                 // In C++, same order as defined is required.
                 let ordered_fields = out.bindings().struct_field_names(path);
-                let last_i = ordered_fields.len() - 1;
                 for (i, ordered_key) in ordered_fields.iter().enumerate() {
                     if let Some(lit) = fields.get(ordered_key) {
                         let condition = lit.cfg.to_condition(self.config);
@@ -933,7 +932,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                         }
                         self.write_literal(out, &lit.value);
 
-                        if i != last_i {
+                        if i + 1 != ordered_fields.len() {
                             write!(out, ", ");
                         }
 
