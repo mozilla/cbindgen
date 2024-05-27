@@ -246,7 +246,11 @@ impl SynFnArgHelpers for syn::FnArg {
                 let name = match **pat {
                     syn::Pat::Wild(..) => None,
                     syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
-                        Some(ident.unraw().to_string())
+                        if ty == Type::Primitive(super::PrimitiveType::VaList) {
+                            None
+                        } else {
+                            Some(ident.unraw().to_string())
+                        }
                     }
                     _ => {
                         return Err(format!(
