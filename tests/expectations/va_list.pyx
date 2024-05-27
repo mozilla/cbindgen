@@ -6,12 +6,12 @@ cdef extern from *:
 
 cdef extern from *:
 
-  ctypedef int32_t (*VaListFnPtr)(...);
+  ctypedef int32_t (*VaListFnPtr)(va_list);
 
   ctypedef int32_t (*VaListFnPtr2)();
 
   ctypedef struct Interface_______i32_______va_list:
-    int32_t (*fn1)(...);
+    int32_t (*fn1)(va_list);
 
   ctypedef struct Interface_______i32:
     int32_t (*fn1)();
@@ -20,7 +20,7 @@ cdef extern from *:
 
   int32_t va_list_test2(va_list ap);
 
-  void va_list_fn_ptrs(int32_t (*fn1)(...),
+  void va_list_fn_ptrs(int32_t (*fn1)(va_list),
                        int32_t (*fn2)(),
                        VaListFnPtr fn3,
                        VaListFnPtr2 fn4,
