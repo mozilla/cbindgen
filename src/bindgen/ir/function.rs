@@ -239,6 +239,10 @@ impl SynFnArgHelpers for syn::FnArg {
             syn::FnArg::Typed(syn::PatType {
                 ref pat, ref ty, ..
             }) => {
+                let ty = match Type::load(ty)? {
+                    Some(x) => x,
+                    None => return Ok(None),
+                };
                 let name = match **pat {
                     syn::Pat::Wild(..) => None,
                     syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
@@ -250,10 +254,6 @@ impl SynFnArgHelpers for syn::FnArg {
                             pat
                         ))
                     }
-                };
-                let ty = match Type::load(ty)? {
-                    Some(x) => x,
-                    None => return Ok(None),
                 };
                 if let Type::Array(..) = ty {
                     return Err("Array as function arguments are not supported".to_owned());
