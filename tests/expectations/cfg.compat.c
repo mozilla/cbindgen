@@ -95,6 +95,11 @@ typedef struct {
 #endif
   ;
 } ConditionalField;
+#define ConditionalField_ZERO (ConditionalField){ 
+#if defined(X11)
+.field = 0
+#endif
+ }
 
 typedef struct {
   int32_t x;
