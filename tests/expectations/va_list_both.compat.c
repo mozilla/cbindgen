@@ -7,11 +7,11 @@ typedef int32_t (*VaListFnPtr)(int32_t count, va_list);
 
 typedef int32_t (*VaListFnPtr2)(int32_t count);
 
-typedef struct {
+typedef struct Interface_______i32_______i32_______va_list {
   int32_t (*fn1)(int32_t count, va_list);
 } Interface_______i32_______i32_______va_list;
 
-typedef struct {
+typedef struct Interface_______i32_______i32 {
   int32_t (*fn1)(int32_t count);
 } Interface_______i32_______i32;
 
@@ -27,8 +27,8 @@ void va_list_fn_ptrs(int32_t (*fn1)(int32_t count, va_list),
                      int32_t (*fn2)(int32_t count),
                      VaListFnPtr fn3,
                      VaListFnPtr2 fn4,
-                     Interface_______i32_______i32_______va_list fn5,
-                     Interface_______i32_______i32 fn6);
+                     struct Interface_______i32_______i32_______va_list fn5,
+                     struct Interface_______i32_______i32 fn6);
 
 #ifdef __cplusplus
 }  // extern "C"
