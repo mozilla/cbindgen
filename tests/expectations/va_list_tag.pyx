@@ -10,7 +10,7 @@ cdef extern from *:
 
   ctypedef int32_t (*VaListFnPtr2)(va_list);
 
-  ctypedef struct Interface_______i32_______va_list:
+  cdef struct Interface_______i32_______va_list:
     int32_t (*fn1)(va_list);
 
   int32_t va_list_test(va_list ap);

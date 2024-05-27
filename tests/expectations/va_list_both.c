@@ -7,7 +7,7 @@ typedef int32_t (*VaListFnPtr)(va_list);
 
 typedef int32_t (*VaListFnPtr2)(va_list);
 
-typedef struct {
+typedef struct Interface_______i32_______va_list {
   int32_t (*fn1)(va_list);
 } Interface_______i32_______va_list;
 
@@ -19,5 +19,5 @@ void va_list_fn_ptrs(int32_t (*fn1)(va_list),
                      int32_t (*fn2)(va_list),
                      VaListFnPtr fn3,
                      VaListFnPtr2 fn4,
-                     Interface_______i32_______va_list fn5,
-                     Interface_______i32_______va_list fn6);
+                     struct Interface_______i32_______va_list fn5,
+                     struct Interface_______i32_______va_list fn6);
