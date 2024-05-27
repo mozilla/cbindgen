@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::borrow::Cow;
+use {quote::ToTokens, std::borrow::Cow};
 
 use syn::ext::IdentExt;
 
@@ -417,27 +417,36 @@ impl Type {
             }
             syn::Type::BareFn(ref function) => {
                 let mut wildcard_counter = 0;
-                let args = function.inputs.iter().try_skip_map(|x| {
-                    Type::load(&x.ty).map(|opt_ty| {
-                        opt_ty.map(|ty| {
-                            (
-                                x.name.as_ref().map(|(ref ident, _)| {
-                                    if ident == "_" {
-                                        wildcard_counter += 1;
-                                        if wildcard_counter == 1 {
-                                            "_".to_owned()
+                let var_args = function.variadic.as_ref().map(|v| syn::BareFnArg {
+                    attrs: v.attrs.clone(),
+                    name: None,
+                    ty: syn::Type::Verbatim(v.dots.into_token_stream()),
+                });
+                let args = function
+                    .inputs
+                    .iter()
+                    .chain(var_args.iter())
+                    .try_skip_map(|x| {
+                        Type::load(&x.ty).map(|opt_ty| {
+                            opt_ty.map(|ty| {
+                                (
+                                    x.name.as_ref().map(|(ref ident, _)| {
+                                        if ident == "_" {
+                                            wildcard_counter += 1;
+                                            if wildcard_counter == 1 {
+                                                "_".to_owned()
+                                            } else {
+                                                format!("_{}", wildcard_counter - 1)
+                                            }
                                         } else {
-                                            format!("_{}", wildcard_counter - 1)
+                                            ident.unraw().to_string()
                                         }
-                                    } else {
-                                        ident.unraw().to_string()
-                                    }
-                                }),
-                                ty,
-                            )
+                                    }),
+                                    ty,
+                                )
+                            })
                         })
-                    })
-                })?;
+                    })?;
                 let (ret, never_return) = Type::load_from_output(&function.output)?;
                 Type::FuncPtr {
                     ret: Box::new(ret),
