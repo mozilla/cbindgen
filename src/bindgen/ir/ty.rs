@@ -417,7 +417,7 @@ impl Type {
             }
             syn::Type::BareFn(ref function) => {
                 let mut wildcard_counter = 0;
-                let args = function.inputs.iter().try_skip_map(|x| {
+                let mut args = function.inputs.iter().try_skip_map(|x| {
                     Type::load(&x.ty).map(|opt_ty| {
                         opt_ty.map(|ty| {
                             (
@@ -438,6 +438,9 @@ impl Type {
                         })
                     })
                 })?;
+                if function.variadic.is_some() {
+                    args.push((None, Type::Primitive(super::PrimitiveType::VaList)))
+                }
                 let (ret, never_return) = Type::load_from_output(&function.output)?;
                 Type::FuncPtr {
                     ret: Box::new(ret),
