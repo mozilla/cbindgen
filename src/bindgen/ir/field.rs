@@ -25,17 +25,26 @@ impl Field {
 
     pub fn load(field: &syn::Field, self_path: &Path) -> Result<Option<Field>, String> {
         Ok(if let Some(mut ty) = Type::load(&field.ty)? {
+            let name = field
+                .ident
+                .as_ref()
+                .ok_or_else(|| "field is missing identifier".to_string())?
+                .unraw()
+                .to_string();
             ty.replace_self_with(self_path);
+            let annotations = AnnotationSet::load(&field.attrs)?;
+            if annotations.bool("volatile").unwrap_or(false) {
+                if let Some(volatile_ty) = ty.make_volatile(true) {
+                    ty = volatile_ty;
+                } else {
+                    return Err(format!("Field {:?} cannot be made volatile", name));
+                }
+            }
             Some(Field {
-                name: field
-                    .ident
-                    .as_ref()
-                    .ok_or_else(|| "field is missing identifier".to_string())?
-                    .unraw()
-                    .to_string(),
+                name,
                 ty,
                 cfg: Cfg::load(&field.attrs),
-                annotations: AnnotationSet::load(&field.attrs)?,
+                annotations,
                 documentation: Documentation::load(&field.attrs),
             })
         } else {

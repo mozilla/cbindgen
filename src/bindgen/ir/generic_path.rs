@@ -209,7 +209,10 @@ impl GenericArgument {
     pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> GenericArgument {
         match *self {
             GenericArgument::Type(ref ty) => {
-                if let Type::Path { ref generic_path } = *ty {
+                if let Type::Path {
+                    ref generic_path, ..
+                } = *ty
+                {
                     if generic_path.is_single_identifier() {
                         // See note on `GenericArgument` above: `ty` may
                         // actually be the name of a const. Check for that now.

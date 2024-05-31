@@ -79,6 +79,7 @@ impl<'a> Mangler<'a> {
                 // see the comment on `enum GenericArgument`.
                 let fake_ty = Type::Path {
                     generic_path: GenericPath::new(Path::new(name), vec![]),
+                    is_volatile: false,
                 };
                 self.append_mangled_type(&fake_ty, last);
             }
@@ -88,7 +89,9 @@ impl<'a> Mangler<'a> {
 
     fn append_mangled_type(&mut self, ty: &Type, last: bool) {
         match *ty {
-            Type::Path { ref generic_path } => {
+            Type::Path {
+                ref generic_path, ..
+            } => {
                 let sub_path = Mangler::new(
                     generic_path.export_name(),
                     generic_path.generics(),
@@ -104,7 +107,7 @@ impl<'a> Mangler<'a> {
                         .apply(&sub_path, IdentifierType::Type),
                 );
             }
-            Type::Primitive { ref primitive } => {
+            Type::Primitive { ref primitive, .. } => {
                 self.output.push_str(
                     &self
                         .config
@@ -176,12 +179,14 @@ fn generics() {
     fn float() -> GenericArgument {
         GenericArgument::Type(Type::Primitive {
             primitive: PrimitiveType::Float,
+            is_volatile: false,
         })
     }
 
     fn c_char() -> GenericArgument {
         GenericArgument::Type(Type::Primitive {
             primitive: PrimitiveType::Char,
+            is_volatile: false,
         })
     }
 
@@ -192,7 +197,10 @@ fn generics() {
     fn generic_path(path: &str, arguments: &[GenericArgument]) -> GenericArgument {
         let path = Path::new(path);
         let generic_path = GenericPath::new(path, arguments.to_owned());
-        GenericArgument::Type(Type::Path { generic_path })
+        GenericArgument::Type(Type::Path {
+            generic_path,
+            is_volatile: false,
+        })
     }
 
     // Foo<f32> => Foo_f32

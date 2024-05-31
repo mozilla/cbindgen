@@ -18,6 +18,7 @@ use crate::bindgen::{Config, Language};
 enum CDeclarator {
     Ptr {
         is_const: bool,
+        is_volatile: bool,
         is_nullable: bool,
         is_ref: bool,
     },
@@ -36,7 +37,7 @@ impl CDeclarator {
 }
 
 struct CDecl {
-    type_qualifers: String,
+    type_qualifiers: Vec<String>,
     type_name: String,
     type_generic_args: Vec<GenericArgument>,
     declarators: Vec<CDeclarator>,
@@ -47,7 +48,7 @@ struct CDecl {
 impl CDecl {
     fn new() -> CDecl {
         CDecl {
-            type_qualifers: String::new(),
+            type_qualifiers: Vec::new(),
             type_name: String::new(),
             type_generic_args: Vec::new(),
             declarators: Vec::new(),
@@ -111,14 +112,20 @@ impl CDecl {
 
     fn build_type(&mut self, t: &Type, is_const: bool, config: &Config) {
         match t {
-            Type::Path { ref generic_path } => {
+            Type::Path {
+                ref generic_path,
+                is_volatile,
+            } => {
+                assert!(
+                    self.type_qualifiers.is_empty(),
+                    "error generating cdecl for {:?}",
+                    t
+                );
                 if is_const {
-                    assert!(
-                        self.type_qualifers.is_empty(),
-                        "error generating cdecl for {:?}",
-                        t
-                    );
-                    "const".clone_into(&mut self.type_qualifers);
+                    self.type_qualifiers.push("const".into());
+                }
+                if *is_volatile && config.language != Language::Cython {
+                    self.type_qualifiers.push("volatile".into());
                 }
 
                 assert!(
@@ -137,14 +144,20 @@ impl CDecl {
                     .clone_into(&mut self.type_generic_args);
                 self.type_ctype = generic_path.ctype().cloned();
             }
-            Type::Primitive { ref primitive } => {
+            Type::Primitive {
+                ref primitive,
+                is_volatile,
+            } => {
+                assert!(
+                    self.type_qualifiers.is_empty(),
+                    "error generating cdecl for {:?}",
+                    t
+                );
                 if is_const {
-                    assert!(
-                        self.type_qualifers.is_empty(),
-                        "error generating cdecl for {:?}",
-                        t
-                    );
-                    "const".clone_into(&mut self.type_qualifers);
+                    self.type_qualifiers.push("const".into());
+                }
+                if *is_volatile && config.language != Language::Cython {
+                    self.type_qualifiers.push("volatile".into());
                 }
 
                 assert!(
@@ -156,12 +169,14 @@ impl CDecl {
             }
             Type::Ptr {
                 ref ty,
+                is_volatile,
                 is_nullable,
                 is_const: ptr_is_const,
                 is_ref,
             } => {
                 self.declarators.push(CDeclarator::Ptr {
                     is_const,
+                    is_volatile: *is_volatile,
                     is_nullable: *is_nullable,
                     is_ref: *is_ref,
                 });
@@ -175,6 +190,7 @@ impl CDecl {
             Type::FuncPtr {
                 ref ret,
                 ref args,
+                is_volatile,
                 is_nullable: _,
                 never_return,
             } => {
@@ -184,6 +200,7 @@ impl CDecl {
                     .collect();
                 self.declarators.push(CDeclarator::Ptr {
                     is_const: false,
+                    is_volatile: *is_volatile,
                     is_nullable: true,
                     is_ref: false,
                 });
@@ -205,8 +222,8 @@ impl CDecl {
         config: &Config,
     ) {
         // Write the type-specifier and type-qualifier first
-        if !self.type_qualifers.is_empty() {
-            write!(out, "{} ", self.type_qualifers);
+        for type_qualifier in self.type_qualifiers.iter() {
+            write!(out, "{} ", type_qualifier);
         }
 
         if config.language != Language::Cython {
@@ -246,12 +263,16 @@ impl CDecl {
             match *declarator {
                 CDeclarator::Ptr {
                     is_const,
+                    is_volatile,
                     is_nullable,
                     is_ref,
                 } => {
                     out.write(if is_ref { "&" } else { "*" });
                     if is_const {
                         out.write("const ");
+                    }
+                    if is_volatile && config.language != Language::Cython {
+                        out.write("volatile ");
                     }
                     if !is_nullable && !is_ref && config.language != Language::Cython {
                         if let Some(attr) = &config.pointer.non_null_attribute {
