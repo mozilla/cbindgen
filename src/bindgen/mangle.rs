@@ -75,7 +75,9 @@ impl<'a> Mangler<'a> {
                 // This must behave the same as a GenericArgument::Type,
                 // because const arguments are commonly represented as Types;
                 // see the comment on `enum GenericArgument`.
-                let fake_ty = Type::Path(GenericPath::new(Path::new(name), vec![]));
+                let fake_ty = Type::Path {
+                    generic_path: GenericPath::new(Path::new(name), vec![]),
+                };
                 self.append_mangled_type(&fake_ty, last);
             }
             GenericArgument::Const(ConstExpr::Value(ref val)) => self.output.push_str(val),
@@ -84,10 +86,14 @@ impl<'a> Mangler<'a> {
 
     fn append_mangled_type(&mut self, ty: &Type, last: bool) {
         match *ty {
-            Type::Path(ref generic) => {
-                let sub_path =
-                    Mangler::new(generic.export_name(), generic.generics(), last, self.config)
-                        .mangle();
+            Type::Path { ref generic_path } => {
+                let sub_path = Mangler::new(
+                    generic_path.export_name(),
+                    generic_path.generics(),
+                    last,
+                    self.config,
+                )
+                .mangle();
 
                 self.output.push_str(
                     &self
@@ -96,7 +102,7 @@ impl<'a> Mangler<'a> {
                         .apply(&sub_path, IdentifierType::Type),
                 );
             }
-            Type::Primitive(ref primitive) => {
+            Type::Primitive { ref primitive } => {
                 self.output.push_str(
                     &self
                         .config
@@ -128,7 +134,7 @@ impl<'a> Mangler<'a> {
                     self.push(Separator::EndFn);
                 }
             }
-            Type::Array(..) => {
+            Type::Array { .. } => {
                 unimplemented!(
                     "Unable to mangle generic parameter {:?} for '{}'",
                     ty,
@@ -167,11 +173,15 @@ fn generics() {
     use crate::bindgen::rename::RenameRule::{self, PascalCase};
 
     fn float() -> GenericArgument {
-        GenericArgument::Type(Type::Primitive(PrimitiveType::Float))
+        GenericArgument::Type(Type::Primitive {
+            primitive: PrimitiveType::Float,
+        })
     }
 
     fn c_char() -> GenericArgument {
-        GenericArgument::Type(Type::Primitive(PrimitiveType::Char))
+        GenericArgument::Type(Type::Primitive {
+            primitive: PrimitiveType::Char,
+        })
     }
 
     fn path(path: &str) -> GenericArgument {
@@ -181,7 +191,7 @@ fn generics() {
     fn generic_path(path: &str, arguments: &[GenericArgument]) -> GenericArgument {
         let path = Path::new(path);
         let generic_path = GenericPath::new(path, arguments.to_owned());
-        GenericArgument::Type(Type::Path(generic_path))
+        GenericArgument::Type(Type::Path { generic_path })
     }
 
     // Foo<f32> => Foo_f32
