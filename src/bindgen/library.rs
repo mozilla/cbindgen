@@ -443,6 +443,8 @@ impl Library {
             .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         self.typedefs
             .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
+        self.globals
+            .for_all_items_mut(|x| x.ty.mangle_paths(&monomorphs));
         for x in &mut self.functions {
             x.mangle_paths(&monomorphs);
         }
