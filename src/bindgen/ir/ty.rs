@@ -281,11 +281,11 @@ impl ConstExpr {
                 for &(param, value) in mappings {
                     if path == *param {
                         match *value {
-                            GenericArgument::Type(Type::Path(ref path))
-                                if path.is_single_identifier() =>
+                            GenericArgument::Type(Type::Path { ref generic_path })
+                                if generic_path.is_single_identifier() =>
                             {
                                 // This happens when the generic argument is a path.
-                                return ConstExpr::Name(path.name().to_string());
+                                return ConstExpr::Name(generic_path.name().to_string());
                             }
                             GenericArgument::Const(ref expr) => {
                                 return expr.clone();
@@ -314,9 +314,16 @@ pub enum Type {
         // to code generation or something.
         is_ref: bool,
     },
-    Path(GenericPath),
-    Primitive(PrimitiveType),
-    Array(Box<Type>, ConstExpr),
+    Path {
+        generic_path: GenericPath,
+    },
+    Primitive {
+        primitive: PrimitiveType,
+    },
+    Array {
+        ty: Box<Type>,
+        len: ConstExpr,
+    },
     FuncPtr {
         ret: Box<Type>,
         args: Vec<(Option<String>, Type)>,
@@ -338,13 +345,19 @@ impl Type {
     pub fn load_from_output(output: &syn::ReturnType) -> Result<(Type, bool), String> {
         let mut never_return = false;
         let ty = match output {
-            syn::ReturnType::Default => Type::Primitive(PrimitiveType::Void),
+            syn::ReturnType::Default => Type::Primitive {
+                primitive: PrimitiveType::Void,
+            },
             syn::ReturnType::Type(_, ref ty) => {
                 if let syn::Type::Never(_) = ty.as_ref() {
                     never_return = true;
-                    Type::Primitive(PrimitiveType::Void)
+                    Type::Primitive {
+                        primitive: PrimitiveType::Void,
+                    }
                 } else {
-                    Type::load(ty)?.unwrap_or(Type::Primitive(PrimitiveType::Void))
+                    Type::load(ty)?.unwrap_or(Type::Primitive {
+                        primitive: PrimitiveType::Void,
+                    })
                 }
             }
         };
@@ -358,7 +371,9 @@ impl Type {
 
                 let converted = match converted {
                     Some(converted) => converted,
-                    None => Type::Primitive(PrimitiveType::Void),
+                    None => Type::Primitive {
+                        primitive: PrimitiveType::Void,
+                    },
                 };
 
                 // TODO(emilio): we could make these use is_ref: true.
@@ -375,7 +390,9 @@ impl Type {
 
                 let converted = match converted {
                     Some(converted) => converted,
-                    None => Type::Primitive(PrimitiveType::Void),
+                    None => Type::Primitive {
+                        primitive: PrimitiveType::Void,
+                    },
                 };
 
                 let is_const = pointer.mutability.is_none();
@@ -397,9 +414,9 @@ impl Type {
                     if !generic_path.generics().is_empty() {
                         return Err("Primitive has generics.".to_owned());
                     }
-                    Type::Primitive(prim)
+                    Type::Primitive { primitive: prim }
                 } else {
-                    Type::Path(generic_path)
+                    Type::Path { generic_path }
                 }
             }
             syn::Type::Array(syn::TypeArray {
@@ -413,7 +430,10 @@ impl Type {
                 };
 
                 let len = ConstExpr::load(len)?;
-                Type::Array(Box::new(converted), len)
+                Type::Array {
+                    ty: Box::new(converted),
+                    len,
+                }
             }
             syn::Type::BareFn(ref function) => {
                 let mut wildcard_counter = 0;
@@ -439,7 +459,12 @@ impl Type {
                     })
                 })?;
                 if function.variadic.is_some() {
-                    args.push((None, Type::Primitive(super::PrimitiveType::VaList)))
+                    args.push((
+                        None,
+                        Type::Primitive {
+                            primitive: PrimitiveType::VaList,
+                        },
+                    ))
                 }
                 let (ret, never_return) = Type::load_from_output(&function.output)?;
                 Type::FuncPtr {
@@ -455,9 +480,9 @@ impl Type {
                 }
                 return Err("Tuples are not supported types.".to_owned());
             }
-            syn::Type::Verbatim(ref tokens) if tokens.to_string() == "..." => {
-                Type::Primitive(PrimitiveType::VaList)
-            }
+            syn::Type::Verbatim(ref tokens) if tokens.to_string() == "..." => Type::Primitive {
+                primitive: PrimitiveType::VaList,
+            },
             _ => return Err(format!("Unsupported type: {:?}", ty)),
         };
 
@@ -470,23 +495,28 @@ impl Type {
 
     pub fn is_primitive_or_ptr_primitive(&self) -> bool {
         match *self {
-            Type::Primitive(..) => true,
-            Type::Ptr { ref ty, .. } => matches!(ty.as_ref(), Type::Primitive(..)),
+            Type::Primitive { .. } => true,
+            Type::Ptr { ref ty, .. } => matches!(ty.as_ref(), Type::Primitive { .. }),
             _ => false,
         }
     }
 
     pub fn make_zeroable(&self, new_zeroable: bool) -> Option<Self> {
         match *self {
-            Type::Primitive(PrimitiveType::Integer {
-                zeroable: old_zeroable,
-                kind,
-                signed,
-            }) if old_zeroable != new_zeroable => Some(Type::Primitive(PrimitiveType::Integer {
-                kind,
-                signed,
-                zeroable: new_zeroable,
-            })),
+            Type::Primitive {
+                primitive:
+                    PrimitiveType::Integer {
+                        zeroable: old_zeroable,
+                        kind,
+                        signed,
+                    },
+            } if old_zeroable != new_zeroable => Some(Type::Primitive {
+                primitive: PrimitiveType::Integer {
+                    kind,
+                    signed,
+                    zeroable: new_zeroable,
+                },
+            }),
             _ => None,
         }
     }
@@ -521,7 +551,7 @@ impl Type {
 
     fn simplified_type(&self, config: &Config) -> Option<Self> {
         let path = match *self {
-            Type::Path(ref p) => p,
+            Type::Path { ref generic_path } => generic_path,
             _ => return None,
         };
 
@@ -575,7 +605,10 @@ impl Type {
     }
 
     pub fn replace_self_with(&mut self, self_ty: &Path) {
-        if let Type::Path(ref mut generic_path) = *self {
+        if let Type::Path {
+            ref mut generic_path,
+        } = *self
+        {
             generic_path.replace_self_with(self_ty);
         }
         self.visit_types(|ty| ty.replace_self_with(self_ty))
@@ -583,16 +616,18 @@ impl Type {
 
     fn visit_types(&mut self, mut visitor: impl FnMut(&mut Type)) {
         match *self {
-            Type::Array(ref mut ty, ..) | Type::Ptr { ref mut ty, .. } => visitor(ty),
-            Type::Path(ref mut path) => {
-                for generic in path.generics_mut() {
+            Type::Array { ref mut ty, .. } | Type::Ptr { ref mut ty, .. } => visitor(ty),
+            Type::Path {
+                ref mut generic_path,
+            } => {
+                for generic in generic_path.generics_mut() {
                     match *generic {
                         GenericArgument::Type(ref mut ty) => visitor(ty),
                         GenericArgument::Const(_) => {}
                     }
                 }
             }
-            Type::Primitive(..) => {}
+            Type::Primitive { .. } => {}
             Type::FuncPtr {
                 ref mut ret,
                 ref mut args,
@@ -611,13 +646,13 @@ impl Type {
         loop {
             match *current {
                 Type::Ptr { ref ty, .. } => current = ty,
-                Type::Path(ref generic) => {
-                    return Some(generic.path().clone());
+                Type::Path { ref generic_path } => {
+                    return Some(generic_path.path().clone());
                 }
-                Type::Primitive(..) => {
+                Type::Primitive { .. } => {
                     return None;
                 }
-                Type::Array(..) => {
+                Type::Array { .. } => {
                     return None;
                 }
                 Type::FuncPtr { .. } => {
@@ -640,7 +675,7 @@ impl Type {
                 is_nullable,
                 is_ref,
             },
-            Type::Path(ref generic_path) => {
+            Type::Path { ref generic_path } => {
                 for &(param, value) in mappings {
                     if generic_path.path() == param {
                         if let GenericArgument::Type(ref ty) = *value {
@@ -657,13 +692,17 @@ impl Type {
                         .map(|x| x.specialize(mappings))
                         .collect(),
                 );
-                Type::Path(specialized)
+                Type::Path {
+                    generic_path: specialized,
+                }
             }
-            Type::Primitive(ref primitive) => Type::Primitive(primitive.clone()),
-            Type::Array(ref ty, ref constant) => Type::Array(
-                Box::new(ty.specialize(mappings)),
-                constant.specialize(mappings),
-            ),
+            Type::Primitive { ref primitive } => Type::Primitive {
+                primitive: primitive.clone(),
+            },
+            Type::Array { ref ty, ref len } => Type::Array {
+                ty: Box::new(ty.specialize(mappings)),
+                len: len.specialize(mappings),
+            },
             Type::FuncPtr {
                 ref ret,
                 ref args,
@@ -692,13 +731,13 @@ impl Type {
             Type::Ptr { ref ty, .. } => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
-            Type::Path(ref generic) => {
-                for generic_value in generic.generics() {
+            Type::Path { ref generic_path } => {
+                for generic_value in generic_path.generics() {
                     if let GenericArgument::Type(ref ty) = *generic_value {
                         ty.add_dependencies_ignoring_generics(generic_params, library, out);
                     }
                 }
-                let path = generic.path();
+                let path = generic_path.path();
                 if !generic_params.iter().any(|param| param.name() == path) {
                     if let Some(items) = library.get_items(path) {
                         if !out.items.contains(path) {
@@ -720,8 +759,8 @@ impl Type {
                     }
                 }
             }
-            Type::Primitive(_) => {}
-            Type::Array(ref ty, _) => {
+            Type::Primitive { .. } => {}
+            Type::Array { ref ty, .. } => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
             Type::FuncPtr {
@@ -744,20 +783,20 @@ impl Type {
             Type::Ptr { ref ty, .. } => {
                 ty.add_monomorphs(library, out);
             }
-            Type::Path(ref generic) => {
-                if generic.generics().is_empty() || out.contains(generic) {
+            Type::Path { ref generic_path } => {
+                if generic_path.generics().is_empty() || out.contains(generic_path) {
                     return;
                 }
-                let path = generic.path();
+                let path = generic_path.path();
                 if let Some(items) = library.get_items(path) {
                     for item in items {
                         item.deref()
-                            .instantiate_monomorph(generic.generics(), library, out);
+                            .instantiate_monomorph(generic_path.generics(), library, out);
                     }
                 }
             }
-            Type::Primitive(_) => {}
-            Type::Array(ref ty, _) => {
+            Type::Primitive { .. } => {}
+            Type::Array { ref ty, .. } => {
                 ty.add_monomorphs(library, out);
             }
             Type::FuncPtr {
@@ -776,11 +815,16 @@ impl Type {
             Type::Ptr { ref mut ty, .. } => {
                 ty.rename_for_config(config, generic_params);
             }
-            Type::Path(ref mut ty) => {
-                ty.rename_for_config(config, generic_params);
+            Type::Path {
+                ref mut generic_path,
+            } => {
+                generic_path.rename_for_config(config, generic_params);
             }
-            Type::Primitive(_) => {}
-            Type::Array(ref mut ty, ref mut len) => {
+            Type::Primitive { .. } => {}
+            Type::Array {
+                ref mut ty,
+                ref mut len,
+            } => {
                 ty.rename_for_config(config, generic_params);
                 len.rename_for_config(config);
             }
@@ -802,11 +846,13 @@ impl Type {
             Type::Ptr { ref mut ty, .. } => {
                 ty.resolve_declaration_types(resolver);
             }
-            Type::Path(ref mut generic_path) => {
+            Type::Path {
+                ref mut generic_path,
+            } => {
                 generic_path.resolve_declaration_types(resolver);
             }
-            Type::Primitive(_) => {}
-            Type::Array(ref mut ty, _) => {
+            Type::Primitive { .. } => {}
+            Type::Array { ref mut ty, .. } => {
                 ty.resolve_declaration_types(resolver);
             }
             Type::FuncPtr {
@@ -827,7 +873,9 @@ impl Type {
             Type::Ptr { ref mut ty, .. } => {
                 ty.mangle_paths(monomorphs);
             }
-            Type::Path(ref mut generic_path) => {
+            Type::Path {
+                ref mut generic_path,
+            } => {
                 if generic_path.generics().is_empty() {
                     return;
                 }
@@ -842,8 +890,8 @@ impl Type {
                     );
                 }
             }
-            Type::Primitive(_) => {}
-            Type::Array(ref mut ty, _) => {
+            Type::Primitive { .. } => {}
+            Type::Array { ref mut ty, .. } => {
                 ty.mangle_paths(monomorphs);
             }
             Type::FuncPtr {
@@ -863,9 +911,9 @@ impl Type {
         match *self {
             // FIXME: Shouldn't this look at ty.can_cmp_order() as well?
             Type::Ptr { is_ref, .. } => !is_ref,
-            Type::Path(..) => true,
-            Type::Primitive(ref p) => p.can_cmp_order(),
-            Type::Array(..) => false,
+            Type::Path { .. } => true,
+            Type::Primitive { ref primitive } => primitive.can_cmp_order(),
+            Type::Array { .. } => false,
             Type::FuncPtr { .. } => false,
         }
     }
@@ -873,9 +921,9 @@ impl Type {
     pub fn can_cmp_eq(&self) -> bool {
         match *self {
             Type::Ptr { ref ty, is_ref, .. } => !is_ref || ty.can_cmp_eq(),
-            Type::Path(..) => true,
-            Type::Primitive(ref p) => p.can_cmp_eq(),
-            Type::Array(..) => false,
+            Type::Path { .. } => true,
+            Type::Primitive { ref primitive } => primitive.can_cmp_eq(),
+            Type::Array { .. } => false,
             Type::FuncPtr { .. } => true,
         }
     }

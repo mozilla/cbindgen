@@ -75,7 +75,10 @@ impl CDecl {
                 t
             ),
         };
-        let ptr_as_array = Type::Array(ty.clone(), ConstExpr::Value(length.to_string()));
+        let ptr_as_array = Type::Array {
+            ty: ty.clone(),
+            len: ConstExpr::Value(length.to_string()),
+        };
         cdecl.build_type(&ptr_as_array, *is_const, config);
         cdecl
     }
@@ -108,7 +111,7 @@ impl CDecl {
 
     fn build_type(&mut self, t: &Type, is_const: bool, config: &Config) {
         match t {
-            Type::Path(ref generic) => {
+            Type::Path { ref generic_path } => {
                 if is_const {
                     assert!(
                         self.type_qualifers.is_empty(),
@@ -123,16 +126,18 @@ impl CDecl {
                     "error generating cdecl for {:?}",
                     t
                 );
-                generic.export_name().clone_into(&mut self.type_name);
+                generic_path.export_name().clone_into(&mut self.type_name);
                 assert!(
                     self.type_generic_args.is_empty(),
                     "error generating cdecl for {:?}",
                     t
                 );
-                generic.generics().clone_into(&mut self.type_generic_args);
-                self.type_ctype = generic.ctype().cloned();
+                generic_path
+                    .generics()
+                    .clone_into(&mut self.type_generic_args);
+                self.type_ctype = generic_path.ctype().cloned();
             }
-            Type::Primitive(ref p) => {
+            Type::Primitive { ref primitive } => {
                 if is_const {
                     assert!(
                         self.type_qualifers.is_empty(),
@@ -147,7 +152,7 @@ impl CDecl {
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_name = p.to_repr_c(config).to_string();
+                self.type_name = primitive.to_repr_c(config).to_string();
             }
             Type::Ptr {
                 ref ty,
@@ -162,10 +167,10 @@ impl CDecl {
                 });
                 self.build_type(ty, *ptr_is_const, config);
             }
-            Type::Array(ref t, ref constant) => {
-                let len = constant.as_str().to_owned();
+            Type::Array { ref ty, ref len } => {
+                let len = len.as_str().to_owned();
                 self.declarators.push(CDeclarator::Array(len));
-                self.build_type(t, is_const, config);
+                self.build_type(ty, is_const, config);
             }
             Type::FuncPtr {
                 ref ret,
