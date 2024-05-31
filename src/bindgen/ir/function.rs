@@ -53,6 +53,7 @@ impl Function {
                 name: None,
                 ty: Type::Primitive {
                     primitive: super::PrimitiveType::VaList,
+                    is_volatile: false,
                 },
                 array_length: None,
             })
@@ -230,6 +231,7 @@ trait SynFnArgHelpers {
 fn gen_self_type(receiver: &syn::Receiver) -> Result<Type, String> {
     let mut self_ty = Type::Path {
         generic_path: GenericPath::self_path(),
+        is_volatile: false,
     };
 
     // Custom self type
@@ -245,6 +247,7 @@ fn gen_self_type(receiver: &syn::Receiver) -> Result<Type, String> {
     Ok(Type::Ptr {
         ty: Box::new(self_ty),
         is_const,
+        is_volatile: false,
         is_nullable: false,
         is_ref: false,
     })
@@ -266,7 +269,8 @@ impl SynFnArgHelpers for syn::FnArg {
                         if matches!(
                             ty,
                             Type::Primitive {
-                                primitive: super::PrimitiveType::VaList
+                                primitive: super::PrimitiveType::VaList,
+                                is_volatile: false
                             }
                         ) {
                             None

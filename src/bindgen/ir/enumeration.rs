@@ -122,6 +122,7 @@ impl EnumVariant {
                     inline_name.map_or_else(|| "tag".to_string(), |name| format!("{}_tag", name)),
                     Type::Path {
                         generic_path: GenericPath::new(Path::new("Tag"), vec![]),
+                        is_volatile: false,
                     },
                 ));
             }
@@ -513,7 +514,10 @@ impl Item for Enum {
                     if let VariantBody::Body { ref mut body, .. } = variant.body {
                         let path = Path::new(new_tag.clone());
                         let generic_path = GenericPath::new(path, vec![]);
-                        body.fields[0].ty = Type::Path { generic_path };
+                        body.fields[0].ty = Type::Path {
+                            generic_path,
+                            is_volatile: false,
+                        };
                     }
                 }
             }
@@ -1252,6 +1256,7 @@ impl Enum {
                         let return_type = Type::Ptr {
                             ty: Box::new(return_type),
                             is_const: const_casts,
+                            is_volatile: false,
                             is_ref: true,
                             is_nullable: false,
                         };
