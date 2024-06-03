@@ -770,6 +770,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
     }
 
     fn write_static<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Static) {
+        let condition = s.cfg.to_condition(self.config);
+        condition.write_before(self.config, out);
+
         self.write_documentation(out, &s.documentation);
         out.write("extern ");
         if let Type::Ptr { is_const: true, .. } = s.ty {
@@ -778,6 +781,8 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         }
         cdecl::write_field(self, out, &s.ty, &s.export_name, self.config);
         out.write(";");
+
+        condition.write_after(self.config, out);
     }
 
     fn write_type<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Type) {

@@ -76,3 +76,10 @@ extern "C" {
 
     fn bar(a: Normal);
 }
+
+#[cfg(windows)]
+#[no_mangle]
+pub static mut global_array_with_different_sizes: [i32; 2] = [123, 456];
+#[cfg(unix)]
+#[no_mangle]
+pub static mut global_array_with_different_sizes: [i32; 1] = [7890];
