@@ -83,6 +83,14 @@ typedef struct Normal {
   float y;
 } Normal;
 
+#if defined(PLATFORM_WIN)
+extern int32_t global_array_with_different_sizes[2];
+#endif
+
+#if defined(PLATFORM_UNIX)
+extern int32_t global_array_with_different_sizes[1];
+#endif
+
 #if (defined(PLATFORM_UNIX) && defined(X11))
 void root(struct FooHandle a, union C c);
 #endif

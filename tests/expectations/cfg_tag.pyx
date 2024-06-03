@@ -62,6 +62,12 @@ cdef extern from *:
     int32_t x;
     float y;
 
+  IF PLATFORM_WIN:
+    extern int32_t global_array_with_different_sizes[2];
+
+  IF PLATFORM_UNIX:
+    extern int32_t global_array_with_different_sizes[1];
+
   IF (PLATFORM_UNIX and X11):
     void root(FooHandle a, C c);
 
