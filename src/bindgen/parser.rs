@@ -751,7 +751,7 @@ impl Parse {
                 );
             }
             (false, Some(_exported_name)) => {
-                warn!("Skipping {} - (not `extern \"C\"`", loggable_item_name());
+                warn!("Skipping {} - (not `extern \"C\"`)", loggable_item_name());
             }
             (false, None) => {}
         }
