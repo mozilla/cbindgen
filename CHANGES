@@ -1,6 +1,13 @@
 # unreleased
 
       * Revert: The `Config` struct now has a private member.
+      * Allow users to specify a crate version for bindings generation (#901).
+      * Update MSRV to 1.70 (#912).
+      * Support #[deprecated] on enum variants (#933).
+      * Support integrating the package_version information in a header file comment (#939).
+      * Add a language backend (#942).
+      * Support generics with defaulted args (#959).
+      * Add `VaList` compatibility (#970).
 
 # 0.26.0
 
