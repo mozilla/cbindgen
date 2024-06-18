@@ -1,16 +1,3 @@
-#if 0
-''' '
-#endif
-
-#ifdef __cplusplus
-struct NonZeroI64;
-#endif
-
-#if 0
-' '''
-#endif
-
-
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
