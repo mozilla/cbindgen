@@ -37,7 +37,7 @@ impl Builder {
 
     #[allow(unused)]
     pub fn with_header<S: AsRef<str>>(mut self, header: S) -> Builder {
-        self.config.header = Some(String::from(header.as_ref()));
+        self.config.header = String::from(header.as_ref()).into();
         self
     }
 
@@ -63,13 +63,13 @@ impl Builder {
 
     #[allow(unused)]
     pub fn with_after_include<S: AsRef<str>>(mut self, line: S) -> Builder {
-        self.config.after_includes = Some(String::from(line.as_ref()));
+        self.config.after_includes = String::from(line.as_ref()).into();
         self
     }
 
     #[allow(unused)]
     pub fn with_trailer<S: AsRef<str>>(mut self, trailer: S) -> Builder {
-        self.config.trailer = Some(String::from(trailer.as_ref()));
+        self.config.trailer = String::from(trailer.as_ref()).into();
         self
     }
 

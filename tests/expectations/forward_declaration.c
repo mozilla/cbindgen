@@ -1,11 +1,5 @@
-#if 0
-''' '
-#endif
 #if defined(CBINDGEN_STYLE_TYPE)
 /* ANONYMOUS STRUCTS DO NOT SUPPORT FORWARD DECLARATIONS!
-#endif
-#if 0
-' '''
 #endif
 
 
@@ -39,12 +33,6 @@ typedef struct {
 
 void root(TypeInfo x);
 
-#if 0
-''' '
-#endif
 #if defined(CBINDGEN_STYLE_TYPE)
 */
-#endif
-#if 0
-' '''
 #endif

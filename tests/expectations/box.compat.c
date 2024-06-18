@@ -1,17 +1,3 @@
-#if 0
-''' '
-#endif
-
-#ifdef __cplusplus
-template <typename T>
-using Box = T*;
-#endif
-
-#if 0
-' '''
-#endif
-
-
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
