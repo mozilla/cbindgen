@@ -327,6 +327,11 @@ pub struct ExportConfig {
     pub include: Vec<String>,
     /// A list of items to not include in the generated bindings
     pub exclude: Vec<String>,
+    /// A list of whitelisted items. When non-empty, only items included in the
+    /// whitelist will be included in the generated bindings. `include` and
+    /// `exclude` have priority over this, and will add or remove items to/from
+    /// the generated bindings regardless of their inclusion in the whitelist.
+    pub whitelist: Vec<String>,
     /// Table of name conversions to apply to item names
     pub rename: HashMap<String, String>,
     /// Table of raw strings to prepend to the body of items.
