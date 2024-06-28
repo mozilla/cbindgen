@@ -27,7 +27,10 @@ impl Predefines {
         }
     }
 
-    pub(crate) fn calling_conventions(&self) -> &HashSet<FunctionAbi> {
-        &self.calling_conventions
+    pub(crate) fn calling_conventions(&self) -> Vec<&FunctionAbi> {
+        // Sort the calling conventions
+        let mut conventions = self.calling_conventions.iter().collect::<Vec<_>>();
+        conventions.sort();
+        conventions
     }
 }

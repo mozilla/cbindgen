@@ -18,7 +18,7 @@ use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
 use crate::bindgen::utilities::IterHelpers;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 /// A function ABI in Rust. Rust ABIs are defined in:
 ///
 /// https://github.com/rust-lang/rust/blob/9c3bc805dd9cb84019c124b9a50fdff1e62a7ec9/compiler/rustc_target/src/spec/abi/mod.r
