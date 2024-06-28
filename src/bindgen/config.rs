@@ -430,6 +430,8 @@ pub struct FunctionConfig {
     pub sort_by: Option<SortKey>,
     /// Optional text to output after functions which return `!`.
     pub no_return: Option<String>,
+    /// Whether to emit calling convention attributes for functions which declare them
+    pub emit_calling_convention: bool,
 }
 
 impl Default for FunctionConfig {
@@ -445,6 +447,7 @@ impl Default for FunctionConfig {
             swift_name_macro: None,
             sort_by: None,
             no_return: None,
+            emit_calling_convention: true,
         }
     }
 }

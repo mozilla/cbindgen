@@ -11,6 +11,8 @@ use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
 
+use super::ir::FunctionAbi;
+
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.
 // http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
@@ -40,6 +42,7 @@ struct CDecl {
     type_name: String,
     type_generic_args: Vec<GenericArgument>,
     declarators: Vec<CDeclarator>,
+    abi: Option<FunctionAbi>,
     type_ctype: Option<DeclarationType>,
     deprecated: Option<String>,
 }
@@ -51,6 +54,7 @@ impl CDecl {
             type_name: String::new(),
             type_generic_args: Vec::new(),
             declarators: Vec::new(),
+            abi: None,
             type_ctype: None,
             deprecated: None,
         }
@@ -103,6 +107,7 @@ impl CDecl {
             never_return: f.never_return,
         });
         self.deprecated.clone_from(&f.annotations.deprecated);
+        self.abi = Some(f.abi.clone());
         self.build_type(&f.ret, false, config);
     }
 
@@ -263,6 +268,14 @@ impl CDecl {
                     if next_is_pointer {
                         out.write("(");
                     }
+                }
+            }
+        }
+
+        if config.language != Language::Cython && config.function.emit_calling_convention {
+            if let Some(ref abi) = self.abi {
+                if let Some(attribute) = abi.as_attribute() {
+                    write!(out, "{} ", attribute);
                 }
             }
         }

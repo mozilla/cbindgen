@@ -15,8 +15,8 @@ use crate::bindgen::cargo::{Cargo, PackageRef};
 use crate::bindgen::config::{Config, ParseConfig};
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GenericParam,
-    GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, FunctionAbi,
+    GenericParam, GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::utilities::{SynAbiHelpers, SynAttributeHelpers, SynItemHelpers};
 
@@ -600,7 +600,7 @@ impl Parse {
         );
     }
 
-    /// Enters a `extern "C" { }` declaration and loads function declarations.
+    /// Enters a `extern "<ABI>" { }` declaration and loads function declarations.
     fn load_syn_foreign_mod(
         &mut self,
         config: &Config,
@@ -609,8 +609,8 @@ impl Parse {
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemForeignMod,
     ) {
-        if !item.abi.is_c() && !item.abi.is_omitted() {
-            info!("Skip {} - (extern block must be extern C).", crate_name);
+        if !item.abi.is_any_c_abi() && !item.abi.is_omitted() {
+            info!("Skip {} - (extern block must be an extern C ABI https://doc.rust-lang.org/reference/items/external-blocks.html).", crate_name);
             return;
         }
 
@@ -632,7 +632,7 @@ impl Parse {
                     path,
                     None,
                     &function.sig,
-                    true,
+                    FunctionAbi::abi(&item.abi),
                     &function.attrs,
                     mod_cfg.as_ref(),
                 ) {
@@ -728,13 +728,22 @@ impl Parse {
             items.join("::")
         };
 
-        let is_extern_c = sig.abi.is_omitted() || sig.abi.is_c();
+        let is_extern_c = sig.abi.is_omitted() || sig.abi.is_any_c_abi();
         let exported_name = named_symbol.exported_name();
 
         match (is_extern_c, exported_name) {
             (true, Some(exported_name)) => {
                 let path = Path::new(exported_name);
-                match Function::load(path, self_type, sig, false, attrs, mod_cfg) {
+                match Function::load(
+                    path,
+                    self_type,
+                    sig,
+                    sig.abi
+                        .as_ref()
+                        .map_or_else(FunctionAbi::none, FunctionAbi::abi),
+                    attrs,
+                    mod_cfg,
+                ) {
                     Ok(func) => {
                         info!("Take {}.", loggable_item_name());
                         self.functions.push(func);
@@ -751,7 +760,7 @@ impl Parse {
                 );
             }
             (false, Some(_exported_name)) => {
-                warn!("Skipping {} - (not `extern \"C\"`)", loggable_item_name());
+                warn!("Skipping {} - (not a valid extern fn https://doc.rust-lang.org/reference/items/external-blocks.html)", loggable_item_name());
             }
             (false, None) => {}
         }
