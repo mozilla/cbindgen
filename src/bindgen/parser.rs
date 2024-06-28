@@ -632,6 +632,7 @@ impl Parse {
                     path,
                     None,
                     &function.sig,
+                    true,
                     FunctionAbi::abi(&item.abi),
                     &function.attrs,
                     mod_cfg.as_ref(),
@@ -738,6 +739,7 @@ impl Parse {
                     path,
                     self_type,
                     sig,
+                    false,
                     sig.abi
                         .as_ref()
                         .map_or_else(FunctionAbi::none, FunctionAbi::abi),

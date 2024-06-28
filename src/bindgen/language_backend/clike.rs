@@ -451,9 +451,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
     fn write_predefines<W: Write>(&self, out: &mut SourceWriter<W>, predefines: &Predefines) {
         if self.config.function.emit_calling_convention {
             predefines.calling_conventions().iter().for_each(|abi| {
-                out.new_line();
                 if let Some(c_definition) = abi.as_clike_definition() {
                     out.write(c_definition);
+                    out.new_line();
                 }
             });
         }

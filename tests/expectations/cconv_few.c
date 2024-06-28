@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-
 // Compiler-specific stdcall calling convention definition
 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
 // Clang: https://clang.llvm.org/docs/AttributeReference.html#stdcall

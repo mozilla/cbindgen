@@ -73,7 +73,7 @@ pub trait LanguageBackend: Sized {
                 out.write(" ")
             }
         }
-        if matches!(func.abi, FunctionAbi::None) {
+        if func.extern_decl {
             out.write("extern ");
         } else {
             if let Some(ref prefix) = prefix {

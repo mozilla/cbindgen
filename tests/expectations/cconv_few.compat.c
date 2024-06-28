@@ -2,8 +2,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-
-
 // Compiler-specific stdcall calling convention definition
 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
 // Clang: https://clang.llvm.org/docs/AttributeReference.html#stdcall
@@ -39,6 +37,7 @@
 #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"cdecl\" may break at runtime." )
 #define __cbindgen_abi_cdecl
 #endif
+
 
 #ifdef __cplusplus
 extern "C" {

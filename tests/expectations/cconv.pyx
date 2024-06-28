@@ -16,7 +16,7 @@ cdef extern from *:
 
   void test_win64();
 
-  extern void test_sysv64();
+  void test_sysv64();
 
   void test_rust();
 
@@ -36,7 +36,7 @@ cdef extern from *:
 
   void test_win64();
 
-  extern void test_sysv64();
+  void test_sysv64();
 
   void test_rust();
 

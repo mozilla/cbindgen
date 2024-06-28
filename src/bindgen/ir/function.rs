@@ -283,6 +283,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::SystemV64 => Some(indoc! {r#"
+                // Compiler-specific sysv64 calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#sysv-abi
                 #define __cbindgen_abi_sysv64 __attribute__((sysv_abi))
@@ -303,6 +304,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::SystemV64Unwind => Some(indoc! {r#"
+                // Compiler-specific sysv64 calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#sysv-abi
                 #define __cbindgen_abi_sysv64_unwind __attribute__((sysv_abi))
@@ -323,6 +325,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::System => Some(indoc! {r#"
+                // Compiler-specific system calling convention definition
                 #if (defined(_WIN32) || defined(__WIN32__) || defined(__WIN32)) && (defined(__i386__) || defined(_M_IX86))
                 // If we are targeting 32-bit windows, "system" is "stdcall"
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
@@ -347,6 +350,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::SystemUnwind => Some(indoc! {r#"
+                // Compiler-specific system calling convention definition
                 #if (defined(_WIN32) || defined(__WIN32__) || defined(__WIN32)) && (defined(__i386__) || defined(_M_IX86))
                 // If we are targeting 32-bit windows, "system" is "stdcall"
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
@@ -371,6 +375,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::AApcs => Some(indoc! {r#"
+                // Compiler-specific aapcs calling convention definition
                 #if defined(__arm__) || defined(_M_ARM)
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#pcs
@@ -395,6 +400,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::AApcsUnwind => Some(indoc! {r#"
+                // Compiler-specific aapcs calling convention definition
                 #if defined(__arm__) || defined(_M_ARM)
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#pcs
@@ -419,6 +425,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::FastCall => Some(indoc! {r#"
+                // Compiler-specific fastcall calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#fastcall
                 #define __cbindgen_abi_fastcall __fastcall
@@ -437,6 +444,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::FastCallUnwind => Some(indoc! {r#"
+                // Compiler-specific fastcall calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#fastcall
                 #define __cbindgen_abi_fastcall_unwind __fastcall
@@ -455,6 +463,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::ThisCall => Some(indoc! {r#"
+                // Compiler-specific thiscall calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#thiscall
                 #define __cbindgen_abi_thiscall __thiscall
@@ -473,6 +482,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::ThisCallUnwind => Some(indoc! {r#"
+                // Compiler-specific thiscall calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#thiscall
                 #define __cbindgen_abi_thiscall_unwind __thiscall
@@ -491,6 +501,7 @@ impl FunctionAbi {
                 #endif
             "#}),
             FunctionAbi::EfiApi => Some(indoc! {r#"
+                // Compiler-specific efiapi calling convention definition
                 #if (defined(__arm__) && !defined(__aarch64__)) || defined(_M_ARM)
                 // On ARM, EFIAPI is the same as AAPCS
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
@@ -562,6 +573,9 @@ pub struct Function {
     pub self_type_path: Option<Path>,
     pub ret: Type,
     pub args: Vec<FunctionArgument>,
+    /// Whether the declaration needs an "extern" keyword
+    pub extern_decl: bool,
+    /// The ABI of the declaration
     pub abi: FunctionAbi,
     pub cfg: Option<Cfg>,
     pub annotations: AnnotationSet,
@@ -574,6 +588,7 @@ impl Function {
         path: Path,
         self_type_path: Option<&Path>,
         sig: &syn::Signature,
+        extern_decl: bool,
         abi: FunctionAbi,
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
@@ -601,6 +616,7 @@ impl Function {
             self_type_path: self_type_path.cloned(),
             ret,
             args,
+            extern_decl,
             abi,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
             annotations: AnnotationSet::load(attrs)?,
