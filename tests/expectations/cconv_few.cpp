@@ -4,6 +4,7 @@
 #include <ostream>
 #include <new>
 
+
 // Compiler-specific cdecl calling convention definition
 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
 // Clang: https://clang.llvm.org/docs/AttributeReference.html#cdecl
@@ -39,7 +40,6 @@
 #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"stdcall\" may break at runtime." )
 #define __cbindgen_abi_stdcall
 #endif
-
 
 extern "C" {
 

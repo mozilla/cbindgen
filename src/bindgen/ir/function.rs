@@ -168,7 +168,7 @@ impl FunctionAbi {
     pub fn as_clike_definition(&self) -> Option<&'static str> {
         match *self {
             FunctionAbi::None | FunctionAbi::C | FunctionAbi::CUnwind => None,
-            FunctionAbi::CDecl | FunctionAbi::CDeclUnwind => Some(indoc! {r#"
+            FunctionAbi::CDecl => Some(indoc! {r#"
                 // Compiler-specific cdecl calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#cdecl
@@ -187,7 +187,26 @@ impl FunctionAbi {
                 #define __cbindgen_abi_cdecl
                 #endif
             "#}),
-            FunctionAbi::StdCall | FunctionAbi::StdCallUnwind => Some(indoc! {r#"
+            FunctionAbi::CDeclUnwind => Some(indoc! {r#"
+                // Compiler-specific cdecl calling convention definition
+                #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
+                // Clang: https://clang.llvm.org/docs/AttributeReference.html#cdecl
+                #define __cbindgen_abi_cdecl_unwind __cdecl
+                #elif defined(__clang__) && defined(__INTEL_LLVM_COMPILER)
+                // ICX: See Clang
+                #define __cbindgen_abi_cdecl_unwind __cdecl
+                #elif defined(__GNUC__) || defined(__GNUG__)
+                // GCC: https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html#index-cdecl-function-attribute_002c-x86-32
+                #define __cbindgen_abi_cdecl_unwind __attribute__((cdecl))
+                #elif defined(_MSC_VER)
+                // MSVC: https://learn.microsoft.com/en-us/cpp/cpp/cdecl?view=msvc-170
+                #define __cbindgen_abi_cdecl_unwind __cdecl
+                #else
+                #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"cdecl\" may break at runtime." )
+                #define __cbindgen_abi_cdec_unwindl
+                #endif
+            "#}),
+            FunctionAbi::StdCall => Some(indoc! {r#"
                 // Compiler-specific stdcall calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#stdcall
@@ -206,7 +225,26 @@ impl FunctionAbi {
                 #define __cbindgen_abi_stdcall
                 #endif
             "#}),
-            FunctionAbi::Win64 | FunctionAbi::Win64Unwind => Some(indoc! {r#"
+            FunctionAbi::StdCallUnwind => Some(indoc! {r#"
+                // Compiler-specific stdcall calling convention definition
+                #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
+                // Clang: https://clang.llvm.org/docs/AttributeReference.html#stdcall
+                #define __cbindgen_abi_stdcall_unwind __stdcall
+                #elif defined(__clang__) && defined(__INTEL_LLVM_COMPILER)
+                // ICX: See Clang
+                #define __cbindgen_abi_stdcall_unwind __stdcall
+                #elif defined(__GNUC__) || defined(__GNUG__)
+                // GCC: https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html#index-stdcall-function-attribute_002c-x86-32
+                #define __cbindgen_abi_stdcall_unwind __attribute__((stdcall))
+                #elif defined(_MSC_VER)
+                // MSVC: https://learn.microsoft.com/en-us/cpp/cpp/stdcall?view=msvc-170
+                #define __cbindgen_abi_stdcall_unwind __stdcall
+                #else
+                #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"stdcall\" may break at runtime." )
+                #define __cbindgen_abi_stdcall_unwind
+                #endif
+            "#}),
+            FunctionAbi::Win64 => Some(indoc! {r#"
                 // Compiler-specific win64 calling convention definition
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#ms-abi
@@ -225,7 +263,26 @@ impl FunctionAbi {
                 #define __cbindgen_abi_win64
                 #endif
             "#}),
-            FunctionAbi::SystemV64 | FunctionAbi::SystemV64Unwind => Some(indoc! {r#"
+            FunctionAbi::Win64Unwind => Some(indoc! {r#"
+                // Compiler-specific win64 calling convention definition
+                #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
+                // Clang: https://clang.llvm.org/docs/AttributeReference.html#ms-abi
+                #define __cbindgen_abi_win64_unwind __attribute__((ms_abi))
+                #elif defined(__clang__) && defined(__INTEL_LLVM_COMPILER)
+                // ICX: See Clang
+                #define __cbindgen_abi_win64_unwind __attribute__((ms_abi))
+                #elif defined(__GNUC__) || defined(__GNUG__)
+                // GCC: https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html#index-ms_005fabi-function-attribute_002c-x86
+                #define __cbindgen_abi_win64_unwind __attribute__((ms_abi))
+                #elif defined(_MSC_VER)
+                // MSVC: ms_abi is the default ABI on MSVC and does not need to be specified
+                #define __cbindgen_abi_win64_unwind
+                #else
+                #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"win64\" may break at runtime." )
+                #define __cbindgen_abi_win64
+                #endif
+            "#}),
+            FunctionAbi::SystemV64 => Some(indoc! {r#"
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#sysv-abi
                 #define __cbindgen_abi_sysv64 __attribute__((sysv_abi))
@@ -245,7 +302,27 @@ impl FunctionAbi {
                 #define __cbindgen_abi_sysv64
                 #endif
             "#}),
-            FunctionAbi::System | FunctionAbi::SystemUnwind => Some(indoc! {r#"
+            FunctionAbi::SystemV64Unwind => Some(indoc! {r#"
+                #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
+                // Clang: https://clang.llvm.org/docs/AttributeReference.html#sysv-abi
+                #define __cbindgen_abi_sysv64_unwind __attribute__((sysv_abi))
+                #elif defined(__clang__) && defined(__INTEL_LLVM_COMPILER)
+                // ICX: See Clang
+                #define __cbindgen_abi_sysv64_unwind __attribute__((sysv_abi))
+                #elif defined(__GNUC__) || defined(__GNUG__)
+                // GCC: https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html#index-ms_005fabi-function-attribute_002c-x86
+                #define __cbindgen_abi_sysv64_unwind __attribute__((sysv_abi))
+                #elif defined(_MSC_VER)
+                // MSVC: SystemV ABI is not available on MSVC, so we generate an error if it is used
+                // as this will result in code that compiles, but may break at runtime
+                #pragma message ( "The SystemV ABI is not available in MSVC but has been requested. This may result in code which breaks at runtime." )
+                #define __cbindgen_abi_sysv64_unwind
+                #else
+                #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"sysv64\" may break at runtime." )
+                #define __cbindgen_abi_sysv64_unwind
+                #endif
+            "#}),
+            FunctionAbi::System => Some(indoc! {r#"
                 #if (defined(_WIN32) || defined(__WIN32__) || defined(__WIN32)) && (defined(__i386__) || defined(_M_IX86))
                 // If we are targeting 32-bit windows, "system" is "stdcall"
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
@@ -269,7 +346,31 @@ impl FunctionAbi {
                 #define __cbindgen_abi_system
                 #endif
             "#}),
-            FunctionAbi::AApcs | FunctionAbi::AApcsUnwind => Some(indoc! {r#"
+            FunctionAbi::SystemUnwind => Some(indoc! {r#"
+                #if (defined(_WIN32) || defined(__WIN32__) || defined(__WIN32)) && (defined(__i386__) || defined(_M_IX86))
+                // If we are targeting 32-bit windows, "system" is "stdcall"
+                #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
+                // Clang: https://clang.llvm.org/docs/AttributeReference.html#system
+                #define __cbindgen_abi_system_unwind __stdcall
+                #elif defined(__clang__) && defined(__INTEL_LLVM_COMPILER)
+                // ICX: See Clang
+                #define __cbindgen_abi_system_unwind __stdcall
+                #elif defined(__GNUC__) || defined(__GNUG__)
+                // GCC: https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html#index-system-function-attribute_002c-x86-32
+                #define __cbindgen_abi_system_unwind __attribute__((stdcall))
+                #elif defined(_MSC_VER)
+                // MSVC: https://learn.microsoft.com/en-us/cpp/cpp/system?view=msvc-170
+                #define __cbindgen_abi_system_unwind __stdcall
+                #else
+                #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"system\" may break at runtime." )
+                #define __cbindgen_abi_system_unwind
+                #endif
+                #else
+                // Otherwise, it is equivalent to "C" AKA empty
+                #define __cbindgen_abi_system_unwind
+                #endif
+            "#}),
+            FunctionAbi::AApcs => Some(indoc! {r#"
                 #if defined(__arm__) || defined(_M_ARM)
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#pcs
@@ -293,7 +394,31 @@ impl FunctionAbi {
                 #define __cbindgen_abi_aapcs
                 #endif
             "#}),
-            FunctionAbi::FastCall | FunctionAbi::FastCallUnwind => Some(indoc! {r#"
+            FunctionAbi::AApcsUnwind => Some(indoc! {r#"
+                #if defined(__arm__) || defined(_M_ARM)
+                #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
+                // Clang: https://clang.llvm.org/docs/AttributeReference.html#pcs
+                #define __cbindgen_abi_aapcs_unwind __attribute__((pcs("aapcs")))
+                #elif defined(__clang__) && defined(__INTEL_LLVM_COMPILER)
+                // ICX: See Clang
+                #define __cbindgen_abi_aapcs_unwind __attribute__((pcs("aapcs")))
+                #elif defined(__GNUC__) || defined(__GNUG__)
+                // GCC: https://gcc.gnu.org/onlinedocs/gcc/ARM-Function-Attributes.html#index-pcs-function-attribute_002c-ARM
+                #define __cbindgen_abi_aapcs_unwind __attribute__((pcs("aapcs")))
+                #elif defined(_MSC_VER)
+                // MSVC: Does not support an attribute for AAPCS, but it is the default
+                // as described in: https://learn.microsoft.com/en-us/cpp/build/overview-of-arm-abi-conventions?view=msvc-170
+                #define __cbindgen_abi_aapcs_unwind
+                #else
+                #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"aapcs\" may break at runtime." )
+                #define __cbindgen_abi_aapcs_unwind
+                #endif
+                #else
+                #pragma message ( "The AAPCS ABI is not available on non-ARM platforms but has been requested. This may result in code which breaks at runtime." )
+                #define __cbindgen_abi_aapcs_unwind
+                #endif
+            "#}),
+            FunctionAbi::FastCall => Some(indoc! {r#"
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#fastcall
                 #define __cbindgen_abi_fastcall __fastcall
@@ -311,7 +436,25 @@ impl FunctionAbi {
                 #define __cbindgen_abi_fastcall
                 #endif
             "#}),
-            FunctionAbi::ThisCall | FunctionAbi::ThisCallUnwind => Some(indoc! {r#"
+            FunctionAbi::FastCallUnwind => Some(indoc! {r#"
+                #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
+                // Clang: https://clang.llvm.org/docs/AttributeReference.html#fastcall
+                #define __cbindgen_abi_fastcall_unwind __fastcall
+                #elif defined(__clang__) && defined(__INTEL_LLVM_COMPILER)
+                // ICX: See Clang
+                #define __cbindgen_abi_fastcall_unwind __fastcall
+                #elif defined(__GNUC__) || defined(__GNUG__)
+                // GCC: https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html#index-fastcall-function-attribute_002c-x86-32
+                #define __cbindgen_abi_fastcall_unwind __attribute__((fastcall))
+                #elif defined(_MSC_VER)
+                // MSVC: https://learn.microsoft.com/en-us/cpp/cpp/fastcall?view=msvc-170
+                #define __cbindgen_abi_fastcall_unwind __fastcall
+                #else
+                #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"fastcall\" may break at runtime." )
+                #define __cbindgen_abi_fastcall_unwind
+                #endif
+            "#}),
+            FunctionAbi::ThisCall => Some(indoc! {r#"
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#thiscall
                 #define __cbindgen_abi_thiscall __thiscall
@@ -327,6 +470,24 @@ impl FunctionAbi {
                 #else
                 #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"thiscall\" may break at runtime." )
                 #define __cbindgen_abi_thiscall
+                #endif
+            "#}),
+            FunctionAbi::ThisCallUnwind => Some(indoc! {r#"
+                #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
+                // Clang: https://clang.llvm.org/docs/AttributeReference.html#thiscall
+                #define __cbindgen_abi_thiscall_unwind __thiscall
+                #elif defined(__clang__) && defined(__INTEL_LLVM_COMPILER)
+                // ICX: See Clang
+                #define __cbindgen_abi_thiscall_unwind __thiscall
+                #elif defined(__GNUC__) || defined(__GNUG__)
+                // GCC: https://gcc.gnu.org/onlinedocs/gcc/x86-Function-Attributes.html#index-thiscall-function-attribute_002c-x86-32
+                #define __cbindgen_abi_thiscall_unwind __attribute__((thiscall))
+                #elif defined(_MSC_VER)
+                // MSVC: https://learn.microsoft.com/en-us/cpp/cpp/thiscall?view=msvc-170
+                #define __cbindgen_abi_thiscall_unwind __thiscall
+                #else
+                #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"thiscall\" may break at runtime." )
+                #define __cbindgen_abi_thiscall_unwind
                 #endif
             "#}),
             FunctionAbi::EfiApi => Some(indoc! {r#"

@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
 // Compiler-specific stdcall calling convention definition
 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
 // Clang: https://clang.llvm.org/docs/AttributeReference.html#stdcall
@@ -21,6 +20,7 @@
 #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"stdcall\" may break at runtime." )
 #define __cbindgen_abi_stdcall
 #endif
+
 
 // Compiler-specific cdecl calling convention definition
 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
