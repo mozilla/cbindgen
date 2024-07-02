@@ -170,6 +170,8 @@ impl FunctionAbi {
             FunctionAbi::None | FunctionAbi::C | FunctionAbi::CUnwind => None,
             FunctionAbi::CDecl => Some(indoc! {r#"
                 // Compiler-specific cdecl calling convention definition
+                #if defined(_MSC_VER) || defined(_ARCH_IA32)
+                // CDecl is defined on MSVC and on IA32 gcc/clang/icx
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#cdecl
                 #define __cbindgen_abi_cdecl __cdecl
@@ -186,9 +188,16 @@ impl FunctionAbi {
                 #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"cdecl\" may break at runtime." )
                 #define __cbindgen_abi_cdecl
                 #endif
+                #else
+                #pragma message ( "The CDecl ABI is not available in non-MSVC/non-IA32 builds but has been requested. This may result in code which breaks at runtime." )
+                #define __cbindgen_abi_cdecl
+                #endif
+
             "#}),
             FunctionAbi::CDeclUnwind => Some(indoc! {r#"
                 // Compiler-specific cdecl calling convention definition
+                #if defined(_MSC_VER) || defined(_ARCH_IA32)
+                // CDecl is defined on MSVC and on IA32 gcc/clang/icx
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#cdecl
                 #define __cbindgen_abi_cdecl_unwind __cdecl
@@ -203,11 +212,17 @@ impl FunctionAbi {
                 #define __cbindgen_abi_cdecl_unwind __cdecl
                 #else
                 #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"cdecl\" may break at runtime." )
-                #define __cbindgen_abi_cdec_unwindl
+                #define __cbindgen_abi_cdec_unwind
+                #endif
+                #else
+                #pragma message ( "The CDecl ABI is not available in non-MSVC/non-IA32 builds but has been requested. This may result in code which breaks at runtime." )
+                #define __cbindgen_abi_cdecl
                 #endif
             "#}),
             FunctionAbi::StdCall => Some(indoc! {r#"
                 // Compiler-specific stdcall calling convention definition
+                #if defined(_MSC_VER) || defined(_ARCH_IA32)
+                // Stdcall is defined on MSVC and on IA32 gcc/clang/icx
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#stdcall
                 #define __cbindgen_abi_stdcall __stdcall
@@ -224,9 +239,15 @@ impl FunctionAbi {
                 #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"stdcall\" may break at runtime." )
                 #define __cbindgen_abi_stdcall
                 #endif
+                #else
+                #pragma message ( "The StdCall ABI is not available in non-MSVC/non-IA32 builds but has been requested. This may result in code which breaks at runtime." )
+                #define __cbindgen_abi_stdcall
+                #endif
             "#}),
             FunctionAbi::StdCallUnwind => Some(indoc! {r#"
                 // Compiler-specific stdcall calling convention definition
+                #if defined(_MSC_VER) || defined(_ARCH_IA32)
+                // Stdcall is defined on MSVC and on IA32 gcc/clang/icx
                 #if defined(__clang__) && !defined(__INTEL_LLVM_COMPILER)
                 // Clang: https://clang.llvm.org/docs/AttributeReference.html#stdcall
                 #define __cbindgen_abi_stdcall_unwind __stdcall
@@ -242,6 +263,10 @@ impl FunctionAbi {
                 #else
                 #pragma message ( "An unsupported compiler is in use. Functions declared as extern \"stdcall\" may break at runtime." )
                 #define __cbindgen_abi_stdcall_unwind
+                #endif
+                #else
+                #pragma message ( "The StdCall ABI is not available in non-MSVC/non-IA32 builds but has been requested. This may result in code which breaks at runtime." )
+                #define __cbindgen_abi_stdcall
                 #endif
             "#}),
             FunctionAbi::Win64 => Some(indoc! {r#"
