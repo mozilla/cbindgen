@@ -86,6 +86,7 @@ rename_args = "None"
 # postfix = "END_FUNC"
 args = "auto"
 sort_by = "Name"
+# emit_calling_convention = true
 
 
 

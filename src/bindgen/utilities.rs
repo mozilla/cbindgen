@@ -319,20 +319,139 @@ impl_syn_item_helper!(syn::ItemMacro);
 impl_syn_item_helper!(syn::ItemTraitAlias);
 
 /// Helper function for accessing Abi information
+///
+/// External blocks can have an ABI, the options for which are enumerated at:
+/// https://doc.rust-lang.org/reference/items/external-blocks.html
+///
+/// They can also have an "unwind" API, specified in the c_unwind unstable feature #74990:
+/// https://doc.rust-lang.org/beta/unstable-book/language-features/c-unwind.html
 pub trait SynAbiHelpers {
-    fn is_c(&self) -> bool;
+    fn is_any_c_abi(&self) -> bool {
+        // Check if the ABI is any of the below
+        self.is_c()
+            || self.is_cdecl()
+            || self.is_stdcall()
+            || self.is_win64()
+            || self.is_sysv64()
+            || self.is_system()
+            || self.is_aapcs()
+            || self.is_fastcall()
+            || self.is_vectorcall()
+            || self.is_thiscall()
+            || self.is_efiapi()
+            || self.is_c_unwind()
+            || self.is_cdecl_unwind()
+            || self.is_stdcall_unwind()
+            || self.is_win64_unwind()
+            || self.is_sysv64_unwind()
+            || self.is_system_unwind()
+            || self.is_aapcs_unwind()
+            || self.is_fastcall_unwind()
+            || self.is_vectorcall_unwind()
+            || self.is_thiscall_unwind()
+    }
+
+    fn is(&self, name: &str) -> bool;
+
     fn is_omitted(&self) -> bool;
+
+    fn is_c(&self) -> bool {
+        self.is("C")
+    }
+
+    fn is_cdecl(&self) -> bool {
+        self.is("cdecl")
+    }
+
+    fn is_stdcall(&self) -> bool {
+        self.is("stdcall")
+    }
+
+    fn is_win64(&self) -> bool {
+        self.is("win64")
+    }
+
+    fn is_sysv64(&self) -> bool {
+        self.is("sysv64")
+    }
+
+    fn is_system(&self) -> bool {
+        self.is("system")
+    }
+
+    fn is_aapcs(&self) -> bool {
+        self.is("aapcs")
+    }
+
+    fn is_fastcall(&self) -> bool {
+        self.is("fastcall")
+    }
+
+    fn is_vectorcall(&self) -> bool {
+        self.is("vectorcall")
+    }
+
+    fn is_thiscall(&self) -> bool {
+        self.is("thiscall")
+    }
+
+    fn is_efiapi(&self) -> bool {
+        self.is("efiapi")
+    }
+
+    fn is_c_unwind(&self) -> bool {
+        self.is("C-unwind")
+    }
+
+    fn is_cdecl_unwind(&self) -> bool {
+        self.is("cdecl-unwind")
+    }
+
+    fn is_stdcall_unwind(&self) -> bool {
+        self.is("stdcall-unwind")
+    }
+
+    fn is_win64_unwind(&self) -> bool {
+        self.is("win64-unwind")
+    }
+
+    fn is_sysv64_unwind(&self) -> bool {
+        self.is("sysv64-unwind")
+    }
+
+    fn is_system_unwind(&self) -> bool {
+        self.is("system-unwind")
+    }
+
+    fn is_aapcs_unwind(&self) -> bool {
+        self.is("aapcs-unwind")
+    }
+
+    fn is_fastcall_unwind(&self) -> bool {
+        self.is("fastcall-unwind")
+    }
+
+    fn is_vectorcall_unwind(&self) -> bool {
+        self.is("vectorcall-unwind")
+    }
+
+    fn is_thiscall_unwind(&self) -> bool {
+        self.is("thiscall-unwind")
+    }
+
+    // NOTE: There is no efiapi-unwind, omission is not an error
 }
 
 impl SynAbiHelpers for Option<syn::Abi> {
-    fn is_c(&self) -> bool {
+    fn is(&self, name: &str) -> bool {
         if let Some(ref abi) = *self {
             if let Some(ref lit_string) = abi.name {
-                return matches!(lit_string.value().as_str(), "C" | "C-unwind");
+                return lit_string.value().as_str() == name;
             }
         }
         false
     }
+
     fn is_omitted(&self) -> bool {
         if let Some(ref abi) = *self {
             abi.name.is_none()
@@ -343,9 +462,9 @@ impl SynAbiHelpers for Option<syn::Abi> {
 }
 
 impl SynAbiHelpers for syn::Abi {
-    fn is_c(&self) -> bool {
+    fn is(&self, name: &str) -> bool {
         if let Some(ref lit_string) = self.name {
-            matches!(lit_string.value().as_str(), "C" | "C-unwind")
+            return lit_string.value().as_str() == name;
         } else {
             false
         }
