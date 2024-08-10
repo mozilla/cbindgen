@@ -328,33 +328,43 @@ pub trait ConditionWrite {
     fn write_after<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>);
 }
 
-impl ConditionWrite for Option<Condition> {
+impl ConditionWrite for Condition {
     fn write_before<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if let Some(ref cfg) = *self {
-            if config.language == Language::Cython {
-                out.write("IF ");
-                cfg.write(config, out);
-                out.open_brace();
-            } else {
-                out.push_set_spaces(0);
-                out.write("#if ");
-                cfg.write(config, out);
-                out.pop_set_spaces();
-                out.new_line();
-            }
+        if config.language == Language::Cython {
+            out.write("IF ");
+            self.write(config, out);
+            out.open_brace();
+        } else {
+            out.push_set_spaces(0);
+            out.write("#if ");
+            self.write(config, out);
+            out.pop_set_spaces();
+            out.new_line();
         }
     }
 
     fn write_after<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
-        if self.is_some() {
-            if config.language == Language::Cython {
-                out.close_brace(false);
-            } else {
-                out.new_line();
-                out.push_set_spaces(0);
-                out.write("#endif");
-                out.pop_set_spaces();
-            }
+        if config.language == Language::Cython {
+            out.close_brace(false);
+        } else {
+            out.new_line();
+            out.push_set_spaces(0);
+            out.write("#endif");
+            out.pop_set_spaces();
+        }
+    }
+}
+
+impl ConditionWrite for Option<Condition> {
+    fn write_before<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if let Some(cfg) = self {
+            cfg.write_before(config, out)
+        }
+    }
+
+    fn write_after<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        if let Some(cfg) = self {
+            cfg.write_after(config, out);
         }
     }
 }
