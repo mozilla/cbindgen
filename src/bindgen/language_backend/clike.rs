@@ -912,19 +912,19 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 let ordered_fields = out.bindings().struct_field_names(path);
                 for (i, ordered_key) in ordered_fields.iter().enumerate() {
                     if let Some(lit) = fields.get(ordered_key) {
+                        let condition = lit.cfg.to_condition(self.config);
                         if is_constexpr {
                             out.new_line();
 
+                            condition.write_before(self.config, out);
                             // TODO: Some C++ versions (c++20?) now support designated
                             // initializers, consider generating them.
                             write!(out, "/* .{} = */ ", ordered_key);
                             self.write_literal(out, &lit.value);
                             if i + 1 != ordered_fields.len() {
                                 write!(out, ",");
-                                if !is_constexpr {
-                                    write!(out, " ");
-                                }
                             }
+                            condition.write_after(self.config, out);
                         } else {
                             if i > 0 {
                                 write!(out, ", ");

@@ -201,6 +201,16 @@ struct ConditionalField {
 #endif
   ;
 };
+constexpr static const ConditionalField ConditionalField_ZERO = ConditionalField{
+#if defined(X11)
+  /* .field = */ 0
+#endif
+};
+constexpr static const ConditionalField ConditionalField_ONE = ConditionalField{
+#if defined(X11)
+  /* .field = */ 1
+#endif
+};
 
 struct Normal {
   int32_t x;

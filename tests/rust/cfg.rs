@@ -49,6 +49,17 @@ struct ConditionalField {
     field: i32,
 }
 
+impl ConditionalField {
+    pub const ZERO: Self = Self {
+        #[cfg(x11)]
+        field: 0,
+    };
+    pub const ONE: Self = Self {
+        #[cfg(x11)]
+        field: 1,
+    };
+}
+
 #[cfg(all(unix, x11))]
 #[no_mangle]
 pub extern "C" fn root(a: FooHandle, c: C)
