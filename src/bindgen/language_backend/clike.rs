@@ -918,7 +918,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                             // TODO: Some C++ versions (c++20?) now support designated
                             // initializers, consider generating them.
                             write!(out, "/* .{} = */ ", ordered_key);
-                            self.write_literal(out, lit);
+                            self.write_literal(out, &lit.value);
                             if i + 1 != ordered_fields.len() {
                                 write!(out, ",");
                                 if !is_constexpr {
@@ -937,7 +937,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                             } else {
                                 write!(out, ".{} = ", ordered_key);
                             }
-                            self.write_literal(out, lit);
+                            self.write_literal(out, &lit.value);
                         }
                     }
                 }
