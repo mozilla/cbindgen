@@ -16,7 +16,11 @@ using FontWeightFixedPoint = FixedPoint<FONT_WEIGHT_FRACTION_BITS>;
 struct FontWeight {
   FontWeightFixedPoint _0;
 };
-constexpr static const FontWeight FontWeight_NORMAL = FontWeight{ /* ._0 = */ FontWeightFixedPoint{ /* .value = */ (400 << FONT_WEIGHT_FRACTION_BITS) } };
+constexpr static const FontWeight FontWeight_NORMAL = FontWeight{
+  /* ._0 = */ FontWeightFixedPoint{
+    /* .value = */ (400 << FONT_WEIGHT_FRACTION_BITS)
+  }
+};
 
 extern "C" {
 

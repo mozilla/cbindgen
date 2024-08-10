@@ -902,20 +902,29 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     write!(out, "{}", export_name);
                 }
 
-                write!(out, "{{ ");
+                write!(out, "{{");
+                if is_constexpr {
+                    out.push_tab();
+                } else {
+                    write!(out, " ");
+                }
                 // In C++, same order as defined is required.
                 let ordered_fields = out.bindings().struct_field_names(path);
                 for (i, ordered_key) in ordered_fields.iter().enumerate() {
                     if let Some(lit) = fields.get(ordered_key) {
                         if is_constexpr {
-                            if i > 0 {
-                                write!(out, ", ");
-                            }
+                            out.new_line();
 
                             // TODO: Some C++ versions (c++20?) now support designated
                             // initializers, consider generating them.
                             write!(out, "/* .{} = */ ", ordered_key);
                             self.write_literal(out, lit);
+                            if i + 1 != ordered_fields.len() {
+                                write!(out, ",");
+                                if !is_constexpr {
+                                    write!(out, " ");
+                                }
+                            }
                         } else {
                             if i > 0 {
                                 write!(out, ", ");
@@ -932,7 +941,13 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                         }
                     }
                 }
-                write!(out, " }}");
+                if is_constexpr {
+                    out.pop_tab();
+                    out.new_line();
+                } else {
+                    write!(out, " ");
+                }
+                write!(out, "}}");
             }
         }
     }

@@ -14,7 +14,9 @@ struct S {
 
 using A = uint8_t;
 
-constexpr static const S C1 = S{ /* .field = */ 0 };
+constexpr static const S C1 = S{
+  /* .field = */ 0
+};
 
 constexpr static const E C2 = V;
 

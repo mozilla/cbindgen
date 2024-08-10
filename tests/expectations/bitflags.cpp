@@ -39,18 +39,34 @@ struct AlignFlags {
   }
 };
 /// 'auto'
-constexpr static const AlignFlags AlignFlags_AUTO = AlignFlags{ /* .bits = */ (uint8_t)0 };
+constexpr static const AlignFlags AlignFlags_AUTO = AlignFlags{
+  /* .bits = */ (uint8_t)0
+};
 /// 'normal'
-constexpr static const AlignFlags AlignFlags_NORMAL = AlignFlags{ /* .bits = */ (uint8_t)1 };
+constexpr static const AlignFlags AlignFlags_NORMAL = AlignFlags{
+  /* .bits = */ (uint8_t)1
+};
 /// 'start'
-constexpr static const AlignFlags AlignFlags_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 1) };
+constexpr static const AlignFlags AlignFlags_START = AlignFlags{
+  /* .bits = */ (uint8_t)(1 << 1)
+};
 /// 'end'
-constexpr static const AlignFlags AlignFlags_END = AlignFlags{ /* .bits = */ (uint8_t)(1 << 2) };
-constexpr static const AlignFlags AlignFlags_ALIAS = AlignFlags{ /* .bits = */ (uint8_t)(AlignFlags_END).bits };
+constexpr static const AlignFlags AlignFlags_END = AlignFlags{
+  /* .bits = */ (uint8_t)(1 << 2)
+};
+constexpr static const AlignFlags AlignFlags_ALIAS = AlignFlags{
+  /* .bits = */ (uint8_t)(AlignFlags_END).bits
+};
 /// 'flex-start'
-constexpr static const AlignFlags AlignFlags_FLEX_START = AlignFlags{ /* .bits = */ (uint8_t)(1 << 3) };
-constexpr static const AlignFlags AlignFlags_MIXED = AlignFlags{ /* .bits = */ (uint8_t)(((1 << 4) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) };
-constexpr static const AlignFlags AlignFlags_MIXED_SELF = AlignFlags{ /* .bits = */ (uint8_t)(((1 << 5) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits) };
+constexpr static const AlignFlags AlignFlags_FLEX_START = AlignFlags{
+  /* .bits = */ (uint8_t)(1 << 3)
+};
+constexpr static const AlignFlags AlignFlags_MIXED = AlignFlags{
+  /* .bits = */ (uint8_t)(((1 << 4) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits)
+};
+constexpr static const AlignFlags AlignFlags_MIXED_SELF = AlignFlags{
+  /* .bits = */ (uint8_t)(((1 << 5) | (AlignFlags_FLEX_START).bits) | (AlignFlags_END).bits)
+};
 
 struct DebugFlags {
   uint32_t bits;
@@ -84,7 +100,9 @@ struct DebugFlags {
   }
 };
 /// Flag with the topmost bit set of the u32
-constexpr static const DebugFlags DebugFlags_BIGGEST_ALLOWED = DebugFlags{ /* .bits = */ (uint32_t)(1 << 31) };
+constexpr static const DebugFlags DebugFlags_BIGGEST_ALLOWED = DebugFlags{
+  /* .bits = */ (uint32_t)(1 << 31)
+};
 
 struct LargeFlags {
   uint64_t bits;
@@ -118,8 +136,12 @@ struct LargeFlags {
   }
 };
 /// Flag with a very large shift that usually would be narrowed.
-constexpr static const LargeFlags LargeFlags_LARGE_SHIFT = LargeFlags{ /* .bits = */ (uint64_t)(1ull << 44) };
-constexpr static const LargeFlags LargeFlags_INVERTED = LargeFlags{ /* .bits = */ (uint64_t)~(LargeFlags_LARGE_SHIFT).bits };
+constexpr static const LargeFlags LargeFlags_LARGE_SHIFT = LargeFlags{
+  /* .bits = */ (uint64_t)(1ull << 44)
+};
+constexpr static const LargeFlags LargeFlags_INVERTED = LargeFlags{
+  /* .bits = */ (uint64_t)~(LargeFlags_LARGE_SHIFT).bits
+};
 
 struct OutOfLine {
   uint32_t _0;
@@ -152,9 +174,15 @@ struct OutOfLine {
     return *this;
   }
 };
-constexpr static const OutOfLine OutOfLine_A = OutOfLine{ /* ._0 = */ (uint32_t)1 };
-constexpr static const OutOfLine OutOfLine_B = OutOfLine{ /* ._0 = */ (uint32_t)2 };
-constexpr static const OutOfLine OutOfLine_AB = OutOfLine{ /* ._0 = */ (uint32_t)((OutOfLine_A)._0 | (OutOfLine_B)._0) };
+constexpr static const OutOfLine OutOfLine_A = OutOfLine{
+  /* ._0 = */ (uint32_t)1
+};
+constexpr static const OutOfLine OutOfLine_B = OutOfLine{
+  /* ._0 = */ (uint32_t)2
+};
+constexpr static const OutOfLine OutOfLine_AB = OutOfLine{
+  /* ._0 = */ (uint32_t)((OutOfLine_A)._0 | (OutOfLine_B)._0)
+};
 
 extern "C" {
 
