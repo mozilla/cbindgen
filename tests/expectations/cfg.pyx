@@ -57,6 +57,8 @@ cdef extern from *:
 
   ctypedef struct ConditionalField:
     int32_t field;
+  const ConditionalField ConditionalField_ZERO # = <ConditionalField>{ 0 }
+  const ConditionalField ConditionalField_ONE # = <ConditionalField>{ 1 }
 
   ctypedef struct Normal:
     int32_t x;

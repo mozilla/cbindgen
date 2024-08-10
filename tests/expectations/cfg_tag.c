@@ -77,6 +77,8 @@ struct ConditionalField {
 #endif
   ;
 };
+#define ConditionalField_ZERO (ConditionalField){ .field = 0 }
+#define ConditionalField_ONE (ConditionalField){ .field = 1 }
 
 struct Normal {
   int32_t x;
