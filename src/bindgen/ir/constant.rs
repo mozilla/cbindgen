@@ -184,7 +184,7 @@ impl Literal {
         }
     }
 
-    fn can_be_constexpr(&self) -> bool {
+    pub(crate) fn can_be_constexpr(&self) -> bool {
         !self.has_pointer_casts()
     }
 
