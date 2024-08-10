@@ -902,6 +902,18 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     write!(out, "{}", export_name);
                 }
 
+                macro_rules! write_field_name {
+                    ($out:ident, $key:ident) => {
+                        if self.config.language == Language::Cxx {
+                            // TODO: Some C++ versions (c++20?) now support designated
+                            // initializers, consider generating them.
+                            write!($out, "/* .{} = */ ", $key);
+                        } else {
+                            write!($out, ".{} = ", $key);
+                        }
+                    };
+                }
+
                 write!(out, "{{");
                 if is_constexpr {
                     out.push_tab();
@@ -917,9 +929,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                             out.new_line();
 
                             condition.write_before(self.config, out);
-                            // TODO: Some C++ versions (c++20?) now support designated
-                            // initializers, consider generating them.
-                            write!(out, "/* .{} = */ ", ordered_key);
+                            write_field_name!(out, ordered_key);
                             self.write_literal(out, &lit.value);
                             if i + 1 != ordered_fields.len() {
                                 write!(out, ",");
@@ -930,14 +940,14 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                                 write!(out, ", ");
                             }
 
-                            if self.config.language == Language::Cxx {
-                                // TODO: Some C++ versions (c++20?) now support designated
-                                // initializers, consider generating them.
-                                write!(out, "/* .{} = */ ", ordered_key);
+                            if condition.is_some() {
+                                write!(out, "__{export_name}_{ordered_key}(");
+                                self.write_literal(out, &lit.value);
+                                write!(out, ")")
                             } else {
-                                write!(out, ".{} = ", ordered_key);
+                                write_field_name!(out, ordered_key);
+                                self.write_literal(out, &lit.value);
                             }
-                            self.write_literal(out, &lit.value);
                         }
                     }
                 }
@@ -948,6 +958,24 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     write!(out, " ");
                 }
                 write!(out, "}}");
+
+                if self.config.language == Language::C {
+                    for ordered_key in ordered_fields.iter() {
+                        if let Some(lit) = fields.get(ordered_key) {
+                            if let Some(condition) = lit.cfg.to_condition(self.config) {
+                                out.new_line();
+                                condition.write_before(self.config, out);
+                                let define = format!("#define __{export_name}_{ordered_key}(v)");
+                                write!(out, "{define} ");
+                                write_field_name!(out, ordered_key);
+                                write!(out, "(v)");
+                                write!(out, "\n#else\n");
+                                write!(out, "{define}");
+                                condition.write_after(self.config, out);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
