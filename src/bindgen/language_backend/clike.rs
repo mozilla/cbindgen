@@ -893,6 +893,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 fields,
                 path,
             } => {
+                let allow_constexpr = self.config.constant.allow_constexpr && l.can_be_constexpr();
+                let is_constexpr = self.config.language == Language::Cxx
+                    && (self.config.constant.allow_static_const || allow_constexpr);
                 if self.config.language == Language::C {
                     write!(out, "({})", export_name);
                 } else {
@@ -900,23 +903,33 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 }
 
                 write!(out, "{{ ");
-                let mut is_first_field = true;
                 // In C++, same order as defined is required.
                 let ordered_fields = out.bindings().struct_field_names(path);
-                for ordered_key in ordered_fields.iter() {
+                for (i, ordered_key) in ordered_fields.iter().enumerate() {
                     if let Some(lit) = fields.get(ordered_key) {
-                        if !is_first_field {
-                            write!(out, ", ");
-                        }
-                        is_first_field = false;
-                        if self.config.language == Language::Cxx {
+                        if is_constexpr {
+                            if i > 0 {
+                                write!(out, ", ");
+                            }
+
                             // TODO: Some C++ versions (c++20?) now support designated
                             // initializers, consider generating them.
                             write!(out, "/* .{} = */ ", ordered_key);
+                            self.write_literal(out, lit);
                         } else {
-                            write!(out, ".{} = ", ordered_key);
+                            if i > 0 {
+                                write!(out, ", ");
+                            }
+
+                            if self.config.language == Language::Cxx {
+                                // TODO: Some C++ versions (c++20?) now support designated
+                                // initializers, consider generating them.
+                                write!(out, "/* .{} = */ ", ordered_key);
+                            } else {
+                                write!(out, ".{} = ", ordered_key);
+                            }
+                            self.write_literal(out, lit);
                         }
-                        self.write_literal(out, lit);
                     }
                 }
                 write!(out, " }}");
