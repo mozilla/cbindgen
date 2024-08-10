@@ -10,12 +10,24 @@ struct Foo {
   int32_t a;
   uint32_t b;
 };
-constexpr static const Foo Foo_FOO = Foo{ /* .a = */ 42, /* .b = */ 47 };
-constexpr static const Foo Foo_FOO2 = Foo{ /* .a = */ 42, /* .b = */ 47 };
-constexpr static const Foo Foo_FOO3 = Foo{ /* .a = */ 42, /* .b = */ 47 };
+constexpr static const Foo Foo_FOO = Foo{
+  /* .a = */ 42,
+  /* .b = */ 47
+};
+constexpr static const Foo Foo_FOO2 = Foo{
+  /* .a = */ 42,
+  /* .b = */ 47
+};
+constexpr static const Foo Foo_FOO3 = Foo{
+  /* .a = */ 42,
+  /* .b = */ 47
+};
 
 
-constexpr static const Foo BAR = Foo{ /* .a = */ 42, /* .b = */ 1337 };
+constexpr static const Foo BAR = Foo{
+  /* .a = */ 42,
+  /* .b = */ 1337
+};
 
 
 
