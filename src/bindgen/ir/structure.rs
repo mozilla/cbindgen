@@ -153,16 +153,16 @@ impl Struct {
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
         if self.is_transparent {
-            // NOTE: A `#[repr(transparent)]` struct with 2+ NZT fields fails to compile, but 0
-            // fields is allowed for some strange reason. Don't emit the typedef in that case.
+            // NOTE: The rust compiler rejects a `#[repr(transparent)]` struct with 2+ NZST fields,
+            // but accepts an empty struct (see https://github.com/rust-lang/rust/issues/129029).
+            // Don't emit the typedef in that case.
             if let Some(field) = self.fields.first() {
                 return Some(Typedef::new_from_struct_field(self, field));
-            } else {
-                error!(
-                    "Cannot convert empty transparent struct {} to typedef",
-                    self.name()
-                );
             }
+            error!(
+                "Cannot convert empty transparent struct {} to typedef",
+                self.name()
+            );
         }
         None
     }
@@ -288,7 +288,7 @@ impl Item for Struct {
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
-        if self.is_transparent {
+        if self.is_transparent && self.fields.len() == 1 {
             resolver.add_none(&self.path);
         } else {
             resolver.add_struct(&self.path);

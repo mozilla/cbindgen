@@ -41,6 +41,11 @@ impl TransparentPrimitiveWithAssociatedConstants {
 #[repr(transparent)]
 struct TransparentPrimitiveWithAssociatedConstants { bits: u32 }
 
+// https://github.com/rust-lang/rust/issues/129029 the rust compiler (wrongly?) accepts this, but
+// cbindgen should nevertheless emit the struct definition instead of a typedef.
+#[repr(transparent)]
+struct TransparentEmptyStructure;
+
 // Associated constant declared after struct declaration.
 impl TransparentPrimitiveWithAssociatedConstants {
     pub const ONE: TransparentPrimitiveWithAssociatedConstants = TransparentPrimitiveWithAssociatedConstants {
@@ -63,5 +68,6 @@ pub extern "C" fn root(
     e: TransparentComplexWrapper<i32>,
     f: TransparentPrimitiveWrapper<i32>,
     g: TransparentPrimitiveWithAssociatedConstants,
-    h: EnumWithAssociatedConstantInImpl,
+    h: TransparentEmptyStructure,
+    i: EnumWithAssociatedConstantInImpl,
 ) { }
