@@ -122,11 +122,18 @@ impl Struct {
         has_tag_field: bool,
         is_enum_variant_body: bool,
         alignment: Option<ReprAlign>,
-        is_transparent: bool,
+        mut is_transparent: bool,
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
     ) -> Self {
+        // WARNING: The rust compiler rejects a `#[repr(transparent)]` struct with 2+ NZST fields, but
+        // accepts an empty struct (see https://github.com/rust-lang/rust/issues/129029). We must
+        // not emit a typedef in that case, because there is no underlying type.
+        if is_transparent && fields.len() != 1 {
+            error!("Illegal empty transparent struct {}", &path);
+            is_transparent = false;
+        }
         let export_name = path.name().to_owned();
         Self {
             path,
@@ -152,19 +159,10 @@ impl Struct {
 
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
-        if self.is_transparent {
-            // NOTE: The rust compiler rejects a `#[repr(transparent)]` struct with 2+ NZST fields,
-            // but accepts an empty struct (see https://github.com/rust-lang/rust/issues/129029).
-            // Don't emit the typedef in that case.
-            if let Some(field) = self.fields.first() {
-                return Some(Typedef::new_from_struct_field(self, field));
-            }
-            error!(
-                "Cannot convert empty transparent struct {} to typedef",
-                self.name()
-            );
+        match self.fields.first() {
+            Some(field) if self.is_transparent => Some(Typedef::new_from_struct_field(self, field)),
+            _ => None,
         }
-        None
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -288,7 +286,7 @@ impl Item for Struct {
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
-        if self.is_transparent && self.fields.len() == 1 {
+        if self.is_transparent {
             resolver.add_none(&self.path);
         } else {
             resolver.add_struct(&self.path);
