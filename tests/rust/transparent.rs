@@ -41,8 +41,8 @@ impl TransparentPrimitiveWithAssociatedConstants {
 #[repr(transparent)]
 struct TransparentPrimitiveWithAssociatedConstants { bits: u32 }
 
-// https://github.com/rust-lang/rust/issues/129029 the rust compiler (wrongly?) accepts this, but
-// cbindgen should nevertheless emit the struct definition instead of a typedef.
+// https://github.com/rust-lang/rust/issues/129029: The rust compiler (wrongly?) accepts a
+// transparent empty struct, but cbindgen should NOT emit a typedef in that case.
 #[repr(transparent)]
 struct TransparentEmptyStructure;
 

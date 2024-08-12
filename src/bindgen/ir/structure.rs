@@ -127,9 +127,9 @@ impl Struct {
         annotations: AnnotationSet,
         documentation: Documentation,
     ) -> Self {
-        // WARNING: The rust compiler rejects a `#[repr(transparent)]` struct with 2+ NZST fields, but
-        // accepts an empty struct (see https://github.com/rust-lang/rust/issues/129029). We must
-        // not emit a typedef in that case, because there is no underlying type.
+        // https://github.com/rust-lang/rust/issues/129029: The rust compiler accepts an empty
+        // `#[repr(transparent)]` struct. We must not emit a typedef in that case, because there is
+        // no underlying type it could refer to.
         if is_transparent && fields.len() != 1 {
             error!("Illegal empty transparent struct {}", &path);
             is_transparent = false;
