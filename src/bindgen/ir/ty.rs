@@ -600,30 +600,24 @@ impl Type {
                 is_nullable,
                 never_return,
             } => {
-                // Predict that ret+args will all be erased, but decrement the count whenever we're
-                // wrong. If the count drops to 0, then type erasure was a no-op after all.
-                let mut num_erased = 1 + args.len();
-                let erased_ret = eraser
-                    .erase_transparent_types(library, ret, mappings)
-                    .unwrap_or_else(|| {
-                        num_erased -= 1;
-                        ret.as_ref().clone()
-                    });
-
+                // Attempt to erase ret and all args; if any of them were actually erased, then
+                // assemble and return the simplified function signature that results.
+                let mut erased_any = false;
+                let mut try_erase = |ty| {
+                    if let Some(erased) = eraser.erase_transparent_types(library, ty, mappings) {
+                        erased_any = true;
+                        erased
+                    } else {
+                        ty.clone()
+                    }
+                };
+                let erased_ret = try_erase(ret);
                 let erased_args = args
                     .iter()
-                    .map(|(name, ty)| {
-                        let erased_ty = eraser
-                            .erase_transparent_types(library, ty, mappings)
-                            .unwrap_or_else(|| {
-                                num_erased -= 1;
-                                ty.clone()
-                            });
-                        (name.clone(), erased_ty)
-                    })
+                    .map(|(name, ty)| (name.clone(), try_erase(ty)))
                     .collect();
 
-                if num_erased > 0 {
+                if erased_any {
                     return Some(Type::FuncPtr {
                         ret: Box::new(erased_ret),
                         args: erased_args,
