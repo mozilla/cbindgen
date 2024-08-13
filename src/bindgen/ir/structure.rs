@@ -129,9 +129,8 @@ impl Struct {
     ) -> Self {
         // WARNING: Zero-sized transparent structs are legal rust [1], but zero-sized types of any
         // repr are "best avoided entirely" [2] because they "will be nonsensical or problematic if
-        // passed through the FFI boundary" [3]. Further, because there no well-defined underlying
-        // native type exists for a ZST, we cannot emit a typedef for it and must treat it as an
-        // empty repr(C) struct instead.
+        // passed through the FFI boundary" [3]. Further, because no well-defined underlying native
+        // type exists for a ZST, we cannot emit a typedef and must define an empty struct instead.
         //
         // [1] https://github.com/rust-lang/rust/issues/77841#issuecomment-716575747
         // [2] https://github.com/rust-lang/rust/issues/77841#issuecomment-716796313
