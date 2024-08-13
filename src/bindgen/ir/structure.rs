@@ -127,13 +127,23 @@ impl Struct {
         annotations: AnnotationSet,
         documentation: Documentation,
     ) -> Self {
-        // https://github.com/rust-lang/rust/issues/129029: The rust compiler accepts an empty
-        // `#[repr(transparent)]` struct. We must not emit a typedef in that case, because there is
-        // no underlying type it could refer to.
-        if is_transparent && fields.len() != 1 {
-            error!("Illegal empty transparent struct {}", &path);
+        // WARNING: Zero-sized transparent structs are legal rust [1], but zero-sized types of any
+        // repr are "best avoided entirely" [2] because they "will be nonsensical or problematic if
+        // passed through the FFI boundary" [3]. Further, because there no well-defined underlying
+        // native type exists for a ZST, we cannot emit a typedef for it and must treat it as an
+        // empty repr(C) struct instead.
+        //
+        // [1] https://github.com/rust-lang/rust/issues/77841#issuecomment-716575747
+        // [2] https://github.com/rust-lang/rust/issues/77841#issuecomment-716796313
+        // [3] https://doc.rust-lang.org/nomicon/other-reprs.html
+        if fields.is_empty() {
+            warn!(
+                "Passing zero-sized struct {} across the FFI boundary is undefined behavior",
+                &path
+            );
             is_transparent = false;
         }
+
         let export_name = path.name().to_owned();
         Self {
             path,
