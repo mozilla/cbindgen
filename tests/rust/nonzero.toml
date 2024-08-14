@@ -1,13 +1,3 @@
-header = """
-#if 0
-''' '
-#endif
-
-#ifdef __cplusplus
+header = { language = "C++", line = """
 struct NonZeroI64;
-#endif
-
-#if 0
-' '''
-#endif
-"""
+""" }
