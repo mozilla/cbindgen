@@ -4,6 +4,8 @@
 #include <ostream>
 #include <new>
 
+constexpr static const int64_t TransparentEnum_ASSOC_ENUM_FOO = 8;
+
 template<typename T>
 using Wrapper = T;
 
@@ -15,12 +17,25 @@ constexpr static const Wrapper<TransparentStruct> TransparentStruct_ASSOC_STRUCT
 using TransparentTupleStruct = uint8_t;
 
 template<typename T>
-using TransparentStructWithErasedField = Wrapper<T>;
+using TransparentStructWithErasedField = T;
+
+using TransparentEnum = uint8_t;
+
+template<typename T>
+using TransparentWrapperEnum = T;
 
 constexpr static const TransparentStruct STRUCT_FOO = 4;
 
 constexpr static const TransparentTupleStruct STRUCT_BAR = 5;
 
-constexpr static const Wrapper<TransparentStruct> STRUCT_BAZ = 6;
+constexpr static const TransparentStruct STRUCT_BAZ = 6;
 
 constexpr static const TransparentStructWithErasedField<TransparentStruct> COMPLEX = 7;
+
+
+
+
+
+
+
+

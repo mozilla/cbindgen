@@ -12,7 +12,7 @@ use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, AnnotationValue, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation, Field,
     GenericArgument, GenericParams, GenericPath, Item, ItemContainer, Literal, Path, Repr,
-    ReprStyle, Struct, ToCondition, Type,
+    ReprStyle, Struct, ToCondition, TransparentTypeEraser, Type, Typedef,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -247,12 +247,6 @@ impl EnumVariant {
         }
     }
 
-    fn simplify_standard_types(&mut self, config: &Config) {
-        if let VariantBody::Body { ref mut body, .. } = self.body {
-            body.simplify_standard_types(config);
-        }
-    }
-
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         if let VariantBody::Body { ref body, .. } = self.body {
             body.add_dependencies(library, out);
@@ -314,7 +308,12 @@ impl Enum {
 
     /// Enum with data turns into a union of structs with each struct having its own tag field.
     pub(crate) fn inline_tag_field(repr: &Repr) -> bool {
-        repr.style != ReprStyle::C
+        // NOTE: repr(C) requires an out of line tag field, and repr(transparent) doesn't use tags.
+        repr.style == ReprStyle::Rust
+    }
+
+    pub fn is_transparent(&self) -> bool {
+        self.repr.style == ReprStyle::Transparent
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -351,7 +350,7 @@ impl Enum {
     ) -> Result<Enum, String> {
         let repr = Repr::load(&item.attrs)?;
         if repr.style == ReprStyle::Rust && repr.ty.is_none() {
-            return Err("Enum is not marked with a valid #[repr(prim)] or #[repr(C)].".to_owned());
+            return Err("Enum is not marked with a valid #[repr(prim)] or #[repr(C)] or #[repr(transparent)].".to_owned());
         }
         // TODO: Implement translation of aligned enums.
         if repr.align.is_some() {
@@ -424,13 +423,35 @@ impl Enum {
     pub fn new(
         path: Path,
         generic_params: GenericParams,
-        repr: Repr,
+        mut repr: Repr,
         variants: Vec<EnumVariant>,
         tag: Option<String>,
         cfg: Option<Cfg>,
         annotations: AnnotationSet,
         documentation: Documentation,
     ) -> Self {
+        // WARNING: A transparent enum with no fields (or whose fields are all 1-ZST) is legal rust
+        // [1], but it is a zero-sized type and as such is "best avoided entirely" [2] because it
+        // "will be nonsensical or problematic if passed through the FFI boundary" [1]. Further,
+        // because no well-defined underlying native type exists for a 1-ZST, we cannot emit a
+        // typedef and must fall back to repr(C) behavior that defines a tagged enum.
+        //
+        // [1] https://doc.rust-lang.org/nomicon/other-reprs.html
+        // [2] https://github.com/rust-lang/rust/issues/77841#issuecomment-716796313
+        if repr.style == ReprStyle::Transparent {
+            let zero_sized = match variants.first() {
+                Some(EnumVariant {
+                    body: VariantBody::Body { ref body, .. },
+                    ..
+                }) => body.fields.is_empty(),
+                _ => true,
+            };
+            if zero_sized {
+                warn!("Passing zero-sized transparent enum {} across the FFI boundary is undefined behavior", &path);
+                repr.style = ReprStyle::C;
+            }
+        }
+
         let export_name = path.name().to_owned();
         Self {
             path,
@@ -443,6 +464,28 @@ impl Enum {
             annotations,
             documentation,
         }
+    }
+
+    /// Attempts to convert this enum to a typedef (only works for transparent enums).
+    pub fn as_typedef(&self) -> Option<Typedef> {
+        if self.is_transparent() {
+            if let Some(EnumVariant {
+                body: VariantBody::Body { ref body, .. },
+                ..
+            }) = self.variants.first()
+            {
+                if let Some(field) = body.fields.first() {
+                    return Some(Typedef::new_from_item_field(self, field));
+                }
+            }
+        }
+        None
+    }
+
+    // Transparent enums become typedefs, so try converting to typedef and recurse on that.
+    pub fn as_transparent_alias(&self, generics: &[GenericArgument]) -> Option<Type> {
+        self.as_typedef()
+            .and_then(|t| t.as_transparent_alias(generics))
     }
 }
 
@@ -476,7 +519,9 @@ impl Item for Enum {
     }
 
     fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
-        if self.tag.is_some() {
+        if self.repr.style == ReprStyle::Transparent {
+            resolver.add_none(&self.path);
+        } else if self.tag.is_some() {
             if self.repr.style == ReprStyle::C {
                 resolver.add_struct(&self.path);
             } else {
@@ -498,6 +543,30 @@ impl Item for Enum {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        generics: &[GenericArgument],
+    ) {
+        let mut skip_inline_tag_field = Self::inline_tag_field(&self.repr);
+        let generics = self.generic_params.defaulted_generics(generics);
+        let mappings = self.generic_params.call(self.name(), &generics);
+        for variant in self.variants.iter_mut() {
+            if let VariantBody::Body { ref mut body, .. } = variant.body {
+                for field in body.fields.iter_mut() {
+                    // Ignore the inline Tag field, if any (it's always first)
+                    if skip_inline_tag_field {
+                        debug!("Skipping inline Tag field {:?}", field);
+                        skip_inline_tag_field = false;
+                    } else {
+                        eraser.erase_transparent_types_inplace(library, &mut field.ty, &mappings);
+                    }
+                }
+            }
+        }
     }
 
     fn rename_for_config(&mut self, config: &Config) {
@@ -1491,12 +1560,6 @@ impl Enum {
                 write!(out, "return *this;");
                 out.close_brace(false);
             }
-        }
-    }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for variant in &mut self.variants {
-            variant.simplify_standard_types(config);
         }
     }
 }

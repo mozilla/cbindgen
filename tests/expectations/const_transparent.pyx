@@ -6,6 +6,8 @@ cdef extern from *:
 
 cdef extern from *:
 
+  const int64_t TransparentEnum_ASSOC_ENUM_FOO # = 8
+
   ctypedef uint8_t TransparentStruct;
   const int64_t TransparentStruct_ASSOC_STRUCT_FOO # = 1
   const TransparentStruct TransparentStruct_ASSOC_STRUCT_BAR # = 2
@@ -13,9 +15,19 @@ cdef extern from *:
 
   ctypedef uint8_t TransparentTupleStruct;
 
+  ctypedef uint8_t TransparentEnum;
+
   const TransparentStruct STRUCT_FOO # = 4
 
   const TransparentTupleStruct STRUCT_BAR # = 5
+
+
+
+
+
+
+
+
 
 
 

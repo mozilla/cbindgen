@@ -13,8 +13,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Struct, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericArgument, GenericParams, Item,
+    ItemContainer, Path, Struct, ToCondition, TransparentTypeEraser, Type,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -602,6 +602,18 @@ impl Item for Constant {
 
     fn generic_params(&self) -> &GenericParams {
         GenericParams::empty()
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        _generics: &[GenericArgument],
+    ) {
+        // NOTE: We also need to simplify the literal initializer value to match the underlying
+        // type, but that is true for all transparent structs (not just transparent-typedef
+        // structs), and is handled by the `write` method below.
+        eraser.erase_transparent_types_inplace(library, &mut self.ty, &[]);
     }
 }
 
