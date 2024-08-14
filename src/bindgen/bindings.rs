@@ -81,8 +81,11 @@ impl Bindings {
         loop {
             let mut found = None;
             self.typedef_map.for_items(&resolved_path, |item| {
-                if let Type::Path(ref p) = item.aliased {
-                    found = Some(p.path().clone());
+                if let Type::Path {
+                    ref generic_path, ..
+                } = item.aliased
+                {
+                    found = Some(generic_path.path().clone());
                 }
             });
             resolved_path = match found {
