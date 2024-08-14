@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+use std::collections::HashMap;
 use std::io::Write;
 use std::ops::Deref;
 
@@ -8,16 +10,17 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
 use crate::bindgen::ir::{ConstExpr, Path, Type};
 use crate::bindgen::language_backend::LanguageBackend;
+use crate::bindgen::library::Library;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::SourceWriter;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum GenericParamType {
     Type,
     Const(Type),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct GenericParam {
     name: Path,
     ty: GenericParamType,
@@ -101,6 +104,24 @@ impl GenericParams {
         }
 
         Ok(GenericParams(params))
+    }
+
+    /// If `generics` is empty, create a set of "default" generic arguments, which preserves the
+    /// existing parameter name. Useful to allow `call` to work when no generics are provided.
+    pub fn defaulted_generics<'a>(
+        &self,
+        generics: &'a [GenericArgument],
+    ) -> Cow<'a, [GenericArgument]> {
+        if !self.is_empty() && generics.is_empty() {
+            Cow::Owned(
+                self.iter()
+                    .map(|param| Type::Path(GenericPath::new(param.name.clone(), vec![])))
+                    .map(GenericArgument::Type)
+                    .collect(),
+            )
+        } else {
+            Cow::Borrowed(generics)
+        }
     }
 
     /// Associate each parameter with an argument.
@@ -231,6 +252,48 @@ impl GenericArgument {
             GenericArgument::Type(ref mut ty) => ty.rename_for_config(config, generic_params),
             GenericArgument::Const(ref mut expr) => expr.rename_for_config(config),
         }
+    }
+}
+
+/// Helper for erasing transparent types, which memoizes already-seen types to avoid repeated work.
+#[derive(Default)]
+pub struct TransparentTypeEraser {
+    // Remember paths we've already visited, so we don't repeat unnecessary work.
+    // TODO: how to handle recursive types such as `struct Foo { next: Box<Foo> }`?
+    known_types: HashMap<Type, Option<Type>>,
+}
+
+impl TransparentTypeEraser {
+    pub fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        target: &mut Type,
+        mappings: &[(&Path, &GenericArgument)],
+    ) {
+        if let Some(erased_type) = self.erase_transparent_types(library, target, mappings) {
+            *target = erased_type;
+        }
+    }
+
+    #[must_use]
+    pub fn erase_transparent_types(
+        &mut self,
+        library: &Library,
+        target: &Type,
+        mappings: &[(&Path, &GenericArgument)],
+    ) -> Option<Type> {
+        let known_type = self.known_types.get(target);
+        let unknown_type = known_type.is_none();
+        let erased_type = if let Some(ty) = known_type {
+            ty.clone()
+        } else {
+            target.erase_transparent_types(library, mappings, self)
+        };
+        if unknown_type {
+            debug!("Caching erasure of {:?} as {:?}", target, erased_type);
+            self.known_types.insert(target.clone(), erased_type.clone());
+        }
+        erased_type
     }
 }
 

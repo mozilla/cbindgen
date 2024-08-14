@@ -6,7 +6,8 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericParams, Item, ItemContainer, Path, Type,
+    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
+    TransparentTypeEraser, Type,
 };
 use crate::bindgen::library::Library;
 
@@ -62,10 +63,6 @@ impl Static {
             documentation,
         }
     }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.ty.simplify_standard_types(config);
-    }
 }
 
 impl Item for Static {
@@ -107,6 +104,15 @@ impl Item for Static {
 
     fn generic_params(&self) -> &GenericParams {
         GenericParams::empty()
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        _generics: &[GenericArgument],
+    ) {
+        eraser.erase_transparent_types_inplace(library, &mut self.ty, &[]);
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {

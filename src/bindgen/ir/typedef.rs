@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Struct, Type,
+    Path, Struct, TransparentTypeEraser, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -30,6 +30,9 @@ pub struct Typedef {
 }
 
 impl Typedef {
+    // Name of the annotation that identifies a transparent typedef.
+    pub const TRANSPARENT_TYPEDEF: &'static str = "transparent-typedef";
+
     pub fn load(item: &syn::ItemType, mod_cfg: Option<&Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(&item.ty)? {
             let path = Path::new(item.ident.unraw().to_string());
@@ -66,10 +69,6 @@ impl Typedef {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.aliased.simplify_standard_types(config);
-    }
-
     // Used to convert a transparent Struct to a Typedef.
     pub fn new_from_struct_field(item: &Struct, field: &Field) -> Self {
         Self {
@@ -99,6 +98,21 @@ impl Typedef {
 
             out.insert(alias_path, self.annotations.clone());
             self.annotations = AnnotationSet::new();
+        }
+    }
+
+    /// Returns the aliased type if this typedef is transparent, else None.
+    pub fn as_transparent_alias(&self, generics: &[GenericArgument]) -> Option<Type> {
+        if self
+            .annotations
+            .bool(Self::TRANSPARENT_TYPEDEF)
+            .unwrap_or(false)
+        {
+            let generics = self.generic_params.defaulted_generics(generics);
+            let mappings = self.generic_params.call(self.name(), &generics);
+            Some(self.aliased.specialize(&mappings))
+        } else {
+            None
         }
     }
 
@@ -154,6 +168,17 @@ impl Item for Typedef {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        generics: &[GenericArgument],
+    ) {
+        let generics = self.generic_params.defaulted_generics(generics);
+        let mappings = self.generic_params.call(self.name(), &generics);
+        eraser.erase_transparent_types_inplace(library, &mut self.aliased, &mappings);
     }
 
     fn rename_for_config(&mut self, config: &Config) {

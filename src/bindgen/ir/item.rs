@@ -10,7 +10,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, GenericArgument, GenericParams, OpaqueItem,
-    Path, Static, Struct, Typedef, Union,
+    Path, Static, Struct, TransparentTypeEraser, Typedef, Union,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
@@ -38,6 +38,16 @@ pub trait Item {
         unimplemented!()
     }
     fn generic_params(&self) -> &GenericParams;
+
+    /// Recursively erases any transparent types this item references. Type erasure impacts typedefs
+    /// and/or `#[repr(transparent)]` types annotated with `cbindgen:transparent-typedef`. It also
+    /// impacts certain built-in types (such as `Box`, `Option`, `Pin`, and `NonNull`).
+    fn erase_transparent_types_inplace(
+        &mut self,
+        library: &Library,
+        eraser: &mut TransparentTypeEraser,
+        generics: &[GenericArgument],
+    );
 
     fn is_generic(&self) -> bool {
         !self.generic_params().is_empty()

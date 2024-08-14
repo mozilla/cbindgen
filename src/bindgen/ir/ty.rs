@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::borrow::Cow;
-
 use syn::ext::IdentExt;
 
-use crate::bindgen::config::{Config, Language};
+use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
+use crate::bindgen::ir::{
+    GenericArgument, GenericParams, GenericPath, ItemContainer, Path, TransparentTypeEraser,
+};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::utilities::IterHelpers;
@@ -519,59 +519,115 @@ impl Type {
         }
     }
 
-    fn simplified_type(&self, config: &Config) -> Option<Self> {
-        let path = match *self {
-            Type::Path(ref p) => p,
-            _ => return None,
-        };
-
-        if path.generics().is_empty() {
-            return None;
-        }
-
-        if path.generics().len() != 1 {
-            return None;
-        }
-
-        let unsimplified_generic = match path.generics()[0] {
-            GenericArgument::Type(ref ty) => ty,
-            GenericArgument::Const(_) => return None,
-        };
-
-        let generic = match unsimplified_generic.simplified_type(config) {
-            Some(generic) => Cow::Owned(generic),
-            None => Cow::Borrowed(unsimplified_generic),
-        };
-        match path.name() {
-            "Option" => generic
-                .make_nullable()
-                .or_else(|| generic.make_zeroable(true)),
-            "NonNull" => Some(Type::Ptr {
-                ty: Box::new(generic.into_owned()),
-                is_const: false,
-                is_nullable: false,
-                is_ref: false,
-            }),
-            "NonZero" => generic.make_zeroable(false),
-            "Box" if config.language != Language::Cxx => Some(Type::Ptr {
-                ty: Box::new(generic.into_owned()),
-                is_const: false,
-                is_nullable: false,
-                is_ref: false,
-            }),
-            "Cell" => Some(generic.into_owned()),
-            "ManuallyDrop" | "MaybeUninit" | "Pin" if config.language != Language::Cxx => {
-                Some(generic.into_owned())
+    #[must_use]
+    pub fn erase_transparent_types(
+        &self,
+        library: &Library,
+        mappings: &[(&Path, &GenericArgument)],
+        eraser: &mut TransparentTypeEraser,
+    ) -> Option<Type> {
+        match *self {
+            Type::Ptr {
+                ref ty,
+                is_const,
+                is_nullable,
+                is_ref,
+            } => {
+                if let Some(erased_type) = eraser.erase_transparent_types(library, ty, mappings) {
+                    return Some(Type::Ptr {
+                        ty: Box::new(erased_type),
+                        is_const,
+                        is_nullable,
+                        is_ref,
+                    });
+                }
             }
-            _ => None,
-        }
-    }
+            Type::Path(ref path) => {
+                if let Some(mut items) = library.get_items(path.path()) {
+                    if let Some(item) = items.first_mut() {
+                        // First, erase the generic args themselves. This is nice for most Item
+                        // types, but crucial for `OpaqueItem` that would otherwise miss out.
+                        let mut did_erase_generics = false;
+                        let generics: Vec<_> = path
+                            .generics()
+                            .iter()
+                            .map(|g| match g {
+                                GenericArgument::Type(ty) => {
+                                    let erased_ty =
+                                        eraser.erase_transparent_types(library, ty, mappings);
+                                    if erased_ty.is_some() {
+                                        did_erase_generics = true;
+                                    };
+                                    GenericArgument::Type(erased_ty.unwrap_or_else(|| ty.clone()))
+                                }
+                                other => other.clone(),
+                            })
+                            .collect();
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.visit_types(|ty| ty.simplify_standard_types(config));
-        if let Some(ty) = self.simplified_type(config) {
-            *self = ty;
+                        // Replace transparent items with their underlying type and erase it.
+                        let aliased_ty = match item {
+                            ItemContainer::OpaqueItem(o) => o.as_transparent_alias(&generics),
+                            ItemContainer::Typedef(t) => t.as_transparent_alias(&generics),
+                            ItemContainer::Struct(s) => s.as_transparent_alias(&generics),
+                            _ => None,
+                        };
+                        if let Some(mut ty) = aliased_ty {
+                            eraser.erase_transparent_types_inplace(library, &mut ty, mappings);
+                            return Some(ty);
+                        } else if did_erase_generics {
+                            // The type was not transparent, but some of its generics were erased.
+                            let path = GenericPath::new(path.path().clone(), generics);
+                            return Some(Type::Path(path));
+                        }
+                    }
+                } else {
+                    warn!(
+                        "Can't find {}. This usually means that this type was incompatible or \
+                           not found.",
+                        path.path()
+                    );
+                }
+            }
+            Type::Primitive(..) => {} // cannot simplify further
+            Type::Array(ref ty, ref constexpr) => {
+                if let Some(erased_ty) = eraser.erase_transparent_types(library, ty, mappings) {
+                    return Some(Type::Array(Box::new(erased_ty), constexpr.clone()));
+                }
+            }
+            Type::FuncPtr {
+                ref ret,
+                ref args,
+                is_nullable,
+                never_return,
+            } => {
+                // Attempt to erase ret and all args; if any of them were actually erased, then
+                // assemble and return the simplified function signature that results.
+                let mut erased_any = false;
+                let mut try_erase = |ty| {
+                    if let Some(erased) = eraser.erase_transparent_types(library, ty, mappings) {
+                        erased_any = true;
+                        erased
+                    } else {
+                        ty.clone()
+                    }
+                };
+                let erased_ret = try_erase(ret);
+                let erased_args = args
+                    .iter()
+                    .map(|(name, ty)| (name.clone(), try_erase(ty)))
+                    .collect();
+
+                if erased_any {
+                    return Some(Type::FuncPtr {
+                        ret: Box::new(erased_ret),
+                        args: erased_args,
+                        is_nullable,
+                        never_return,
+                    });
+                }
+            }
         }
+        None
     }
 
     pub fn replace_self_with(&mut self, self_ty: &Path) {
