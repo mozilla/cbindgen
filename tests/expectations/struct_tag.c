@@ -25,8 +25,15 @@ struct TupleNamed {
   float y;
 };
 
+struct WithFlexibleArrayMember {
+  int32_t x;
+  int16_t y[0];
+  int8_t z[0];
+};
+
 void root(struct Opaque *a,
           struct Normal b,
           struct NormalWithZST c,
           struct TupleRenamed d,
-          struct TupleNamed e);
+          struct TupleNamed e,
+          struct WithFlexibleArrayMember f);

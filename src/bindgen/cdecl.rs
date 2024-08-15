@@ -22,6 +22,7 @@ enum CDeclarator {
         is_ref: bool,
     },
     Array(String),
+    FlexibleArray(),
     Func {
         args: Vec<(Option<String>, CDecl)>,
         layout: Layout,
@@ -167,6 +168,10 @@ impl CDecl {
                 self.declarators.push(CDeclarator::Array(len));
                 self.build_type(t, is_const, config);
             }
+            Type::FlexibleArray(ref t) => {
+                self.declarators.push(CDeclarator::FlexibleArray());
+                self.build_type(t, is_const, config);
+            }
             Type::FuncPtr {
                 ref ret,
                 ref args,
@@ -254,7 +259,7 @@ impl CDecl {
                         }
                     }
                 }
-                CDeclarator::Array(..) => {
+                CDeclarator::Array(..) | CDeclarator::FlexibleArray() => {
                     if next_is_pointer {
                         out.write("(");
                     }
@@ -286,7 +291,23 @@ impl CDecl {
                     if last_was_pointer {
                         out.write(")");
                     }
+
                     write!(out, "[{}]", constant);
+
+                    last_was_pointer = false;
+                }
+                CDeclarator::FlexibleArray() => {
+                    if last_was_pointer {
+                        out.write(")");
+                    }
+
+                    if config.structure.c99_flexible_array_members
+                        && config.language != Language::Cython
+                    {
+                        write!(out, "[]");
+                    } else {
+                        write!(out, "[0]");
+                    }
 
                     last_was_pointer = false;
                 }
