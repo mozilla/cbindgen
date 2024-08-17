@@ -71,7 +71,7 @@ impl Struct {
             layout_config.ensure_safe_to_represent(&align)?;
         }
 
-        let fields = match item.fields {
+        let mut fields = match item.fields {
             syn::Fields::Unit => Vec::new(),
             syn::Fields::Named(ref fields) => fields
                 .named
@@ -96,6 +96,20 @@ impl Struct {
                 out
             }
         };
+
+        match fields.last() {
+            Some(Field {
+                name: _,
+                ty: Type::Array(ty, sz),
+                cfg: _,
+                annotations: _,
+                documentation: _,
+            }) if sz.as_str() == "0" => {
+                let last_index = fields.len() - 1;
+                fields[last_index].ty = Type::FlexibleArray(ty.clone());
+            }
+            _ => (),
+        }
 
         let has_tag_field = false;
         let is_enum_variant_body = false;

@@ -25,4 +25,14 @@ cdef extern from *:
     int32_t x;
     float y;
 
-  void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
+  ctypedef struct WithFlexibleArrayMember:
+    int32_t x;
+    int16_t y[0];
+    int8_t z[0];
+
+  void root(Opaque *a,
+            Normal b,
+            NormalWithZST c,
+            TupleRenamed d,
+            TupleNamed e,
+            WithFlexibleArrayMember f);

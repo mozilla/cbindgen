@@ -25,4 +25,15 @@ typedef struct {
   float y;
 } TupleNamed;
 
-void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
+typedef struct {
+  int32_t x;
+  int16_t y[0];
+  int8_t z[0];
+} WithFlexibleArrayMember;
+
+void root(Opaque *a,
+          Normal b,
+          NormalWithZST c,
+          TupleRenamed d,
+          TupleNamed e,
+          WithFlexibleArrayMember f);

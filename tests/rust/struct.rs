@@ -28,11 +28,19 @@ struct TupleRenamed(i32, f32);
 #[repr(C)]
 struct TupleNamed(i32, f32);
 
+#[repr(C)]
+struct WithFlexibleArrayMember {
+    x: i32,
+    y: [i16; 0],
+    z: [i8; 0],
+}
+
 #[no_mangle]
 pub extern "C" fn root(
     a: *mut Opaque,
     b: Normal,
     c: NormalWithZST,
     d: TupleRenamed,
-    e: TupleNamed
+    e: TupleNamed,
+    f: WithFlexibleArrayMember,
 ) { }

@@ -499,6 +499,8 @@ pub struct StructConfig {
     pub deprecated: Option<String>,
     /// The way to annotation this function as #[deprecated] with notes
     pub deprecated_with_note: Option<String>,
+    /// The way we represent flexible array members, either GNU style or c99 style
+    pub c99_flexible_array_members: bool,
 }
 
 impl StructConfig {

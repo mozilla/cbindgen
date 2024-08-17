@@ -317,6 +317,7 @@ pub enum Type {
     Path(GenericPath),
     Primitive(PrimitiveType),
     Array(Box<Type>, ConstExpr),
+    FlexibleArray(Box<Type>),
     FuncPtr {
         ret: Box<Type>,
         args: Vec<(Option<String>, Type)>,
@@ -583,7 +584,9 @@ impl Type {
 
     fn visit_types(&mut self, mut visitor: impl FnMut(&mut Type)) {
         match *self {
-            Type::Array(ref mut ty, ..) | Type::Ptr { ref mut ty, .. } => visitor(ty),
+            Type::Array(ref mut ty, ..)
+            | Type::FlexibleArray(ref mut ty)
+            | Type::Ptr { ref mut ty, .. } => visitor(ty),
             Type::Path(ref mut path) => {
                 for generic in path.generics_mut() {
                     match *generic {
@@ -617,7 +620,7 @@ impl Type {
                 Type::Primitive(..) => {
                     return None;
                 }
-                Type::Array(..) => {
+                Type::Array(..) | Type::FlexibleArray(..) => {
                     return None;
                 }
                 Type::FuncPtr { .. } => {
@@ -664,6 +667,7 @@ impl Type {
                 Box::new(ty.specialize(mappings)),
                 constant.specialize(mappings),
             ),
+            Type::FlexibleArray(ref ty) => Type::FlexibleArray(Box::new(ty.specialize(mappings))),
             Type::FuncPtr {
                 ref ret,
                 ref args,
@@ -721,7 +725,7 @@ impl Type {
                 }
             }
             Type::Primitive(_) => {}
-            Type::Array(ref ty, _) => {
+            Type::Array(ref ty, _) | Type::FlexibleArray(ref ty) => {
                 ty.add_dependencies_ignoring_generics(generic_params, library, out);
             }
             Type::FuncPtr {
@@ -757,7 +761,7 @@ impl Type {
                 }
             }
             Type::Primitive(_) => {}
-            Type::Array(ref ty, _) => {
+            Type::Array(ref ty, _) | Type::FlexibleArray(ref ty) => {
                 ty.add_monomorphs(library, out);
             }
             Type::FuncPtr {
@@ -784,6 +788,9 @@ impl Type {
                 ty.rename_for_config(config, generic_params);
                 len.rename_for_config(config);
             }
+            Type::FlexibleArray(ref mut ty) => {
+                ty.rename_for_config(config, generic_params);
+            }
             Type::FuncPtr {
                 ref mut ret,
                 ref mut args,
@@ -806,7 +813,7 @@ impl Type {
                 generic_path.resolve_declaration_types(resolver);
             }
             Type::Primitive(_) => {}
-            Type::Array(ref mut ty, _) => {
+            Type::Array(ref mut ty, _) | Type::FlexibleArray(ref mut ty) => {
                 ty.resolve_declaration_types(resolver);
             }
             Type::FuncPtr {
@@ -843,7 +850,7 @@ impl Type {
                 }
             }
             Type::Primitive(_) => {}
-            Type::Array(ref mut ty, _) => {
+            Type::Array(ref mut ty, _) | Type::FlexibleArray(ref mut ty) => {
                 ty.mangle_paths(monomorphs);
             }
             Type::FuncPtr {
@@ -866,6 +873,7 @@ impl Type {
             Type::Path(..) => true,
             Type::Primitive(ref p) => p.can_cmp_order(),
             Type::Array(..) => false,
+            Type::FlexibleArray(..) => false,
             Type::FuncPtr { .. } => false,
         }
     }
@@ -876,6 +884,7 @@ impl Type {
             Type::Path(..) => true,
             Type::Primitive(ref p) => p.can_cmp_eq(),
             Type::Array(..) => false,
+            Type::FlexibleArray(..) => false,
             Type::FuncPtr { .. } => true,
         }
     }

@@ -25,11 +25,22 @@ typedef struct {
   float y;
 } TupleNamed;
 
+typedef struct {
+  int32_t x;
+  int16_t y[0];
+  int8_t z[0];
+} WithFlexibleArrayMember;
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
+void root(Opaque *a,
+          Normal b,
+          NormalWithZST c,
+          TupleRenamed d,
+          TupleNamed e,
+          WithFlexibleArrayMember f);
 
 #ifdef __cplusplus
 }  // extern "C"

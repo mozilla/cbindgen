@@ -26,8 +26,19 @@ struct TupleNamed {
   float y;
 };
 
+struct WithFlexibleArrayMember {
+  int32_t x;
+  int16_t y[0];
+  int8_t z[0];
+};
+
 extern "C" {
 
-void root(Opaque *a, Normal b, NormalWithZST c, TupleRenamed d, TupleNamed e);
+void root(Opaque *a,
+          Normal b,
+          NormalWithZST c,
+          TupleRenamed d,
+          TupleNamed e,
+          WithFlexibleArrayMember f);
 
 }  // extern "C"
