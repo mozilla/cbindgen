@@ -1051,7 +1051,7 @@ impl Default for Config {
             tab_width: 2,
             line_endings: LineEndingStyle::default(),
             language: Language::Cxx,
-            cpp_compat: false,
+            cpp_compat: true,
             style: Style::default(),
             usize_is_size_t: false,
             sort_by: SortKey::None,
