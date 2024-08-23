@@ -501,8 +501,8 @@ no_includes = false
 #
 # If the language is not C this option won't have any effect.
 #
-# default: false
-cpp_compat = false
+# default: true
+cpp_compat = true
 
 # A list of lines to add verbatim after the includes block
 after_includes = "#define VERSION 1"
