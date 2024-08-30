@@ -25,6 +25,7 @@ fn parse_dep_string(dep_string: &str) -> (&str, Option<&str>) {
 pub(crate) struct Cargo {
     manifest_path: PathBuf,
     binding_crate_name: String,
+    binding_crate_lib_name: String,
     lock: Option<Lock>,
     metadata: Metadata,
     clean: bool,
@@ -63,19 +64,24 @@ impl Cargo {
             None
         };
 
+        let manifest = cargo_toml::manifest(&toml_path)
+            .map_err(|x| Error::CargoToml(toml_path.to_str().unwrap().to_owned(), x))?;
+
         // Use the specified binding crate name or infer it from the manifest
         let binding_crate_name = match binding_crate_name {
             Some(s) => s.to_owned(),
-            None => {
-                let manifest = cargo_toml::manifest(&toml_path)
-                    .map_err(|x| Error::CargoToml(toml_path.to_str().unwrap().to_owned(), x))?;
-                manifest.package.name
-            }
+            None => manifest.package.name,
         };
+
+        let binding_crate_lib_name = manifest
+            .lib
+            .and_then(|lib| lib.name)
+            .unwrap_or_else(|| binding_crate_name.clone());
 
         Ok(Cargo {
             manifest_path: toml_path,
             binding_crate_name,
+            binding_crate_lib_name,
             lock,
             metadata,
             clean,
@@ -84,6 +90,10 @@ impl Cargo {
 
     pub(crate) fn binding_crate_name(&self) -> &str {
         &self.binding_crate_name
+    }
+
+    pub(crate) fn binding_crate_lib_name(&self) -> &str {
+        &self.binding_crate_lib_name
     }
 
     pub(crate) fn binding_crate_ref(&self) -> PackageRef {
