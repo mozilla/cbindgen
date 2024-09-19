@@ -559,7 +559,7 @@ impl Type {
                 is_nullable: false,
                 is_ref: false,
             }),
-            "Cell" => Some(generic.into_owned()),
+            "SyncUnsafeCell" | "UnsafeCell" | "Cell" => Some(generic.into_owned()),
             "ManuallyDrop" | "MaybeUninit" | "Pin" if config.language != Language::Cxx => {
                 Some(generic.into_owned())
             }
