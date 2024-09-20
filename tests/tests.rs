@@ -1,6 +1,7 @@
 extern crate cbindgen;
 
 use cbindgen::*;
+use tempfile::NamedTempFile;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::Read;
@@ -21,6 +22,12 @@ fn style_str(style: Style) -> &'static str {
     }
 }
 
+struct CBindgenOutput {
+    bindings_content: Vec<u8>,
+    depfile_content: Option<String>,
+    symfile_content: Option<String>,
+}
+
 fn run_cbindgen(
     path: &Path,
     output: Option<&Path>,
@@ -29,20 +36,30 @@ fn run_cbindgen(
     style: Option<Style>,
     generate_depfile: bool,
     package_version: bool,
-) -> (Vec<u8>, Option<String>) {
+    generate_symfile: bool,
+) -> CBindgenOutput {
     assert!(
-        !(output.is_none() && generate_depfile),
-        "generating a depfile requires outputting to a path"
+        !output.is_none() || !(generate_depfile || generate_symfile),
+        "generating a depfile or symfile requires outputting to a path"
     );
     let program = Path::new(CBINDGEN_PATH);
     let mut command = Command::new(program);
     if let Some(output) = output {
         command.arg("--output").arg(output);
     }
-    let cbindgen_depfile = if generate_depfile {
-        let depfile = tempfile::NamedTempFile::new().unwrap();
-        command.arg("--depfile").arg(depfile.path());
-        Some(depfile)
+    
+    let depfile = if generate_depfile {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        command.arg("--depfile").arg(tmp.path());
+        Some(tmp)
+    } else {
+        None
+    };
+    
+    let symfile = if generate_symfile {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        command.arg("--symfile").arg(tmp.path());
+        Some(tmp)
     } else {
         None
     };
@@ -86,7 +103,7 @@ fn run_cbindgen(
         str::from_utf8(&cbindgen_output.stderr).unwrap_or_default()
     );
 
-    let bindings = if let Some(output_path) = output {
+    let bindings_content = if let Some(output_path) = output {
         let mut bindings = Vec::new();
         // Ignore errors here, we have assertions on the expected output later.
         let _ = File::open(output_path).map(|mut file| {
@@ -97,18 +114,17 @@ fn run_cbindgen(
         cbindgen_output.stdout
     };
 
-    let depfile_contents = if let Some(mut depfile) = cbindgen_depfile {
-        let mut raw = Vec::new();
-        depfile.read_to_end(&mut raw).unwrap();
-        Some(
-            str::from_utf8(raw.as_slice())
-                .expect("Invalid encoding encountered in depfile")
-                .into(),
-        )
-    } else {
-        None
-    };
-    (bindings, depfile_contents)
+    fn read_to_string(f: NamedTempFile) -> String {
+        std::fs::read_to_string(&f).expect(&format!("Failed to read file as String: {:?}", f))
+    }
+    let depfile_content = depfile.map(read_to_string);
+    let symfile_content = symfile.map(read_to_string);
+
+    CBindgenOutput {
+        bindings_content,
+        depfile_content,
+        symfile_content,
+    }
 }
 
 fn compile(
@@ -208,11 +224,17 @@ fn run_compile_test(
     style: Option<Style>,
     cbindgen_outputs: &mut HashSet<Vec<u8>>,
     package_version: bool,
+    generate_symfile: bool
 ) {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let tests_path = Path::new(&crate_dir).join("tests");
     let mut generated_file = tests_path.join("expectations");
+    let mut generated_symfile = tests_path.join("expectations-symbols");
     fs::create_dir_all(&generated_file).unwrap();
+    fs::create_dir_all(&generated_symfile).unwrap();
+    
+    let verify = env::var_os("CBINDGEN_TEST_VERIFY").is_some();
+    let no_compile = env::var_os("CBINDGEN_TEST_NO_COMPILE").is_some();
 
     let style_ext = style
         // Cython is sensitive to dots, so we can't include any dots.
@@ -236,10 +258,12 @@ fn run_compile_test(
 
     let source_file =
         format!("{}{}{}", name, style_ext, lang_ext).replace(SKIP_WARNING_AS_ERROR_SUFFIX, "");
+    let symbols_file = format!("{source_file}.sym");
 
     generated_file.push(source_file);
+    generated_symfile.push(symbols_file);
 
-    let (output_file, generate_depfile) = if env::var_os("CBINDGEN_TEST_VERIFY").is_some() {
+    let (output_file, generate_depfile) = if verify {
         (None, false)
     } else {
         (
@@ -249,7 +273,7 @@ fn run_compile_test(
         )
     };
 
-    let (cbindgen_output, depfile_contents) = run_cbindgen(
+    let CBindgenOutput { bindings_content, depfile_content, symfile_content } = run_cbindgen(
         path,
         output_file,
         language,
@@ -257,9 +281,10 @@ fn run_compile_test(
         style,
         generate_depfile,
         package_version,
+        true
     );
     if generate_depfile {
-        let depfile = depfile_contents.expect("No depfile generated");
+        let depfile = depfile_content.expect("No depfile generated");
         assert!(!depfile.is_empty());
         let mut rules = depfile.split(':');
         let target = rules.next().expect("No target found");
@@ -275,27 +300,36 @@ fn run_compile_test(
         assert_eq!(rules.count(), 0, "More than 1 rule in the depfile");
     }
 
-    if cbindgen_outputs.contains(&cbindgen_output) {
+    if cbindgen_outputs.contains(&bindings_content) {
         // We already generated an identical file previously.
-        if env::var_os("CBINDGEN_TEST_VERIFY").is_some() {
+        if verify {
             assert!(!generated_file.exists());
         } else if generated_file.exists() {
             fs::remove_file(&generated_file).unwrap();
         }
     } else {
-        if env::var_os("CBINDGEN_TEST_VERIFY").is_some() {
-            use std::str::from_utf8;
-            let prev_cbindgen_output = fs::read(&generated_file).unwrap();
-            let cbindgen_output = from_utf8(&cbindgen_output).unwrap();
-            let prev_cbindgen_output = from_utf8(&prev_cbindgen_output).unwrap();
-            assert_eq!(prev_cbindgen_output, cbindgen_output);
+        if verify {
+            // Compare cbindgen output to expected (existing on disk) output.
+            let prev_cbindgen_bindings = fs::read(&generated_file).unwrap();
+            assert_eq!(bindings_content, prev_cbindgen_bindings);
+            
+            if generate_symfile {
+                let symbols = symfile_content.expect("No symfile generated");
+                let prev_cbindgen_symbols = fs::read(&generated_symfile).unwrap();
+                let prev_symbols = String::from_utf8(prev_cbindgen_symbols).unwrap();
+                assert_eq!(symbols, prev_symbols);
+            }
         } else {
-            fs::write(&generated_file, &cbindgen_output).unwrap();
+            fs::write(&generated_file, &bindings_content).expect("Failed to write generated bindings.");
+            if generate_symfile {
+                let symbols = symfile_content.expect("No symfile generated");
+                fs::write(&generated_symfile, &symbols).expect("Failed to write generated symbols.");
+            }
         }
 
-        cbindgen_outputs.insert(cbindgen_output);
+        cbindgen_outputs.insert(bindings_content);
 
-        if env::var_os("CBINDGEN_TEST_NO_COMPILE").is_some() {
+        if no_compile {
             return;
         }
 
@@ -333,6 +367,9 @@ fn test_file(name: &'static str, filename: &'static str) {
     let mut cbindgen_outputs = HashSet::new();
     for cpp_compat in &[true, false] {
         for style in &[Style::Type, Style::Tag, Style::Both] {
+             // We only need to generate the symfile once,
+             // it should not change with the different options.
+            let generate_symfile = !cpp_compat && *style == Style::Type;
             run_compile_test(
                 name,
                 test,
@@ -342,6 +379,7 @@ fn test_file(name: &'static str, filename: &'static str) {
                 Some(*style),
                 &mut cbindgen_outputs,
                 false,
+                generate_symfile,
             );
         }
     }
@@ -355,6 +393,7 @@ fn test_file(name: &'static str, filename: &'static str) {
         None,
         &mut HashSet::new(),
         false,
+        /* generate_symfile = */ false
     );
 
     // `Style::Both` should be identical to `Style::Tag` for Cython.
@@ -369,6 +408,7 @@ fn test_file(name: &'static str, filename: &'static str) {
             Some(*style),
             &mut cbindgen_outputs,
             false,
+            /* generate_symfile = */ false
         );
     }
 }
