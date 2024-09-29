@@ -23,16 +23,6 @@ impl Field {
         }
     }
 
-    pub fn from_type(ty: Type) -> Field {
-        Field {
-            name: "".to_string(),
-            ty,
-            cfg: None,
-            annotations: AnnotationSet::new(),
-            documentation: Documentation::none(),
-        }
-    }
-
     pub fn load(field: &syn::Field, self_path: &Path) -> Result<Option<Field>, String> {
         Ok(if let Some(mut ty) = Type::load(&field.ty)? {
             ty.replace_self_with(self_path);

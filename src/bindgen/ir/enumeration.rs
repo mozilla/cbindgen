@@ -811,9 +811,9 @@ impl Enum {
             write!(out, " {} ", note);
         }
 
-        if config.language != Language::C || config.language != Language::Zig || config.style.generate_tag() {
-            write!(out, " {}", self.export_name());
-        }
+        // if config.language != Language::C || config.language != Language::Zig || config.style.generate_tag() {
+        //     write!(out, " {}", self.export_name());
+        // }
 
         out.open_brace();
 

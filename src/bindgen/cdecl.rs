@@ -116,9 +116,8 @@ impl CDecl {
                         t
                     );
                     if config.language != Language::Zig {
-                        self.type_qualifers = "const".to_owned();
+                        "const".clone_into(&mut self.type_qualifers);
                     }
-                    "const".clone_into(&mut self.type_qualifers);
                 }
 
                 assert!(
@@ -143,9 +142,8 @@ impl CDecl {
                         t
                     );
                     if config.language != Language::Zig {
-                        self.type_qualifers = "const".to_owned();
+                        "const".clone_into(&mut self.type_qualifers);
                     }
-                    "const".clone_into(&mut self.type_qualifers);
                 }
 
                 assert!(
@@ -241,7 +239,7 @@ impl CDecl {
 
         // When we have an identifier, put a space between the type and the declarators
         if ident.is_some() {
-            if config.language == Language::Zig && self.declarators.is_empty() {
+            if config.language == Language::Zig {
                 out.write("");
             } else {
                 out.write(" ");
@@ -268,6 +266,9 @@ impl CDecl {
                         if !self.type_qualifers.is_empty() {
                             write!(out, "{}", self.type_qualifers);
                         } else {
+                            if ident.is_none() && config.language == Language::Zig {
+                                out.write("_");
+                            }
                             if config.language != Language::Zig {
                                 out.write("_");
                             }
@@ -294,6 +295,9 @@ impl CDecl {
                 CDeclarator::Func { .. } => {
                     if next_is_pointer && config.language != Language::Zig {
                         out.write("(");
+                    }
+                    if !next_is_pointer && config.language == Language::Zig {
+                        out.write("fn ");
                     }
                     is_functors = true;
                 }
