@@ -429,6 +429,10 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                         out.new_line();
                     }
                 }
+                Language::D => {
+                    out.write("module cbindgen;");
+                    out.new_line();
+                }
                 _ => {}
             }
         }
