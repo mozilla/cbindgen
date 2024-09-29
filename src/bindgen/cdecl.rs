@@ -297,7 +297,7 @@ impl CDecl {
                         out.write("(");
                     }
                     if !next_is_pointer && config.language == Language::Zig {
-                        out.write("fn ");
+                        out.write("extern fn ");
                     }
                     is_functors = true;
                 }
