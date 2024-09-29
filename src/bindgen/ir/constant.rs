@@ -723,7 +723,7 @@ impl Constant {
             }
             Language::Zig => {
                 out.write(config.style.zig_def());
-                write!(out, "{} ", name);
+                write!(out, "{} = ", name);
                 language_backend.write_literal(out, value);
                 out.write(";");
             }
