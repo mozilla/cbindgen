@@ -10,8 +10,8 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
-    Type,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
+    Path, Struct, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -70,6 +70,19 @@ impl Typedef {
         self.aliased.simplify_standard_types(config);
     }
 
+    // Used to convert a transparent Struct to a Typedef.
+    pub fn new_from_struct_field(item: &Struct, field: &Field) -> Self {
+        Self {
+            path: item.path().clone(),
+            export_name: item.export_name().to_string(),
+            generic_params: item.generic_params.clone(),
+            aliased: field.ty.clone(),
+            cfg: item.cfg().cloned(),
+            annotations: item.annotations().clone(),
+            documentation: item.documentation().clone(),
+        }
+    }
+
     pub fn transfer_annotations(&mut self, out: &mut HashMap<Path, AnnotationSet>) {
         if self.annotations.is_empty() {
             return;
@@ -89,18 +102,12 @@ impl Typedef {
         }
     }
 
-    pub fn is_generic(&self) -> bool {
-        self.generic_params.len() > 0
-    }
-
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
-        if self.is_generic() {
-            return;
+        if !self.is_generic() {
+            self.aliased.add_monomorphs(library, out);
         }
-
-        self.aliased.add_monomorphs(library, out);
     }
 
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
@@ -129,6 +136,10 @@ impl Item for Typedef {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Typedef(self.clone())
     }
@@ -139,6 +150,10 @@ impl Item for Typedef {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.aliased.resolve_declaration_types(resolver);
+    }
+
+    fn generic_params(&self) -> &GenericParams {
+        &self.generic_params
     }
 
     fn rename_for_config(&mut self, config: &Config) {

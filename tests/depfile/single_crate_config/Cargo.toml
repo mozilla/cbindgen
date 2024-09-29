@@ -1,5 +1,5 @@
 [package]
-name = "single_crate"
+name = "single_crate_config"
 version = "0.1.0"
 authors = ["cbindgen"]
 

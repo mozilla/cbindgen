@@ -1,6 +1,6 @@
 [package]
 name = "cbindgen"
-version = "0.26.0"
+version = "0.27.0"
 authors = [
   "Emilio Cobos Álvarez <emilio@crisal.io>",
   "Jeff Muizelaar <jmuizelaar@mozilla.com>",
@@ -13,7 +13,7 @@ keywords = ["bindings", "ffi", "code-generation"]
 categories = ["external-ffi-bindings", "development-tools::ffi"]
 repository = "https://github.com/mozilla/cbindgen"
 edition = "2018"
-rust-version = "1.70"
+rust-version = "1.74"
 exclude = [
   "tests/profile.rs", # Test relies in a sub-crate, see https://github.com/rust-lang/cargo/issues/9017
 ]
@@ -31,12 +31,13 @@ quote = "1"
 heck = "0.4"
 
 [dependencies.syn]
-version = "1.0.88"
+version = "2.0.64"
 default-features = false
 features = ["clone-impls", "extra-traits", "fold", "full", "parsing", "printing"]
 
 [dev-dependencies]
 serial_test = { version = "2.0.0", default-features = false }
+pretty_assertions = "1.4.0"
 
 [features]
 default =  ["clap"]
@@ -50,3 +51,36 @@ required-features = ["clap"]
 [lib]
 name = "cbindgen"
 path = "src/lib.rs"
+
+[workspace]
+exclude = [
+  "tests/depfile/single_crate_config",
+  "tests/depfile/single_crate_default_config",
+  "tests/depfile/single_crate",
+  "tests/rust/bitfield",
+  "tests/rust/dep_v2",
+  "tests/rust/dep_v2/dep",
+  "tests/rust/derive_eq",
+  "tests/rust/expand_default_features",
+  "tests/rust/expand_dep_v2",
+  "tests/rust/expand_dep_v2/dep_v2",
+  "tests/rust/expand_dep_v2/dep",
+  "tests/rust/expand_dep",
+  "tests/rust/expand_dep/dep",
+  "tests/rust/expand_features",
+  "tests/rust/expand_no_default_features",
+  "tests/rust/expand",
+  "tests/rust/external_workspace_child",
+  "tests/rust/literal_target",
+  "tests/rust/mod_2015",
+  "tests/rust/mod_2018",
+  "tests/rust/mod_attr",
+  "tests/rust/mod_path",
+  "tests/rust/package_version",
+  "tests/rust/rename_crate",
+  "tests/rust/rename_crate/dependency",
+  "tests/rust/rename_crate/no_extern",
+  "tests/rust/rename_crate/old_dep",
+  "tests/rust/workspace",
+  "tests/rust/workspace/dep",
+]

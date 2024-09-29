@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use syn::ext::IdentExt;
-
 use crate::bindgen::ir::ty::{IntKind, PrimitiveType};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
@@ -45,44 +43,52 @@ pub struct Repr {
 
 impl Repr {
     pub fn load(attrs: &[syn::Attribute]) -> Result<Repr, String> {
-        let ids = attrs
-            .iter()
-            .filter_map(|attr| {
-                if let syn::Meta::List(syn::MetaList { path, nested, .. }) =
-                    attr.parse_meta().ok()?
-                {
-                    if path.is_ident("repr") {
-                        return Some(nested.into_iter().collect::<Vec<_>>());
+        let mut ids = Vec::new();
+
+        // We want only the `repr` attributes
+        let iter = attrs.iter().filter(|attr| attr.path().is_ident("repr"));
+
+        for repr_attr in iter {
+            let reprs = repr_attr
+                .parse_args_with(
+                    syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
+                )
+                .map_err(|err| format!("Invalid `#[repr]` attribute: {err}"))?;
+
+            for meta in reprs {
+                match meta {
+                    // #[repr(C)] and #[repr(transparent)] and #[repr(INT)]
+                    syn::Meta::Path(path) => {
+                        if let Some(ident) = path.get_ident() {
+                            let ident_s = ident.to_string();
+                            ids.push((ident_s, None))
+                        } else {
+                            return Err("Invalid `repr` attribute".to_string());
+                        }
                     }
+                    // #[repr(align(N))]
+                    syn::Meta::List(meta) if meta.path.is_ident("align") => {
+                        let lit: syn::LitInt = meta
+                            .parse_args()
+                            .map_err(|err| format!("Invalid align argument: {err}"))?;
+                        ids.push(("align".to_string(), Some(lit.to_string())))
+                    }
+                    // #[repr(packed(N))]
+                    syn::Meta::List(meta) if meta.path.is_ident("packed") => {
+                        // no arguments
+                        if meta.tokens.is_empty() {
+                            ids.push(("packed".to_string(), None))
+                        } else {
+                            let lit: syn::LitInt = meta
+                                .parse_args()
+                                .map_err(|err| format!("Invalid packed argument: {err}"))?;
+                            ids.push(("packed".to_string(), Some(lit.to_string())))
+                        }
+                    }
+                    _ => return Err("Invalid `repr` attribute".to_string()),
                 }
-                None
-            })
-            .flatten()
-            .filter_map(|meta| match meta {
-                syn::NestedMeta::Meta(syn::Meta::Path(path)) => Some((
-                    path.segments.first().unwrap().ident.unraw().to_string(),
-                    None,
-                )),
-                syn::NestedMeta::Meta(syn::Meta::List(syn::MetaList { path, nested, .. })) => {
-                    Some((
-                        path.segments.first().unwrap().ident.unraw().to_string(),
-                        Some(
-                            nested
-                                .iter()
-                                .filter_map(|meta| match meta {
-                                    // Only used for #[repr(align(...))].
-                                    syn::NestedMeta::Lit(syn::Lit::Int(literal)) => {
-                                        Some(literal.base10_digits().to_string())
-                                    }
-                                    // Only single levels of nesting supported at the moment.
-                                    _ => None,
-                                })
-                                .collect::<Vec<_>>(),
-                        ),
-                    ))
-                }
-                _ => None,
-            });
+            }
+        }
 
         let mut repr = Repr::default();
         for id in ids {
@@ -124,20 +130,11 @@ impl Repr {
                     repr.align = Some(align);
                     continue;
                 }
-                ("align", Some(args)) => {
-                    // #[repr(align(...))] only allows a single argument.
-                    if args.len() != 1 {
-                        return Err(format!(
-                            "Unsupported #[repr(align({}))], align must have exactly one argument.",
-                            args.join(", ")
-                        ));
-                    }
+                ("align", Some(arg)) => {
                     // Must be a positive integer.
-                    let align = match args.first().unwrap().parse::<u64>() {
+                    let align = match arg.parse::<u64>() {
                         Ok(align) => align,
-                        Err(_) => {
-                            return Err(format!("Non-numeric #[repr(align({}))].", args.join(", ")))
-                        }
+                        Err(_) => return Err(format!("Non-unsigned #[repr(align({}))].", arg)),
                     };
                     // Must be a power of 2.
                     if !align.is_power_of_two() || align == 0 {
@@ -154,14 +151,10 @@ impl Repr {
                     repr.align = Some(ReprAlign::Align(align));
                     continue;
                 }
-                (path, args) => match args {
+                (path, arg) => match arg {
                     None => return Err(format!("Unsupported #[repr({})].", path)),
-                    Some(args) => {
-                        return Err(format!(
-                            "Unsupported #[repr({}({}))].",
-                            path,
-                            args.join(", ")
-                        ));
+                    Some(arg) => {
+                        return Err(format!("Unsupported #[repr({}({}))].", path, arg));
                     }
                 },
             };

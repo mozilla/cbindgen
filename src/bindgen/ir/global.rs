@@ -5,7 +5,9 @@
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, Item, ItemContainer, Path, Type};
+use crate::bindgen::ir::{
+    AnnotationSet, Cfg, Documentation, GenericParams, Item, ItemContainer, Path, Type,
+};
 use crate::bindgen::library::Library;
 
 #[derive(Debug, Clone)]
@@ -34,7 +36,7 @@ impl Static {
         Ok(Static::new(
             path,
             ty.unwrap(),
-            item.mutability.is_some(),
+            matches!(item.mutability, syn::StaticMutability::Mut(_)),
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,
             Documentation::load(&item.attrs),
@@ -87,6 +89,10 @@ impl Item for Static {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Static(self.clone())
     }
@@ -97,6 +103,10 @@ impl Item for Static {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.ty.resolve_declaration_types(resolver);
+    }
+
+    fn generic_params(&self) -> &GenericParams {
+        GenericParams::empty()
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {

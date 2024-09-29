@@ -132,7 +132,7 @@ impl Literal {
                 ref mut fields,
             } => {
                 if path.replace_self_with(self_ty) {
-                    *export_name = self_ty.name().to_owned();
+                    self_ty.name().clone_into(export_name);
                 }
                 for ref mut expr in fields.values_mut() {
                     expr.replace_self_with(self_ty);
@@ -151,7 +151,7 @@ impl Literal {
             } => {
                 if let Some((ref mut path, ref mut export_name)) = *associated_to {
                     if path.replace_self_with(self_ty) {
-                        *export_name = self_ty.name().to_owned();
+                        self_ty.name().clone_into(export_name);
                     }
                 }
             }
@@ -314,16 +314,22 @@ impl Literal {
                     syn::BinOp::Ne(..) => "!=",
                     syn::BinOp::Ge(..) => ">=",
                     syn::BinOp::Gt(..) => ">",
-                    syn::BinOp::AddEq(..) => "+=",
-                    syn::BinOp::SubEq(..) => "-=",
-                    syn::BinOp::MulEq(..) => "*=",
-                    syn::BinOp::DivEq(..) => "/=",
-                    syn::BinOp::RemEq(..) => "%=",
-                    syn::BinOp::BitXorEq(..) => "^=",
-                    syn::BinOp::BitAndEq(..) => "&=",
-                    syn::BinOp::BitOrEq(..) => "|=",
-                    syn::BinOp::ShlEq(..) => "<<=",
-                    syn::BinOp::ShrEq(..) => ">>=",
+                    syn::BinOp::AddAssign(..) => "+=",
+                    syn::BinOp::SubAssign(..) => "-=",
+                    syn::BinOp::MulAssign(..) => "*=",
+                    syn::BinOp::DivAssign(..) => "/=",
+                    syn::BinOp::RemAssign(..) => "%=",
+                    syn::BinOp::BitXorAssign(..) => "^=",
+                    syn::BinOp::BitAndAssign(..) => "&=",
+                    syn::BinOp::BitOrAssign(..) => "|=",
+                    syn::BinOp::ShlAssign(..) => "<<=",
+                    syn::BinOp::ShrAssign(..) => ">>=",
+                    currently_unknown => {
+                        return Err(format!(
+                            "unsupported binary operator: {:?}",
+                            currently_unknown
+                        ))
+                    }
                 };
                 Ok(Literal::BinOp {
                     left: Box::new(l),
@@ -574,6 +580,10 @@ impl Item for Constant {
         &mut self.annotations
     }
 
+    fn documentation(&self) -> &Documentation {
+        &self.documentation
+    }
+
     fn container(&self) -> ItemContainer {
         ItemContainer::Constant(self.clone())
     }
@@ -588,6 +598,10 @@ impl Item for Constant {
 
     fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
         self.ty.resolve_declaration_types(resolver);
+    }
+
+    fn generic_params(&self) -> &GenericParams {
+        GenericParams::empty()
     }
 }
 
@@ -663,16 +677,15 @@ impl Constant {
             Cow::Owned(format!("{}_{}", associated_name, self.export_name()))
         };
 
-        let value = match self.value {
-            Literal::Struct {
-                ref fields,
-                ref path,
-                ..
-            } if out.bindings().struct_is_transparent(path) => fields.iter().next().unwrap().1,
-            _ => &self.value,
-        };
+        let mut value = &self.value;
+        while let Literal::Struct { path, fields, .. } = value {
+            if !out.bindings().struct_is_transparent(path) {
+                break;
+            }
+            value = fields.iter().next().unwrap().1
+        }
 
-        language_backend.write_documentation(out, &self.documentation);
+        language_backend.write_documentation(out, self.documentation());
 
         let allow_constexpr = config.constant.allow_constexpr && self.value.can_be_constexpr();
         match config.language {

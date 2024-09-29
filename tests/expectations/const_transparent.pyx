@@ -6,6 +6,17 @@ cdef extern from *:
 
 cdef extern from *:
 
-  ctypedef uint8_t Transparent;
+  ctypedef uint8_t TransparentStruct;
+  const int64_t TransparentStruct_ASSOC_STRUCT_FOO # = 1
+  const TransparentStruct TransparentStruct_ASSOC_STRUCT_BAR # = 2
 
-  const Transparent FOO # = 0
+
+  ctypedef uint8_t TransparentTupleStruct;
+
+  const TransparentStruct STRUCT_FOO # = 4
+
+  const TransparentTupleStruct STRUCT_BAR # = 5
+
+
+
+

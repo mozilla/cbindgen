@@ -68,6 +68,23 @@ fn main() {
 
 You can add configuration options using the [`Builder`](https://docs.rs/cbindgen/*/cbindgen/struct.Builder.html#methods) interface.
 
+When actively working on code, you likely don't want cbindgen to fail the entire build. Instead of expect-ing the result of the header generation, you could [ignore parse errors](https://github.com/mozilla/cbindgen/issues/472#issuecomment-831439826) and let rustc or your code analysis bring up:
+
+```rust
+    // ...
+    .generate()
+    .map_or_else(
+        |error| match error {
+            cbindgen::Error::ParseSyntaxError { .. } => {}
+            e => panic!("{:?}", e),
+        },
+        |bindings| {
+            bindings.write_to_file("target/include/bindings.h");
+        },
+    );
+}
+```
+
 Be sure to add the following section to your Cargo.toml:
 
 ```

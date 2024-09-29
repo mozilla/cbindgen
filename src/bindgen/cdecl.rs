@@ -102,7 +102,7 @@ impl CDecl {
             layout,
             never_return: f.never_return,
         });
-        self.deprecated = f.annotations.deprecated.clone();
+        self.deprecated.clone_from(&f.annotations.deprecated);
         self.build_type(&f.ret, false, config);
     }
 
@@ -118,6 +118,7 @@ impl CDecl {
                     if config.language != Language::Zig {
                         self.type_qualifers = "const".to_owned();
                     }
+                    "const".clone_into(&mut self.type_qualifers);
                 }
 
                 assert!(
@@ -125,13 +126,13 @@ impl CDecl {
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_name = generic.export_name().to_owned();
+                generic.export_name().clone_into(&mut self.type_name);
                 assert!(
                     self.type_generic_args.is_empty(),
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_generic_args = generic.generics().to_owned();
+                generic.generics().clone_into(&mut self.type_generic_args);
                 self.type_ctype = generic.ctype().cloned();
             }
             Type::Primitive(ref p) => {
@@ -144,6 +145,7 @@ impl CDecl {
                     if config.language != Language::Zig {
                         self.type_qualifers = "const".to_owned();
                     }
+                    "const".clone_into(&mut self.type_qualifers);
                 }
 
                 assert!(

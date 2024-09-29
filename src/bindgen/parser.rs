@@ -345,8 +345,11 @@ impl<'a> Parser<'a> {
                     // Last chance to find a module path
                     let mut path_attr_found = false;
                     for attr in &item.attrs {
-                        if let Ok(syn::Meta::NameValue(syn::MetaNameValue { path, lit, .. })) =
-                            attr.parse_meta()
+                        if let syn::Meta::NameValue(syn::MetaNameValue {
+                            path,
+                            value: syn::Expr::Lit(syn::ExprLit { lit, .. }),
+                            ..
+                        }) = &attr.meta
                         {
                             match lit {
                                 syn::Lit::Str(ref path_lit) if path.is_ident("path") => {
@@ -480,7 +483,7 @@ impl Parse {
         self.typedefs.extend_with(&other.typedefs);
         self.functions.extend_from_slice(&other.functions);
         self.source_files.extend_from_slice(&other.source_files);
-        self.package_version = other.package_version.clone();
+        self.package_version.clone_from(&other.package_version);
     }
 
     fn load_syn_crate_mod<'a>(
@@ -541,7 +544,9 @@ impl Parse {
                     if let syn::Type::Path(ref path) = *item_impl.self_ty {
                         if let Some(type_name) = path.path.get_ident() {
                             for method in item_impl.items.iter().filter_map(|item| match item {
-                                syn::ImplItem::Method(method) => Some(method),
+                                syn::ImplItem::Fn(method) if !method.should_skip_parsing() => {
+                                    Some(method)
+                                }
                                 _ => None,
                             }) {
                                 self.load_syn_method(
@@ -580,7 +585,11 @@ impl Parse {
         item_impl: &syn::ItemImpl,
     ) {
         let associated_constants = item_impl.items.iter().filter_map(|item| match item {
-            syn::ImplItem::Const(ref associated_constant) => Some(associated_constant),
+            syn::ImplItem::Const(ref associated_constant)
+                if !associated_constant.should_skip_parsing() =>
+            {
+                Some(associated_constant)
+            }
             _ => None,
         });
         self.load_syn_assoc_consts(
@@ -651,7 +660,7 @@ impl Parse {
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         self_type: &Path,
-        item: &syn::ImplItemMethod,
+        item: &syn::ImplItemFn,
     ) {
         self.load_fn_declaration(
             config,
@@ -742,7 +751,7 @@ impl Parse {
                 );
             }
             (false, Some(_exported_name)) => {
-                warn!("Skipping {} - (not `extern \"C\"`", loggable_item_name());
+                warn!("Skipping {} - (not `extern \"C\"`)", loggable_item_name());
             }
             (false, None) => {}
         }

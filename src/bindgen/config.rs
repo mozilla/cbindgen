@@ -384,7 +384,7 @@ impl ExportConfig {
 
     pub(crate) fn rename(&self, item_name: &mut String) {
         if let Some(name) = self.rename.get(item_name) {
-            *item_name = name.clone();
+            item_name.clone_from(name);
             if self.renaming_overrides_prefixing {
                 return;
             }
