@@ -710,14 +710,7 @@ impl Constant {
             }
             Language::Zig => {
                 out.write(config.style.zig_def());
-                self.ty.write(config, out);
-                if let Literal::Struct { .. } = &self.value {
-                    write!(out, "{} ", name);
-                } else {
-                    write!(out, "{} = ", name);
-                }
-                value.write(config, out);
-                write!(out, ";");
+                language_backend.write_literal(out, value);
             }
         }
 

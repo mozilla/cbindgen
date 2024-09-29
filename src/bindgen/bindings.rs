@@ -16,7 +16,7 @@ use crate::bindgen::ir::{
     Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct, Type, Typedef,
 };
 use crate::bindgen::language_backend::{
-    CLikeLanguageBackend, CythonLanguageBackend, LanguageBackend,
+    CLikeLanguageBackend, CythonLanguageBackend, ZigLanguageBackend, LanguageBackend,
 };
 use crate::bindgen::writer::SourceWriter;
 
@@ -211,7 +211,7 @@ impl Bindings {
                 self.write_with_backend(file, &mut CythonLanguageBackend::new(&self.config))
             }
             Language::Zig => {
-                // self.write_with_backend(file, &mut ZigLanguageBackend::new(&self.config))
+                self.write_with_backend(file, &mut ZigLanguageBackend::new(&self.config))
             }
         }
     }

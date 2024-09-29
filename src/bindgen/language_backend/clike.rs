@@ -828,6 +828,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 DocumentationStyle::Doxy => out.write(" *"),
                 DocumentationStyle::C99 => out.write("//"),
                 DocumentationStyle::Cxx => out.write("///"),
+                DocumentationStyle::Zig => out.write("///"),
                 DocumentationStyle::Auto => unreachable!(), // Auto case should always be covered
             }
 
