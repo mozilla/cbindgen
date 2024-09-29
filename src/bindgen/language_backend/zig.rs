@@ -66,7 +66,7 @@ impl<'a> ZigLanguageBackend<'a> {
     }
 
     fn open_close_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>, _: bool) {
-       out.new_line();
+        out.new_line();
     }
 }
 
@@ -310,7 +310,7 @@ impl LanguageBackend for ZigLanguageBackend<'_> {
 
         self.write_generic_param(out, &u.generic_params);
 
-        write!(out, "const {} = union", u.export_name);
+        write!(out, "const {} = extern union", u.export_name);
 
         if let Some(align) = u.alignment {
             match align {
@@ -531,7 +531,6 @@ impl LanguageBackend for ZigLanguageBackend<'_> {
         // Override default method to open various blocs containing both globals and functions
         // these blocks are closed in [`write_functions`] that is also overridden
         if !b.functions.is_empty() || !b.globals.is_empty() {
-
             // if b.config.language == Language::Zig {
             //     if let Some(ref using_namespaces) = b.config.using_namespaces {
             //         for namespace in using_namespaces {
