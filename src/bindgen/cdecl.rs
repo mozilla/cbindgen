@@ -147,7 +147,11 @@ impl CDecl {
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_name = p.to_repr_c(config).to_string();
+                if config.language == Language::D {
+                    self.type_name = p.to_repr_d(config).to_string();
+                } else {
+                    self.type_name = p.to_repr_c(config).to_string();
+                }
             }
             Type::Ptr {
                 ref ty,
@@ -213,7 +217,11 @@ impl CDecl {
         write!(out, "{}", self.type_name);
 
         if !self.type_generic_args.is_empty() {
-            out.write("<");
+            if config.language == Language::D {
+                out.write("!(");
+            } else {
+                out.write("<");
+            }
             out.write_horizontal_source_list(
                 language_backend,
                 &self.type_generic_args,
@@ -223,7 +231,11 @@ impl CDecl {
                     GenericArgument::Const(ref expr) => write!(out, "{}", expr.as_str()),
                 },
             );
-            out.write(">");
+            if config.language == Language::D {
+                out.write(")");
+            } else {
+                out.write(">");
+            }
         }
 
         // When we have an identifier, put a space between the type and the declarators
@@ -233,6 +245,7 @@ impl CDecl {
 
         // Write the left part of declarators before the identifier
         let mut iter_rev = self.declarators.iter().rev().peekable();
+        let mut is_functors = false;
 
         #[allow(clippy::while_let_on_iterator)]
         while let Some(declarator) = iter_rev.next() {
@@ -244,7 +257,17 @@ impl CDecl {
                     is_nullable,
                     is_ref,
                 } => {
-                    out.write(if is_ref { "&" } else { "*" });
+                    if config.language == Language::D {
+                        // out.write(if is_ref { "ref " } else { "*" });
+                        if is_ref {
+                            out.write("ref ");
+                        } else if is_functors {
+                        } else {
+                            out.write("*");
+                        }
+                    } else {
+                        out.write(if is_ref { "&" } else { "*" });
+                    }
                     if is_const {
                         out.write("const ");
                     }
@@ -254,14 +277,22 @@ impl CDecl {
                         }
                     }
                 }
-                CDeclarator::Array(..) => {
+                CDeclarator::Array(ref constant) => {
                     if next_is_pointer {
                         out.write("(");
+                    }
+                    if config.language == Language::D {
+                        write!(out, "[{}] ", constant);
                     }
                 }
                 CDeclarator::Func { .. } => {
                     if next_is_pointer {
-                        out.write("(");
+                        if config.language == Language::D {
+                            out.write(" function");
+                            is_functors = true;
+                        } else {
+                            out.write("(");
+                        }
                     }
                 }
             }
@@ -269,7 +300,11 @@ impl CDecl {
 
         // Write the identifier
         if let Some(ident) = ident {
-            write!(out, "{}", ident);
+            if is_functors {
+                // out.write(" ");
+            } else {
+                write!(out, "{}", ident);
+            }
         }
 
         // Write the right part of declarators after the identifier
@@ -286,7 +321,9 @@ impl CDecl {
                     if last_was_pointer {
                         out.write(")");
                     }
-                    write!(out, "[{}]", constant);
+                    if config.language != Language::D {
+                        write!(out, "[{}]", constant);
+                    }
 
                     last_was_pointer = false;
                 }
@@ -296,7 +333,9 @@ impl CDecl {
                     never_return,
                 } => {
                     if last_was_pointer {
-                        out.write(")");
+                        if config.language != Language::D {
+                            out.write(")");
+                        }
                     }
 
                     out.write("(");
@@ -363,6 +402,12 @@ impl CDecl {
                             out.write_fmt(format_args!(" {}", no_return_attr));
                         }
                     }
+                    if config.language == Language::D && is_functors {
+                        if let Some(ident) = ident {
+                            write!(out, " {}", ident);
+                        }
+                    }
+                    is_functors = false;
 
                     last_was_pointer = true;
                 }

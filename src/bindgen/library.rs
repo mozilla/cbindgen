@@ -69,7 +69,7 @@ impl Library {
             SortKey::None => { /* keep input order */ }
         }
 
-        if self.config.language != Language::Cxx {
+        if self.config.language != Language::Cxx && self.config.language != Language::D {
             self.instantiate_monomorphs();
         }
         self.remove_excluded();

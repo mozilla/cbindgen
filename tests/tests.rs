@@ -59,6 +59,9 @@ fn run_cbindgen(
         Language::Cython => {
             command.arg("--lang").arg("cython");
         }
+        Language::D => {
+            command.arg("--lang").arg("d");
+        }
     }
 
     if package_version {
@@ -123,6 +126,7 @@ fn compile(
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
         Language::Cython => env::var("CYTHON").unwrap_or_else(|_| "cython".to_owned()),
+        Language::D => env::var("DC").unwrap_or_else(|_| "dmd".to_owned()),
     };
 
     let file_name = cbindgen_output
@@ -185,6 +189,17 @@ fn compile(
             command.arg("-o").arg(&object);
             command.arg(cbindgen_output);
         }
+        Language::D => {
+            if !skip_warning_as_error {
+                command.arg("-w");
+            } else {
+                command.arg("-wi");
+            }
+            command.arg("-extern-std=c++17");
+            command.arg("-O");
+            command.arg("-of").arg(&object);
+            command.arg("-c").arg(cbindgen_output);
+        }
     }
 
     println!("Running: {:?}", command);
@@ -230,6 +245,7 @@ fn run_compile_test(
         // is extension-sensitive and won't work on them, so we use implementation files (`.pyx`)
         // in the test suite.
         Language::Cython => ".pyx",
+        Language::D => ".d",
     };
 
     let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();
@@ -351,6 +367,16 @@ fn test_file(name: &'static str, filename: &'static str) {
         test,
         tmp_dir,
         Language::Cxx,
+        /* cpp_compat = */ false,
+        None,
+        &mut HashSet::new(),
+        false,
+    );
+    run_compile_test(
+        name,
+        test,
+        tmp_dir,
+        Language::D,
         /* cpp_compat = */ false,
         None,
         &mut HashSet::new(),
