@@ -217,7 +217,11 @@ impl CDecl {
         write!(out, "{}", self.type_name);
 
         if !self.type_generic_args.is_empty() {
-            out.write("<");
+            if config.language == Language::D {
+                out.write("(");
+            } else {
+                out.write("<");
+            }
             out.write_horizontal_source_list(
                 language_backend,
                 &self.type_generic_args,
@@ -227,7 +231,11 @@ impl CDecl {
                     GenericArgument::Const(ref expr) => write!(out, "{}", expr.as_str()),
                 },
             );
-            out.write(">");
+            if config.language == Language::D {
+                out.write(")");
+            } else {
+                out.write(">");
+            }
         }
 
         // When we have an identifier, put a space between the type and the declarators
@@ -248,7 +256,11 @@ impl CDecl {
                     is_nullable,
                     is_ref,
                 } => {
-                    out.write(if is_ref { "&" } else { "*" });
+                    if config.language == Language::D {
+                        out.write(if is_ref { "ref " } else { "*" });
+                    } else {
+                        out.write(if is_ref { "&" } else { "*" });
+                    }
                     if is_const {
                         out.write("const ");
                     }
@@ -258,9 +270,12 @@ impl CDecl {
                         }
                     }
                 }
-                CDeclarator::Array(..) => {
+                CDeclarator::Array(ref constant) => {
                     if next_is_pointer {
                         out.write("(");
+                    }
+                    if config.language == Language::D {
+                        write!(out, "[{}] ", constant);
                     }
                 }
                 CDeclarator::Func { .. } => {
@@ -290,7 +305,9 @@ impl CDecl {
                     if last_was_pointer {
                         out.write(")");
                     }
-                    write!(out, "[{}]", constant);
+                    if config.language != Language::D {
+                        write!(out, "[{}]", constant);
+                    }
 
                     last_was_pointer = false;
                 }

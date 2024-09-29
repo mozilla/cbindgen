@@ -99,7 +99,11 @@ impl<'a> CLikeLanguageBackend<'a> {
         for namespace in namespaces {
             out.new_line();
             if open {
-                write!(out, "namespace {} {{", namespace)
+                if self.config.language == Language::D {
+                    write!(out, "extern(C++, `{}`) {{", namespace)
+                } else {
+                    write!(out, "namespace {} {{", namespace)
+                }
             } else {
                 write!(out, "}}  // namespace {}", namespace)
             }
@@ -532,7 +536,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 out.close_brace(false);
                 write!(out, " {};", e.export_name);
             } else {
-                out.close_brace(true);
+                if self.config.language != Language::D {
+                    out.close_brace(true);
+                } else {
+                    out.close_brace(false);
+                }
             }
         }
 
@@ -628,7 +636,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             out.close_brace(false);
             write!(out, " {};", s.export_name());
         } else {
-            out.close_brace(true);
+            if self.config.language != Language::D {
+                out.close_brace(true);
+            } else {
+                out.close_brace(false);
+            }
         }
 
         for constant in &s.associated_constants {
@@ -699,7 +711,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             out.close_brace(false);
             write!(out, " {};", u.export_name);
         } else {
-            out.close_brace(true);
+            if self.config.language != Language::D {
+                out.close_brace(true);
+            } else {
+                out.close_brace(false);
+            }
         }
 
         condition.write_after(self.config, out);
@@ -737,6 +753,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         if self.config.language == Language::Cxx {
             write!(out, "using {} = ", t.export_name());
+            self.write_type(out, &t.aliased);
+        } else if self.config.language == Language::D {
+            write!(out, "alias {} = ", t.export_name());
             self.write_type(out, &t.aliased);
         } else {
             write!(out, "{} ", self.config.language.typedef());
@@ -787,6 +806,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             }
             DocumentationStyle::Auto if self.config.language == Language::Cxx => {
                 DocumentationStyle::Cxx
+            }
+            DocumentationStyle::Auto if self.config.language == Language::D => {
+                DocumentationStyle::D
             }
             DocumentationStyle::Auto => DocumentationStyle::C, // Fallback if `Language` gets extended.
             other => other,
@@ -884,6 +906,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 write!(out, ")");
             }
             Literal::Cast { ref ty, ref value } => {
+                if self.config.language == Language::D {
+                    out.write("cast");
+                }
                 out.write("(");
                 self.write_type(out, ty);
                 out.write(")");
@@ -950,6 +975,16 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 out.new_line();
             }
 
+            if b.config.language == Language::D {
+                out.new_line();
+                if b.config.cpp_compat {
+                    out.write("extern(C++) {");
+                } else {
+                    out.write("extern(C) {");
+                }
+                out.new_line();
+            }
+
             if b.config.cpp_compatible_c() {
                 out.write("#endif // __cplusplus");
                 out.new_line();
@@ -973,6 +1008,16 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             if b.config.language == Language::Cxx || b.config.cpp_compatible_c() {
                 out.new_line();
                 out.write("}  // extern \"C\"");
+                out.new_line();
+            }
+
+            if b.config.language == Language::D {
+                out.new_line();
+                if b.config.cpp_compat {
+                    out.write("}  // extern(C++)");
+                } else {
+                    out.write("}  // extern(C)");
+                }
                 out.new_line();
             }
 

@@ -766,7 +766,11 @@ impl Enum {
             out.close_brace(false);
             write!(out, " {};", tag_name);
         } else {
-            out.close_brace(true);
+            if config.language != Language::D {
+                out.close_brace(true);
+            } else {
+                out.close_brace(false);
+            }
         }
 
         // Emit typedef specifying the tag enum's size if necessary.
