@@ -147,7 +147,11 @@ impl CDecl {
                     "error generating cdecl for {:?}",
                     t
                 );
-                self.type_name = p.to_repr_c(config).to_string();
+                if config.language == Language::D {
+                    self.type_name = p.to_repr_d(config).to_string();
+                } else {
+                    self.type_name = p.to_repr_c(config).to_string();
+                }
             }
             Type::Ptr {
                 ref ty,

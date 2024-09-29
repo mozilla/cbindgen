@@ -159,7 +159,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
 
     pub fn open_brace(&mut self) {
         match self.bindings.config.language {
-            Language::Cxx | Language::C => match self.bindings.config.braces {
+            Language::Cxx | Language::C | Language::D => match self.bindings.config.braces {
                 Braces::SameLine => {
                     self.write(" {");
                     self.push_tab();
@@ -183,7 +183,7 @@ impl<'a, F: Write> SourceWriter<'a, F> {
     pub fn close_brace(&mut self, semicolon: bool) {
         self.pop_tab();
         match self.bindings.config.language {
-            Language::Cxx | Language::C => {
+            Language::Cxx | Language::C | Language::D => {
                 self.new_line();
                 if semicolon {
                     self.write("};");

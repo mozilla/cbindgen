@@ -721,6 +721,11 @@ impl Constant {
                 write!(out, " {} # = ", name);
                 language_backend.write_literal(out, value);
             }
+            Language::D => {
+                write!(out, "enum {} = ", name);
+                language_backend.write_literal(out, value);
+                out.write(";");
+            }
         }
 
         condition.write_after(config, out);
