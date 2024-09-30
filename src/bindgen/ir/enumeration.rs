@@ -782,7 +782,7 @@ impl Enum {
                 out.write("#ifndef __cplusplus");
             }
 
-            if config.language != Language::Cxx {
+            if config.language != Language::Cxx && config.language != Language::D {
                 out.new_line();
                 write!(out, "{} {} {};", config.language.typedef(), prim, tag_name);
             }
