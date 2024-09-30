@@ -615,6 +615,7 @@ impl Constant {
     ) {
         debug_assert!(self.associated_to.is_some());
         debug_assert!(config.language == Language::Cxx);
+        debug_assert!(config.language == Language::D);
         debug_assert!(!associated_to_struct.is_transparent);
         debug_assert!(config.structure.associated_constants_in_body);
         debug_assert!(config.constant.allow_static_const);

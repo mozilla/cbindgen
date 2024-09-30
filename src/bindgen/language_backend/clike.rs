@@ -430,7 +430,15 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     }
                 }
                 Language::D => {
+                    // No add druntime moduule for now (works w/o betterC)
                     out.write("module cbindgen;");
+                    out.new_line();
+                    out.new_line();
+                    out.write(if self.config.cpp_compat {
+                        "@nogc @safe:"
+                    } else {
+                        "@nogc nothrow @safe:"
+                    });
                     out.new_line();
                 }
                 _ => {}
