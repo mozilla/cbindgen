@@ -474,7 +474,13 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
     }
 
     fn write_enum<W: Write>(&mut self, out: &mut SourceWriter<W>, e: &Enum) {
-        let size = e.repr.ty.map(|ty| ty.to_primitive().to_repr_c(self.config));
+        let size = e.repr.ty.map(|ty| {
+            if self.config.language == Language::D {
+                ty.to_primitive().to_repr_d(self.config)
+            } else {
+                ty.to_primitive().to_repr_c(self.config)
+            }
+        });
         let has_data = e.tag.is_some();
         let inline_tag_field = Enum::inline_tag_field(&e.repr);
         let tag_name = e.tag_name();

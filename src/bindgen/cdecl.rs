@@ -218,7 +218,7 @@ impl CDecl {
 
         if !self.type_generic_args.is_empty() {
             if config.language == Language::D {
-                out.write("(");
+                out.write("!(");
             } else {
                 out.write("<");
             }
