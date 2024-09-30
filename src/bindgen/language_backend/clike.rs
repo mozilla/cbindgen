@@ -943,7 +943,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     write!(out, "{}", export_name);
                 }
 
-                write!(out, "{{ ");
+                if self.config.language == Language::D {
+                    write!(out, "(");
+                } else {
+                    write!(out, "{{ ");
+                }
                 let mut is_first_field = true;
                 // In C++, same order as defined is required.
                 let ordered_fields = out.bindings().struct_field_names(path);
@@ -957,13 +961,19 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                             // TODO: Some C++ versions (c++20?) now support designated
                             // initializers, consider generating them.
                             write!(out, "/* .{} = */ ", ordered_key);
+                        } else if self.config.language == Language::D {
+                            write!(out, "{}: ", ordered_key);
                         } else {
                             write!(out, ".{} = ", ordered_key);
                         }
                         self.write_literal(out, lit);
                     }
                 }
-                write!(out, " }}");
+                if self.config.language == Language::D {
+                    write!(out, ")");
+                } else {
+                    write!(out, " }}");
+                }
             }
         }
     }

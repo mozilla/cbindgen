@@ -59,6 +59,9 @@ fn run_cbindgen(
         Language::Cython => {
             command.arg("--lang").arg("cython");
         }
+        Language::D => {
+            command.arg("--lang").arg("d");
+        }
     }
 
     if package_version {
