@@ -8,11 +8,13 @@ enum Status : uint {
 }
 
 struct Dep {
+  @disable this();
   int a;
   float b;
 }
 
 struct Foo(X) {
+  @disable this();
   X a;
   X b;
   Dep c;

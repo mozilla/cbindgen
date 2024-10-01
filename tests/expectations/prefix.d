@@ -8,9 +8,9 @@ enum X = (22 << 22);
 
 enum Y = (X + X);
 
-alias NamedLenArray = int[LEN];
+alias NamedLenArray = int[LEN] ;
 
-alias ValuedLenArray = int[22];
+alias ValuedLenArray = int[22] ;
 
 enum AbsoluteFontWeight_Tag : ubyte {
   Weight,
@@ -23,7 +23,7 @@ union AbsoluteFontWeight {
   struct {
     AbsoluteFontWeight_Tag weight_tag;
     float weight;
-  }
+  };
 }
 
 extern(C) {

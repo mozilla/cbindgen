@@ -4,13 +4,11 @@ module cbindgen;
 
 (T = void)struct Bar;
 
-struct Foo(T) {
-  @disable this();
+union Foo(T) {
   const T *data;
 }
 
-struct Tuple(T, E) {
-  @disable this();
+union Tuple(T, E) {
   const T *a;
   const E *b;
 }

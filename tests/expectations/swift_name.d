@@ -5,10 +5,12 @@ module cbindgen;
 struct Opaque;
 
 struct SelfTypeTestStruct {
+  @disable this();
   ubyte times;
 }
 
 struct PointerToOpaque {
+  @disable this();
   Opaque *ptr;
 }
 

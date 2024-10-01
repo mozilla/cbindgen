@@ -2,14 +2,19 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
+struct Bar {
+  @disable this();
+  int a;
+}
+
 struct Foo {
   @disable this();
   int a;
   uint b;
+  Bar bar;
 }
-enum Foo_FOO = Foo(a: 42, b: 47);
 
-enum BAR = Foo(a: 42, b: 1337);
+enum VAL = Foo(a: 42, b: 1337, bar: Bar(a: 323));
 
 extern(C) {
 

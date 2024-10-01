@@ -2,14 +2,14 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
+enum FOO = 10;
+
+enum ZOM = 3.14;
+
 struct Foo {
   @disable this();
-  int a;
-  uint b;
+  int [FOO] x;
 }
-enum Foo_FOO = Foo(a: 42, b: 47);
-
-enum BAR = Foo(a: 42, b: 1337);
 
 extern(C) {
 
