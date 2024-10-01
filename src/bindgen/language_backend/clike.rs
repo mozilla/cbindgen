@@ -571,7 +571,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_documentation(out, &s.documentation);
 
-        if !s.is_enum_variant_body {
+        if !s.is_enum_variant_body && self.config.language != Language::D {
             self.write_generic_param(out, &s.generic_params);
         }
 
@@ -620,7 +620,17 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, " {}", s.export_name());
         }
 
+        if self.config.language == Language::D {
+            self.write_generic_param(out, &s.generic_params);
+        }
+
         out.open_brace();
+
+        // D & C struct no have default ctor
+        if self.config.language == Language::D && !self.config.cpp_compat {
+            out.write("@disable this();");
+            out.new_line();
+        }
 
         // Emit the pre_body section, if relevant
         if let Some(body) = self.config.export.pre_body(&s.path) {
@@ -675,7 +685,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_documentation(out, &u.documentation);
 
-        self.write_generic_param(out, &u.generic_params);
+        if self.config.language != Language::D {
+            self.write_generic_param(out, &u.generic_params);
+        }
 
         // The following results in
         // C++ or C with Tag as style:
@@ -709,6 +721,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, " {}", u.export_name);
         }
 
+        if self.config.language == Language::D {
+            self.write_generic_param(out, &u.generic_params);
+        }
         out.open_brace();
 
         // Emit the pre_body section, if relevant
@@ -767,13 +782,21 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_documentation(out, &t.documentation);
 
-        self.write_generic_param(out, &t.generic_params);
+        if self.config.language != Language::D {
+            self.write_generic_param(out, &t.generic_params);
+        }
 
         if self.config.language == Language::Cxx {
             write!(out, "using {} = ", t.export_name());
             self.write_type(out, &t.aliased);
         } else if self.config.language == Language::D {
-            write!(out, "alias {} = ", t.export_name());
+            if t.is_generic() {
+                write!(out, "alias {}", t.export_name());
+                self.write_generic_param(out, &t.generic_params);
+                out.write(" = ");
+            } else {
+                write!(out, "alias {} = ", t.export_name());
+            }
             self.write_type(out, &t.aliased);
         } else {
             write!(out, "{} ", self.config.language.typedef());
