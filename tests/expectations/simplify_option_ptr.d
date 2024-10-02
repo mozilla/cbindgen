@@ -10,19 +10,24 @@ struct Foo {
   @disable this();
   const Opaque *x;
   Opaque *y;
-  void (*z)();
-  void (**zz)();
+  void  function() z;
+  void  function() zz;
 }
 
 union Bar {
   const Opaque *x;
   Opaque *y;
-  void (*z)();
-  void (**zz)();
+  void  function() z;
+  void  function() zz;
 }
 
 extern(C) {
 
-void root(const Opaque *a, Opaque *b, Foo c, Bar d, Option!(Opaque*) *e, void (*f)(const Opaque*));
+void root(const Opaque *a,
+          Opaque *b,
+          Foo c,
+          Bar d,
+          Option!(Opaque*) *e,
+          void  function(const Opaque*) f);
 
 }  // extern(C)

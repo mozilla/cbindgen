@@ -15,9 +15,9 @@ struct HashTable(K, V, bool IS_MAP) {
 
 alias MySet = HashTable!(Str, char, false);
 
-alias SetCallback = void(*)(Str key);
+alias SetCallback = void function(Str key);
 
-alias MapCallback = void(*)(Str key, ulong val);
+alias MapCallback = void function(Str key, ulong val);
 
 extern(C) {
 

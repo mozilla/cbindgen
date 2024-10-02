@@ -4,13 +4,13 @@ module cbindgen;
 
 struct Example {
   @disable this();
-  void (*f)(ulong, ulong);
+  void  function(ulong, ulong) f;
 }
 
 extern(C) {
 
 void loop_forever();
 
-ubyte normal_return(Example arg, void (*other)(ubyte));
+ubyte normal_return(Example arg, void  function(ubyte) other);
 
 }  // extern(C)

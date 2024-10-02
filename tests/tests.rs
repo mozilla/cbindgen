@@ -195,8 +195,9 @@ fn compile(
             } else {
                 command.arg("-wi");
             }
+            command.arg("-extern-std=c++17");
             command.arg("-O");
-            command.arg("-of=").arg(&object);
+            command.arg("-of").arg(&object);
             command.arg("-c").arg(cbindgen_output);
         }
     }
@@ -366,6 +367,16 @@ fn test_file(name: &'static str, filename: &'static str) {
         test,
         tmp_dir,
         Language::Cxx,
+        /* cpp_compat = */ false,
+        None,
+        &mut HashSet::new(),
+        false,
+    );
+    run_compile_test(
+        name,
+        test,
+        tmp_dir,
+        Language::D,
         /* cpp_compat = */ false,
         None,
         &mut HashSet::new(),

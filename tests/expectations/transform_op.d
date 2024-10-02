@@ -8,7 +8,7 @@ struct Point(T) {
   T y;
 }
 
-(T)enum Foo_Tag : ubyte {
+enum Foo_Tag : ubyte {
   Foo,
   Bar,
   Baz,
@@ -36,7 +36,7 @@ union Foo {
   };
 }
 
-(T)enum Bar_Tag {
+enum Bar_Tag {
   Bar1,
   Bar2,
   Bar3,
@@ -48,7 +48,7 @@ struct Bar1_Body(T) {
   int x;
   Point!(T) y;
   Point!(float) z;
-  int (*u)(int);
+  int  function(int) u;
 }
 
 struct Bar {

@@ -21,7 +21,7 @@ struct Polygon(LengthPercentage) {
   OwnedSlice!(LengthPercentage) coordinates;
 }
 
-(T)enum Foo_Tag : ubyte {
+enum Foo_Tag : ubyte {
   Bar,
   Polygon1,
   Slice1,
@@ -59,7 +59,7 @@ struct Foo {
   };
 }
 
-(T)enum Baz_Tag : ubyte {
+enum Baz_Tag : ubyte {
   Bar2,
   Polygon21,
   Slice21,

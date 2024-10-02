@@ -2,7 +2,7 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
-(T)enum MaybeOwnedPtr_Tag : ubyte {
+enum MaybeOwnedPtr_Tag : ubyte {
   Owned,
   None,
 }

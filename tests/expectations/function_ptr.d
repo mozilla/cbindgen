@@ -2,9 +2,9 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
-alias MyCallback = void(*)(ulong a, ulong b);
+alias MyCallback = void function(ulong a, ulong b);
 
-alias MyOtherCallback = void(*)(ulong a, ulong lot, ulong of, ulong args, ulong and_then_some);
+alias MyOtherCallback = void function(ulong a, ulong lot, ulong of, ulong args, ulong and_then_some);
 
 extern(C) {
 

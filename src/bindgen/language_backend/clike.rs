@@ -353,17 +353,19 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, "{}", f);
             out.new_line();
         }
-        if let Some(f) = self.config.include_guard() {
-            out.new_line_if_not_start();
-            write!(out, "#ifndef {}", f);
-            out.new_line();
-            write!(out, "#define {}", f);
-            out.new_line();
-        }
-        if self.config.pragma_once {
-            out.new_line_if_not_start();
-            write!(out, "#pragma once");
-            out.new_line();
+        if self.config.language != Language::D {
+            if let Some(f) = self.config.include_guard() {
+                out.new_line_if_not_start();
+                write!(out, "#ifndef {}", f);
+                out.new_line();
+                write!(out, "#define {}", f);
+                out.new_line();
+            }
+            if self.config.pragma_once {
+                out.new_line_if_not_start();
+                write!(out, "#pragma once");
+                out.new_line();
+            }
         }
         if self.config.include_version {
             out.new_line_if_not_start();
@@ -497,7 +499,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         condition.write_before(self.config, out);
 
         self.write_documentation(out, &e.documentation);
-        self.write_generic_param(out, &e.generic_params);
+        if self.config.language != Language::D {
+            self.write_generic_param(out, &e.generic_params);
+        }
 
         // If the enum has data, we need to emit a struct or union for the data
         // and enum for the tag. C++ supports nested type definitions, so we open

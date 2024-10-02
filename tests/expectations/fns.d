@@ -4,11 +4,11 @@ module cbindgen;
 
 struct Fns {
   @disable this();
-  void (*noArgs)();
-  void (*anonymousArg)(int);
-  int (*returnsNumber)();
-  byte (*namedArgs)(int first, short snd);
-  byte (*namedArgsWildcards)(int _, short named, long _1);
+  void  function() noArgs;
+  void  function(int) anonymousArg;
+  int  function() returnsNumber;
+  byte  function(int first, short snd) namedArgs;
+  byte  function(int _, short named, long _1) namedArgsWildcards;
 }
 
 extern(C) {

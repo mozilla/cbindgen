@@ -245,6 +245,7 @@ impl CDecl {
 
         // Write the left part of declarators before the identifier
         let mut iter_rev = self.declarators.iter().rev().peekable();
+        let mut is_functors = false;
 
         #[allow(clippy::while_let_on_iterator)]
         while let Some(declarator) = iter_rev.next() {
@@ -257,7 +258,13 @@ impl CDecl {
                     is_ref,
                 } => {
                     if config.language == Language::D {
-                        out.write(if is_ref { "ref " } else { "*" });
+                        // out.write(if is_ref { "ref " } else { "*" });
+                        if is_ref {
+                            out.write("ref ");
+                        } else if is_functors {
+                        } else {
+                            out.write("*");
+                        }
                     } else {
                         out.write(if is_ref { "&" } else { "*" });
                     }
@@ -280,7 +287,12 @@ impl CDecl {
                 }
                 CDeclarator::Func { .. } => {
                     if next_is_pointer {
-                        out.write("(");
+                        if config.language == Language::D {
+                            out.write(" function");
+                            is_functors = true;
+                        } else {
+                            out.write("(");
+                        }
                     }
                 }
             }
@@ -288,7 +300,11 @@ impl CDecl {
 
         // Write the identifier
         if let Some(ident) = ident {
-            write!(out, "{}", ident);
+            if is_functors {
+                // out.write(" ");
+            } else {
+                write!(out, "{}", ident);
+            }
         }
 
         // Write the right part of declarators after the identifier
@@ -317,8 +333,11 @@ impl CDecl {
                     never_return,
                 } => {
                     if last_was_pointer {
-                        out.write(")");
+                        if config.language != Language::D {
+                            out.write(")");
+                        }
                     }
+                    // is_functors = false;
 
                     out.write("(");
                     if args.is_empty() && config.language == Language::C {
@@ -382,6 +401,11 @@ impl CDecl {
                     if never_return && config.language != Language::Cython {
                         if let Some(ref no_return_attr) = config.function.no_return {
                             out.write_fmt(format_args!(" {}", no_return_attr));
+                        }
+                    }
+                    if config.language == Language::D && is_functors {
+                        if let Some(ident) = ident {
+                            write!(out, " {}", ident);
                         }
                     }
 
