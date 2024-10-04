@@ -2,9 +2,9 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
-(T = void)struct NotReprC;
+struct NotReprC(T = void);
 
-(T = void)struct RefCell;
+struct RefCell(T = void);
 
 alias Foo = NotReprC!(RefCell!(int));
 

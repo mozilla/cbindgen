@@ -2,13 +2,13 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
-(T = void)struct Option;
+struct Option(T = void);
 
-(T = void, E = void)struct Result;
+struct Result(T = void, E = void);
 
 struct String;
 
-(T = void)struct Vec;
+struct Vec(T = void);
 
 extern(C) {
 

@@ -2,7 +2,7 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
-(T = void)struct NotReprC;
+struct NotReprC(T = void);
 
 alias Foo = NotReprC!(const int*);
 

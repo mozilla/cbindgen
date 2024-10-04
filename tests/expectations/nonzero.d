@@ -2,7 +2,7 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
-(T = void)struct Option;
+struct Option(T = void);
 
 struct NonZeroAliases {
   @disable this();

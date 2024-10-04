@@ -764,7 +764,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_documentation(out, &o.documentation);
 
-        o.generic_params.write_with_default(self, self.config, out);
+        if self.config.language != Language::D {
+            o.generic_params.write_with_default(self, self.config, out);
+        }
 
         if self.generate_typedef() {
             write!(
@@ -774,7 +776,13 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 o.export_name()
             );
         } else {
-            write!(out, "struct {};", o.export_name());
+            if self.config.language == Language::D {
+                write!(out, "struct {}", o.export_name());
+                o.generic_params.write_with_default(self, self.config, out);
+                out.write(";");
+            } else {
+                write!(out, "struct {};", o.export_name());
+            }
         }
 
         condition.write_after(self.config, out);

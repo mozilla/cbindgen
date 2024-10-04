@@ -4,7 +4,7 @@ module cbindgen;
 
 struct Opaque;
 
-(T = void)struct Option;
+struct Option(T = void);
 
 struct Foo {
   @disable this();

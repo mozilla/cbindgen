@@ -2,9 +2,9 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
-(K = void, V = void, Hasher = void)struct HashMap;
+struct HashMap(K = void, V = void, Hasher = void);
 
-(T = void, E = void)struct Result;
+struct Result(T = void, E = void);
 
 /// Fast hash map used internally.
 alias FastHashMap(K, V) = HashMap!(K, V, BuildHasherDefault!(DefaultHasher));

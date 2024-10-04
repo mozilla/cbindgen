@@ -2,7 +2,7 @@ module cbindgen;
 
 @nogc nothrow @safe:
 
-(T = void)struct Bar;
+struct Bar(T = void);
 
 union Foo(T) {
   const T *data;
