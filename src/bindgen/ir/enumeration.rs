@@ -534,8 +534,10 @@ impl Item for Enum {
             }
         }
 
-        if config.enumeration.prefix_with_name
-            || self.annotations.bool("prefix-with-name").unwrap_or(false)
+        if self
+            .annotations
+            .bool("prefix-with-name")
+            .unwrap_or(config.enumeration.prefix_with_name)
         {
             let separator = if config.export.mangle.remove_underscores {
                 ""
