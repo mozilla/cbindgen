@@ -34,7 +34,7 @@ alias P = void function(int named1st, bool, bool named3rd, int _);
 
 extern(C) {
 
-void  function() O() O;
+void  function() O();
 
 void root(A a, B b, C c, D d, E e, F f, G g, H h, I i, J j, K k, L l, M m, N n, P p);
 

@@ -337,7 +337,6 @@ impl CDecl {
                             out.write(")");
                         }
                     }
-                    // is_functors = false;
 
                     out.write("(");
                     if args.is_empty() && config.language == Language::C {
@@ -408,6 +407,7 @@ impl CDecl {
                             write!(out, " {}", ident);
                         }
                     }
+                    is_functors = false;
 
                     last_was_pointer = true;
                 }
