@@ -171,7 +171,7 @@ impl Item for Union {
         let rules = self
             .annotations
             .parse_atom::<RenameRule>("rename-all")
-            .unwrap_or(config.structure.rename_fields);
+            .unwrap_or(config.structure.rename_fields.clone());
 
         if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();

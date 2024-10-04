@@ -159,7 +159,7 @@ impl Function {
         let rules = self
             .annotations
             .parse_atom::<RenameRule>("rename-all")
-            .unwrap_or(config.function.rename_args);
+            .unwrap_or(config.function.rename_args.clone());
 
         if let Some(r) = rules.not_none() {
             let args = std::mem::take(&mut self.args);
