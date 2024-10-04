@@ -154,7 +154,7 @@ impl EnumVariant {
 
         let body_rule = enum_annotations
             .parse_atom::<RenameRule>("rename-variant-name-fields")
-            .unwrap_or(config.enumeration.rename_variant_name_fields);
+            .unwrap_or(config.enumeration.rename_variant_name_fields.clone());
 
         let body = match variant.fields {
             syn::Fields::Unit => VariantBody::Empty(annotations),
@@ -556,7 +556,7 @@ impl Item for Enum {
         let rules = self
             .annotations
             .parse_atom::<RenameRule>("rename-all")
-            .unwrap_or(config.enumeration.rename_variants);
+            .unwrap_or(config.enumeration.rename_variants.clone());
 
         if let Some(r) = rules.not_none() {
             self.variants = self

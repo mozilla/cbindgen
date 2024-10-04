@@ -342,7 +342,7 @@ impl Item for Struct {
             let field_rules = self
                 .annotations
                 .parse_atom::<RenameRule>("rename-all")
-                .unwrap_or(config.structure.rename_fields);
+                .unwrap_or(config.structure.rename_fields.clone());
 
             if let Some(o) = self.annotations.list("field-names") {
                 for (dest, src) in names.zip(o) {
