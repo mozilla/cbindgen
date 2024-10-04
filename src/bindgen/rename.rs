@@ -28,7 +28,7 @@ impl<'a> IdentifierType<'a> {
 }
 
 /// A rule to apply to an identifier when generating bindings.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Default)]
 pub enum RenameRule {
     /// Do not apply any renaming. The default.
     #[default]
@@ -50,6 +50,8 @@ pub enum RenameRule {
     /// Converts the identifier to SCREAMING_SNAKE_CASE and prefixes enum variants
     /// with the enum name.
     QualifiedScreamingSnakeCase,
+    /// Adds a given prefix
+    Prefix(String),
 }
 
 impl RenameRule {
@@ -61,7 +63,7 @@ impl RenameRule {
     }
 
     /// Applies the rename rule to a string
-    pub fn apply<'a>(self, text: &'a str, context: IdentifierType) -> Cow<'a, str> {
+    pub fn apply<'a>(&self, text: &'a str, context: IdentifierType) -> Cow<'a, str> {
         use heck::*;
 
         if text.is_empty() {
@@ -90,6 +92,7 @@ impl RenameRule {
                 result.push_str(&RenameRule::ScreamingSnakeCase.apply(text, context));
                 result
             }
+            RenameRule::Prefix(prefix) => prefix.to_owned() + text,
         })
     }
 }
@@ -98,6 +101,9 @@ impl FromStr for RenameRule {
     type Err = String;
 
     fn from_str(s: &str) -> Result<RenameRule, Self::Err> {
+        const PREFIX: &str = "prefix:";
+        const PREFIX_LEN: usize = PREFIX.len();
+
         match s {
             "none" => Ok(RenameRule::None),
             "None" => Ok(RenameRule::None),
@@ -131,6 +137,8 @@ impl FromStr for RenameRule {
             "QUALIFIED_SCREAMING_SNAKE_CASE" => Ok(RenameRule::QualifiedScreamingSnakeCase),
             "QualifiedScreamingSnakeCase" => Ok(RenameRule::QualifiedScreamingSnakeCase),
             "qualified_screaming_snake_case" => Ok(RenameRule::QualifiedScreamingSnakeCase),
+
+            s if s.starts_with(PREFIX) => Ok(RenameRule::Prefix(s[PREFIX_LEN..].to_string())),
 
             _ => Err(format!("Unrecognized RenameRule: '{}'.", s)),
         }
