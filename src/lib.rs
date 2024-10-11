@@ -14,6 +14,9 @@ extern crate quote;
 extern crate syn;
 extern crate toml;
 
+#[cfg(feature = "unstable_ir")]
+pub mod bindgen;
+#[cfg(not(feature = "unstable_ir"))]
 mod bindgen;
 
 pub use crate::bindgen::*;
