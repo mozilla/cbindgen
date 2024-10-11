@@ -45,6 +45,9 @@ fn build_using_bin(extra_args: &[&str]) -> tempfile::TempDir {
     Command::new(cbindgen_path)
         .current_dir(expand_dep_test_dir)
         .env("CARGO_EXPAND_TARGET_DIR", tmp_dir.path())
+        .env_remove("CARGO_BUILD_TARGET")
+        // ^ avoid unexpected change of layout of the target directory;
+        // ... see: https://doc.rust-lang.org/cargo/guide/build-cache.html
         .args(extra_args)
         .output()
         .expect("build should succeed");
@@ -85,6 +88,18 @@ fn lib_explicit_release_build() {
 fn bin_default_uses_debug_build() {
     let target_dir = build_using_bin(&[]);
     assert_eq!(get_contents_of_dir(target_dir.path()), &["debug"]);
+}
+
+#[test]
+fn bin_ignore_cargo_build_target_in_tests() {
+    use std::env;
+    env::set_var("CARGO_BUILD_TARGET", "x86_64-unknown-linux-gnu");
+    assert_eq!(
+        env::var("CARGO_BUILD_TARGET"),
+        Ok("x86_64-unknown-linux-gnu".into())
+    );
+    // ^ this env var should be ignored:
+    bin_default_uses_debug_build();
 }
 
 #[test]
