@@ -94,9 +94,18 @@ cbindgen = "0.24.0"
 
 If you'd like to use a `build.rs` script with a `cbindgen.toml`, consider using [`cbindgen::generate()`](https://docs.rs/cbindgen/*/cbindgen/fn.generate.html) instead.
 
+## Internal Representation
 
+Some users may find it useful to access the **unstable** internal representation (IR) that cbindgen uses to parse and generate code. By default, the IR is private, but you can access it by enabling the `"unstable_ir"` feature flag like so:
 
+```
+[build-dependencies]
+cbindgen = { version = "0.27.0", features = ["unstable_ir"] }
+```
 
+This opens up the `cbindgen::bindgen::ir` module.
+
+Please remember that the IR is **not stable**, so if you use this feature, you will need to pin cbindgen to avoid breakages.
 
 # Writing Your C API
 
