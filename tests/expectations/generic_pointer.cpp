@@ -15,4 +15,6 @@ extern "C" {
 
 void root(Boo x);
 
+void my_function(Foo<uint8_t[4]> x);
+
 }  // extern "C"
