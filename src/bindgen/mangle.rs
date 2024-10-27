@@ -93,7 +93,6 @@ impl<'a> Mangler<'a> {
                     &self
                         .config
                         .rename_types
-                        .clone()
                         .apply(&sub_path, IdentifierType::Type),
                 );
             }
@@ -102,7 +101,6 @@ impl<'a> Mangler<'a> {
                     &self
                         .config
                         .rename_types
-                        .clone()
                         .apply(primitive.to_repr_rust(), IdentifierType::Type),
                 );
             }

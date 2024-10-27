@@ -156,10 +156,8 @@ impl Function {
         self.ret.rename_for_config(config, &generic_params);
 
         // Apply rename rules to argument names
-        let rules = self
-            .annotations
-            .parse_atom::<RenameRule>("rename-all")
-            .unwrap_or(config.function.rename_args.clone());
+        let rules = self.annotations.parse_atom::<RenameRule>("rename-all");
+        let rules = rules.as_ref().unwrap_or(&config.function.rename_args);
 
         if let Some(r) = rules.not_none() {
             let args = std::mem::take(&mut self.args);

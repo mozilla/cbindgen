@@ -339,10 +339,10 @@ impl Item for Struct {
         {
             let names = self.fields.iter_mut().map(|field| &mut field.name);
 
-            let field_rules = self
-                .annotations
-                .parse_atom::<RenameRule>("rename-all")
-                .unwrap_or(config.structure.rename_fields.clone());
+            let field_rules = self.annotations.parse_atom::<RenameRule>("rename-all");
+            let field_rules = field_rules
+                .as_ref()
+                .unwrap_or(&config.structure.rename_fields);
 
             if let Some(o) = self.annotations.list("field-names") {
                 for (dest, src) in names.zip(o) {
