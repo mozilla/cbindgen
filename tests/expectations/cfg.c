@@ -11,6 +11,42 @@ DEF M_32 = 0
 #include <stdint.h>
 #include <stdlib.h>
 
+#if defined(PLATFORM_UNIX)
+#define FOO_CONST 0
+#endif
+
+#if defined(PLATFORM_WIN)
+#define FOO_CONST 1
+#endif
+
+#if !(defined(PLATFORM_UNIX) || defined(PLATFORM_WIN))
+#define FOO_CONST 61453
+#endif
+
+#if defined(PLATFORM_UNIX)
+#define BAR_CONST 0
+#endif
+
+#if defined(PLATFORM_WIN)
+#error "reached unreachable code"
+#endif
+
+#if !(defined(PLATFORM_UNIX) || defined(PLATFORM_WIN))
+#define BAR_CONST 1
+#endif
+
+#if (defined(X11) && defined(PLATFORM_UNIX))
+#define BAZ_CONST 0
+#endif
+
+#if (defined(X11) && defined(PLATFORM_WIN))
+#define BAZ_CONST 1
+#endif
+
+#if (defined(X11) && !(defined(PLATFORM_UNIX) || defined(PLATFORM_WIN)))
+#error "Baz error"
+#endif
+
 #if (defined(PLATFORM_WIN) || defined(M_32))
 enum BarType {
   A,

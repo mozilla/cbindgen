@@ -404,6 +404,9 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
                 }
                 write!(out, " }}");
             }
+            Literal::PanicMacro(_) => {
+                warn!("SKIP: Not implemented")
+            }
         }
     }
 
