@@ -20,4 +20,6 @@ extern "C" {
 
 void root(Boo x, Bar y);
 
+void unsafe_root(Boo x, Bar y);
+
 }  // extern "C"

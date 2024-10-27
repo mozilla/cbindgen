@@ -15,3 +15,5 @@ typedef struct FooU8 {
 typedef struct FooU8 Boo;
 
 void root(Boo x, enum Bar y);
+
+void unsafe_root(Boo x, enum Bar y);
