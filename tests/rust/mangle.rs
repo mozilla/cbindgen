@@ -17,3 +17,9 @@ pub extern "C" fn root(
     x: Boo,
     y: Bar,
 ) { }
+
+#[unsafe(no_mangle)]
+pub extern "C" fn unsafe_root(
+    x: Boo,
+    y: Bar,
+) { }

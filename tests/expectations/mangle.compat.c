@@ -20,6 +20,8 @@ extern "C" {
 
 void root(Boo x, Bar y);
 
+void unsafe_root(Boo x, Bar y);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus
