@@ -38,12 +38,10 @@ impl SynItemHelpers for syn::ItemFn {
     fn exported_name(&self) -> Option<String> {
         self.attrs
             .attr_name_value_lookup("export_name")
+            .or_else(|| self.unsafe_attr_name_value_lookup("export_name"))
             .or_else(|| {
-                if self.is_no_mangle() {
-                    Some(self.sig.ident.unraw().to_string())
-                } else {
-                    None
-                }
+                self.is_no_mangle()
+                    .then(|| self.sig.ident.unraw().to_string())
             })
     }
 }
@@ -150,6 +148,30 @@ pub trait SynAttributeHelpers {
         })
     }
 
+    /// Searches for attributes like `#[unsafe(test)]`.
+    /// Example:
+    /// - `item.has_unsafe_attr_word("test")` => `#[unsafe(test)]`
+    fn has_unsafe_attr_word(&self, name: &str) -> bool {
+        for attr in self.attrs() {
+            let unsafe_list = match &attr.meta {
+                syn::Meta::List(list) if list.path.is_ident("unsafe") => list,
+                _ => continue,
+            };
+            let args: syn::punctuated::Punctuated<syn::Path, Token![,]> =
+                match unsafe_list.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
+                    Ok(args) => args,
+                    Err(..) => {
+                        warn!("couldn't parse unsafe() attribute");
+                        continue;
+                    }
+                };
+            if args.iter().any(|a| a.is_ident(name)) {
+                return true;
+            }
+        }
+        false
+    }
+
     fn find_deprecated_note(&self) -> Option<String> {
         let attrs = self.attrs();
         // #[deprecated = ""]
@@ -171,14 +193,15 @@ pub trait SynAttributeHelpers {
             }
         })?;
 
-        let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> =
-            match attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
-                Ok(args) => args,
-                Err(_) => {
-                    warn!("couldn't parse deprecated attribute");
-                    return None;
-                }
-            };
+        let parser =
+            syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
+        let args = match attr.parse_args_with(parser) {
+            Ok(args) => args,
+            Err(_) => {
+                warn!("couldn't parse deprecated attribute");
+                return None;
+            }
+        };
 
         let arg = args.iter().find(|arg| arg.path.is_ident("note"))?;
         if let syn::Expr::Lit(syn::ExprLit {
@@ -194,7 +217,7 @@ pub trait SynAttributeHelpers {
     }
 
     fn is_no_mangle(&self) -> bool {
-        self.has_attr_word("no_mangle")
+        self.has_attr_word("no_mangle") || self.has_unsafe_attr_word("no_mangle")
     }
 
     /// Sees whether we should skip parsing a given item.
@@ -223,6 +246,32 @@ pub trait SynAttributeHelpers {
                 }) = &attr.meta
                 {
                     if path.is_ident(name) {
+                        return Some(lit.value());
+                    }
+                }
+                None
+            })
+            .next()
+    }
+
+    fn unsafe_attr_name_value_lookup(&self, name: &str) -> Option<String> {
+        self.attrs()
+            .iter()
+            .filter_map(|attr| {
+                let syn::Meta::List(list) = &attr.meta else { return None };
+                if !list.path.is_ident("unsafe") {
+                    return None;
+                }
+                let parser = syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
+                let Ok(args) = list.parse_args_with(parser) else { return None };
+                for arg in args {
+                    if !arg.path.is_ident(name) {
+                        continue;
+                    }
+                    if let syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(lit),
+                        ..
+                    }) = arg.value {
                         return Some(lit.value());
                     }
                 }
