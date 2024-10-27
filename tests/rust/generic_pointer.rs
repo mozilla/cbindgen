@@ -9,3 +9,6 @@ pub type Boo = Foo<*mut u8>;
 pub extern "C" fn root(
     x: Boo,
 ) { }
+
+#[no_mangle]
+pub extern "C" fn my_function(x: Foo<[u8; 4]>) {}

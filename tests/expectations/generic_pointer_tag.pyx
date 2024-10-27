@@ -11,4 +11,9 @@ cdef extern from *:
 
   ctypedef Foo_____u8 Boo;
 
+  cdef struct Foo__________u8__________4:
+    uint8_t a[4];
+
   void root(Boo x);
+
+  void my_function(Foo__________u8__________4 x);
