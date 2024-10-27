@@ -107,6 +107,7 @@ pub enum Literal {
         ty: Type,
         value: Box<Literal>,
     },
+    PanicMacro(PanicMacroKind),
 }
 
 impl Literal {
@@ -156,6 +157,7 @@ impl Literal {
                 }
             }
             Literal::Expr(..) => {}
+            Literal::PanicMacro(_) => {}
         }
     }
 
@@ -181,6 +183,7 @@ impl Literal {
             Literal::FieldAccess { ref base, .. } => base.is_valid(bindings),
             Literal::Struct { ref path, .. } => bindings.struct_exists(path),
             Literal::Cast { ref value, .. } => value.is_valid(bindings),
+            Literal::PanicMacro(_) => true,
         }
     }
 
@@ -210,6 +213,7 @@ impl Literal {
                 true
             }
             Literal::Cast { ref value, .. } => value.visit(visitor),
+            Literal::PanicMacro(_) => true,
         }
     }
 
@@ -285,7 +289,85 @@ impl Literal {
                 ty.rename_for_config(config, &GenericParams::default());
                 value.rename_for_config(config);
             }
+            Literal::PanicMacro(_) => {}
         }
+    }
+
+    // Handles `if` expressions with `cfg!` macros
+    pub fn load_many(
+        expr: &syn::Expr,
+        og_cfg: Option<&Cfg>,
+        prev_cfgs: &mut Vec<Cfg>,
+    ) -> Result<Vec<(Literal, Option<Cfg>)>, String> {
+        let mut vec = Vec::new();
+        match *expr {
+            syn::Expr::If(syn::ExprIf {
+                ref cond,
+                ref then_branch,
+                ref else_branch,
+                ..
+            }) => match cond.as_ref() {
+                syn::Expr::Macro(syn::ExprMacro { mac, .. }) => {
+                    if !mac.path.is_ident("cfg") {
+                        return Err(format!(
+                            "Unsupported if expression with macro {:?}",
+                            mac.path
+                        ));
+                    }
+
+                    let cfg: Cfg =
+                        syn::parse2(mac.tokens.clone()).map_err(|err| err.to_string())?;
+
+                    let lit = then_branch
+                        .stmts
+                        .last()
+                        .map(|stmt| match stmt {
+                            syn::Stmt::Expr(expr, None) => Literal::load(expr),
+                            syn::Stmt::Macro(stmt_macro) => Literal::from_macro(&stmt_macro.mac),
+                            _ => Err(format!("Unsupported block without expression")),
+                        })
+                        .ok_or(format!("Unsupported block without expression"))??;
+
+                    vec.push((lit, Cfg::append(og_cfg, Some(cfg.clone()))));
+                    prev_cfgs.push(cfg);
+
+                    if let Some((_, else_expr)) = else_branch {
+                        match else_expr.as_ref() {
+                            syn::Expr::Block(expr_block) => {
+                                let lit = expr_block
+                                    .block
+                                    .stmts
+                                    .last()
+                                    .map(|stmt| match stmt {
+                                        syn::Stmt::Expr(expr, None) => Literal::load(expr),
+                                        syn::Stmt::Macro(stmt_macro) => {
+                                            Literal::from_macro(&stmt_macro.mac)
+                                        }
+                                        _ => Err(format!("Unsupported block without expression")),
+                                    })
+                                    .ok_or(format!("Unsupported block without expression"))??;
+                                let cfg = Cfg::append(
+                                    og_cfg,
+                                    Some(Cfg::Not(Box::new(Cfg::Any(prev_cfgs.clone())))),
+                                );
+                                vec.push((lit, cfg));
+                            }
+                            syn::Expr::If(_) => vec.extend(
+                                Literal::load_many(&else_expr, og_cfg, prev_cfgs)?.into_iter(),
+                            ),
+                            _ => unreachable!(),
+                        }
+                    }
+                }
+                _ => return Err(format!("Unsupported if expression. {:?}", *expr)),
+            },
+            _ => {
+                let lit = Literal::load(expr)?;
+                let cfg = Cfg::append(og_cfg, None);
+                vec.push((lit, cfg));
+            }
+        }
+        Ok(vec)
     }
 
     // Translate from full blown `syn::Expr` into a simpler `Literal` type
@@ -476,7 +558,29 @@ impl Literal {
                 }
             }
 
+            syn::Expr::Macro(syn::ExprMacro { ref mac, .. }) => Literal::from_macro(mac),
             _ => Err(format!("Unsupported expression. {:?}", *expr)),
+        }
+    }
+}
+
+impl Literal {
+    fn from_macro(mac: &syn::Macro) -> Result<Literal, String> {
+        let path = &mac.path;
+        let tokens = &mac.tokens;
+        if path.is_ident("todo") {
+            Ok(Literal::PanicMacro(PanicMacroKind::Todo))
+        } else if path.is_ident("unreachable") {
+            Ok(Literal::PanicMacro(PanicMacroKind::Unreachable))
+        } else if path.is_ident("unimplemented") {
+            Ok(Literal::PanicMacro(PanicMacroKind::Unimplemented))
+        } else if path.is_ident("panic") {
+            // We only support simple messages, i.e. string literals
+            let msg: syn::LitStr = syn::parse2(tokens.clone())
+                .map_err(|_| format!("Unsupported `panic!` with complex message"))?;
+            Ok(Literal::PanicMacro(PanicMacroKind::Panic(msg.value())))
+        } else {
+            Err(format!("Unsupported macro as literal. {:?}", path))
         }
     }
 }
@@ -501,7 +605,7 @@ impl Constant {
         expr: &syn::Expr,
         attrs: &[syn::Attribute],
         associated_to: Option<Path>,
-    ) -> Result<Constant, String> {
+    ) -> Result<Vec<Constant>, String> {
         let ty = Type::load(ty)?;
         let mut ty = match ty {
             Some(ty) => ty,
@@ -510,22 +614,34 @@ impl Constant {
             }
         };
 
-        let mut lit = Literal::load(expr)?;
-
         if let Some(ref associated_to) = associated_to {
             ty.replace_self_with(associated_to);
-            lit.replace_self_with(associated_to);
         }
 
-        Ok(Constant::new(
-            path,
-            ty,
-            lit,
-            Cfg::append(mod_cfg, Cfg::load(attrs)),
-            AnnotationSet::load(attrs)?,
-            Documentation::load(attrs),
-            associated_to,
-        ))
+        let og_cfg = Cfg::append(mod_cfg, Cfg::load(attrs));
+
+        let mut prev_cfgs = Vec::new();
+        let lits = Literal::load_many(expr, og_cfg.as_ref(), &mut prev_cfgs)?;
+
+        let mut consts = Vec::with_capacity(lits.len());
+
+        for (mut lit, cfg) in lits {
+            if let Some(ref associated_to) = associated_to {
+                lit.replace_self_with(associated_to);
+            }
+
+            consts.push(Constant::new(
+                path.clone(),
+                ty.clone(),
+                lit,
+                cfg,
+                AnnotationSet::load(attrs)?,
+                Documentation::load(attrs),
+                associated_to.clone(),
+            ));
+        }
+
+        Ok(consts)
     }
 
     pub fn new(
@@ -690,27 +806,36 @@ impl Constant {
         let allow_constexpr = config.constant.allow_constexpr && self.value.can_be_constexpr();
         match config.language {
             Language::Cxx if config.constant.allow_static_const || allow_constexpr => {
-                if allow_constexpr {
-                    out.write("constexpr ")
-                }
-
-                if config.constant.allow_static_const {
-                    out.write(if in_body { "inline " } else { "static " });
-                }
-
-                if let Type::Ptr { is_const: true, .. } = self.ty {
-                    // Nothing.
+                if matches!(self.value, Literal::PanicMacro(_)) {
+                    write!(out, "#error ");
+                    language_backend.write_literal(out, value);
                 } else {
-                    out.write("const ");
-                }
+                    if allow_constexpr {
+                        out.write("constexpr ")
+                    }
 
-                language_backend.write_type(out, &self.ty);
-                write!(out, " {} = ", name);
-                language_backend.write_literal(out, value);
-                write!(out, ";");
+                    if config.constant.allow_static_const {
+                        out.write(if in_body { "inline " } else { "static " });
+                    }
+
+                    if let Type::Ptr { is_const: true, .. } = self.ty {
+                        // Nothing.
+                    } else {
+                        out.write("const ");
+                    }
+
+                    language_backend.write_type(out, &self.ty);
+                    write!(out, " {} = ", name);
+                    language_backend.write_literal(out, value);
+                    write!(out, ";");
+                }
             }
             Language::Cxx | Language::C => {
-                write!(out, "#define {} ", name);
+                if matches!(self.value, Literal::PanicMacro(_)) {
+                    write!(out, "#error ");
+                } else {
+                    write!(out, "#define {} ", name);
+                }
                 language_backend.write_literal(out, value);
             }
             Language::Cython => {
@@ -725,4 +850,12 @@ impl Constant {
 
         condition.write_after(config, out);
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum PanicMacroKind {
+    Todo,
+    Unreachable,
+    Unimplemented,
+    Panic(String),
 }
