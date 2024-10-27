@@ -12,3 +12,5 @@ void test_snake_case(int32_t foo_bar);
 void test_screaming_snake_case(int32_t FOO_BAR);
 
 void test_gecko_case(int32_t aFooBar);
+
+void test_prefix(int32_t prefix_foo_bar);

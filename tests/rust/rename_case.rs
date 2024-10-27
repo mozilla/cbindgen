@@ -17,3 +17,7 @@ pub extern "C" fn test_screaming_snake_case(foo_bar: i32) {}
 /// cbindgen:rename-all=GeckoCase
 #[no_mangle]
 pub extern "C" fn test_gecko_case(foo_bar: i32) {}
+
+/// cbindgen:rename-all=prefix:prefix_
+#[no_mangle]
+pub extern "C" fn test_prefix(foo_bar: i32) {}
