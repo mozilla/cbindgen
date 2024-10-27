@@ -4,7 +4,7 @@
 
 #![allow(clippy::redundant_closure_call)]
 
-use syn::{ext::IdentExt, parse::Parser};
+use syn::ext::IdentExt;
 
 pub trait IterHelpers: Iterator {
     fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
@@ -152,23 +152,24 @@ pub trait SynAttributeHelpers {
     /// Example:
     /// - `item.has_unsafe_attr_word("test")` => `#[unsafe(test)]`
     fn has_unsafe_attr_word(&self, name: &str) -> bool {
-        self.attrs().iter().filter_map(|attr| {
-            match &attr.meta {
-                syn::Meta::List(list) if list.path.is_ident("unsafe") => Some(list.tokens.clone()),
-                _ => None,
-            }
-        }).any(|tokens| {
-            let parser = syn::punctuated::Punctuated::<proc_macro2::TokenStream, syn::Token![,]>::parse_terminated;
-            let Ok(args) = parser.parse2(tokens) else {
-                return false;
+        for attr in self.attrs() {
+            let unsafe_list = match &attr.meta {
+                syn::Meta::List(list) if list.path.is_ident("unsafe") => list,
+                _ => continue,
             };
-            args.into_iter().any(|arg| {
-                match syn::parse2::<syn::Path>(arg) {
-                    Ok(path) => path.is_ident(name),
-                    Err(_) => false,
-                }
-            })
-        })
+            let args: syn::punctuated::Punctuated<syn::Path, Token![,]> =
+                match unsafe_list.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
+                    Ok(args) => args,
+                    Err(..) => {
+                        warn!("couldn't parse unsafe() attribute");
+                        continue;
+                    }
+                };
+            if args.iter().any(|a| a.is_ident(name)) {
+                return true;
+            }
+        }
+        false
     }
 
     fn find_deprecated_note(&self) -> Option<String> {
@@ -192,14 +193,15 @@ pub trait SynAttributeHelpers {
             }
         })?;
 
-        let args: syn::punctuated::Punctuated<syn::MetaNameValue, Token![,]> =
-            match attr.parse_args_with(syn::punctuated::Punctuated::parse_terminated) {
-                Ok(args) => args,
-                Err(_) => {
-                    warn!("couldn't parse deprecated attribute");
-                    return None;
-                }
-            };
+        let parser =
+            syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
+        let args = match attr.parse_args_with(parser) {
+            Ok(args) => args,
+            Err(_) => {
+                warn!("couldn't parse deprecated attribute");
+                return None;
+            }
+        };
 
         let arg = args.iter().find(|arg| arg.path.is_ident("note"))?;
         if let syn::Expr::Lit(syn::ExprLit {
@@ -256,32 +258,21 @@ pub trait SynAttributeHelpers {
         self.attrs()
             .iter()
             .filter_map(|attr| {
-                let syn::Meta::List(syn::MetaList { path, tokens, .. }) = &attr.meta else {
+                let syn::Meta::List(list) = &attr.meta else { return None };
+                if !list.path.is_ident("unsafe") {
                     return None;
-                };
-                if path.is_ident("unsafe") {
-                    let parser = syn::punctuated::Punctuated::<
-                        proc_macro2::TokenStream,
-                        syn::Token![,],
-                    >::parse_terminated;
-                    let Ok(args) = parser.parse2(tokens.clone()) else {
-                        return None;
-                    };
-                    for arg in args {
-                        match syn::parse2::<syn::MetaNameValue>(arg) {
-                            Ok(syn::MetaNameValue {
-                                path,
-                                value:
-                                    syn::Expr::Lit(syn::ExprLit {
-                                        lit: syn::Lit::Str(lit),
-                                        ..
-                                    }),
-                                ..
-                            }) if path.is_ident(name) => {
-                                return Some(lit.value());
-                            }
-                            _ => {}
-                        }
+                }
+                let parser = syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
+                let Ok(args) = list.parse_args_with(parser) else { return None };
+                for arg in args {
+                    if !arg.path.is_ident(name) {
+                        continue;
+                    }
+                    if let syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(lit),
+                        ..
+                    }) = arg.value {
+                        return Some(lit.value());
                     }
                 }
                 None
