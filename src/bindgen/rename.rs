@@ -55,7 +55,7 @@ pub enum RenameRule {
 }
 
 impl RenameRule {
-    pub(crate) fn not_none(self) -> Option<Self> {
+    pub(crate) fn not_none(&self) -> Option<&Self> {
         match self {
             RenameRule::None => None,
             other => Some(other),

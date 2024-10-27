@@ -152,9 +152,10 @@ impl EnumVariant {
             annotations.add_default("derive-ostream", AnnotationValue::Bool(b));
         }
 
-        let body_rule = enum_annotations
-            .parse_atom::<RenameRule>("rename-variant-name-fields")
-            .unwrap_or(config.enumeration.rename_variant_name_fields.clone());
+        let body_rule = enum_annotations.parse_atom::<RenameRule>("rename-variant-name-fields");
+        let body_rule = body_rule
+            .as_ref()
+            .unwrap_or(&config.enumeration.rename_variant_name_fields);
 
         let body = match variant.fields {
             syn::Fields::Unit => VariantBody::Empty(annotations),
@@ -555,10 +556,10 @@ impl Item for Enum {
             }
         }
 
-        let rules = self
-            .annotations
-            .parse_atom::<RenameRule>("rename-all")
-            .unwrap_or(config.enumeration.rename_variants.clone());
+        let rules = self.annotations.parse_atom::<RenameRule>("rename-all");
+        let rules = rules
+            .as_ref()
+            .unwrap_or(&config.enumeration.rename_variants);
 
         if let Some(r) = rules.not_none() {
             self.variants = self

@@ -168,10 +168,8 @@ impl Item for Union {
             field.ty.rename_for_config(config, &self.generic_params);
         }
 
-        let rules = self
-            .annotations
-            .parse_atom::<RenameRule>("rename-all")
-            .unwrap_or(config.structure.rename_fields.clone());
+        let rules = self.annotations.parse_atom::<RenameRule>("rename-all");
+        let rules = rules.as_ref().unwrap_or(&config.structure.rename_fields);
 
         if let Some(o) = self.annotations.list("field-names") {
             let mut overriden_fields = Vec::new();
