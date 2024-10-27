@@ -128,7 +128,7 @@ impl<'a> Mangler<'a> {
                     self.push(Separator::EndFn);
                 }
             }
-            Type::Array(..) => {
+            Type::Array(..) | Type::FlexibleArray(..) => {
                 unimplemented!(
                     "Unable to mangle generic parameter {:?} for '{}'",
                     ty,
