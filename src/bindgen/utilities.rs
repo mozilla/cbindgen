@@ -4,7 +4,7 @@
 
 #![allow(clippy::redundant_closure_call)]
 
-use syn::ext::IdentExt;
+use syn::{ext::IdentExt, parse::Parser};
 
 pub trait IterHelpers: Iterator {
     fn try_skip_map<F, T, E>(&mut self, f: F) -> Result<Vec<T>, E>
@@ -38,12 +38,10 @@ impl SynItemHelpers for syn::ItemFn {
     fn exported_name(&self) -> Option<String> {
         self.attrs
             .attr_name_value_lookup("export_name")
+            .or_else(|| self.unsafe_attr_name_value_lookup("export_name"))
             .or_else(|| {
-                if self.is_no_mangle() {
-                    Some(self.sig.ident.unraw().to_string())
-                } else {
-                    None
-                }
+                self.is_no_mangle()
+                    .then(|| self.sig.ident.unraw().to_string())
             })
     }
 }
@@ -150,6 +148,29 @@ pub trait SynAttributeHelpers {
         })
     }
 
+    /// Searches for attributes like `#[unsafe(test)]`.
+    /// Example:
+    /// - `item.has_unsafe_attr_word("test")` => `#[unsafe(test)]`
+    fn has_unsafe_attr_word(&self, name: &str) -> bool {
+        self.attrs().iter().filter_map(|attr| {
+            match &attr.meta {
+                syn::Meta::List(list) if list.path.is_ident("unsafe") => Some(list.tokens.clone()),
+                _ => None,
+            }
+        }).any(|tokens| {
+            let parser = syn::punctuated::Punctuated::<proc_macro2::TokenStream, syn::Token![,]>::parse_terminated;
+            let Ok(args) = parser.parse2(tokens) else {
+                return false;
+            };
+            args.into_iter().any(|arg| {
+                match syn::parse2::<syn::Path>(arg) {
+                    Ok(path) => path.is_ident(name),
+                    Err(_) => false,
+                }
+            })
+        })
+    }
+
     fn find_deprecated_note(&self) -> Option<String> {
         let attrs = self.attrs();
         // #[deprecated = ""]
@@ -194,7 +215,7 @@ pub trait SynAttributeHelpers {
     }
 
     fn is_no_mangle(&self) -> bool {
-        self.has_attr_word("no_mangle")
+        self.has_attr_word("no_mangle") || self.has_unsafe_attr_word("no_mangle")
     }
 
     /// Sees whether we should skip parsing a given item.
@@ -224,6 +245,43 @@ pub trait SynAttributeHelpers {
                 {
                     if path.is_ident(name) {
                         return Some(lit.value());
+                    }
+                }
+                None
+            })
+            .next()
+    }
+
+    fn unsafe_attr_name_value_lookup(&self, name: &str) -> Option<String> {
+        self.attrs()
+            .iter()
+            .filter_map(|attr| {
+                let syn::Meta::List(syn::MetaList { path, tokens, .. }) = &attr.meta else {
+                    return None;
+                };
+                if path.is_ident("unsafe") {
+                    let parser = syn::punctuated::Punctuated::<
+                        proc_macro2::TokenStream,
+                        syn::Token![,],
+                    >::parse_terminated;
+                    let Ok(args) = parser.parse2(tokens.clone()) else {
+                        return None;
+                    };
+                    for arg in args {
+                        match syn::parse2::<syn::MetaNameValue>(arg) {
+                            Ok(syn::MetaNameValue {
+                                path,
+                                value:
+                                    syn::Expr::Lit(syn::ExprLit {
+                                        lit: syn::Lit::Str(lit),
+                                        ..
+                                    }),
+                                ..
+                            }) if path.is_ident(name) => {
+                                return Some(lit.value());
+                            }
+                            _ => {}
+                        }
                     }
                 }
                 None
