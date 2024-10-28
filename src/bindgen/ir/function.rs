@@ -51,7 +51,10 @@ impl Function {
         if sig.variadic.is_some() {
             args.push(FunctionArgument {
                 name: None,
-                ty: Type::Primitive(super::PrimitiveType::VaList),
+                ty: Type::Primitive {
+                    primitive: super::PrimitiveType::VaList,
+                    is_volatile: false,
+                },
                 array_length: None,
             })
         }
@@ -224,7 +227,10 @@ trait SynFnArgHelpers {
 }
 
 fn gen_self_type(receiver: &syn::Receiver) -> Result<Type, String> {
-    let mut self_ty = Type::Path(GenericPath::self_path());
+    let mut self_ty = Type::Path {
+        generic_path: GenericPath::self_path(),
+        is_volatile: false,
+    };
 
     // Custom self type
     if receiver.colon_token.is_some() {
@@ -239,6 +245,7 @@ fn gen_self_type(receiver: &syn::Receiver) -> Result<Type, String> {
     Ok(Type::Ptr {
         ty: Box::new(self_ty),
         is_const,
+        is_volatile: false,
         is_nullable: false,
         is_ref: false,
     })
@@ -257,7 +264,13 @@ impl SynFnArgHelpers for syn::FnArg {
                 let name = match **pat {
                     syn::Pat::Wild(..) => None,
                     syn::Pat::Ident(syn::PatIdent { ref ident, .. }) => {
-                        if ty == Type::Primitive(super::PrimitiveType::VaList) {
+                        if matches!(
+                            ty,
+                            Type::Primitive {
+                                primitive: super::PrimitiveType::VaList,
+                                is_volatile: false
+                            }
+                        ) {
                             None
                         } else {
                             Some(ident.unraw().to_string())
@@ -270,7 +283,7 @@ impl SynFnArgHelpers for syn::FnArg {
                         ))
                     }
                 };
-                if let Type::Array(..) = ty {
+                if let Type::Array { .. } = ty {
                     return Err("Array as function arguments are not supported".to_owned());
                 }
                 Ok(Some(FunctionArgument {
