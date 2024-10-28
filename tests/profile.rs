@@ -97,14 +97,11 @@ fn bin_default_uses_debug_build() {
 }
 
 #[test]
+#[serial]
 fn bin_ignore_cargo_build_target_in_tests() {
     unsafe {
         env::set_var("CARGO_BUILD_TARGET", "x86_64-unknown-linux-gnu");
     }
-    assert_eq!(
-        env::var("CARGO_BUILD_TARGET"),
-        Ok("x86_64-unknown-linux-gnu".into())
-    );
     // ^ this env var should be ignored:
     bin_default_uses_debug_build();
 }
