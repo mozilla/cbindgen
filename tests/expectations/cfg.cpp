@@ -12,6 +12,42 @@ DEF M_32 = 0
 #include <ostream>
 #include <new>
 
+#if defined(PLATFORM_UNIX)
+constexpr static const uint32_t FOO_CONST = 0;
+#endif
+
+#if defined(PLATFORM_WIN)
+constexpr static const uint32_t FOO_CONST = 1;
+#endif
+
+#if !(defined(PLATFORM_UNIX) || defined(PLATFORM_WIN))
+constexpr static const uint32_t FOO_CONST = 61453;
+#endif
+
+#if defined(PLATFORM_UNIX)
+constexpr static const uint8_t BAR_CONST = 0;
+#endif
+
+#if defined(PLATFORM_WIN)
+#error "reached unreachable code"
+#endif
+
+#if !(defined(PLATFORM_UNIX) || defined(PLATFORM_WIN))
+constexpr static const uint8_t BAR_CONST = 1;
+#endif
+
+#if (defined(X11) && defined(PLATFORM_UNIX))
+constexpr static const uint8_t BAZ_CONST = 0;
+#endif
+
+#if (defined(X11) && defined(PLATFORM_WIN))
+constexpr static const uint8_t BAZ_CONST = 1;
+#endif
+
+#if (defined(X11) && !(defined(PLATFORM_UNIX) || defined(PLATFORM_WIN)))
+#error "Baz error"
+#endif
+
 #if (defined(PLATFORM_WIN) || defined(M_32))
 enum class BarType : uint32_t {
   A,
