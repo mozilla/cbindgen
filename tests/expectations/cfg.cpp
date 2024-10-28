@@ -13,15 +13,15 @@ DEF M_32 = 0
 #include <new>
 
 #if defined(PLATFORM_UNIX)
-constexpr static const uint8_t FOO_CONST = 0;
+constexpr static const uint32_t FOO_CONST = 0;
 #endif
 
 #if defined(PLATFORM_WIN)
-constexpr static const uint8_t FOO_CONST = 1;
+constexpr static const uint32_t FOO_CONST = 1;
 #endif
 
 #if !(defined(PLATFORM_UNIX) || defined(PLATFORM_WIN))
-constexpr static const uint8_t FOO_CONST = 61453;
+constexpr static const uint32_t FOO_CONST = 61453;
 #endif
 
 #if defined(PLATFORM_UNIX)
