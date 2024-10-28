@@ -1,4 +1,4 @@
-pub const FOO_CONST: u8 = if cfg!(unix) {
+pub const FOO_CONST: u32 = if cfg!(unix) {
     0
 } else if cfg!(windows) {
     1
