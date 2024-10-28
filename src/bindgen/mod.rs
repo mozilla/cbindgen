@@ -51,6 +51,7 @@ mod library;
 mod mangle;
 mod monomorph;
 mod parser;
+mod predefines;
 mod rename;
 mod reserved;
 mod utilities;
