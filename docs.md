@@ -596,6 +596,11 @@ include = ["MyOrphanStruct", "MyGreatTypeRename"]
 # default: []
 exclude = ["Bad"]
 
+# A list of items to include in the generated bindings, while excluding other unlisted
+# items from being exported. Has lower precedence than `include` and `exclude`, so they
+# can still add or remove items regardless of the whitelist's value.
+whitelist = ["MyImportantStruct", "Bad"]
+
 # A prefix to add before the name of every item
 # default: no prefix is added
 prefix = "CAPI_"
