@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{BufWriter, Read, Write};
 use std::path;
 use std::rc::Rc;
 
@@ -127,6 +127,27 @@ impl Bindings {
             memos.insert(p, fields.clone());
         }
         fields
+    }
+
+    /// Lists the exported symbols that can be dynamically linked, i.e. globals and functions.
+    pub fn dynamic_symbols_names(&self) -> impl Iterator<Item = &str> {
+        use crate::bindgen::ir::Item;
+
+        let function_names = self.functions.iter().map(|f| f.path().name());
+        let global_names = self.globals.iter().map(|g| g.export_name());
+        function_names.chain(global_names)
+    }
+
+    pub fn generate_symfile<P: AsRef<path::Path>>(&self, symfile_path: P) {
+        if let Some(dir) = symfile_path.as_ref().parent() {
+            std::fs::create_dir_all(dir).unwrap();
+        }
+        let mut writer = BufWriter::new(File::create(symfile_path).unwrap());
+        write!(&mut writer, "{{\n").expect("writing symbol file header failed");
+        for symbol in self.dynamic_symbols_names() {
+            write!(&mut writer, "{};\n", symbol).expect("writing symbol failed");
+        }
+        write!(&mut writer, "}};").expect("writing symbol file footer failed");
     }
 
     pub fn generate_depfile<P: AsRef<path::Path>>(&self, header_path: P, depfile_path: P) {
