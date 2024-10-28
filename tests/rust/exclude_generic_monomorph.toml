@@ -1,22 +1,17 @@
 language = "C"
-header = """
+header = [
+    { language = "Cython", line = "''' '" },
+    """
 #include <stdint.h>
 
-#if 0
-''' '
-#endif
-
 typedef uint64_t Option_Foo;
-
-#if 0
+""",
+    { language = "Cython", line = """
 ' '''
-#endif
-
-#if 0
 from libc.stdint cimport uint64_t
 ctypedef uint64_t Option_Foo
-#endif
-"""
+""" },
+]
 
 [export]
 exclude = [
