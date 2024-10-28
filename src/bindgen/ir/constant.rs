@@ -324,9 +324,9 @@ impl Literal {
                         .map(|stmt| match stmt {
                             syn::Stmt::Expr(expr, None) => Literal::load(expr),
                             syn::Stmt::Macro(stmt_macro) => Literal::from_macro(&stmt_macro.mac),
-                            _ => Err(format!("Unsupported block without expression")),
+                            _ => Err("Unsupported block without expression".to_string()),
                         })
-                        .ok_or(format!("Unsupported block without expression"))??;
+                        .ok_or("Unsupported block without expression".to_string())??;
 
                     vec.push((lit, Cfg::append(og_cfg, Some(cfg.clone()))));
                     prev_cfgs.push(cfg);
@@ -343,18 +343,20 @@ impl Literal {
                                         syn::Stmt::Macro(stmt_macro) => {
                                             Literal::from_macro(&stmt_macro.mac)
                                         }
-                                        _ => Err(format!("Unsupported block without expression")),
+                                        _ => {
+                                            Err("Unsupported block without expression".to_string())
+                                        }
                                     })
-                                    .ok_or(format!("Unsupported block without expression"))??;
+                                    .ok_or("Unsupported block without expression".to_string())??;
                                 let cfg = Cfg::append(
                                     og_cfg,
                                     Some(Cfg::Not(Box::new(Cfg::Any(prev_cfgs.clone())))),
                                 );
                                 vec.push((lit, cfg));
                             }
-                            syn::Expr::If(_) => vec.extend(
-                                Literal::load_many(&else_expr, og_cfg, prev_cfgs)?.into_iter(),
-                            ),
+                            syn::Expr::If(_) => {
+                                vec.extend(Literal::load_many(else_expr, og_cfg, prev_cfgs)?)
+                            }
                             _ => unreachable!(),
                         }
                     }
@@ -577,7 +579,7 @@ impl Literal {
         } else if path.is_ident("panic") {
             // We only support simple messages, i.e. string literals
             let msg: syn::LitStr = syn::parse2(tokens.clone())
-                .map_err(|_| format!("Unsupported `panic!` with complex message"))?;
+                .map_err(|_| "Unsupported `panic!` with complex message".to_string())?;
             Ok(Literal::PanicMacro(PanicMacroKind::Panic(msg.value())))
         } else {
             Err(format!("Unsupported macro as literal. {:?}", path))
