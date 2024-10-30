@@ -41,6 +41,7 @@ pretty_assertions = "1.4.0"
 
 [features]
 default =  ["clap"]
+unstable_ir = []
 
 [[bin]]
 name = "cbindgen"
