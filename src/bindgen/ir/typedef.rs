@@ -10,8 +10,8 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericPath, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Struct, Type,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, GenericPath, Item,
+    ItemContainer, Path, Struct, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -102,9 +102,15 @@ impl Typedef {
         }
     }
 
-    pub fn find_monomorphs(&self, library: &Library, out: &mut std::collections::HashSet<GenericPath>, is_function_ret_val: bool) {
+    pub fn find_return_value_monomorphs(
+        &self,
+        library: &Library,
+        out: &mut std::collections::HashSet<GenericPath>,
+        is_function_ret_val: bool,
+    ) {
         if !self.is_generic() {
-            self.aliased.find_monomorphs(library, out, is_function_ret_val);
+            self.aliased
+                .find_return_value_monomorphs(library, out, is_function_ret_val);
         }
     }
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

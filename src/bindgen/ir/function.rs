@@ -129,10 +129,14 @@ impl Function {
         }
     }
 
-    pub fn find_monomorphs(&self, library: &Library, out: &mut std::collections::HashSet<GenericPath>) {
-        self.ret.find_monomorphs(library, out, true);
+    pub fn find_return_value_monomorphs(
+        &self,
+        library: &Library,
+        out: &mut std::collections::HashSet<GenericPath>,
+    ) {
+        self.ret.find_return_value_monomorphs(library, out, true);
         for arg in &self.args {
-            arg.ty.find_monomorphs(library, out, false);
+            arg.ty.find_return_value_monomorphs(library, out, false);
         }
     }
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

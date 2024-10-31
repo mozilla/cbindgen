@@ -341,12 +341,14 @@ pub struct ExportConfig {
     pub renaming_overrides_prefixing: bool,
     /// Mangling configuration.
     pub mangle: MangleConfig,
-    /// Whether to instantiate the struct templates that were emitted, as members of a giant struct
-    /// with the name optionally overridden by [`instantiate_monomorphs_struct_name`]. This silences
-    /// warnings and errors for several compiles, notably MSVC.
-    pub instantiate_monomorphs: bool,
+    /// Whether to instantiate the monomorphs of template types used as function return values. This
+    /// is needed for C compatibility, because otherwise compilers warn (gcc/clang) or even reject
+    /// (MSVC) those function definitions. The compensation is made by emitting a single struct with
+    /// one field for each monomorphized type. The emitted wrapper struct's name can optionally be
+    /// overridden by [`return_value_monomorphs_struct_name`].
+    pub instantiate_return_value_monomorphs: bool,
     /// The struct name to use when [`instantiate_monomorphs`] is enabled, ignored otherwise.
-    pub instantiate_monomorphs_struct_name: Option<String>,
+    pub return_value_monomorphs_struct_name: Option<String>,
 }
 
 /// Mangling-specific configuration.

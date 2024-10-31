@@ -9,7 +9,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{GenericArgument, ItemContainer, GenericParams, GenericPath, Path};
+use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, ItemContainer, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::utilities::IterHelpers;
@@ -739,9 +739,14 @@ impl Type {
         self.add_dependencies_ignoring_generics(&GenericParams::default(), library, out)
     }
 
-    pub fn find_monomorphs(&self, library: &Library, out: &mut std::collections::HashSet<GenericPath>, is_function_ret_val: bool) {
+    pub fn find_return_value_monomorphs(
+        &self,
+        library: &Library,
+        out: &mut std::collections::HashSet<GenericPath>,
+        is_function_ret_val: bool,
+    ) {
         match *self {
-            Type::Ptr { ref ty, .. } => ty.find_monomorphs(library, out, false),
+            Type::Ptr { ref ty, .. } => ty.find_return_value_monomorphs(library, out, false),
             Type::Path(ref generic) => {
                 if !is_function_ret_val || generic.generics().is_empty() {
                     return;
@@ -752,34 +757,34 @@ impl Type {
                 for item in items {
                     match item {
                         // Constants and statics cannot be function return types
-                        ItemContainer::Constant(_) | ItemContainer::Static(_)  => {}
+                        ItemContainer::Constant(_) | ItemContainer::Static(_) => {}
                         // Opaque items cannot be instantiated (doomed to compilation failure)
                         ItemContainer::OpaqueItem(_) => {}
                         ItemContainer::Typedef(typedef) => {
                             // Typedefs can reference concrete types so we need to recurse deeper
-                            typedef.find_monomorphs(library, out, true);
+                            typedef.find_return_value_monomorphs(library, out, true);
                         }
                         ItemContainer::Struct(s) if s.is_transparent => {
                             if let Some(typedef) = s.as_typedef() {
-                                typedef.find_monomorphs(library, out, true);
+                                typedef.find_return_value_monomorphs(library, out, true);
                             }
                         }
-                        ItemContainer::Struct(_) | ItemContainer::Union(_) | ItemContainer::Enum(_) => {
+                        ItemContainer::Struct(_)
+                        | ItemContainer::Union(_)
+                        | ItemContainer::Enum(_) => {
                             out.insert(generic.clone());
                         }
                     }
                 }
             }
             Type::Primitive(_) => {}
-            Type::Array(ref ty, _) => ty.find_monomorphs(library, out, false),
+            Type::Array(ref ty, _) => ty.find_return_value_monomorphs(library, out, false),
             Type::FuncPtr {
-                ref ret,
-                ref args,
-                ..
+                ref ret, ref args, ..
             } => {
-                ret.find_monomorphs(library, out, true);
+                ret.find_return_value_monomorphs(library, out, true);
                 for (_, ref arg) in args {
-                    arg.find_monomorphs(library, out, false);
+                    arg.find_return_value_monomorphs(library, out, false);
                 }
             }
         }

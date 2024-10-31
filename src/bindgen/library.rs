@@ -10,7 +10,10 @@ use crate::bindgen::config::{Config, Language, SortKey};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
-use crate::bindgen::ir::{Constant, Enum, Field, Function, Type, Item, GenericPath, ItemContainer, ItemMap, OpaqueItem, Path, Static, Struct, Typedef, Union};
+use crate::bindgen::ir::{
+    Constant, Enum, Field, Function, GenericPath, Item, ItemContainer, ItemMap, OpaqueItem, Path,
+    Static, Struct, Type, Typedef, Union,
+};
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::ItemType;
 
@@ -80,47 +83,10 @@ impl Library {
 
         let mut dependencies = Dependencies::new();
 
-        if self.config.language == Language::Cxx && self.config.export.instantiate_monomorphs {
-            let mut found = std::collections::HashSet::new();
-            self.structs.for_all_items(|x| {
-                x.find_monomorphs(&self, &mut found);
-            });
-            self.unions.for_all_items(|x| {
-                x.find_monomorphs(&self, &mut found);
-            });
-            self.enums.for_all_items(|x| {
-                x.find_monomorphs(&self, &mut found);
-            });
-            self.typedefs.for_all_items(|x| {
-                x.find_monomorphs(&self, &mut found, false);
-            });
-            for x in &self.functions {
-                x.find_monomorphs(&self, &mut found);
-            }
-
-            // Emit all instantiated monomorphs as fields of a giant struct, which silences warnings
-            // and errors on several compilers.
-            let struct_name = match self.config.export.instantiate_monomorphs_struct_name {
-                Some(ref name) => name,
-                _ => "__cbindgen_monomorph_struct",
-            };
-            let fields = found.into_iter().enumerate().map(|(i, path)| {
-                Field::from_name_and_type(format!("field{}", i), Type::Path(path))
-            }).collect();
-            let monomorph_struct = Struct::new(
-                Path::new(struct_name),
-                Default::default(), // no generic params
-                fields,
-                false, // no tag field
-                false, // not an enum body
-                None, // no special alignment requirements
-                false, // not transparent
-                None, // no conf
-                Default::default(), // no annotations
-                Default::default(), // no documentation
-            );
-            self.structs.try_insert(monomorph_struct);
-            Type::Path(GenericPath::new(Path::new(struct_name), vec![])).add_dependencies(&self, &mut dependencies);
+        if self.config.language == Language::Cxx
+            && self.config.export.instantiate_return_value_monomorphs
+        {
+            self.instantiate_return_value_monomorphs(&mut dependencies);
         }
 
         for function in &self.functions {
@@ -488,5 +454,53 @@ impl Library {
         for x in &mut self.functions {
             x.mangle_paths(&monomorphs);
         }
+    }
+
+    fn instantiate_return_value_monomorphs(&mut self, dependencies: &mut Dependencies) {
+        let mut found = std::collections::HashSet::new();
+        self.structs.for_all_items(|x| {
+            x.find_return_value_monomorphs(self, &mut found);
+        });
+        self.unions.for_all_items(|x| {
+            x.find_return_value_monomorphs(self, &mut found);
+        });
+        self.enums.for_all_items(|x| {
+            x.find_return_value_monomorphs(self, &mut found);
+        });
+        self.typedefs.for_all_items(|x| {
+            x.find_return_value_monomorphs(self, &mut found, false);
+        });
+        for x in &self.functions {
+            x.find_return_value_monomorphs(self, &mut found);
+        }
+
+        // Emit all instantiated monomorphs as fields of a giant struct, which silences warnings
+        // and errors on several compilers.
+        let struct_name = match self.config.export.return_value_monomorphs_struct_name {
+            Some(ref name) => name,
+            _ => "__cbindgen_monomorph_struct",
+        };
+        let fields = found
+            .into_iter()
+            .enumerate()
+            .map(|(i, path)| {
+                Field::from_name_and_type(format!("field{}", i), Type::Path(path))
+            })
+            .collect();
+        let monomorph_struct = Struct::new(
+            Path::new(struct_name),
+            Default::default(), // no generic params
+            fields,
+            false,              // no tag field
+            false,              // not an enum body
+            None,               // no special alignment requirements
+            false,              // not transparent
+            None,               // no conf
+            Default::default(), // no annotations
+            Default::default(), // no documentation
+        );
+        self.structs.try_insert(monomorph_struct);
+        Type::Path(GenericPath::new(Path::new(struct_name), vec![]))
+            .add_dependencies(self, dependencies);
     }
 }
