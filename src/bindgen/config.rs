@@ -341,6 +341,12 @@ pub struct ExportConfig {
     pub renaming_overrides_prefixing: bool,
     /// Mangling configuration.
     pub mangle: MangleConfig,
+    /// Whether to instantiate the struct templates that were emitted, as members of a giant struct
+    /// with the name optionally overridden by [`instantiate_monomorphs_struct_name`]. This silences
+    /// warnings and errors for several compiles, notably MSVC.
+    pub instantiate_monomorphs: bool,
+    /// The struct name to use when [`instantiate_monomorphs`] is enabled, ignored otherwise.
+    pub instantiate_monomorphs_struct_name: Option<String>,
 }
 
 /// Mangling-specific configuration.

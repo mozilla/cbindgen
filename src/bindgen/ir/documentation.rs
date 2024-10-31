@@ -4,7 +4,7 @@
 
 use crate::bindgen::utilities::SynAttributeHelpers;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Documentation {
     pub doc_comment: Vec<String>,
 }
@@ -27,8 +27,6 @@ impl Documentation {
     }
 
     pub fn none() -> Self {
-        Documentation {
-            doc_comment: Vec::new(),
-        }
+        Self::default()
     }
 }

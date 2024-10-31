@@ -8,7 +8,7 @@ use crate::bindgen::config::{Config, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
+    AnnotationSet, Cfg, Documentation, Field, GenericPath, GenericArgument, GenericParams, Item, ItemContainer,
     Path, Repr, ReprAlign, ReprStyle,
 };
 use crate::bindgen::library::Library;
@@ -97,6 +97,15 @@ impl Union {
     pub fn simplify_standard_types(&mut self, config: &Config) {
         for field in &mut self.fields {
             field.ty.simplify_standard_types(config);
+        }
+    }
+
+    pub fn find_monomorphs(&self, library: &Library, out: &mut std::collections::HashSet<GenericPath>) {
+        if self.is_generic() {
+            return;
+        }
+        for field in &self.fields {
+            field.ty.find_monomorphs(library, out, false);
         }
     }
 

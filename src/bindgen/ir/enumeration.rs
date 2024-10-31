@@ -317,6 +317,16 @@ impl Enum {
         repr.style != ReprStyle::C
     }
 
+    pub fn find_monomorphs(&self, library: &Library, out: &mut std::collections::HashSet<GenericPath>) {
+        if self.is_generic() {
+            return;
+        }
+        for v in &self.variants {
+            if let VariantBody::Body { ref body, .. } = v.body {
+                body.find_monomorphs(library, out);
+            }
+        }
+    }
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         if self.is_generic() {
             return;

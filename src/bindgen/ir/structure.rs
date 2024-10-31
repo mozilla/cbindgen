@@ -10,7 +10,7 @@ use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams, Item,
+    AnnotationSet, Cfg, Constant, Documentation, Field, GenericPath, GenericArgument, GenericParams, Item,
     ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
 };
 use crate::bindgen::library::Library;
@@ -174,6 +174,14 @@ impl Struct {
         }
     }
 
+    pub fn find_monomorphs(&self, library: &Library, out: &mut std::collections::HashSet<GenericPath>) {
+        if self.is_generic() {
+            return;
+        }
+        for field in &self.fields {
+            field.ty.find_monomorphs(library, out, false);
+        }
+    }
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
