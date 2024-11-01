@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashSet;
 use std::io::Write;
 
 use syn::ext::IdentExt;
@@ -168,24 +169,21 @@ impl Struct {
 
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
-        match self.fields.first() {
-            Some(field) if self.is_transparent => Some(Typedef::new_from_struct_field(self, field)),
-            _ => None,
-        }
+        let field = self.fields.first()?;
+        self.is_transparent
+            .then(|| Typedef::new_from_struct_field(self, field))
     }
 
-    pub fn find_return_value_monomorphs(
-        &self,
-        library: &Library,
-        out: &mut std::collections::HashSet<GenericPath>,
-    ) {
+    pub fn find_return_value_monomorphs(&self, library: &Library, out: &mut HashSet<GenericPath>) {
         if self.is_generic() {
             return;
         }
+
         for field in &self.fields {
             field.ty.find_return_value_monomorphs(library, out, false);
         }
     }
+
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use syn::ext::IdentExt;
 
@@ -105,14 +105,15 @@ impl Typedef {
     pub fn find_return_value_monomorphs(
         &self,
         library: &Library,
-        out: &mut std::collections::HashSet<GenericPath>,
-        is_function_ret_val: bool,
+        out: &mut HashSet<GenericPath>,
+        is_return_value: bool,
     ) {
         if !self.is_generic() {
             self.aliased
-                .find_return_value_monomorphs(library, out, is_function_ret_val);
+                .find_return_value_monomorphs(library, out, is_return_value);
         }
     }
+
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.

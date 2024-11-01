@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 use crate::bindgen::bindings::Bindings;
@@ -457,35 +457,29 @@ impl Library {
     }
 
     fn instantiate_return_value_monomorphs(&mut self, dependencies: &mut Dependencies) {
-        let mut found = std::collections::HashSet::new();
-        self.structs.for_all_items(|x| {
-            x.find_return_value_monomorphs(self, &mut found);
-        });
-        self.unions.for_all_items(|x| {
-            x.find_return_value_monomorphs(self, &mut found);
-        });
-        self.enums.for_all_items(|x| {
-            x.find_return_value_monomorphs(self, &mut found);
-        });
-        self.typedefs.for_all_items(|x| {
-            x.find_return_value_monomorphs(self, &mut found, false);
-        });
+        let mut found = HashSet::new();
+        self.structs
+            .for_all_items(|x| x.find_return_value_monomorphs(self, &mut found));
+        self.unions
+            .for_all_items(|x| x.find_return_value_monomorphs(self, &mut found));
+        self.enums
+            .for_all_items(|x| x.find_return_value_monomorphs(self, &mut found));
+        self.typedefs
+            .for_all_items(|x| x.find_return_value_monomorphs(self, &mut found, false));
         for x in &self.functions {
             x.find_return_value_monomorphs(self, &mut found);
         }
 
-        // Emit all instantiated monomorphs as fields of a giant struct, which silences warnings
+        // Emit all instantiated monomorphs as fields of a dummy struct, which silences warnings
         // and errors on several compilers.
         let struct_name = match self.config.export.return_value_monomorphs_struct_name {
             Some(ref name) => name,
-            _ => "__cbindgen_monomorph_struct",
+            _ => "__cbindgen_return_value_monomorphs",
         };
         let fields = found
             .into_iter()
             .enumerate()
-            .map(|(i, path)| {
-                Field::from_name_and_type(format!("field{}", i), Type::Path(path))
-            })
+            .map(|(i, path)| Field::from_name_and_type(format!("field{}", i), Type::Path(path)))
             .collect();
         let monomorph_struct = Struct::new(
             Path::new(struct_name),

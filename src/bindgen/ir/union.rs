@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashSet;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, LayoutConfig};
@@ -100,14 +101,11 @@ impl Union {
         }
     }
 
-    pub fn find_return_value_monomorphs(
-        &self,
-        library: &Library,
-        out: &mut std::collections::HashSet<GenericPath>,
-    ) {
+    pub fn find_return_value_monomorphs(&self, library: &Library, out: &mut HashSet<GenericPath>) {
         if self.is_generic() {
             return;
         }
+
         for field in &self.fields {
             field.ty.find_return_value_monomorphs(library, out, false);
         }

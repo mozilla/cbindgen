@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::borrow::Cow;
+use std::collections::HashSet;
 
 use syn::ext::IdentExt;
 
@@ -742,19 +743,17 @@ impl Type {
     pub fn find_return_value_monomorphs(
         &self,
         library: &Library,
-        out: &mut std::collections::HashSet<GenericPath>,
-        is_function_ret_val: bool,
+        out: &mut HashSet<GenericPath>,
+        is_return_value: bool,
     ) {
         match *self {
             Type::Ptr { ref ty, .. } => ty.find_return_value_monomorphs(library, out, false),
             Type::Path(ref generic) => {
-                if !is_function_ret_val || generic.generics().is_empty() {
+                if !is_return_value || generic.generics().is_empty() {
                     return;
                 }
-                let Some(items) = library.get_items(generic.path()) else {
-                    return;
-                };
-                for item in items {
+
+                for item in library.get_items(generic.path()).into_iter().flatten() {
                     match item {
                         // Constants and statics cannot be function return types
                         ItemContainer::Constant(_) | ItemContainer::Static(_) => {}

@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashSet;
 use std::io::Write;
 
 use syn::ext::IdentExt;
@@ -317,20 +318,18 @@ impl Enum {
         repr.style != ReprStyle::C
     }
 
-    pub fn find_return_value_monomorphs(
-        &self,
-        library: &Library,
-        out: &mut std::collections::HashSet<GenericPath>,
-    ) {
+    pub fn find_return_value_monomorphs(&self, library: &Library, out: &mut HashSet<GenericPath>) {
         if self.is_generic() {
             return;
         }
+
         for v in &self.variants {
             if let VariantBody::Body { ref body, .. } = v.body {
                 body.find_return_value_monomorphs(library, out);
             }
         }
     }
+
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         if self.is_generic() {
             return;

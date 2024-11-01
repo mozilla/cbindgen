@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use syn::ext::IdentExt;
 
@@ -129,11 +129,7 @@ impl Function {
         }
     }
 
-    pub fn find_return_value_monomorphs(
-        &self,
-        library: &Library,
-        out: &mut std::collections::HashSet<GenericPath>,
-    ) {
+    pub fn find_return_value_monomorphs(&self, library: &Library, out: &mut HashSet<GenericPath>) {
         self.ret.find_return_value_monomorphs(library, out, true);
         for arg in &self.args {
             arg.ty.find_return_value_monomorphs(library, out, false);
