@@ -107,8 +107,10 @@ impl Typedef {
         monomorphs: &mut ReturnValueMonomorphs<'_>,
         is_return_value: bool,
     ) {
-        self.aliased
-            .find_return_value_monomorphs(monomorphs, is_return_value);
+        monomorphs.with_active_cfg(self.cfg.clone(), |m| {
+            self.aliased
+                .find_return_value_monomorphs(m, is_return_value);
+        });
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

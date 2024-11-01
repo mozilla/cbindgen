@@ -7,7 +7,7 @@ use std::iter::FromIterator as _;
 use std::mem;
 
 use crate::bindgen::ir::{
-    Documentation, Enum, Field, GenericArgument, GenericPath, Item, ItemContainer, OpaqueItem,
+    Cfg, Documentation, Enum, Field, GenericArgument, GenericPath, Item, ItemContainer, OpaqueItem,
     Path, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::library::Library;
@@ -152,7 +152,8 @@ impl Monomorphs {
 /// functions that can lead to compilation warnings/errors if not explicitly instantiated.
 pub struct ReturnValueMonomorphs<'a> {
     library: &'a Library,
-    monomorphs: HashSet<GenericPath>,
+    monomorphs: HashSet<(GenericPath, Option<Cfg>)>,
+    active_cfgs: Vec<Cfg>,
 }
 
 impl<'a> ReturnValueMonomorphs<'a> {
@@ -160,20 +161,42 @@ impl<'a> ReturnValueMonomorphs<'a> {
         Self {
             library,
             monomorphs: HashSet::new(),
+            active_cfgs: Vec::new(),
+        }
+    }
+
+    fn insert(&mut self, generic: &GenericPath, cfg: Option<Cfg>) {
+        if !generic.generics().is_empty() {
+            self.with_active_cfg(cfg, |m| {
+                let cfg = Cfg::join(&m.active_cfgs);
+                m.monomorphs.insert((generic.clone(), cfg));
+            });
+        }
+    }
+
+    pub fn with_active_cfg(&mut self, cfg: Option<Cfg>, thunk: impl FnOnce(&mut Self)) {
+        if let Some(cfg) = cfg {
+            self.active_cfgs.push(cfg);
+            thunk(self);
+            self.active_cfgs.pop();
+        } else {
+            thunk(self);
         }
     }
 
     /// Resolve a typedef that is a function return value, specializing it first if needed.
     fn handle_return_value_typedef(&mut self, typedef: Typedef, generic: &GenericPath) {
-        if typedef.is_generic() {
-            let args = generic.generics();
-            let aliased = &typedef.aliased;
-            let mappings = typedef.generic_params.call(typedef.path.name(), args);
-            let aliased = aliased.specialize(&mappings);
-            aliased.find_return_value_monomorphs(self, true);
-        } else {
-            typedef.find_return_value_monomorphs(self, true);
-        }
+        self.with_active_cfg(typedef.cfg.clone(), |m| {
+            if typedef.is_generic() {
+                let args = generic.generics();
+                let aliased = &typedef.aliased;
+                let mappings = typedef.generic_params.call(typedef.path.name(), args);
+                let aliased = aliased.specialize(&mappings);
+                aliased.find_return_value_monomorphs(m, true);
+            } else {
+                typedef.find_return_value_monomorphs(m, true);
+            }
+        });
     }
 
     /// Once we find a function return type, what we do with it depends on the type of item it
@@ -191,16 +214,13 @@ impl<'a> ReturnValueMonomorphs<'a> {
                 // Opaque items cannot be instantiated (doomed to compilation failure)
                 ItemContainer::OpaqueItem(_) => {}
                 ItemContainer::Typedef(t) => self.handle_return_value_typedef(t, generic),
-                ItemContainer::Union(_) | ItemContainer::Enum(_) => {
-                    if !generic.generics().is_empty() {
-                        self.monomorphs.insert(generic.clone());
-                    }
-                }
+                ItemContainer::Union(u) => self.insert(generic, u.cfg),
+                ItemContainer::Enum(e) => self.insert(generic, e.cfg),
                 ItemContainer::Struct(s) => {
                     if let Some(t) = s.as_typedef() {
                         self.handle_return_value_typedef(t, generic);
-                    } else if !generic.generics().is_empty() {
-                        self.monomorphs.insert(generic.clone());
+                    } else {
+                        self.insert(generic, s.cfg);
                     }
                 }
             }
@@ -225,11 +245,15 @@ impl<'a> ReturnValueMonomorphs<'a> {
 
         // Sort the output so that the struct remains stable across runs (tests want that).
         let mut monomorphs = Vec::from_iter(self.monomorphs);
-        monomorphs.sort();
+        monomorphs.sort_by(|(k1, _), (k2, _)| k1.cmp(k2));
         let fields = monomorphs
             .into_iter()
             .enumerate()
-            .map(|(i, path)| Field::from_name_and_type(format!("field{}", i), Type::Path(path)))
+            .map(|(i, (path, cfg))| {
+                let mut f = Field::from_name_and_type(format!("field{}", i), Type::Path(path));
+                f.cfg = cfg;
+                f
+            })
             .collect();
         let doc_comment = vec![
             " Dummy struct emitted by cbindgen to avoid compiler warnings/errors about",

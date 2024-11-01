@@ -1,3 +1,9 @@
+#if 0
+DEF DEFINE_FEATURE_1 = 0
+DEF DEFINE_FEATURE_2 = 0
+#endif
+
+
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, uintptr_t
 cdef extern from *:
@@ -5,6 +11,12 @@ cdef extern from *:
   ctypedef struct va_list
 
 cdef extern from *:
+
+  ctypedef struct Foo_u16:
+    uint16_t x;
+
+  IF DEFINE_FEATURE_1:
+    ctypedef Foo_u16 FooConditional_u16;
 
   ctypedef struct Foo_i16:
     int16_t x;
@@ -60,6 +72,12 @@ cdef extern from *:
 
   ctypedef Foo_i64 Transparent;
 
+  ctypedef struct Foo_u8:
+    uint8_t x;
+
+  IF DEFINE_FEATURE_2:
+    FooConditional_u16 double_feature();
+
   int32_t fnA();
 
   int16_t fnB();
@@ -83,3 +101,8 @@ cdef extern from *:
   WrapNonZeroInt fnM();
 
   Transparent fnN();
+
+  IF DEFINE_FEATURE_1:
+    Foo_u8 fnO();
+
+  Foo_u8 fnP();

@@ -137,7 +137,9 @@ impl Function {
     }
 
     pub fn find_return_value_monomorphs(&self, monomorphs: &mut ReturnValueMonomorphs<'_>) {
-        monomorphs.handle_function(&self.ret, self.args.iter().map(|arg| &arg.ty));
+        monomorphs.with_active_cfg(self.cfg.clone(), |m| {
+            m.handle_function(&self.ret, self.args.iter().map(|arg| &arg.ty));
+        });
     }
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         self.ret.add_monomorphs(library, out);

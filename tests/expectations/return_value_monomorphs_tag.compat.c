@@ -1,7 +1,21 @@
+#if 0
+DEF DEFINE_FEATURE_1 = 0
+DEF DEFINE_FEATURE_2 = 0
+#endif
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+
+struct Foo_u16 {
+  uint16_t x;
+};
+
+#if defined(DEFINE_FEATURE_1)
+typedef struct Foo_u16 FooConditional_u16;
+#endif
 
 struct Foo_i16 {
   int16_t x;
@@ -68,9 +82,17 @@ struct Foo_i64 {
 
 typedef struct Foo_i64 Transparent;
 
+struct Foo_u8 {
+  uint8_t x;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
+
+#if defined(DEFINE_FEATURE_2)
+FooConditional_u16 double_feature(void);
+#endif
 
 int32_t fnA(void);
 
@@ -95,6 +117,12 @@ struct Foo_bool fnL(void);
 WrapNonZeroInt fnM(void);
 
 Transparent fnN(void);
+
+#if defined(DEFINE_FEATURE_1)
+struct Foo_u8 fnO(void);
+#endif
+
+struct Foo_u8 fnP(void);
 
 #ifdef __cplusplus
 }  // extern "C"

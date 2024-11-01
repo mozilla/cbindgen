@@ -1,28 +1,40 @@
 #[repr(C)]
-struct Foo<T> {
+pub struct Foo<T> {
     x: T,
 }
 
 #[repr(C)]
-struct NotReturnValue<T> {
+pub struct NotReturnValue<T> {
     x: T,
 }
 
 #[repr(C)]
-struct FooField {
+pub struct FooField {
     f: extern "C" fn() -> Foo<i8>,
     g: extern "C" fn(NotReturnValue<i32>),
 }
 
 #[repr(C)]
-struct Bar<P, Q> {
+pub struct Bar<P, Q> {
     p: P,
     q: Q,
 }
 
 #[repr(transparent)]
-struct Transparent {
+pub struct Transparent {
     x: Foo<i64>,
+}
+
+#[cfg(feature = "feature1")]
+pub type FooConditional<T> = Foo<T>;
+
+pub struct Conditional;
+
+#[cfg(feature = "feature1")]
+impl Conditional {
+    #[no_mangle]
+    #[cfg(feature = "feature2")]
+    pub extern "C" fn double_feature() -> FooConditional<u16> { todo!() }
 }
 
 pub type IntBar<T> = Bar<i8, T>;
@@ -84,3 +96,11 @@ pub extern "C" fn fnM() -> WrapNonZeroInt { todo!() }
 
 #[no_mangle]
 pub extern "C" fn fnN() -> Transparent { todo!() }
+
+#[no_mangle]
+#[cfg(feature = "feature1")]
+pub extern "C" fn fnO() -> Foo<u8> { todo!() }
+
+// This one should cause Foo<u8> to appear a second time, because the cfg differs
+#[no_mangle]
+pub extern "C" fn fnP() -> Foo<u8> { todo!() }

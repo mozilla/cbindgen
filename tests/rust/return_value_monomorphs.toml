@@ -1,2 +1,13 @@
+header = """
+#if 0
+DEF DEFINE_FEATURE_1 = 0
+DEF DEFINE_FEATURE_2 = 0
+#endif
+"""
+
 [export]
 instantiate_return_value_monomorphs = true
+
+[defines]
+"feature = feature1" = "DEFINE_FEATURE_1"
+"feature = feature2" = "DEFINE_FEATURE_2"

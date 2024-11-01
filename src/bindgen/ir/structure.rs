@@ -174,9 +174,11 @@ impl Struct {
     }
 
     pub fn find_return_value_monomorphs(&self, monomorphs: &mut ReturnValueMonomorphs<'_>) {
-        for field in &self.fields {
-            field.ty.find_return_value_monomorphs(monomorphs, false);
-        }
+        monomorphs.with_active_cfg(self.cfg.clone(), |m| {
+            for field in &self.fields {
+                field.ty.find_return_value_monomorphs(m, false);
+            }
+        });
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

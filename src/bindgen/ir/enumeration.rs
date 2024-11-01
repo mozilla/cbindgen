@@ -318,11 +318,13 @@ impl Enum {
     }
 
     pub fn find_return_value_monomorphs(&self, monomorphs: &mut ReturnValueMonomorphs<'_>) {
-        for v in &self.variants {
-            if let VariantBody::Body { ref body, .. } = v.body {
-                body.find_return_value_monomorphs(monomorphs);
+        monomorphs.with_active_cfg(self.cfg.clone(), |m| {
+            for v in &self.variants {
+                if let VariantBody::Body { ref body, .. } = v.body {
+                    body.find_return_value_monomorphs(m);
+                }
             }
-        }
+        });
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

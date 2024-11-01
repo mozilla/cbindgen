@@ -1,3 +1,9 @@
+#if 0
+DEF DEFINE_FEATURE_1 = 0
+DEF DEFINE_FEATURE_2 = 0
+#endif
+
+
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
@@ -23,11 +29,25 @@ struct __cbindgen_return_value_monomorphs {
   Bar<int8_t, int32_t> field2;
   Bar<int16_t, int16_t> field3;
   Foo<bool> field4;
-  Foo<int8_t> field5;
-  Foo<int16_t> field6;
-  Foo<int32_t> field7;
-  Foo<int64_t> field8;
+#if defined(DEFINE_FEATURE_1)
+  Foo<uint8_t> field5
+#endif
+  ;
+  Foo<uint8_t> field6;
+#if (defined(DEFINE_FEATURE_2) && defined(DEFINE_FEATURE_1))
+  Foo<uint16_t> field7
+#endif
+  ;
+  Foo<int8_t> field8;
+  Foo<int16_t> field9;
+  Foo<int32_t> field10;
+  Foo<int64_t> field11;
 };
+
+#if defined(DEFINE_FEATURE_1)
+template<typename T>
+using FooConditional = Foo<T>;
+#endif
 
 template<typename T>
 struct NotReturnValue {
@@ -57,6 +77,10 @@ using Transparent = Foo<int64_t>;
 
 extern "C" {
 
+#if defined(DEFINE_FEATURE_2)
+FooConditional<uint16_t> double_feature();
+#endif
+
 int32_t fnA();
 
 int16_t fnB();
@@ -80,5 +104,11 @@ Foo<bool> fnL();
 WrapNonZeroInt fnM();
 
 Transparent fnN();
+
+#if defined(DEFINE_FEATURE_1)
+Foo<uint8_t> fnO();
+#endif
+
+Foo<uint8_t> fnP();
 
 }  // extern "C"
