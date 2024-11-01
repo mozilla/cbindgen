@@ -9,7 +9,9 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{
+    AnnotationSet, Cfg, Documentation, GenericParams, GenericPath, Path, Type,
+};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::rename::{IdentifierType, RenameRule};
@@ -47,8 +49,10 @@ impl Function {
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
-        if !sig.generics.params.is_empty() {
-            return Err("Generic functions are not supported".to_owned());
+        if let Ok(GenericParams(generics)) = GenericParams::load(&sig.generics) {
+            if !generics.is_empty() {
+                return Err("Generic functions are not supported".to_owned());
+            }
         }
 
         let mut args = sig.inputs.iter().try_skip_map(|x| x.as_argument())?;
