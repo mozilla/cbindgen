@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::collections::{HashMap, HashSet};
+use std::iter::FromIterator as _;
 use std::mem;
 
 use crate::bindgen::ir::{
@@ -222,8 +223,10 @@ impl<'a> ReturnValueMonomorphs<'a> {
             return None;
         }
 
-        let fields = self
-            .monomorphs
+        // Sort the output so that the struct remains stable across runs (tests want that).
+        let mut monomorphs = Vec::from_iter(self.monomorphs);
+        monomorphs.sort();
+        let fields = monomorphs
             .into_iter()
             .enumerate()
             .map(|(i, path)| Field::from_name_and_type(format!("field{}", i), Type::Path(path)))
