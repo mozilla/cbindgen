@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use syn::ext::IdentExt;
 
@@ -10,12 +10,12 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, GenericPath, Item,
-    ItemContainer, Path, Struct, Type,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
+    Path, Struct, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 
 /// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]
@@ -104,14 +104,11 @@ impl Typedef {
 
     pub fn find_return_value_monomorphs(
         &self,
-        library: &Library,
-        out: &mut HashSet<GenericPath>,
+        monomorphs: &mut ReturnValueMonomorphs<'_>,
         is_return_value: bool,
     ) {
-        if !self.is_generic() {
-            self.aliased
-                .find_return_value_monomorphs(library, out, is_return_value);
-        }
+        self.aliased
+            .find_return_value_monomorphs(monomorphs, is_return_value);
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

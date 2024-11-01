@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use syn::ext::IdentExt;
 
@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
 use crate::bindgen::library::Library;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
 use crate::bindgen::utilities::IterHelpers;
@@ -47,6 +47,10 @@ impl Function {
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
+        if !sig.generics.params.is_empty() {
+            return Err("Generic functions are not supported".to_owned());
+        }
+
         let mut args = sig.inputs.iter().try_skip_map(|x| x.as_argument())?;
         if sig.variadic.is_some() {
             args.push(FunctionArgument {
@@ -129,11 +133,8 @@ impl Function {
         }
     }
 
-    pub fn find_return_value_monomorphs(&self, library: &Library, out: &mut HashSet<GenericPath>) {
-        self.ret.find_return_value_monomorphs(library, out, true);
-        for arg in &self.args {
-            arg.ty.find_return_value_monomorphs(library, out, false);
-        }
+    pub fn find_return_value_monomorphs(&self, monomorphs: &mut ReturnValueMonomorphs<'_>) {
+        monomorphs.handle_function(&self.ret, self.args.iter().map(|arg| &arg.ty));
     }
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         self.ret.add_monomorphs(library, out);

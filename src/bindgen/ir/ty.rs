@@ -3,16 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::borrow::Cow;
-use std::collections::HashSet;
 
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, ItemContainer, Path};
+use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -742,49 +741,16 @@ impl Type {
 
     pub fn find_return_value_monomorphs(
         &self,
-        library: &Library,
-        out: &mut HashSet<GenericPath>,
+        monomorphs: &mut ReturnValueMonomorphs<'_>,
         is_return_value: bool,
     ) {
-        match *self {
-            Type::Ptr { ref ty, .. } => ty.find_return_value_monomorphs(library, out, false),
-            Type::Path(ref generic) => {
-                if !is_return_value || generic.generics().is_empty() {
-                    return;
-                }
-
-                for item in library.get_items(generic.path()).into_iter().flatten() {
-                    match item {
-                        // Constants and statics cannot be function return types
-                        ItemContainer::Constant(_) | ItemContainer::Static(_) => {}
-                        // Opaque items cannot be instantiated (doomed to compilation failure)
-                        ItemContainer::OpaqueItem(_) => {}
-                        ItemContainer::Typedef(typedef) => {
-                            // Typedefs can reference concrete types so we need to recurse deeper
-                            typedef.find_return_value_monomorphs(library, out, true);
-                        }
-                        ItemContainer::Struct(s) if s.is_transparent => {
-                            if let Some(typedef) = s.as_typedef() {
-                                typedef.find_return_value_monomorphs(library, out, true);
-                            }
-                        }
-                        ItemContainer::Struct(_)
-                        | ItemContainer::Union(_)
-                        | ItemContainer::Enum(_) => {
-                            out.insert(generic.clone());
-                        }
-                    }
-                }
-            }
+        match self {
+            Type::Ptr { ty, .. } => ty.find_return_value_monomorphs(monomorphs, false),
+            Type::Path(generic) => monomorphs.handle_return_value_path(generic, is_return_value),
             Type::Primitive(_) => {}
-            Type::Array(ref ty, _) => ty.find_return_value_monomorphs(library, out, false),
-            Type::FuncPtr {
-                ref ret, ref args, ..
-            } => {
-                ret.find_return_value_monomorphs(library, out, true);
-                for (_, ref arg) in args {
-                    arg.find_return_value_monomorphs(library, out, false);
-                }
+            Type::Array(ty, _) => ty.find_return_value_monomorphs(monomorphs, false),
+            Type::FuncPtr { ret, args, .. } => {
+                monomorphs.handle_function(ret, args.iter().map(|(_, arg)| arg))
             }
         }
     }

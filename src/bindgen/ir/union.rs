@@ -2,19 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashSet;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, GenericPath, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
+    Path, Repr, ReprAlign, ReprStyle,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::utilities::IterHelpers;
 
@@ -101,13 +100,9 @@ impl Union {
         }
     }
 
-    pub fn find_return_value_monomorphs(&self, library: &Library, out: &mut HashSet<GenericPath>) {
-        if self.is_generic() {
-            return;
-        }
-
+    pub fn find_return_value_monomorphs(&self, monomorphs: &mut ReturnValueMonomorphs<'_>) {
         for field in &self.fields {
-            field.ty.find_return_value_monomorphs(library, out, false);
+            field.ty.find_return_value_monomorphs(monomorphs, false);
         }
     }
 

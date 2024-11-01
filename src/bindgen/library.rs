@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::bindgen::bindings::Bindings;
@@ -11,10 +11,10 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
-    Constant, Enum, Field, Function, GenericPath, Item, ItemContainer, ItemMap, OpaqueItem, Path,
-    Static, Struct, Type, Typedef, Union,
+    Constant, Enum, Function, Item, ItemContainer, ItemMap, OpaqueItem, Path, Static, Struct,
+    Typedef, Union,
 };
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::ItemType;
 
 #[derive(Debug, Clone)]
@@ -457,44 +457,26 @@ impl Library {
     }
 
     fn instantiate_return_value_monomorphs(&mut self, dependencies: &mut Dependencies) {
-        let mut found = HashSet::new();
+        let mut monomorphs = ReturnValueMonomorphs::new(self);
         self.structs
-            .for_all_items(|x| x.find_return_value_monomorphs(self, &mut found));
+            .for_all_items(|x| x.find_return_value_monomorphs(&mut monomorphs));
         self.unions
-            .for_all_items(|x| x.find_return_value_monomorphs(self, &mut found));
+            .for_all_items(|x| x.find_return_value_monomorphs(&mut monomorphs));
         self.enums
-            .for_all_items(|x| x.find_return_value_monomorphs(self, &mut found));
+            .for_all_items(|x| x.find_return_value_monomorphs(&mut monomorphs));
         self.typedefs
-            .for_all_items(|x| x.find_return_value_monomorphs(self, &mut found, false));
+            .for_all_items(|x| x.find_return_value_monomorphs(&mut monomorphs, false));
         for x in &self.functions {
-            x.find_return_value_monomorphs(self, &mut found);
+            x.find_return_value_monomorphs(&mut monomorphs);
         }
 
-        // Emit all instantiated monomorphs as fields of a dummy struct, which silences warnings
-        // and errors on several compilers.
         let struct_name = match self.config.export.return_value_monomorphs_struct_name {
             Some(ref name) => name,
             _ => "__cbindgen_return_value_monomorphs",
         };
-        let fields = found
-            .into_iter()
-            .enumerate()
-            .map(|(i, path)| Field::from_name_and_type(format!("field{}", i), Type::Path(path)))
-            .collect();
-        let monomorph_struct = Struct::new(
-            Path::new(struct_name),
-            Default::default(), // no generic params
-            fields,
-            false,              // no tag field
-            false,              // not an enum body
-            None,               // no special alignment requirements
-            false,              // not transparent
-            None,               // no conf
-            Default::default(), // no annotations
-            Default::default(), // no documentation
-        );
-        self.structs.try_insert(monomorph_struct);
-        Type::Path(GenericPath::new(Path::new(struct_name), vec![]))
-            .add_dependencies(self, dependencies);
+        if let Some((struct_name, struct_def)) = monomorphs.into_struct(struct_name) {
+            self.structs.try_insert(struct_def);
+            struct_name.add_dependencies(self, dependencies);
+        }
     }
 }

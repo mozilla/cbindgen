@@ -144,9 +144,6 @@ fn compile(
             command.arg("-Wno-attributes");
             // clang warns about unused const variables.
             command.arg("-Wno-unused-const-variable");
-            // clang also warns about returning non-instantiated templates (they could
-            // be specialized, but they're not so it's fine).
-            command.arg("-Wno-return-type-c-linkage");
             // deprecated warnings should not be errors as it's intended
             command.arg("-Wno-deprecated-declarations");
 
