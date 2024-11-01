@@ -49,10 +49,9 @@ impl Function {
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
-        if let Ok(GenericParams(generics)) = GenericParams::load(&sig.generics) {
-            if !generics.is_empty() {
-                return Err("Generic functions are not supported".to_owned());
-            }
+        let GenericParams(generics) = GenericParams::load(&sig.generics)?;
+        if !generics.is_empty() {
+            return Err("Generic functions are not supported".to_owned());
         }
 
         let mut args = sig.inputs.iter().try_skip_map(|x| x.as_argument())?;
