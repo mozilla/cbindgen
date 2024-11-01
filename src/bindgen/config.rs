@@ -342,12 +342,13 @@ pub struct ExportConfig {
     /// Mangling configuration.
     pub mangle: MangleConfig,
     /// Whether to instantiate the monomorphs of template types used as function return values. This
-    /// is needed for C compatibility, because otherwise compilers warn (gcc/clang) or even reject
-    /// (MSVC) those function definitions. The compensation is made by emitting a single struct with
-    /// one field for each monomorphized type. The emitted wrapper struct's name can optionally be
-    /// overridden by [`return_value_monomorphs_struct_name`].
+    /// is needed for C compatibility, because otherwise compilers warn (`-Wreturn-type-c-linkage`
+    /// on gcc/clang) or even reject (MSVC) those function definitions. The compensation is made by
+    /// emitting a single struct with one field for each monomorphized type. The emitted wrapper
+    /// struct's name can optionally be overridden by [`return_value_monomorphs_struct_name`].
     pub instantiate_return_value_monomorphs: bool,
-    /// The struct name to use when [`instantiate_monomorphs`] is enabled, ignored otherwise.
+    /// Overrides the struct name to use when [`instantiate_return_value_monomorphs`] is enabled
+    /// (ignored otherwise). If not specified, the default is `__cbindgen_return_value_monomorphs`.
     pub return_value_monomorphs_struct_name: Option<String>,
 }
 
