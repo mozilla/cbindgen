@@ -627,6 +627,68 @@ impl Type {
         }
     }
 
+    /// If this type is transparent, recursively replace it with whatever type it aliases.
+    pub fn transparent_alias(&self, library: &Library) -> Option<Type> {
+        match self {
+            Type::Ptr {
+                ty,
+                is_const,
+                is_nullable,
+                is_ref,
+            } => Some(Type::Ptr {
+                ty: Box::new(ty.transparent_alias(library)?),
+                is_const: *is_const,
+                is_nullable: *is_nullable,
+                is_ref: *is_ref,
+            }),
+            Type::Path(generic_path) => {
+                let mut erased_types = library
+                    .get_items(generic_path.path())
+                    .into_iter()
+                    .flatten()
+                    .flat_map(|item| item.transparent_alias(generic_path.generics(), library));
+                let erased_type = erased_types.next()?;
+                if let Some(other_erased_type) = erased_types.next() {
+                    warn!(
+                        "Found multiple erased types for {:?}: {:?} vs. {:?}",
+                        generic_path, erased_type, other_erased_type
+                    );
+                    return None;
+                }
+                Some(erased_type)
+            }
+            Type::Primitive(_) => None,
+            Type::Array(ty, expr) => Some(Type::Array(
+                Box::new(ty.transparent_alias(library)?),
+                expr.clone(),
+            )),
+            Type::FuncPtr {
+                ret,
+                args,
+                is_nullable,
+                never_return,
+            } => {
+                let new_ret = ret.transparent_alias(library);
+                let new_args: Vec<_> = args.iter().map(|(_, ty)| ty.transparent_alias(library)).collect();
+                (new_ret.is_some() || new_args.iter().any(|arg| arg.is_some())).then(|| {
+                    Type::FuncPtr {
+                        ret: Box::new(new_ret.unwrap_or_else(|| ret.as_ref().clone())),
+                        args: new_args
+                            .into_iter()
+                            .zip(args)
+                            .map(|(new_arg, (name, arg))| {
+                                let new_arg = new_arg.unwrap_or_else(|| arg.clone());
+                                (name.clone(), new_arg)
+                            })
+                            .collect(),
+                        is_nullable: *is_nullable,
+                        never_return: *never_return,
+                    }
+                })
+            }
+        }
+    }
+
     pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> Type {
         match *self {
             Type::Ptr {
@@ -705,7 +767,7 @@ impl Type {
                             out.items.insert(path.clone());
 
                             for item in &items {
-                                item.deref().add_dependencies(library, out);
+                                item.add_dependencies(library, out);
                             }
                             for item in items {
                                 out.order.push(item);
@@ -751,8 +813,7 @@ impl Type {
                 let path = generic.path();
                 if let Some(items) = library.get_items(path) {
                     for item in items {
-                        item.deref()
-                            .instantiate_monomorph(generic.generics(), library, out);
+                        item.instantiate_monomorph(generic.generics(), library, out);
                     }
                 }
             }

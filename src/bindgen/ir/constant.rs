@@ -13,8 +13,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Struct, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericArgument, GenericParams, Item,
+    ItemContainer, Path, Struct, ToCondition, Type,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -602,6 +602,9 @@ impl Item for Constant {
 
     fn generic_params(&self) -> &GenericParams {
         GenericParams::empty()
+    }
+    fn transparent_alias(&self, _generics: &[GenericArgument], _library: &Library) -> Option<Type> {
+        None
     }
 }
 

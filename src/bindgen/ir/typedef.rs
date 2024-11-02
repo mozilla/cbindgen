@@ -113,6 +113,13 @@ impl Typedef {
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         self.aliased.mangle_paths(monomorphs);
     }
+
+    pub fn resolve_transparent_aliases(&self, library: &Library) -> Option<Typedef> {
+        Some(Typedef {
+            aliased: self.aliased.transparent_alias(library)?,
+            ..self.clone()
+        })
+    }
 }
 
 impl Item for Typedef {
@@ -154,6 +161,16 @@ impl Item for Typedef {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+
+    fn transparent_alias(&self, generics: &[GenericArgument], library: &Library) -> Option<Type> {
+        if self.is_generic() {
+            let mappings = self.generic_params.call(self.path.name(), generics);
+            let aliased = self.aliased.specialize(&mappings);
+            aliased.transparent_alias(library)
+        } else {
+            self.aliased.transparent_alias(library)
+        }
     }
 
     fn rename_for_config(&mut self, config: &Config) {

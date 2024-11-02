@@ -9,7 +9,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Repr, ReprAlign, ReprStyle,
+    Path, Repr, ReprAlign, ReprStyle, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -160,6 +160,10 @@ impl Item for Union {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+
+    fn transparent_alias(&self, _generics: &[GenericArgument], _library: &Library) -> Option<Type> {
+        None
     }
 
     fn rename_for_config(&mut self, config: &Config) {

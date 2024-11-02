@@ -501,6 +501,10 @@ impl Item for Enum {
         &self.generic_params
     }
 
+    fn transparent_alias(&self, _generics: &[GenericArgument], _library: &Library) -> Option<Type> {
+        None
+    }
+
     fn rename_for_config(&mut self, config: &Config) {
         config.export.rename(&mut self.export_name);
 

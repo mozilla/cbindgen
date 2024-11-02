@@ -95,7 +95,7 @@ impl Library {
             if let Some(items) = self.get_items(&path) {
                 if dependencies.items.insert(path) {
                     for item in &items {
-                        item.deref().add_dependencies(&self, &mut dependencies);
+                        item.add_dependencies(&self, &mut dependencies);
                     }
                     for item in items {
                         dependencies.order.push(item);
@@ -388,6 +388,23 @@ impl Library {
         for x in &mut self.functions {
             x.simplify_standard_types(config);
         }
+    }
+
+    fn erase_types(&mut self) {
+        let mut structs = HashMap::new();
+        let mut i = 0;
+        self.structs.for_all_items(|x| {
+            x.resolve_transparent_aliases(self).map(|alias| {
+                structs.insert(i, alias);
+            });
+            i += 1;
+        });
+
+        let mut i = 0;
+        self.structs.for_all_items_mut(|x| {
+            structs.remove(&i).map(|alias| *x = alias);
+            i += 1;
+        });
     }
 
     fn instantiate_monomorphs(&mut self) {

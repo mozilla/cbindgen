@@ -10,7 +10,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, GenericArgument, GenericParams, OpaqueItem,
-    Path, Static, Struct, Typedef, Union,
+    Path, Static, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
@@ -43,6 +43,7 @@ pub trait Item {
         !self.generic_params().is_empty()
     }
 
+    fn transparent_alias(&self, generics: &[GenericArgument], _library: &Library) -> Option<Type>;
     fn rename_for_config(&mut self, _config: &Config) {}
     fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) {}
     fn instantiate_monomorph(
@@ -66,8 +67,10 @@ pub enum ItemContainer {
     Typedef(Typedef),
 }
 
-impl ItemContainer {
-    pub fn deref(&self) -> &dyn Item {
+impl std::ops::Deref for ItemContainer {
+    type Target = dyn Item + 'static;
+
+    fn deref(&self) -> &Self::Target {
         match *self {
             ItemContainer::Constant(ref x) => x,
             ItemContainer::Static(ref x) => x,

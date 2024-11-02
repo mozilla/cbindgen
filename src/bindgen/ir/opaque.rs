@@ -7,6 +7,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
+    Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -92,6 +93,10 @@ impl Item for OpaqueItem {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+
+    fn transparent_alias(&self, generics: &[GenericArgument], _library: &Library) -> Option<Type> {
+        None // TODO!
     }
 
     fn rename_for_config(&mut self, config: &Config) {

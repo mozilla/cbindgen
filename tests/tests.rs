@@ -331,6 +331,18 @@ fn test_file(name: &'static str, filename: &'static str) {
     // Run tests in deduplication priority order. C++ compatibility tests are run first,
     // otherwise we would lose the C++ compiler run if they were deduplicated.
     let mut cbindgen_outputs = HashSet::new();
+
+    run_compile_test(
+        name,
+        test,
+        tmp_dir,
+        Language::Cxx,
+        /* cpp_compat = */ false,
+        None,
+        &mut HashSet::new(),
+        false,
+    );
+
     for cpp_compat in &[true, false] {
         for style in &[Style::Type, Style::Tag, Style::Both] {
             run_compile_test(
@@ -345,17 +357,6 @@ fn test_file(name: &'static str, filename: &'static str) {
             );
         }
     }
-
-    run_compile_test(
-        name,
-        test,
-        tmp_dir,
-        Language::Cxx,
-        /* cpp_compat = */ false,
-        None,
-        &mut HashSet::new(),
-        false,
-    );
 
     // `Style::Both` should be identical to `Style::Tag` for Cython.
     let mut cbindgen_outputs = HashSet::new();

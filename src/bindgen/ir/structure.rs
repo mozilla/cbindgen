@@ -192,6 +192,23 @@ impl Struct {
         }
     }
 
+    pub fn resolve_transparent_aliases(&self, library: &Library) -> Option<Struct> {
+        let types: Vec<_> = self.fields.iter().map(|f| f.ty.transparent_alias(library)).collect();
+        if types.iter().all(Option::is_none) {
+            return None;
+        }
+        let fields = types.into_iter().zip(&self.fields).map(|(ty, field)| {
+            Field {
+                ty: ty.unwrap_or_else(|| field.ty.clone()),
+                ..field.clone()
+            }
+        }).collect();
+        Some(Struct {
+            fields,
+            ..self.clone()
+        })
+    }
+
     pub fn specialize(
         &self,
         generic_values: &[GenericArgument],
@@ -310,6 +327,10 @@ impl Item for Struct {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+
+    fn transparent_alias(&self, generics: &[GenericArgument], library: &Library) -> Option<Type> {
+        self.as_typedef().and_then(|t| t.transparent_alias(generics, library))
     }
 
     fn rename_for_config(&mut self, config: &Config) {
