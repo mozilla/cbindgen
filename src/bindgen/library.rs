@@ -63,6 +63,7 @@ impl Library {
     pub fn generate(mut self) -> Result<Bindings, Error> {
         self.transfer_annotations();
         self.simplify_standard_types();
+        self.resolve_transparent_types();
 
         match self.config.function.sort_by.unwrap_or(self.config.sort_by) {
             SortKey::Name => self.functions.sort_by(|x, y| x.path.cmp(&y.path)),
@@ -390,19 +391,55 @@ impl Library {
         }
     }
 
-    fn erase_types(&mut self) {
+    fn resolve_transparent_types(&mut self) {
         let mut structs = HashMap::new();
         let mut i = 0;
         self.structs.for_all_items(|x| {
-            x.resolve_transparent_aliases(self).map(|alias| {
+            if let Some(alias) = x.resolve_transparent_aliases(self) {
                 structs.insert(i, alias);
-            });
+            }
             i += 1;
         });
 
         let mut i = 0;
         self.structs.for_all_items_mut(|x| {
-            structs.remove(&i).map(|alias| *x = alias);
+            if let Some(alias) = structs.remove(&i) {
+                *x = alias;
+            }
+            i += 1;
+        });
+
+        let mut typedefs = HashMap::new();
+        let mut i = 0;
+        self.typedefs.for_all_items(|x| {
+            if let Some(alias) = x.resolve_transparent_aliases(self) {
+                typedefs.insert(i, alias);
+            }
+            i += 1;
+        });
+
+        let mut i = 0;
+        self.typedefs.for_all_items_mut(|x| {
+            if let Some(alias) = typedefs.remove(&i) {
+                *x = alias;
+            }
+            i += 1;
+        });
+
+        let mut functions = HashMap::new();
+        let mut i = 0;
+        self.functions.iter().for_each(|x| {
+            if let Some(alias) = x.resolve_transparent_aliases(self) {
+                functions.insert(i, alias);
+            }
+            i += 1;
+        });
+
+        let mut i = 0;
+        self.functions.iter_mut().for_each(|x| {
+            if let Some(alias) = functions.remove(&i) {
+                *x = alias;
+            }
             i += 1;
         });
     }

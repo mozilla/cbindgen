@@ -116,7 +116,7 @@ impl Typedef {
 
     pub fn resolve_transparent_aliases(&self, library: &Library) -> Option<Typedef> {
         Some(Typedef {
-            aliased: self.aliased.transparent_alias(library)?,
+            aliased: self.aliased.transparent_alias(library, &self.generic_params)?,
             ..self.clone()
         })
     }
@@ -163,13 +163,14 @@ impl Item for Typedef {
         &self.generic_params
     }
 
-    fn transparent_alias(&self, generics: &[GenericArgument], library: &Library) -> Option<Type> {
+    fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
+        // NOTE: We don't need to resolve params, because our caller will reprocess it. Just
+        // specialize the aliased type (if needed) and return it.
         if self.is_generic() {
-            let mappings = self.generic_params.call(self.path.name(), generics);
-            let aliased = self.aliased.specialize(&mappings);
-            aliased.transparent_alias(library)
+            let mappings = self.generic_params.call(self.path.name(), args);
+            Some(self.aliased.specialize(&mappings))
         } else {
-            self.aliased.transparent_alias(library)
+            Some(self.aliased.clone())
         }
     }
 

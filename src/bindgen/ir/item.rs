@@ -43,7 +43,7 @@ pub trait Item {
         !self.generic_params().is_empty()
     }
 
-    fn transparent_alias(&self, generics: &[GenericArgument], _library: &Library) -> Option<Type>;
+    fn transparent_alias(&self, _library: &Library, _args: &[GenericArgument], _params: &GenericParams) -> Option<Type>;
     fn rename_for_config(&mut self, _config: &Config) {}
     fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) {}
     fn instantiate_monomorph(

@@ -9,7 +9,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{AnnotationSet, Cfg, GenericParams, Documentation, GenericPath, Path, Type};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
@@ -141,6 +141,29 @@ impl Function {
         for arg in &mut self.args {
             arg.ty.mangle_paths(monomorphs);
         }
+    }
+
+    pub fn resolve_transparent_aliases(&self, library: &Library) -> Option<Function> {
+        // TODO: Dedup with `Type::FuncPtr` case in `Type::transparent_alias`
+        let empty = GenericParams::empty();
+        let new_ret = self.ret.transparent_alias(library, empty);
+        let new_args: Vec<_> = self.args.iter().map(|arg| arg.ty.transparent_alias(library, empty)).collect();
+        (new_ret.is_some() || new_args.iter().any(|arg| arg.is_some())).then(|| {
+            Function {
+                ret: new_ret.unwrap_or_else(|| self.ret.clone()),
+                args: new_args
+                    .into_iter()
+                    .zip(&self.args)
+                    .map(|(ty, arg)| {
+                        FunctionArgument {
+                            ty: ty.unwrap_or_else(|| arg.ty.clone()),
+                            ..arg.clone()
+                        }
+                    })
+                    .collect(),
+                ..self.clone()
+            }
+        })
     }
 
     pub fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {

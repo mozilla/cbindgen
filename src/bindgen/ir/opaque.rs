@@ -95,8 +95,29 @@ impl Item for OpaqueItem {
         &self.generic_params
     }
 
-    fn transparent_alias(&self, generics: &[GenericArgument], _library: &Library) -> Option<Type> {
-        None // TODO!
+    fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
+        // NOTE: Our caller already resolved the params, no need to resolve them again here.
+        if !self.is_generic() {
+            return None;
+        }
+        let Some(GenericArgument::Type(ty)) = args.first() else {
+            return None;
+        };
+        let ty = match self.name() {
+            "NonNull" => {
+                return Some(Type::Ptr {
+                    ty: Box::new(ty.clone()),
+                    is_const: false,
+                    is_nullable: false,
+                    is_ref: false,
+                })
+            }
+                "NonZero" => return ty.make_zeroable(false),
+            "Option" => ty.make_nullable().or_else(|| ty.make_zeroable(true))?,
+            _ => return None,
+        };
+        let mappings = self.generic_params.call(self.path.name(), args);
+        Some(ty.specialize(&mappings))
     }
 
     fn rename_for_config(&mut self, config: &Config) {

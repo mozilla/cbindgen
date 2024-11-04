@@ -110,7 +110,7 @@ impl Item for Static {
         GenericParams::empty()
     }
 
-    fn transparent_alias(&self, _generics: &[GenericArgument], _library: &Library) -> Option<Type> {
+    fn transparent_alias(&self, _library: &Library, _args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
         None
     }
 

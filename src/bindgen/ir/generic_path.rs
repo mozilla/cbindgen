@@ -25,11 +25,11 @@ pub struct GenericParam {
 }
 
 impl GenericParam {
-    pub fn new_type_param(name: &str) -> Self {
+    pub fn new_type_param(name: &str, default: Option<GenericArgument>) -> Self {
         GenericParam {
             name: Path::new(name),
             ty: GenericParamType::Type,
-            default: None,
+            default,
         }
     }
 
@@ -79,6 +79,9 @@ impl GenericParam {
 
     pub fn name(&self) -> &Path {
         &self.name
+    }
+    pub fn default(&self) -> Option<&GenericArgument> {
+        self.default.as_ref()
     }
 }
 

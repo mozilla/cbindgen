@@ -443,7 +443,7 @@ impl Parse {
             let path = Path::new(path);
             let generic_params: Vec<_> = generic_params
                 .into_iter()
-                .map(GenericParam::new_type_param)
+                .map(|name| GenericParam::new_type_param(name, None))
                 .collect();
             self.opaque_items.try_insert(OpaqueItem::new(
                 path,
@@ -462,6 +462,7 @@ impl Parse {
         add_opaque("Result", vec!["T", "E"]);
         add_opaque("Option", vec!["T"]);
         add_opaque("NonNull", vec!["T"]);
+        add_opaque("NonZero", vec!["T"]);
         add_opaque("Vec", vec!["T"]);
         add_opaque("HashMap", vec!["K", "V", "Hasher"]);
         add_opaque("BTreeMap", vec!["K", "V"]);

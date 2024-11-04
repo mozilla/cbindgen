@@ -501,7 +501,7 @@ impl Item for Enum {
         &self.generic_params
     }
 
-    fn transparent_alias(&self, _generics: &[GenericArgument], _library: &Library) -> Option<Type> {
+    fn transparent_alias(&self, _library: &Library, _args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
         None
     }
 

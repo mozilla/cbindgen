@@ -603,7 +603,7 @@ impl Item for Constant {
     fn generic_params(&self) -> &GenericParams {
         GenericParams::empty()
     }
-    fn transparent_alias(&self, _generics: &[GenericArgument], _library: &Library) -> Option<Type> {
+    fn transparent_alias(&self, _library: &Library, _args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
         None
     }
 }
