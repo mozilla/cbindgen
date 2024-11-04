@@ -1,0 +1,20 @@
+header = """
+"""
+
+[layout]
+# We do not define aligned_n.
+packed = "CBINDGEN_PACKED"
+
+[export]
+include = [
+	"PackedStruct",
+	"PackedUnion",
+	"OpaqueAlign1Union",
+	"OpaqueAlign4Union",
+	"OpaqueAlign16Union",
+	"OpaqueAlign1Struct",
+	"OpaqueAlign2Struct",
+	"OpaqueAlign4Struct",
+	"OpaqueAlign8Struct",
+	"OpaqueAlign32Struct",
+]

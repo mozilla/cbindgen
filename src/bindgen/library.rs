@@ -28,6 +28,7 @@ pub struct Library {
     functions: Vec<Function>,
     source_files: Vec<PathBuf>,
     package_version: String,
+    binding_crate_lib_name: String,
 }
 
 impl Library {
@@ -44,6 +45,7 @@ impl Library {
         functions: Vec<Function>,
         source_files: Vec<PathBuf>,
         package_version: String,
+        binding_crate_lib_name: String,
     ) -> Library {
         Library {
             config,
@@ -57,6 +59,7 @@ impl Library {
             functions,
             source_files,
             package_version,
+            binding_crate_lib_name,
         }
     }
 
@@ -145,6 +148,7 @@ impl Library {
             self.source_files,
             false,
             self.package_version,
+            self.binding_crate_lib_name,
         ))
     }
 

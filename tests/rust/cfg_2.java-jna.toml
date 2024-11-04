@@ -1,0 +1,7 @@
+[java_jna]
+extra_defs = "class Bar {}"
+
+[export]
+exclude = [
+    "DEFAULT_X", "Bar"
+]

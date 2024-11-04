@@ -50,11 +50,17 @@ impl error::Error for Error {
 #[derive(Clone, Deserialize, Debug)]
 pub struct Manifest {
     pub package: Package,
+    pub lib: Option<Lib>,
 }
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct Package {
     pub name: String,
+}
+
+#[derive(Clone, Deserialize, Debug)]
+pub struct Lib {
+    pub name: Option<String>,
 }
 
 /// Parse the Cargo.toml for a given path
