@@ -106,7 +106,7 @@ struct Parser<'a> {
     out: Parse,
 }
 
-impl<'a> Parser<'a> {
+impl Parser<'_> {
     fn should_parse_dependency(&self, pkg_name: &str) -> bool {
         if self.parsed_crates.contains(pkg_name) {
             return false;

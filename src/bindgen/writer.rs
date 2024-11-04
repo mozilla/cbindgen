@@ -21,7 +21,7 @@ pub enum ListType<'a> {
 /// A utility wrapper to write unbuffered data and correctly adjust positions.
 struct InnerWriter<'a, 'b: 'a, F: 'a + Write>(&'a mut SourceWriter<'b, F>);
 
-impl<'a, 'b, F: Write> Write for InnerWriter<'a, 'b, F> {
+impl<F: Write> Write for InnerWriter<'_, '_, F> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         let writer = &mut self.0;
 
