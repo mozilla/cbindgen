@@ -732,6 +732,27 @@ impl Enum {
                     write!(out, "{}enum {}", config.style.cython_def(), tag_name);
                 }
             }
+            Language::D => {
+                out.write("enum");
+
+                if self.annotations.must_use(config) {
+                    if let Some(ref anno) = config.enumeration.must_use {
+                        write!(out, " {}", anno)
+                    }
+                }
+
+                if let Some(note) = self
+                    .annotations
+                    .deprecated_note(config, DeprecatedNoteKind::Enum)
+                {
+                    write!(out, " {}", note);
+                }
+
+                write!(out, " {}", tag_name);
+                if let Some(prim) = size {
+                    write!(out, " : {}", prim);
+                }
+            }
         }
         out.open_brace();
 
@@ -748,7 +769,11 @@ impl Enum {
             out.close_brace(false);
             write!(out, " {};", tag_name);
         } else {
-            out.close_brace(true);
+            if config.language != Language::D {
+                out.close_brace(true);
+            } else {
+                out.close_brace(false);
+            }
         }
 
         // Emit typedef specifying the tag enum's size if necessary.
@@ -760,7 +785,7 @@ impl Enum {
                 out.write("#ifndef __cplusplus");
             }
 
-            if config.language != Language::Cxx {
+            if config.language != Language::Cxx && config.language != Language::D {
                 out.new_line();
                 write!(out, "{} {} {};", config.language.typedef(), prim, tag_name);
             }
@@ -784,7 +809,7 @@ impl Enum {
     ) {
         match config.language {
             Language::C if config.style.generate_typedef() => out.write("typedef "),
-            Language::C | Language::Cxx => {}
+            Language::C | Language::Cxx | Language::D => {}
             Language::Cython => out.write(config.style.cython_def()),
         }
 
