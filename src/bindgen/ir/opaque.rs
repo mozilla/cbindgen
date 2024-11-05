@@ -2,13 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::borrow::Cow;
-
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParam, GenericParams, Item, ItemContainer, Path,
+    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
     Type,
 };
 use crate::bindgen::library::Library;
@@ -185,28 +183,8 @@ impl Item for OpaqueItem {
 
 impl ResolveTransparentTypes for OpaqueItem {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
-        // Resolve any defaults in the generic params
-        let params = &self.generic_params;
-        let new_params: Vec<_> = params.iter().map(|param| {
-            match param.default()? {
-                GenericArgument::Type(ty) => {
-                    // NOTE: Param defaults can reference other params
-                    let new_ty = ty.transparent_alias(library, params)?;
-                    let default = Some(GenericArgument::Type(new_ty));
-                    Some(GenericParam::new_type_param(param.name().name(), default))
-                }
-                _ => None,
-            }
-        }).collect();
-
-        if new_params.iter().all(Option::is_none) {
-            return None;
-        }
-        let params = new_params.into_iter().zip(&params.0).map(|(new_param, param)| {
-            new_param.unwrap_or_else(|| param.clone())
-        });
         Some(OpaqueItem {
-            generic_params: GenericParams(params.collect()),
+            generic_params: Self::resolve_generic_params(library, &self.generic_params)?,
             ..self.clone()
         })
     }

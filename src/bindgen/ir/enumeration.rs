@@ -10,7 +10,7 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, GenericParam, DeprecatedNoteKind, Documentation, Field,
+    AnnotationSet, AnnotationValue, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation, Field,
     GenericArgument, GenericParams, GenericPath, Item, ItemContainer, Literal, Path, Repr,
     ReprStyle, Struct, ToCondition, Type,
 };
@@ -648,58 +648,24 @@ impl Item for Enum {
 
 impl ResolveTransparentTypes for Enum {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
-        // Resolve any defaults in the generic params
         let params = &self.generic_params;
-        let new_params: Vec<_> = params.iter().map(|param| {
-            match param.default()? {
-                GenericArgument::Type(ty) => {
-                    // NOTE: Param defaults can reference other params
-                    let new_ty = ty.transparent_alias(library, params)?;
-                    let default = Some(GenericArgument::Type(new_ty));
-                    Some(GenericParam::new_type_param(param.name().name(), default))
-                }
-                _ => None,
-            }
-        }).collect();
-        let new_params = new_params.iter().any(Option::is_some).then(|| {
-            let params = new_params.into_iter().zip(&params.0).map(|(new_param, param)| {
-                new_param.unwrap_or_else(|| param.clone())
-            });
-            GenericParams(params.collect())
-        });
+        let new_params = Self::resolve_generic_params(library, params);
         let params = new_params.as_ref().unwrap_or(params);
-        let mut skip_inline_tag_field = Self::inline_tag_field(&self.repr);
+        let skip_inline_tag_field = Self::inline_tag_field(&self.repr);
         let variants: Vec<_> = self.variants.iter().map(|v| match v.body {
             VariantBody::Body { ref name, ref body, inline, inline_casts } => {
-                let fields: Vec<_> = body.fields.iter().map(|f| {
-                    // Ignore the inline Tag field, if any (it's always first)
-                    if skip_inline_tag_field {
-                        skip_inline_tag_field = false;
-                        None
-                    } else {
-                        Some(Field {
-                            ty: f.ty.transparent_alias(library, params)?,
-                            ..f.clone()
-                        })
-                    }
-                }).collect();
-
-                fields.iter().any(Option::is_some).then(|| {
-                    EnumVariant {
+                Some(EnumVariant {
                         body: VariantBody::Body {
                             name: name.clone(),
                             body: Struct {
-                                fields: fields.into_iter().zip(&body.fields).map(|(new_field, field)| {
-                                    new_field.unwrap_or_else(|| field.clone())
-                                }).collect(),
+                                fields: Self::resolve_fields(library, &body.fields, params, skip_inline_tag_field)?,
                                 ..body.clone()
                             },
                             inline,
                             inline_casts,
                         },
                         ..v.clone()
-                    }
-                })
+                    })
             }
             VariantBody::Empty(..) => None,
         }).collect();

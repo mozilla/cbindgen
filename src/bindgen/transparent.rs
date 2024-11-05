@@ -1,10 +1,54 @@
 use std::collections::HashMap;
 
-use crate::bindgen::ir::{Constant, Static, Enum, Struct, Union, OpaqueItem, Typedef, Function, Item, ItemMap};
+use crate::bindgen::ir::{Constant, Static, Enum, Struct, Union, OpaqueItem, Typedef, Function, Item, ItemMap, GenericParams, GenericArgument, GenericParam, Field};
 use crate::bindgen::library::Library;
 
 pub trait ResolveTransparentTypes: Sized {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Self>;
+
+    fn resolve_fields(library: &Library, fields: &[Field], params: &GenericParams, mut skip_first: bool) -> Option<Vec<Field>> {
+        let new_fields: Vec<_> = fields.iter().map(|f| {
+            // Ignore the inline Tag field, if any (it's always first)
+            if skip_first {
+                skip_first = false;
+                None
+            } else {
+                Some(Field {
+                    ty: f.ty.transparent_alias(library, params)?,
+                    ..f.clone()
+                })
+            }
+        }).collect();
+
+        if new_fields.iter().all(Option::is_none) {
+            return None;
+        }
+        Some(new_fields.into_iter().zip(fields).map(|(new_field, field)| {
+            new_field.unwrap_or_else(|| field.clone())
+        }).collect())
+    }
+
+    fn resolve_generic_params(library: &Library, params: &GenericParams) -> Option<GenericParams> {
+        // Resolve defaults in the generic params
+        let new_params: Vec<_> = params.iter().map(|param| {
+            match param.default()? {
+                GenericArgument::Type(ty) => {
+                    // NOTE: Param defaults can reference other params
+                    let new_ty = ty.transparent_alias(library, params)?;
+                    let default = Some(GenericArgument::Type(new_ty));
+                    Some(GenericParam::new_type_param(param.name().name(), default))
+                }
+                _ => None,
+            }
+        }).collect();
+
+        new_params.iter().any(Option::is_some).then(|| {
+            let params = new_params.into_iter().zip(&params.0).map(|(new_param, param)| {
+                new_param.unwrap_or_else(|| param.clone())
+            });
+            GenericParams(params.collect())
+        })
+    }
 }
 
 pub type ResolvedItems<T> = HashMap<usize, T>;

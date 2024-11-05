@@ -62,6 +62,8 @@ impl Library {
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
+        //self.transfer_annotations();
+        //self.simplify_standard_types();
         self.resolve_transparent_types();
 
         match self.config.function.sort_by.unwrap_or(self.config.sort_by) {
