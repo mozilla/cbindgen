@@ -2,15 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashMap;
-
+use std::borrow::Cow;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParam, GenericParams, Item, ItemContainer,
     Path, Struct, Type,
 };
 use crate::bindgen::library::Library;
@@ -118,8 +117,30 @@ impl Typedef {
     }
 
     pub fn resolve_transparent_aliases(&self, library: &Library) -> Option<Typedef> {
+        // Resolve any defaults in the generic params
+        let params = &self.generic_params;
+        let new_params: Vec<_> = params.iter().map(|param| {
+            match param.default()? {
+                GenericArgument::Type(ty) => {
+                    // NOTE: Param defaults can reference other params
+                    let new_ty = ty.transparent_alias(library, params)?;
+                    let default = Some(GenericArgument::Type(new_ty));
+                    Some(GenericParam::new_type_param(param.name().name(), default))
+                }
+                _ => None,
+            }
+        }).collect();
+        let new_params = new_params.iter().any(Option::is_some).then(|| {
+            let params = new_params.into_iter().zip(&params.0).map(|(new_param, param)| {
+                new_param.unwrap_or_else(|| param.clone())
+            });
+            GenericParams(params.collect())
+        });
+        let params = new_params.map_or_else(|| Cow::Borrowed(params), |new_params| Cow::Owned(new_params));
+        let aliased = self.aliased.transparent_alias(library, &params)?;
         Some(Typedef {
-            aliased: self.aliased.transparent_alias(library, &self.generic_params)?,
+            aliased,
+            generic_params: params.into_owned(),
             ..self.clone()
         })
     }
@@ -168,11 +189,12 @@ impl Item for Typedef {
 
     fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
         matches!(self.annotations.bool(Self::TRANSPARENT_TYPEDEF), Some(true)).then(|| {
+            //println!("Erasing {self:?}");
             // NOTE: We don't need to resolve params, because our caller will reprocess it. Just
             // specialize the aliased type (if needed) and return it.
             if self.is_generic() {
                 let mappings = self.generic_params.call(self.path.name(), args);
-            self.aliased.specialize(&mappings)
+                self.aliased.specialize(&mappings)
             } else {
                 self.aliased.clone()
             }

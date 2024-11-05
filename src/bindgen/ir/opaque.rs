@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
+
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -95,7 +97,7 @@ impl Item for OpaqueItem {
         &self.generic_params
     }
 
-    fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
+    fn transparent_alias(&self, library: &Library, args: &[GenericArgument], params: &GenericParams) -> Option<Type> {
         // NOTE: Our caller already resolved the params, no need to resolve them again here.
         if !self.is_generic() {
             return None;
@@ -103,21 +105,36 @@ impl Item for OpaqueItem {
         let Some(GenericArgument::Type(ty)) = args.first() else {
             return None;
         };
+        // We have to specialize before resolving, in case the args themselves get resolved
+        // Option<Transparent<NonZero<i32>>>
+        let ty = if self.is_generic() {
+            let Some(GenericArgument::Type(new_ty)) = args.first() else {
+                return None;
+            };
+            warn!("Specializing {ty:#?} as {new_ty:#?}");
+            new_ty
+        } else {
+            ty
+        };
+        //let resolved_ty = ty.transparent_alias(library, params);
+        //let ty = resolved_ty.map_or_else(|| Cow::Borrowed(ty), |resolved| Cow::Owned(resolved));
         let ty = match self.name() {
             "NonNull" => {
-                return Some(Type::Ptr {
+                //warn!("Processing {self:#?}");
+                Type::Ptr {
                     ty: Box::new(ty.clone()),
                     is_const: false,
                     is_nullable: false,
                     is_ref: false,
-                })
+                }
             }
-            "NonZero" => return ty.make_zeroable(false),
-            "Option" => ty.make_nullable().or_else(|| ty.make_zeroable(true))?,
+            "NonZero" => ty.make_zeroable(false)?,
+            "Option" => ty.make_zeroable(true).or_else(|| ty.make_nullable())?,
             _ => return None,
         };
-        let mappings = self.generic_params.call(self.path.name(), args);
-        Some(ty.specialize(&mappings))
+        Some(ty)
+        //let mappings = self.generic_params.call(self.path.name(), args);
+        //Some(ty.specialize(&mappings)).inspect(|x| warn!("specialized {:#?}\nfrom {ty:#?}\nto {x:#?}\nwith mappings {mappings:#?}", args.first()))
     }
 
     fn rename_for_config(&mut self, config: &Config) {
