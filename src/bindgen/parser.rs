@@ -12,10 +12,10 @@ use syn::ext::IdentExt;
 
 use crate::bindgen::bitflags;
 use crate::bindgen::cargo::{Cargo, PackageRef};
-use crate::bindgen::config::{Config, ParseConfig};
+use crate::bindgen::config::{Config, Language, ParseConfig};
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GenericParam,
+    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GenericPath, GenericArgument, GenericParam,
     GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::utilities::{SynAbiHelpers, SynAttributeHelpers, SynItemHelpers};
@@ -438,40 +438,77 @@ impl Parse {
         }
     }
 
-    pub fn add_std_types(&mut self) {
-        let mut add_opaque = |path: &str, generic_params: Vec<&str>| {
-            let path = Path::new(path);
-            let generic_params: Vec<_> = generic_params
-                .into_iter()
-                .map(|name| GenericParam::new_type_param(name, None))
-                .collect();
-            self.opaque_items.try_insert(OpaqueItem::new(
-                path,
-                GenericParams(generic_params),
-                None,
-                AnnotationSet::new(),
-                Documentation::none(),
-            ))
-        };
+    fn create_generic_params(param_names: Vec<&str>) -> Vec<GenericParam> {
+        param_names
+            .iter()
+            .map(|name| GenericParam::new_type_param(name, None))
+            .collect()
+    }
 
-        add_opaque("String", vec![]);
-        add_opaque("Box", vec!["T"]);
-        add_opaque("RefCell", vec!["T"]);
-        add_opaque("Rc", vec!["T"]);
-        add_opaque("Arc", vec!["T"]);
-        add_opaque("Result", vec!["T", "E"]);
-        add_opaque("Option", vec!["T"]);
-        add_opaque("NonNull", vec!["T"]);
-        add_opaque("NonZero", vec!["T"]);
-        add_opaque("Vec", vec!["T"]);
-        add_opaque("HashMap", vec!["K", "V", "Hasher"]);
-        add_opaque("BTreeMap", vec!["K", "V"]);
-        add_opaque("HashSet", vec!["T"]);
-        add_opaque("BTreeSet", vec!["T"]);
-        add_opaque("LinkedList", vec!["T"]);
-        add_opaque("VecDeque", vec!["T"]);
-        add_opaque("ManuallyDrop", vec!["T"]);
-        add_opaque("MaybeUninit", vec!["T"]);
+    fn add_opaque(&mut self, path: &str, generic_params: Vec<&str>) {
+        self.opaque_items.try_insert(OpaqueItem::new(
+            Path::new(path),
+            GenericParams(Self::create_generic_params(generic_params)),
+            None,
+            AnnotationSet::new(),
+            Documentation::none(),
+        ));
+    }
+
+    fn add_transparent_typedef(&mut self, path: &str, aliased: Type, generic_params: Vec<&str>) {
+        let mut annotations = AnnotationSet::new();
+        annotations.add_default(Typedef::TRANSPARENT_TYPEDEF, AnnotationValue::Bool(true));
+        self.typedefs.try_insert(Typedef::new(
+            Path::new(path),
+            GenericParams(Self::create_generic_params(generic_params)),
+            aliased,
+            None,
+            annotations,
+            Documentation::none(),
+        ));
+    }
+
+    pub fn add_std_types(&mut self, language: Language) {
+        // Always opaque
+        self.add_opaque("String", vec![]);
+        self.add_opaque("RefCell", vec!["T"]);
+        self.add_opaque("Rc", vec!["T"]);
+        self.add_opaque("Arc", vec!["T"]);
+        self.add_opaque("Result", vec!["T", "E"]);
+        self.add_opaque("Vec", vec!["T"]);
+        self.add_opaque("HashMap", vec!["K", "V", "Hasher"]);
+        self.add_opaque("BTreeMap", vec!["K", "V"]);
+        self.add_opaque("HashSet", vec!["T"]);
+        self.add_opaque("BTreeSet", vec!["T"]);
+        self.add_opaque("LinkedList", vec!["T"]);
+        self.add_opaque("VecDeque", vec!["T"]);
+
+        // Registered as opaque, but potentially transparent (see OpaqueItem::transparent_alias).
+        self.add_opaque("Option", vec!["T"]);
+        self.add_opaque("NonNull", vec!["T"]);
+        self.add_opaque("NonZero", vec!["T"]);
+
+        // Opaque in C++ but transparent in C
+        let tpath = Type::Path(GenericPath::new(Path::new("T"), vec![]));
+        if language == Language::Cxx {
+            self.add_opaque("Box", vec!["T"]);
+            self.add_opaque("ManuallyDrop", vec!["T"]);
+            self.add_opaque("MaybeUninit", vec!["T"]);
+            self.add_opaque("Pin", vec!["T"]);
+        } else {
+            // NOTE: Box<T> acts like NonNull<T> in C
+            let generics = vec![GenericArgument::Type(tpath.clone())];
+            let alias = Type::Path(GenericPath::new(Path::new("NonNull"), generics));
+            self.add_transparent_typedef("Box", alias, vec!["T"]);
+            self.add_transparent_typedef("ManuallyDrop", tpath.clone(), vec!["T"]);
+            self.add_transparent_typedef("MaybeUninit", tpath.clone(), vec!["T"]);
+            self.add_transparent_typedef("Pin", tpath.clone(), vec!["T"]);
+        }
+
+        // Always transparent
+        self.add_transparent_typedef("Cell", tpath.clone(), vec!["T"]);
+        self.add_transparent_typedef("SyncUnsafeCell", tpath.clone(), vec!["T"]);
+        self.add_transparent_typedef("UnsafeCell", tpath.clone(), vec!["T"]);
     }
 
     pub fn extend_with(&mut self, other: &Parse) {

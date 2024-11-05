@@ -112,7 +112,7 @@ impl Item for OpaqueItem {
                     is_ref: false,
                 })
             }
-                "NonZero" => return ty.make_zeroable(false),
+            "NonZero" => return ty.make_zeroable(false),
             "Option" => ty.make_nullable().or_else(|| ty.make_zeroable(true))?,
             _ => return None,
         };

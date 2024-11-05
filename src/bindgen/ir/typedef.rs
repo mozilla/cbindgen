@@ -30,6 +30,9 @@ pub struct Typedef {
 }
 
 impl Typedef {
+    // Name of the annotation that identifies a transparent typedef.
+    pub const TRANSPARENT_TYPEDEF: &'static str = "transparent-typedef";
+
     pub fn load(item: &syn::ItemType, mod_cfg: Option<&Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(&item.ty)? {
             let path = Path::new(item.ident.unraw().to_string());
@@ -164,14 +167,16 @@ impl Item for Typedef {
     }
 
     fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
-        // NOTE: We don't need to resolve params, because our caller will reprocess it. Just
-        // specialize the aliased type (if needed) and return it.
-        if self.is_generic() {
-            let mappings = self.generic_params.call(self.path.name(), args);
-            Some(self.aliased.specialize(&mappings))
-        } else {
-            Some(self.aliased.clone())
-        }
+        matches!(self.annotations.bool(Self::TRANSPARENT_TYPEDEF), Some(true)).then(|| {
+            // NOTE: We don't need to resolve params, because our caller will reprocess it. Just
+            // specialize the aliased type (if needed) and return it.
+            if self.is_generic() {
+                let mappings = self.generic_params.call(self.path.name(), args);
+            self.aliased.specialize(&mappings)
+            } else {
+                self.aliased.clone()
+            }
+        })
     }
 
     fn rename_for_config(&mut self, config: &Config) {
