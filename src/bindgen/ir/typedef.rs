@@ -15,6 +15,7 @@ use crate::bindgen::ir::{
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent::ResolveTransparentTypes;
 
 /// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]
@@ -115,35 +116,6 @@ impl Typedef {
     pub fn mangle_paths(&mut self, monomorphs: &Monomorphs) {
         self.aliased.mangle_paths(monomorphs);
     }
-
-    pub fn resolve_transparent_aliases(&self, library: &Library) -> Option<Typedef> {
-        // Resolve any defaults in the generic params
-        let params = &self.generic_params;
-        let new_params: Vec<_> = params.iter().map(|param| {
-            match param.default()? {
-                GenericArgument::Type(ty) => {
-                    // NOTE: Param defaults can reference other params
-                    let new_ty = ty.transparent_alias(library, params)?;
-                    let default = Some(GenericArgument::Type(new_ty));
-                    Some(GenericParam::new_type_param(param.name().name(), default))
-                }
-                _ => None,
-            }
-        }).collect();
-        let new_params = new_params.iter().any(Option::is_some).then(|| {
-            let params = new_params.into_iter().zip(&params.0).map(|(new_param, param)| {
-                new_param.unwrap_or_else(|| param.clone())
-            });
-            GenericParams(params.collect())
-        });
-        let params = new_params.map_or_else(|| Cow::Borrowed(params), |new_params| Cow::Owned(new_params));
-        let aliased = self.aliased.transparent_alias(library, &params)?;
-        Some(Typedef {
-            aliased,
-            generic_params: params.into_owned(),
-            ..self.clone()
-        })
-    }
 }
 
 impl Item for Typedef {
@@ -189,9 +161,8 @@ impl Item for Typedef {
 
     fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
         matches!(self.annotations.bool(Self::TRANSPARENT_TYPEDEF), Some(true)).then(|| {
-            //println!("Erasing {self:?}");
-            // NOTE: We don't need to resolve params, because our caller will reprocess it. Just
-            // specialize the aliased type (if needed) and return it.
+            // Specialize the aliased type (if needed) and return it. We don't need to resolve
+            // params, because our caller processes transparent aliases iteratively to fixpoint.
             if self.is_generic() {
                 let mappings = self.generic_params.call(self.path.name(), args);
                 self.aliased.specialize(&mappings)
@@ -235,5 +206,36 @@ impl Item for Typedef {
         );
 
         out.insert_typedef(library, self, monomorph, generic_values.to_owned());
+    }
+}
+
+impl ResolveTransparentTypes for Typedef {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Typedef> {
+        // Resolve any defaults in the generic params
+        let params = &self.generic_params;
+        let new_params: Vec<_> = params.iter().map(|param| {
+            match param.default()? {
+                GenericArgument::Type(ty) => {
+                    // NOTE: Param defaults can reference other params
+                    let new_ty = ty.transparent_alias(library, params)?;
+                    let default = Some(GenericArgument::Type(new_ty));
+                    Some(GenericParam::new_type_param(param.name().name(), default))
+                }
+                _ => None,
+            }
+        }).collect();
+        let new_params = new_params.iter().any(Option::is_some).then(|| {
+            let params = new_params.into_iter().zip(&params.0).map(|(new_param, param)| {
+                new_param.unwrap_or_else(|| param.clone())
+            });
+            GenericParams(params.collect())
+        });
+        let params = new_params.map_or_else(|| Cow::Borrowed(params), |new_params| Cow::Owned(new_params));
+        let aliased = self.aliased.transparent_alias(library, &params)?;
+        Some(Typedef {
+            aliased,
+            generic_params: params.into_owned(),
+            ..self.clone()
+        })
     }
 }

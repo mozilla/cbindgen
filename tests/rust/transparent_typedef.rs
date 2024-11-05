@@ -1,9 +1,14 @@
 use std::num::NonZero;
 use std::ptr::NonNull;
 
+pub struct Opaque<U = Alias<i32>>;
+
+#[no_mangle]
+pub extern "C" fn root_opaque(o: Opaque<Alias<Option<NonZero<i32>>>>) {}
+
 #[repr(C)]
-pub struct Struct<T> {
-    field: T,
+pub struct Struct<U = Alias<U>> {
+    field: U,
 }
 
 /// cbindgen:transparent-typedef
@@ -169,37 +174,37 @@ pub extern "C" fn root2(
     n: NotTransparent2<Struct<Option<i32>>>) {}
 
 #[repr(C)]
-pub struct FullyTransparentMany<E = Alias<Option<Transparent<NonZero<Transparent<i64>>>>>> {
-    ont: Option<NonNull<Transparent<E>>>,
-    otn: Option<Transparent<NonNull<E>>>,
-    ton: Transparent<Option<NonNull<E>>>,
+pub enum FullyTransparentMany<E = Alias<Option<Transparent<NonZero<Transparent<i64>>>>>> {
+    ont(Option<NonNull<Transparent<E>>>),
+    otn(Option<Transparent<NonNull<E>>>),
+    ton(Transparent<Option<NonNull<E>>>),
 
     // One erasable quadruple
-    totn: Transparent<Option<Transparent<NonNull<E>>>>,
+    totn(Transparent<Option<Transparent<NonNull<E>>>>),
 
-    f: extern "C" fn(
+    f(extern "C" fn(
         ont: Option<NonNull<Transparent<E>>>,
         otn: Option<Transparent<NonNull<E>>>,
         ton: Transparent<Option<NonNull<E>>>,
-    ) -> Transparent<Option<Transparent<NonNull<E>>>>,
+    ) -> Transparent<Option<Transparent<NonNull<E>>>>),
 
-    onti: Option<NonNull<Transparent<i32>>>,
-    otni: Option<Transparent<NonNull<i32>>>,
-    toni: Transparent<Option<NonNull<i32>>>,
+    onti(Option<NonNull<Transparent<i32>>>),
+    otni(Option<Transparent<NonNull<i32>>>),
+    toni(Transparent<Option<NonNull<i32>>>),
 
     // One erasable quadruple
-    totni: Transparent<Option<Transparent<NonNull<i32>>>>,
+    totni(Transparent<Option<Transparent<NonNull<i32>>>>),
 
-    fi: extern "C" fn(
+    fi(extern "C" fn(
         onti: Option<NonNull<Transparent<i32>>>,
         otni: Option<Transparent<NonNull<i32>>>,
         toni: Transparent<Option<NonNull<i32>>>,
-    ) -> Transparent<Option<Transparent<NonNull<i32>>>>,
+    ) -> Transparent<Option<Transparent<NonNull<i32>>>>),
 
 }
 
 #[repr(C)]
-pub struct PartlyTransparentMany<'a, E = Transparent<Option<Alias<i64>>>> {
+pub union PartlyTransparentMany<'a, E = Transparent<Option<Alias<i64>>>> {
     // A few triples
     tao: &'a Transparent<Alias<Option<E>>>,
     toa: &'a Transparent<Option<Alias<E>>>,

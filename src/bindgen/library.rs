@@ -13,6 +13,7 @@ use crate::bindgen::error::Error;
 use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent::TransparentTypeResolver;
 use crate::bindgen::ItemType;
 
 #[derive(Debug, Clone)]
@@ -390,56 +391,24 @@ impl Library {
     }
 
     fn resolve_transparent_types(&mut self) {
-        let mut structs = HashMap::new();
-        let mut i = 0;
-        self.structs.for_all_items(|x| {
-            if let Some(alias) = x.resolve_transparent_aliases(self) {
-                structs.insert(i, alias);
-            }
-            i += 1;
-        });
+        let mut resolver = TransparentTypeResolver::default();
+        TransparentTypeResolver::resolve_items(&mut resolver.constants, self, &self.constants);
+        TransparentTypeResolver::resolve_items(&mut resolver.globals, self, &self.globals);
+        TransparentTypeResolver::resolve_items(&mut resolver.enums, self, &self.enums);
+        TransparentTypeResolver::resolve_items(&mut resolver.structs, self, &self.structs);
+        TransparentTypeResolver::resolve_items(&mut resolver.unions, self, &self.unions);
+        TransparentTypeResolver::resolve_items(&mut resolver.opaque_items, self, &self.opaque_items);
+        TransparentTypeResolver::resolve_items(&mut resolver.typedefs, self, &self.typedefs);
+        resolver.resolve_functions(self, &self.functions);
 
-        let mut i = 0;
-        self.structs.for_all_items_mut(|x| {
-            if let Some(alias) = structs.remove(&i) {
-                *x = alias;
-            }
-            i += 1;
-        });
-
-        let mut typedefs = HashMap::new();
-        let mut i = 0;
-        self.typedefs.for_all_items(|x| {
-            if let Some(alias) = x.resolve_transparent_aliases(self) {
-                typedefs.insert(i, alias);
-            }
-            i += 1;
-        });
-
-        let mut i = 0;
-        self.typedefs.for_all_items_mut(|x| {
-            if let Some(alias) = typedefs.remove(&i) {
-                *x = alias;
-            }
-            i += 1;
-        });
-
-        let mut functions = HashMap::new();
-        let mut i = 0;
-        self.functions.iter().for_each(|x| {
-            if let Some(alias) = x.resolve_transparent_aliases(self) {
-                functions.insert(i, alias);
-            }
-            i += 1;
-        });
-
-        let mut i = 0;
-        self.functions.iter_mut().for_each(|x| {
-            if let Some(alias) = functions.remove(&i) {
-                *x = alias;
-            }
-            i += 1;
-        });
+        TransparentTypeResolver::install_items(&mut resolver.constants, &mut self.constants);
+        TransparentTypeResolver::install_items(&mut resolver.globals, &mut self.globals);
+        TransparentTypeResolver::install_items(&mut resolver.enums, &mut self.enums);
+        TransparentTypeResolver::install_items(&mut resolver.structs, &mut self.structs);
+        TransparentTypeResolver::install_items(&mut resolver.unions, &mut self.unions);
+        TransparentTypeResolver::install_items(&mut resolver.opaque_items, &mut self.opaque_items);
+        TransparentTypeResolver::install_items(&mut resolver.typedefs, &mut self.typedefs);
+        resolver.install_functions(&mut self.functions);
     }
 
     fn instantiate_monomorphs(&mut self) {

@@ -18,6 +18,7 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
+use crate::bindgen::transparent::ResolveTransparentTypes;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::SourceWriter;
 
@@ -444,5 +445,46 @@ impl Item for Struct {
         let mappings = self.generic_params.call(self.path.name(), generic_values);
         let monomorph = self.specialize(generic_values, &mappings, library.get_config());
         out.insert_struct(library, self, monomorph, generic_values.to_owned());
+    }
+}
+
+impl ResolveTransparentTypes for Struct {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Struct> {
+        // Resolve any defaults in the generic params
+        let params = &self.generic_params;
+        let new_params: Vec<_> = params.iter().map(|param| {
+            match param.default()? {
+                GenericArgument::Type(ty) => {
+                    // NOTE: Param defaults can reference other params
+                    let new_ty = ty.transparent_alias(library, params)?;
+                    let default = Some(GenericArgument::Type(new_ty));
+                    Some(GenericParam::new_type_param(param.name().name(), default))
+                }
+                _ => None,
+            }
+        }).collect();
+        let new_params = new_params.iter().any(Option::is_some).then(|| {
+            let params = new_params.into_iter().zip(&params.0).map(|(new_param, param)| {
+                new_param.unwrap_or_else(|| param.clone())
+            });
+            GenericParams(params.collect())
+        });
+        let params = new_params.as_ref().unwrap_or(params);
+        let types: Vec<_> = self.fields.iter().map(|f| f.ty.transparent_alias(library, params)).collect();
+        if new_params.is_none() && types.iter().all(Option::is_none) {
+            return None;
+        }
+        let fields = types.into_iter().zip(&self.fields).map(|(ty, field)| {
+            warn!("Type of field {:?} changed from {ty:#?}\nto {:#?}", field.name, field.ty);
+            Field {
+                ty: ty.unwrap_or_else(|| field.ty.clone()),
+                ..field.clone()
+            }
+        }).collect();
+        Some(Struct {
+            generic_params: new_params.unwrap_or(self.generic_params.clone()),
+            fields,
+            ..self.clone()
+        })
     }
 }

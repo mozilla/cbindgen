@@ -8,12 +8,13 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
+    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParam, GenericParams, Item, ItemContainer, Path,
     Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent::ResolveTransparentTypes;
 
 #[derive(Debug, Clone)]
 pub struct OpaqueItem {
@@ -97,7 +98,7 @@ impl Item for OpaqueItem {
         &self.generic_params
     }
 
-    fn transparent_alias(&self, library: &Library, args: &[GenericArgument], params: &GenericParams) -> Option<Type> {
+    fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
         // NOTE: Our caller already resolved the params, no need to resolve them again here.
         if !self.is_generic() {
             return None;
@@ -106,12 +107,11 @@ impl Item for OpaqueItem {
             return None;
         };
         // We have to specialize before resolving, in case the args themselves get resolved
-        // Option<Transparent<NonZero<i32>>>
-        let ty = if self.is_generic() {
-            let Some(GenericArgument::Type(new_ty)) = args.first() else {
-                return None;
-            };
-            warn!("Specializing {ty:#?} as {new_ty:#?}");
+        //
+        // NOTE: Unlike e.g. struct or typedef, specializing opaque types is just a direct
+        // replacement. Otherwise, specializing `Option<NonNull<T>>` for `T` would produce
+        // `Option<NonNull<NonNull<T>>>`. See also `OpaqueItem::instantiate_monomorph` below.
+        let ty = if let Some(GenericArgument::Type(new_ty)) = args.first() {
             new_ty
         } else {
             ty
@@ -129,7 +129,10 @@ impl Item for OpaqueItem {
                 }
             }
             "NonZero" => ty.make_zeroable(false)?,
-            "Option" => ty.make_zeroable(true).or_else(|| ty.make_nullable())?,
+            "Option" => {
+                warn!("Processing {self:#?}\nwith T={ty:#?}");
+                ty.make_zeroable(true).or_else(|| ty.make_nullable().inspect(|n| warn!("=> became {n:#?}")))?
+            }
             _ => return None,
         };
         Some(ty)
@@ -177,5 +180,34 @@ impl Item for OpaqueItem {
         );
 
         out.insert_opaque(self, monomorph, generic_values.to_owned());
+    }
+}
+
+impl ResolveTransparentTypes for OpaqueItem {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
+        // Resolve any defaults in the generic params
+        let params = &self.generic_params;
+        let new_params: Vec<_> = params.iter().map(|param| {
+            match param.default()? {
+                GenericArgument::Type(ty) => {
+                    // NOTE: Param defaults can reference other params
+                    let new_ty = ty.transparent_alias(library, params)?;
+                    let default = Some(GenericArgument::Type(new_ty));
+                    Some(GenericParam::new_type_param(param.name().name(), default))
+                }
+                _ => None,
+            }
+        }).collect();
+
+        if new_params.iter().all(Option::is_none) {
+            return None;
+        }
+        let params = new_params.into_iter().zip(&params.0).map(|(new_param, param)| {
+            new_param.unwrap_or_else(|| param.clone())
+        });
+        Some(OpaqueItem {
+            generic_params: GenericParams(params.collect()),
+            ..self.clone()
+        })
     }
 }

@@ -19,4 +19,4 @@ pub struct Foo<T> {
 pub type NonNullPtr<X> = Option<NonNull<X>>;
 
 #[no_mangle]
-pub extern "C" fn root(arg: NonNull<i32>, foo: *mut Foo<u64>, d: NonNull<NonNull<Opaque>>, e: NonNullPtr<NonNull<bool>>) { }
+pub extern "C" fn root(arg: NonNull<i32>, foo: *mut Foo<u64>, d: NonNull<NonNull<Opaque>>) { }

@@ -10,6 +10,7 @@ use crate::bindgen::ir::{
     Type,
 };
 use crate::bindgen::library::Library;
+use crate::bindgen::transparent::ResolveTransparentTypes;
 
 #[derive(Debug, Clone)]
 pub struct Static {
@@ -116,5 +117,14 @@ impl Item for Static {
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ty.add_dependencies(library, out);
+    }
+}
+
+impl ResolveTransparentTypes for Static {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
+        Some(Static {
+            ty: self.ty.transparent_alias(library, GenericParams::empty())?,
+            ..self.clone()
+        })
     }
 }
