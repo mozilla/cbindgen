@@ -2,8 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
+use indexmap::IndexSet;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::Config;
@@ -165,7 +166,7 @@ impl Item for Typedef {
         &self,
         library: &Library,
         out: &mut Dependencies,
-        ptr_types: &mut HashSet<GenericPath>,
+        ptr_types: &mut IndexSet<GenericPath>,
     ) {
         self.aliased.add_dependencies_ignoring_generics(
             &self.generic_params,

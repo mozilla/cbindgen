@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::borrow::Cow;
-use std::collections::HashSet;
 
+use indexmap::IndexSet;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, Language};
@@ -688,7 +688,7 @@ impl Type {
         generic_params: &GenericParams,
         library: &Library,
         out: &mut Dependencies,
-        ptr_types: &mut HashSet<GenericPath>,
+        ptr_types: &mut IndexSet<GenericPath>,
 
         is_ptr: bool,
     ) {
@@ -790,7 +790,7 @@ impl Type {
         &self,
         library: &Library,
         out: &mut Dependencies,
-        ptr_types: &mut HashSet<GenericPath>,
+        ptr_types: &mut IndexSet<GenericPath>,
     ) {
         self.add_dependencies_ignoring_generics(
             &GenericParams::default(),

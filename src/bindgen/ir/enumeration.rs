@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashSet;
 use std::io::Write;
 
+use indexmap::IndexSet;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, Language};
@@ -259,7 +259,7 @@ impl EnumVariant {
         &self,
         library: &Library,
         out: &mut Dependencies,
-        ptr_types: &mut HashSet<GenericPath>,
+        ptr_types: &mut IndexSet<GenericPath>,
     ) {
         if let VariantBody::Body { ref body, .. } = self.body {
             body.add_dependencies(library, out, ptr_types);
@@ -644,7 +644,7 @@ impl Item for Enum {
         &self,
         library: &Library,
         out: &mut Dependencies,
-        ptr_types: &mut HashSet<GenericPath>,
+        ptr_types: &mut IndexSet<GenericPath>,
     ) {
         for variant in &self.variants {
             variant.add_dependencies(library, out, ptr_types);

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashSet;
+use indexmap::IndexSet;
 
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
@@ -101,7 +101,7 @@ impl Item for OpaqueItem {
         config.export.rename(&mut self.export_name);
     }
 
-    fn add_dependencies(&self, _: &Library, _: &mut Dependencies, _: &mut HashSet<GenericPath>) {}
+    fn add_dependencies(&self, _: &Library, _: &mut Dependencies, _: &mut IndexSet<GenericPath>) {}
 
     fn instantiate_monomorph(
         &self,

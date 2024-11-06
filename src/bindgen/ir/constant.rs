@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::Write;
 
+use indexmap::IndexSet;
 use syn::ext::IdentExt;
 use syn::UnOp;
 
@@ -564,7 +565,7 @@ impl Item for Constant {
         &self,
         library: &Library,
         out: &mut Dependencies,
-        ptr_types: &mut HashSet<GenericPath>,
+        ptr_types: &mut IndexSet<GenericPath>,
     ) {
         self.ty.add_dependencies(library, out, ptr_types);
     }
