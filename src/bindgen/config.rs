@@ -1077,8 +1077,13 @@ impl Default for Config {
 
 impl Config {
     pub(crate) fn forward_declarations_enabled(&self) -> bool {
-        // Cannot generate forward declarations if `Style::Type` is specified.
-        self.language == Language::C && self.style.generate_tag()
+        match self.language {
+            Language::C | Language::Cxx => {
+                // Cannot generate forward declarations if `Style::Type` is specified.
+                self.style.generate_tag()
+            }
+            _ => false,
+        }
     }
 
     pub(crate) fn cpp_compatible_c(&self) -> bool {
