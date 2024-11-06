@@ -11,6 +11,8 @@ use std::io::{Read, Write};
 use std::path;
 use std::rc::Rc;
 
+use indexmap::IndexMap;
+
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::ir::{
     Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct, Type, Typedef,
@@ -28,7 +30,7 @@ pub struct Bindings {
     struct_map: ItemMap<Struct>,
     typedef_map: ItemMap<Typedef>,
     struct_fileds_memo: RefCell<HashMap<BindgenPath, Rc<Vec<String>>>>,
-    pub forward_declarations: Vec<Type>,
+    pub forward_declarations: IndexMap<BindgenPath, Type>,
     pub globals: Vec<Static>,
     pub constants: Vec<Constant>,
     pub items: Vec<ItemContainer>,
@@ -46,7 +48,7 @@ impl Bindings {
         config: Config,
         struct_map: ItemMap<Struct>,
         typedef_map: ItemMap<Typedef>,
-        forward_declarations: Vec<Type>,
+        forward_declarations: IndexMap<BindgenPath, Type>,
         constants: Vec<Constant>,
         globals: Vec<Static>,
         items: Vec<ItemContainer>,

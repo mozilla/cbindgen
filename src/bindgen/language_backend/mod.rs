@@ -137,7 +137,7 @@ pub trait LanguageBackend: Sized {
             return;
         }
         out.new_line_if_not_start();
-        for ty in &b.forward_declarations {
+        for ty in b.forward_declarations.values() {
             self.write_forward_declaration(out, ty);
             out.new_line();
         }
@@ -189,7 +189,13 @@ pub trait LanguageBackend: Sized {
                 ItemContainer::Enum(ref x) => self.write_enum(out, x),
                 ItemContainer::Struct(ref x) => self.write_struct_or_typedef(out, x, b),
                 ItemContainer::Union(ref x) => self.write_union(out, x),
-                ItemContainer::OpaqueItem(ref x) => self.write_opaque_item(out, x),
+                ItemContainer::OpaqueItem(ref x) => {
+                    if b.forward_declarations.contains_key(&x.path) {
+                        // The opaque type has already been declared by the forward declaration.
+                        continue;
+                    }
+                    self.write_opaque_item(out, x)
+                }
                 ItemContainer::Typedef(ref x) => self.write_type_def(out, x),
             }
             out.new_line();

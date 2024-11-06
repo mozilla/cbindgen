@@ -5,6 +5,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use indexmap::indexmap;
+
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::config::{Config, Language, SortKey};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
@@ -110,7 +112,7 @@ impl Library {
             }
         }
 
-        let mut forward_declarations = vec![];
+        let mut forward_declarations = indexmap! {};
         while !ptr_types.is_empty() {
             let mut remainings = Default::default();
             for path in ptr_types.into_iter() {
@@ -121,7 +123,7 @@ impl Library {
                     path.resolve_declaration_types(&resolver);
                     // A `GenericPath` for an alias type has no `ctype`.
                     if path.ctype().is_some() {
-                        forward_declarations.push(Type::Path(path));
+                        forward_declarations.insert(path.path().clone(), Type::Path(path));
                     }
                 }
                 Type::Path(path).add_dependencies(&self, &mut dependencies, &mut remainings);

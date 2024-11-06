@@ -710,7 +710,14 @@ impl Type {
                 // For avoiding the issue, it's postponed to collect the dependnecies until
                 // dependencies of all types other than pointer types are collected.
                 // See `Library::generate()`.
-                if is_ptr {
+                //
+                // Collect dependencies of the type if it's a generic type.  Because instantiation
+                // of a template type has to be performed after the template type definition in
+                // C++.
+                //
+                // FIXME: Forward declarations for C++ template types are not supported at this
+                // point.
+                if is_ptr && generic.generics().is_empty() {
                     let path = generic.path();
                     if !generic_params.iter().any(|param| param.name() == path)
                         && library.get_items(path).is_some()
