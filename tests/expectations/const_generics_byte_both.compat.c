@@ -3,6 +3,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Parser_40__41;
+struct Parser_123__125;
+
 typedef struct Parser_40__41 {
   uint8_t *buf;
   uintptr_t len;

@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct Opaque Opaque;
+struct Foo_u64;
+struct Opaque;
 
 typedef struct Foo_u64 {
   float *a;

@@ -8,6 +8,10 @@ cdef extern from *:
 
   ctypedef const char *Str;
 
+  ctypedef void (*SetCallback)(Str key);
+
+  ctypedef void (*MapCallback)(Str key, uint64_t val);
+
   cdef struct HashTable_Str__c_char__false:
     uintptr_t num_buckets;
     uintptr_t capacity;
@@ -17,16 +21,12 @@ cdef extern from *:
 
   ctypedef HashTable_Str__c_char__false MySet;
 
-  ctypedef void (*SetCallback)(Str key);
-
   cdef struct HashTable_Str__u64__true:
     uintptr_t num_buckets;
     uintptr_t capacity;
     uint8_t *occupied;
     Str *keys;
     uint64_t *vals;
-
-  ctypedef void (*MapCallback)(Str key, uint64_t val);
 
   MySet *new_set();
 

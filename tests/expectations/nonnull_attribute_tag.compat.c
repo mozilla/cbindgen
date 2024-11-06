@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 struct Opaque;
+struct Pointers_u64;
 
 struct References {
   const struct Opaque *CBINDGEN_NONNULL a;

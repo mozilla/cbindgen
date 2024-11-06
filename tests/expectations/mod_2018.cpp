@@ -4,6 +4,9 @@
 #include <ostream>
 #include <new>
 
+struct ExportMe;
+struct ExportMe2;
+
 constexpr static const uint8_t EXPORT_ME_TOO = 42;
 
 struct ExportMe {

@@ -3,9 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct A A;
-
-typedef struct B B;
+struct A;
+struct B;
 
 typedef struct List_A {
   struct A *members;

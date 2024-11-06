@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Foo;
+
 typedef struct Foo {
   uint64_t bar;
 } Foo;

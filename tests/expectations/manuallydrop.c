@@ -19,12 +19,12 @@ using ManuallyDrop = T;
 
 typedef struct NotReprC_Point NotReprC_Point;
 
-typedef NotReprC_Point Foo;
-
 typedef struct {
   int32_t x;
   int32_t y;
 } Point;
+
+typedef NotReprC_Point Foo;
 
 typedef struct {
   Point point;

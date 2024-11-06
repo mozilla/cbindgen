@@ -4,14 +4,15 @@
 
 use std::collections::HashMap;
 
+use indexmap::IndexSet;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Struct, Type,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, GenericPath, Item,
+    ItemContainer, Path, Struct, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -161,9 +162,19 @@ impl Item for Typedef {
         self.aliased.rename_for_config(config, &self.generic_params);
     }
 
-    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.aliased
-            .add_dependencies_ignoring_generics(&self.generic_params, library, out);
+    fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut IndexSet<GenericPath>,
+    ) {
+        self.aliased.add_dependencies_ignoring_generics(
+            &self.generic_params,
+            library,
+            out,
+            ptr_types,
+            false,
+        );
     }
 
     fn instantiate_monomorph(

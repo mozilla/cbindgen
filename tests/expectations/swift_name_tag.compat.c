@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct SelfTypeTestStruct;
 struct Opaque;
 
 struct SelfTypeTestStruct {

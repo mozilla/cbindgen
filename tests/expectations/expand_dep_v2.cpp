@@ -4,6 +4,8 @@
 #include <ostream>
 #include <new>
 
+struct dep_struct;
+
 struct dep_struct {
   uint32_t x;
   double y;

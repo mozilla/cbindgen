@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct MyStruct;
+
 typedef struct NotReprC_RefCell_i32 NotReprC_RefCell_i32;
 
 typedef struct NotReprC_RefCell_i32 Foo;

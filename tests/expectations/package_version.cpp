@@ -6,6 +6,8 @@
 #include <ostream>
 #include <new>
 
+struct Foo;
+
 struct Foo {
   uint64_t bar;
 };

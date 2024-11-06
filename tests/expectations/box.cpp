@@ -18,6 +18,8 @@ using Box = T*;
 #include <ostream>
 #include <new>
 
+struct MyStruct;
+
 template<typename T = void>
 struct NotReprC;
 

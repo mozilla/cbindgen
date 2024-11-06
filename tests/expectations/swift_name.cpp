@@ -6,10 +6,11 @@
 #include <ostream>
 #include <new>
 
+struct SelfTypeTestStruct;
+struct Opaque;
+
 template<typename T = void>
 struct Box;
-
-struct Opaque;
 
 struct SelfTypeTestStruct {
   uint8_t times;

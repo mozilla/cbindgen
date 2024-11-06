@@ -2,11 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use indexmap::IndexSet;
+
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
+    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, GenericPath, Item,
+    ItemContainer, Path,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -98,7 +101,7 @@ impl Item for OpaqueItem {
         config.export.rename(&mut self.export_name);
     }
 
-    fn add_dependencies(&self, _: &Library, _: &mut Dependencies) {}
+    fn add_dependencies(&self, _: &Library, _: &mut Dependencies, _: &mut IndexSet<GenericPath>) {}
 
     fn instantiate_monomorph(
         &self,

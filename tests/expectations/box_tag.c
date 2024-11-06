@@ -17,6 +17,8 @@ using Box = T*;
 #include <stdint.h>
 #include <stdlib.h>
 
+struct MyStruct;
+
 struct NotReprC_____i32;
 
 typedef struct NotReprC_____i32 Foo;

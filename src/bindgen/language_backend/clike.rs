@@ -767,6 +767,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         condition.write_after(self.config, out);
     }
 
+    fn write_forward_declaration<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Type) {
+        cdecl::write_type(self, out, t, self.config);
+        out.write(";");
+    }
+
     fn write_type<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Type) {
         cdecl::write_type(self, out, t, self.config);
     }

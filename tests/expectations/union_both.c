@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct Opaque Opaque;
+struct Opaque;
 
 typedef union Normal {
   int32_t x;

@@ -17,14 +17,16 @@ using ManuallyDrop = T;
 #include <stdint.h>
 #include <stdlib.h>
 
-struct NotReprC_Point;
+struct MyStruct;
 
-typedef struct NotReprC_Point Foo;
+struct NotReprC_Point;
 
 struct Point {
   int32_t x;
   int32_t y;
 };
+
+typedef struct NotReprC_Point Foo;
 
 struct MyStruct {
   struct Point point;

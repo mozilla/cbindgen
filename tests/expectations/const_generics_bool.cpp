@@ -9,6 +9,8 @@ struct MaybeUninit;
 
 using Str = const char*;
 
+using SetCallback = void(*)(Str key);
+
 template<typename K, typename V, bool IS_MAP>
 struct HashTable {
   uintptr_t num_buckets;
@@ -18,11 +20,9 @@ struct HashTable {
   MaybeUninit<V> *vals;
 };
 
-using MySet = HashTable<Str, char, false>;
-
-using SetCallback = void(*)(Str key);
-
 using MapCallback = void(*)(Str key, uint64_t val);
+
+using MySet = HashTable<Str, char, false>;
 
 extern "C" {
 

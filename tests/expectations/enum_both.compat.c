@@ -17,6 +17,8 @@ using Box = T*;
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Opaque;
+
 enum A
 #ifdef __cplusplus
   : uint64_t
@@ -145,8 +147,6 @@ typedef int8_t O;
 typedef struct J J;
 
 typedef struct K K;
-
-typedef struct Opaque Opaque;
 
 enum G_Tag
 #ifdef __cplusplus

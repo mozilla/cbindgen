@@ -15,6 +15,15 @@ cdef extern from *:
     B,
   ctypedef uint8_t FillRule;
 
+  cdef enum:
+    Bar4,
+    Taz2,
+  ctypedef uint8_t Tazz_Tag;
+
+  ctypedef union Tazz:
+    Tazz_Tag tag;
+    int32_t taz2;
+
   # This will have a destructor manually implemented via variant_body, and
   # similarly a Drop impl in Rust.
   ctypedef struct OwnedSlice_u32:
@@ -97,15 +106,6 @@ cdef extern from *:
     Taz_Tag tag;
     int32_t taz1;
     OwnedSlice_i32 taz3;
-
-  cdef enum:
-    Bar4,
-    Taz2,
-  ctypedef uint8_t Tazz_Tag;
-
-  ctypedef union Tazz:
-    Tazz_Tag tag;
-    int32_t taz2;
 
   cdef enum:
     Bar5,

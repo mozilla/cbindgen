@@ -13,6 +13,20 @@ enum FillRule {
 };
 typedef uint8_t FillRule;
 
+enum Tazz_Tag {
+  Bar4,
+  Taz2,
+};
+typedef uint8_t Tazz_Tag;
+
+typedef union {
+  Tazz_Tag tag;
+  struct {
+    Tazz_Tag taz2_tag;
+    int32_t taz2;
+  };
+} Tazz;
+
 /**
  * This will have a destructor manually implemented via variant_body, and
  * similarly a Drop impl in Rust.
@@ -136,20 +150,6 @@ typedef union {
     OwnedSlice_i32 taz3;
   };
 } Taz;
-
-enum Tazz_Tag {
-  Bar4,
-  Taz2,
-};
-typedef uint8_t Tazz_Tag;
-
-typedef union {
-  Tazz_Tag tag;
-  struct {
-    Tazz_Tag taz2_tag;
-    int32_t taz2;
-  };
-} Tazz;
 
 enum Tazzz_Tag {
   Bar5,

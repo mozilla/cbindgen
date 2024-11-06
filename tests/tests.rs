@@ -328,11 +328,16 @@ fn test_file(name: &'static str, filename: &'static str) {
         .tempdir()
         .expect("Creating tmp dir failed");
     let tmp_dir = tmp_dir.path();
+    let recursive = test.file_name().unwrap().to_str().unwrap().starts_with("recursive_");
     // Run tests in deduplication priority order. C++ compatibility tests are run first,
     // otherwise we would lose the C++ compiler run if they were deduplicated.
     let mut cbindgen_outputs = HashSet::new();
     for cpp_compat in &[true, false] {
         for style in &[Style::Type, Style::Tag, Style::Both] {
+            if recursive && matches!(style, Style::Type) {
+                // Test cases for recursive type references do not work with `Style::Type`.
+                continue;
+            }
             run_compile_test(
                 name,
                 test,
@@ -360,6 +365,10 @@ fn test_file(name: &'static str, filename: &'static str) {
     // `Style::Both` should be identical to `Style::Tag` for Cython.
     let mut cbindgen_outputs = HashSet::new();
     for style in &[Style::Type, Style::Tag] {
+        if recursive && matches!(style, Style::Type) {
+            // Test cases for recursive type references do not work with `Style::Type`.
+            continue;
+        }
         run_compile_test(
             name,
             test,

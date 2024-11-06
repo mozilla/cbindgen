@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Foo_u64;
 struct Opaque;
 
 struct Foo_u64 {

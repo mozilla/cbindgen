@@ -10,7 +10,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct Opaque Opaque;
+struct Opaque;
+struct Pointers_u64;
 
 typedef struct References {
   const struct Opaque *CBINDGEN_NONNULL a;

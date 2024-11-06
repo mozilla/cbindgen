@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct ArrayVec_____u8__100;
+
 struct ArrayVec_____u8__100 {
   uint8_t *xs[100];
   uint32_t len;

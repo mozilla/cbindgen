@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+union StyleFoo_i32;
+struct StyleBar_i32;
+union StyleBaz;
+struct StyleTaz;
+
 struct StylePoint_i32 {
   int32_t x;
   int32_t y;

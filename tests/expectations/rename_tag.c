@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct C_A;
+
 #define C_H 10
 
 enum C_E {
@@ -10,8 +12,6 @@ enum C_E {
   y = 1,
 };
 typedef uint8_t C_E;
-
-struct C_A;
 
 struct C_C;
 

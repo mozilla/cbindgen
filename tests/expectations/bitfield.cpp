@@ -4,6 +4,8 @@
 #include <ostream>
 #include <new>
 
+struct HasBitfields;
+
 struct HasBitfields {
   uint64_t foo: 8;
   uint64_t bar: 56;

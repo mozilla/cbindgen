@@ -5,6 +5,9 @@
 #include <new>
 #include <cassert>
 
+union StyleBaz;
+struct StyleTaz;
+
 template<typename T>
 struct StylePoint {
   T x;

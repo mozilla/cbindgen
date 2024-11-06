@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct StyleA StyleA;
+struct StyleA;
 
 typedef struct B {
   int32_t x;

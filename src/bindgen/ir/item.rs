@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use indexmap::IndexMap;
+use indexmap::{IndexMap, IndexSet};
 use std::mem;
 
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Enum, GenericArgument, GenericParams, OpaqueItem,
-    Path, Static, Struct, Typedef, Union,
+    AnnotationSet, Cfg, Constant, Documentation, Enum, GenericArgument, GenericParams, GenericPath,
+    OpaqueItem, Path, Static, Struct, Typedef, Union,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
@@ -44,7 +44,16 @@ pub trait Item {
     }
 
     fn rename_for_config(&mut self, _config: &Config) {}
-    fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) {}
+    fn add_dependencies(
+        &self,
+        _library: &Library,
+        _out: &mut Dependencies,
+        // IndexSet is used instead of HashSet in order to keep the insertion order.
+        // When running `cargo test`, //tests/expectations/* will be updated randomly
+        // if HashSet is used.
+        _ptr_types: &mut IndexSet<GenericPath>,
+    ) {
+    }
     fn instantiate_monomorph(
         &self,
         _generics: &[GenericArgument],
