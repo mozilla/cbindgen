@@ -2,14 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashSet;
+
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Repr, ReprAlign, ReprStyle,
+    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, GenericPath, Item,
+    ItemContainer, Path, Repr, ReprAlign, ReprStyle,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -212,11 +214,20 @@ impl Item for Union {
         }
     }
 
-    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+    fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut HashSet<GenericPath>,
+    ) {
         for field in &self.fields {
-            field
-                .ty
-                .add_dependencies_ignoring_generics(&self.generic_params, library, out);
+            field.ty.add_dependencies_ignoring_generics(
+                &self.generic_params,
+                library,
+                out,
+                ptr_types,
+                false,
+            );
         }
     }
 

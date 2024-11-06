@@ -2,11 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashSet;
+
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericParams, Item, ItemContainer, Path, Type,
+    AnnotationSet, Cfg, Documentation, GenericParams, GenericPath, Item, ItemContainer, Path, Type,
 };
 use crate::bindgen::library::Library;
 
@@ -109,7 +111,12 @@ impl Item for Static {
         GenericParams::empty()
     }
 
-    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.ty.add_dependencies(library, out);
+    fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut HashSet<GenericPath>,
+    ) {
+        self.ty.add_dependencies(library, out, ptr_types);
     }
 }

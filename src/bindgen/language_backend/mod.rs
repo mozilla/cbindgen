@@ -26,6 +26,8 @@ pub trait LanguageBackend: Sized {
     fn write_type_def<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Typedef);
     fn write_static<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Static);
 
+    fn write_forward_declaration<W: Write>(&mut self, _out: &mut SourceWriter<W>, _t: &Type) {}
+
     fn write_function<W: Write>(
         &mut self,
         config: &Config,
@@ -119,6 +121,7 @@ pub trait LanguageBackend: Sized {
     fn write_bindings<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         self.write_headers(out, &b.package_version);
         self.open_namespaces(out);
+        self.write_forward_declarations(out, b);
         self.write_primitive_constants(out, b);
         self.write_items(out, b);
         self.write_non_primitive_constants(out, b);
@@ -127,6 +130,17 @@ pub trait LanguageBackend: Sized {
         self.close_namespaces(out);
         self.write_footers(out);
         self.write_trailer(out, b);
+    }
+
+    fn write_forward_declarations<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
+        if b.forward_declarations.is_empty() {
+            return;
+        }
+        out.new_line_if_not_start();
+        for ty in &b.forward_declarations {
+            self.write_forward_declaration(out, ty);
+            out.new_line();
+        }
     }
 
     fn write_primitive_constants<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {

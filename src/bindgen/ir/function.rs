@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use syn::ext::IdentExt;
 
@@ -122,10 +122,15 @@ impl Function {
         }
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.ret.add_dependencies(library, out);
+    pub fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut HashSet<GenericPath>,
+    ) {
+        self.ret.add_dependencies(library, out, ptr_types);
         for arg in &self.args {
-            arg.ty.add_dependencies(library, out);
+            arg.ty.add_dependencies(library, out, ptr_types);
         }
     }
 

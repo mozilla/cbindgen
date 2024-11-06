@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::collections::HashSet;
 use std::io::Write;
 
 use syn::ext::IdentExt;
@@ -254,9 +255,14 @@ impl EnumVariant {
         }
     }
 
-    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+    fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut HashSet<GenericPath>,
+    ) {
         if let VariantBody::Body { ref body, .. } = self.body {
-            body.add_dependencies(library, out);
+            body.add_dependencies(library, out, ptr_types);
         }
     }
 
@@ -634,9 +640,14 @@ impl Item for Enum {
         out.insert_enum(library, self, monomorph, generic_values.to_owned());
     }
 
-    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+    fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut HashSet<GenericPath>,
+    ) {
         for variant in &self.variants {
-            variant.add_dependencies(library, out);
+            variant.add_dependencies(library, out, ptr_types);
         }
     }
 }

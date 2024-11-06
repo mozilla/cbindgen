@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::borrow::Cow;
+use std::collections::HashSet;
 
 use syn::ext::IdentExt;
 
@@ -687,15 +688,47 @@ impl Type {
         generic_params: &GenericParams,
         library: &Library,
         out: &mut Dependencies,
+        ptr_types: &mut HashSet<GenericPath>,
+
+        is_ptr: bool,
     ) {
         match *self {
             Type::Ptr { ref ty, .. } => {
-                ty.add_dependencies_ignoring_generics(generic_params, library, out);
+                ty.add_dependencies_ignoring_generics(
+                    generic_params,
+                    library,
+                    out,
+                    ptr_types,
+                    true,
+                );
             }
             Type::Path(ref generic) => {
+                // Collecting dependencies of the pointer type at this point causes a declaration
+                // order issue if there are cyclic pointer references in the soruce files.
+                // See issue#832 and issue#43.
+                //
+                // For avoiding the issue, it's postponed to collect the dependnecies until
+                // dependencies of all types other than pointer types are collected.
+                // See `Library::generate()`.
+                if is_ptr {
+                    let path = generic.path();
+                    if !generic_params.iter().any(|param| param.name() == path)
+                        && library.get_items(path).is_some()
+                        && !out.items.contains(path)
+                    {
+                        ptr_types.insert(generic.clone());
+                    }
+                    return;
+                }
                 for generic_value in generic.generics() {
                     if let GenericArgument::Type(ref ty) = *generic_value {
-                        ty.add_dependencies_ignoring_generics(generic_params, library, out);
+                        ty.add_dependencies_ignoring_generics(
+                            generic_params,
+                            library,
+                            out,
+                            ptr_types,
+                            false,
+                        );
                     }
                 }
                 let path = generic.path();
@@ -705,10 +738,10 @@ impl Type {
                             out.items.insert(path.clone());
 
                             for item in &items {
-                                item.deref().add_dependencies(library, out);
+                                item.deref().add_dependencies(library, out, ptr_types);
                             }
-                            for item in items {
-                                out.order.push(item);
+                            for item in &items {
+                                out.order.push(item.clone());
                             }
                         }
                     } else {
@@ -722,21 +755,50 @@ impl Type {
             }
             Type::Primitive(_) => {}
             Type::Array(ref ty, _) => {
-                ty.add_dependencies_ignoring_generics(generic_params, library, out);
+                ty.add_dependencies_ignoring_generics(
+                    generic_params,
+                    library,
+                    out,
+                    ptr_types,
+                    false,
+                );
             }
             Type::FuncPtr {
                 ref ret, ref args, ..
             } => {
-                ret.add_dependencies_ignoring_generics(generic_params, library, out);
+                ret.add_dependencies_ignoring_generics(
+                    generic_params,
+                    library,
+                    out,
+                    ptr_types,
+                    false,
+                );
                 for (_, ref arg) in args {
-                    arg.add_dependencies_ignoring_generics(generic_params, library, out);
+                    arg.add_dependencies_ignoring_generics(
+                        generic_params,
+                        library,
+                        out,
+                        ptr_types,
+                        false,
+                    );
                 }
             }
         }
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.add_dependencies_ignoring_generics(&GenericParams::default(), library, out)
+    pub fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut HashSet<GenericPath>,
+    ) {
+        self.add_dependencies_ignoring_generics(
+            &GenericParams::default(),
+            library,
+            out,
+            ptr_types,
+            false,
+        );
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
