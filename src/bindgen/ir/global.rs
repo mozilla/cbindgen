@@ -6,7 +6,7 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
+    AnnotationSet, Cfg, Documentation, GenericParams, Item, ItemContainer, Path,
     Type,
 };
 use crate::bindgen::library::Library;
@@ -109,10 +109,6 @@ impl Item for Static {
 
     fn generic_params(&self) -> &GenericParams {
         GenericParams::empty()
-    }
-
-    fn transparent_alias(&self, _library: &Library, _args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
-        None
     }
 
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {

@@ -313,10 +313,9 @@ impl Item for Struct {
     }
 
     fn transparent_alias(&self, library: &Library, args: &[GenericArgument], params: &GenericParams) -> Option<Type> {
-        let Some(typedef) = self.as_typedef() else {
-            return None;
-        };
-        typedef.transparent_alias(library, args, params)
+        self.as_typedef().and_then(|typedef| {
+            typedef.transparent_alias(library, args, params)
+        })
     }
 
     fn rename_for_config(&mut self, config: &Config) {
