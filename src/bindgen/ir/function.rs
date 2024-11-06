@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 use syn::ext::IdentExt;
@@ -14,7 +15,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::transparent::ResolveTransparentTypes;
+use crate::bindgen::transparent::{CowIsOwned, IterCow, ResolveTransparentTypes};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone)]
@@ -222,25 +223,19 @@ impl Function {
 
 impl ResolveTransparentTypes for Function {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Function> {
-        // TODO: Dedup with `Type::FuncPtr` case in `Type::transparent_alias`
         let empty = GenericParams::empty();
-        let new_ret = self.ret.transparent_alias(library, empty);
-        let new_args: Vec<_> = self.args.iter().map(|arg| arg.ty.transparent_alias(library, empty)).collect();
-        (new_ret.is_some() || new_args.iter().any(|arg| arg.is_some())).then(|| {
-            Function {
-                ret: new_ret.unwrap_or_else(|| self.ret.clone()),
-                args: new_args
-                    .into_iter()
-                    .zip(&self.args)
-                    .map(|(ty, arg)| {
-                        FunctionArgument {
-                            ty: ty.unwrap_or_else(|| arg.ty.clone()),
-                            ..arg.clone()
-                        }
-                    })
-                    .collect(),
-                ..self.clone()
-            }
+        let ret = self.ret.transparent_alias_cow(library, empty);
+        let new_args: Vec<_> = self.args.iter().cow_map(|arg| {
+            Some(FunctionArgument {
+                ty: arg.ty.transparent_alias(library, empty)?,
+                ..arg.clone()
+            })
+        }).collect();
+
+        (ret.cow_is_owned() || new_args.iter().any_owned()).then(|| Function {
+            ret: ret.into_owned(),
+            args: new_args.into_iter().map(Cow::into_owned).collect(),
+            ..self.clone()
         })
     }
 }

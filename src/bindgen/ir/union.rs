@@ -15,7 +15,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
-use crate::bindgen::transparent::ResolveTransparentTypes;
+use crate::bindgen::transparent::{CowIsOwned, ResolveTransparentTypes};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone)]
@@ -266,16 +266,11 @@ impl Item for Union {
 impl ResolveTransparentTypes for Union {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
         // Resolve any defaults in the generic params
-        let params = &self.generic_params;
-        let new_params = Self::resolve_generic_params(library, params);
-        let params = new_params.as_ref().unwrap_or(params);
-        let new_fields = Self::resolve_fields(library, &self.fields, params, false);
-        if new_params.is_none() && new_fields.is_none() {
-            return None;
-        }
-        Some(Union {
-            generic_params: new_params.unwrap_or_else(|| self.generic_params.clone()),
-            fields: new_fields.unwrap_or_else(|| self.fields.clone()),
+        let params = Self::resolve_generic_params(library, &self.generic_params);
+        let fields = Self::resolve_fields(library, &self.fields, &params, false);
+        (params.cow_is_owned() || fields.cow_is_owned()).then(|| Union {
+            generic_params: params.into_owned(),
+            fields: fields.into_owned(),
             ..self.clone()
         })
     }

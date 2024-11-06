@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
+
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
@@ -183,9 +185,12 @@ impl Item for OpaqueItem {
 
 impl ResolveTransparentTypes for OpaqueItem {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
-        Some(OpaqueItem {
-            generic_params: Self::resolve_generic_params(library, &self.generic_params)?,
-            ..self.clone()
-        })
+        match Self::resolve_generic_params(library, &self.generic_params) {
+            Cow::Owned(generic_params) => Some(OpaqueItem {
+                generic_params,
+                ..self.clone()
+            }),
+            _ => None
+        }
     }
 }

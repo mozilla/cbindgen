@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::io::Write;
 
 use syn::ext::IdentExt;
@@ -20,7 +21,7 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::transparent::ResolveTransparentTypes;
+use crate::bindgen::transparent::{CowIsOwned, IterCow, ResolveTransparentTypes};
 use crate::bindgen::writer::{ListType, SourceWriter};
 
 #[allow(clippy::large_enum_variant)]
@@ -648,36 +649,34 @@ impl Item for Enum {
 
 impl ResolveTransparentTypes for Enum {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
-        let params = &self.generic_params;
-        let new_params = Self::resolve_generic_params(library, params);
-        let params = new_params.as_ref().unwrap_or(params);
+        // If the enum uses inline tag fields, every variant struct has one. Skip resolving them.
+        let params = Self::resolve_generic_params(library, &self.generic_params);
         let skip_inline_tag_field = Self::inline_tag_field(&self.repr);
-        let variants: Vec<_> = self.variants.iter().map(|v| match v.body {
+        let variants: Vec<_> = self.variants.iter().cow_map(|v| match v.body {
             VariantBody::Body { ref name, ref body, inline, inline_casts } => {
+                let fields = Self::resolve_fields(library, &body.fields, &params, skip_inline_tag_field);
+                let Cow::Owned(fields) = fields else {
+                    return None;
+                };
                 Some(EnumVariant {
-                        body: VariantBody::Body {
-                            name: name.clone(),
-                            body: Struct {
-                                fields: Self::resolve_fields(library, &body.fields, params, skip_inline_tag_field)?,
-                                ..body.clone()
-                            },
-                            inline,
-                            inline_casts,
+                    body: VariantBody::Body {
+                        name: name.clone(),
+                        body: Struct {
+                            fields,
+                            ..body.clone()
                         },
-                        ..v.clone()
-                    })
+                        inline,
+                        inline_casts,
+                    },
+                    ..v.clone()
+                })
             }
             VariantBody::Empty(..) => None,
         }).collect();
 
-        if new_params.is_none() && variants.iter().all(Option::is_none) {
-            return None;
-        }
-        Some(Enum {
-            generic_params: new_params.unwrap_or(self.generic_params.clone()),
-            variants: variants.into_iter().zip(&self.variants).map(|(new_variant, variant)| {
-                new_variant.unwrap_or_else(|| variant.clone())
-            }).collect(),
+        (params.cow_is_owned() || variants.iter().any_owned()).then(|| Enum {
+            generic_params: params.into_owned(),
+            variants: variants.into_iter().map(Cow::into_owned).collect(),
             ..self.clone()
         })
     }

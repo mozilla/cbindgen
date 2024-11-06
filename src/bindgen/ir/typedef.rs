@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::borrow::Cow;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::Config;
@@ -15,7 +14,7 @@ use crate::bindgen::ir::{
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
-use crate::bindgen::transparent::ResolveTransparentTypes;
+use crate::bindgen::transparent::{CowIsOwned, ResolveTransparentTypes};
 
 /// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]
@@ -212,12 +211,10 @@ impl Item for Typedef {
 impl ResolveTransparentTypes for Typedef {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Typedef> {
         // Resolve any defaults in the generic params
-        let params = &self.generic_params;
-        let new_params = Self::resolve_generic_params(library, params);
-        let params = new_params.map_or_else(|| Cow::Borrowed(params), |new_params| Cow::Owned(new_params));
-        let aliased = self.aliased.transparent_alias(library, &params)?;
-        Some(Typedef {
-            aliased,
+        let params = Self::resolve_generic_params(library, &self.generic_params);
+        let aliased = self.aliased.transparent_alias_cow(library, &params);
+        (params.cow_is_owned() || aliased.cow_is_owned()).then(|| Typedef {
+            aliased: aliased.into_owned(),
             generic_params: params.into_owned(),
             ..self.clone()
         })

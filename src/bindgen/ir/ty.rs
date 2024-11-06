@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config};
@@ -10,6 +11,7 @@ use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, ItemContainer, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent::{CowIsOwned, IterCow};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -670,6 +672,11 @@ impl Type {
             .or(Some(erased_type))
     }
 
+    /// Convenience wrapper for callers who prefer `Cow` instead of `Option`
+    pub fn transparent_alias_cow<'a>(&'a self, library: &Library, params: &GenericParams) -> Cow<'a, Type> {
+        self.transparent_alias(library, params).map_or_else(|| Cow::Borrowed(self), Cow::Owned)
+    }
+
     /// If this type is transparent, recursively replace it with whatever type it aliases.
     pub fn transparent_alias(&self, library: &Library, params: &GenericParams) -> Option<Type> {
         /*
@@ -699,9 +706,9 @@ impl Type {
     pub fn transparent_alias_impl(&self, library: &Library, params: &GenericParams) -> Option<Type> {
         warn!("Attempt to erase {self:#?}");
         */
-        match self {
+        match *self {
             Type::Ptr {
-                ty,
+                ref ty,
                 is_const,
                 is_nullable,
                 is_ref,
@@ -710,12 +717,12 @@ impl Type {
                 //warn!("Type::Ptr inner {ty:#?}\nerased as {new_ty:#?}");
                 Some(Type::Ptr {
                     ty: Box::new(new_ty),
-                    is_const: *is_const,
-                    is_nullable: *is_nullable,
-                    is_ref: *is_ref,
+                    is_const,
+                    is_nullable,
+                    is_ref,
                 })
             }
-            Type::Path(generic_path) => {
+            Type::Path(ref generic_path) => {
                 let path = generic_path.path();
                 if params.0.iter().any(|p| p.name() == path) {
                     return None;
@@ -748,32 +755,27 @@ impl Type {
                 }
             }
             Type::Primitive(_) => None,
-            Type::Array(ty, expr) => Some(Type::Array(
+            Type::Array(ref ty, ref expr) => Some(Type::Array(
                 Box::new(ty.transparent_alias(library, params)?),
                 expr.clone(),
             )),
             Type::FuncPtr {
-                ret,
-                args,
+                ref ret,
+                ref args,
                 is_nullable,
                 never_return,
             } => {
-                let new_ret = ret.transparent_alias(library, params);
-                let new_args: Vec<_> = args.iter().map(|(_, ty)| ty.transparent_alias(library, params)).collect();
-                (new_ret.is_some() || new_args.iter().any(|arg| arg.is_some())).then(|| {
-                    Type::FuncPtr {
-                        ret: Box::new(new_ret.unwrap_or_else(|| ret.as_ref().clone())),
-                        args: new_args
-                            .into_iter()
-                            .zip(args)
-                            .map(|(new_arg, (name, arg))| {
-                                let new_arg = new_arg.unwrap_or_else(|| arg.clone());
-                                (name.clone(), new_arg)
-                            })
-                            .collect(),
-                        is_nullable: *is_nullable,
-                        never_return: *never_return,
-                    }
+                let ret = ret.transparent_alias_cow(library, params);
+                let new_args: Vec<_> = args.iter().cow_map(|arg| {
+                    let ty = arg.1.transparent_alias(library, params)?;
+                    Some((arg.0.clone(), ty))
+                }).collect();
+
+                (ret.cow_is_owned() || new_args.iter().any_owned()).then(|| Type::FuncPtr {
+                    ret: Box::new(ret.into_owned()),
+                    args: new_args.into_iter().map(Cow::into_owned).collect(),
+                    is_nullable,
+                    never_return,
                 })
             }
         }
