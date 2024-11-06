@@ -10,6 +10,9 @@ DEF BAR = 0
 #include <ostream>
 #include <new>
 
+struct Foo;
+struct Bar;
+
 #if defined(FOO)
 constexpr static const int32_t FOO = 1;
 #endif

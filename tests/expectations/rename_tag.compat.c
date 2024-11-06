@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct C_A;
+
 #define C_H 10
 
 enum C_E
@@ -16,8 +18,6 @@ enum C_E
 #ifndef __cplusplus
 typedef uint8_t C_E;
 #endif // __cplusplus
-
-struct C_A;
 
 struct C_C;
 

@@ -5,7 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct Opaque Opaque;
+struct SelfTypeTestStruct;
+struct Opaque;
 
 typedef struct SelfTypeTestStruct {
   uint8_t times;

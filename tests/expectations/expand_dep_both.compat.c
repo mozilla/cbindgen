@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct dep_struct;
+
 typedef struct dep_struct {
   uint32_t x;
   double y;

@@ -16,7 +16,7 @@ struct NonZeroI64;
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct Option_i64 Option_i64;
+struct Option_i64;
 
 typedef struct NonZeroAliases {
   uint8_t a;

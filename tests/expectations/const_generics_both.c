@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Book;
+
 #define TITLE_SIZE 80
 
 typedef int8_t CArrayString_TITLE_SIZE[TITLE_SIZE];

@@ -17,6 +17,8 @@ using Box = T*;
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Opaque;
+
 enum A {
   a1 = 0,
   a2 = 2,
@@ -97,8 +99,6 @@ typedef int8_t O;
 typedef struct J J;
 
 typedef struct K K;
-
-typedef struct Opaque Opaque;
 
 enum G_Tag {
   Foo,

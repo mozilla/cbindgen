@@ -18,6 +18,8 @@ using Box = T*;
 #include <ostream>
 #include <new>
 
+struct Opaque;
+
 enum class A : uint64_t {
   a1 = 0,
   a2 = 2,
@@ -90,8 +92,6 @@ enum O : int8_t {
 struct J;
 
 struct K;
-
-struct Opaque;
 
 union G {
   enum class Tag : uint8_t {

@@ -5,6 +5,10 @@
 
 typedef const char *Str;
 
+typedef void (*SetCallback)(Str key);
+
+typedef void (*MapCallback)(Str key, uint64_t val);
+
 typedef struct {
   uintptr_t num_buckets;
   uintptr_t capacity;
@@ -15,8 +19,6 @@ typedef struct {
 
 typedef HashTable_Str__c_char__false MySet;
 
-typedef void (*SetCallback)(Str key);
-
 typedef struct {
   uintptr_t num_buckets;
   uintptr_t capacity;
@@ -24,8 +26,6 @@ typedef struct {
   Str *keys;
   uint64_t *vals;
 } HashTable_Str__u64__true;
-
-typedef void (*MapCallback)(Str key, uint64_t val);
 
 MySet *new_set(void);
 

@@ -3,7 +3,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct HashTable_Str__u64__true;
+
 typedef const char *Str;
+
+typedef void (*SetCallback)(Str key);
+
+typedef void (*MapCallback)(Str key, uint64_t val);
 
 typedef struct HashTable_Str__c_char__false {
   uintptr_t num_buckets;
@@ -15,8 +21,6 @@ typedef struct HashTable_Str__c_char__false {
 
 typedef struct HashTable_Str__c_char__false MySet;
 
-typedef void (*SetCallback)(Str key);
-
 typedef struct HashTable_Str__u64__true {
   uintptr_t num_buckets;
   uintptr_t capacity;
@@ -24,8 +28,6 @@ typedef struct HashTable_Str__u64__true {
   Str *keys;
   uint64_t *vals;
 } HashTable_Str__u64__true;
-
-typedef void (*MapCallback)(Str key, uint64_t val);
 
 #ifdef __cplusplus
 extern "C" {

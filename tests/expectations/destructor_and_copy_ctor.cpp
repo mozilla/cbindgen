@@ -8,6 +8,11 @@
 #include <ostream>
 #include <new>
 
+union Taz;
+union Tazzz;
+union Tazzzz;
+union Qux;
+
 enum class FillRule : uint8_t {
   A,
   B,
@@ -331,6 +336,51 @@ union Baz {
   }
 };
 
+union Tazz {
+  enum class Tag : uint8_t {
+    Bar4,
+    Taz2,
+  };
+
+  struct Taz2_Body {
+    Tag tag;
+    int32_t _0;
+  };
+
+  struct {
+    Tag tag;
+  };
+  Taz2_Body taz2;
+
+  static Tazz Bar4() {
+    Tazz result;
+    result.tag = Tag::Bar4;
+    return result;
+  }
+
+  bool IsBar4() const {
+    return tag == Tag::Bar4;
+  }
+
+  static Tazz Taz2(const int32_t &_0) {
+    Tazz result;
+    ::new (&result.taz2._0) (int32_t)(_0);
+    result.tag = Tag::Taz2;
+    return result;
+  }
+
+  bool IsTaz2() const {
+    return tag == Tag::Taz2;
+  }
+
+  private:
+  Tazz() {
+
+  }
+  public:
+
+};
+
 union Taz {
   enum class Tag : uint8_t {
     Bar3,
@@ -416,51 +466,6 @@ union Taz {
     }
     return *this;
   }
-};
-
-union Tazz {
-  enum class Tag : uint8_t {
-    Bar4,
-    Taz2,
-  };
-
-  struct Taz2_Body {
-    Tag tag;
-    int32_t _0;
-  };
-
-  struct {
-    Tag tag;
-  };
-  Taz2_Body taz2;
-
-  static Tazz Bar4() {
-    Tazz result;
-    result.tag = Tag::Bar4;
-    return result;
-  }
-
-  bool IsBar4() const {
-    return tag == Tag::Bar4;
-  }
-
-  static Tazz Taz2(const int32_t &_0) {
-    Tazz result;
-    ::new (&result.taz2._0) (int32_t)(_0);
-    result.tag = Tag::Taz2;
-    return result;
-  }
-
-  bool IsTaz2() const {
-    return tag == Tag::Taz2;
-  }
-
-  private:
-  Tazz() {
-
-  }
-  public:
-
 };
 
 union Tazzz {

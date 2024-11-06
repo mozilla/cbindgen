@@ -4,6 +4,8 @@
 #include <ostream>
 #include <new>
 
+struct Book;
+
 constexpr static const uintptr_t TITLE_SIZE = 80;
 
 template<uintptr_t CAP>
