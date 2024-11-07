@@ -299,7 +299,76 @@ fn bar() -> Foo { .. } // Will be emitted as `struct foo bar();`
 
 ### Struct Annotations
 
-* field-names=\[field1, field2, ...\] -- sets the names of all the fields in the output struct. These names will be output verbatim, and are not eligible for renaming.
+* field-names=\[field1, field2, ...\] -- sets the names of all the fields in the output
+  struct. These names will be output verbatim, and are not eligible for renaming.
+
+* transparent-typedef -- when emitting the typedef for a transparent struct, mark it as
+  transparent. All references to the struct will be replaced with the type of its underlying NZST
+  field, effectively making the struct invisible on the FFI side. For example, consider the
+  following Rust code:
+
+  ```rust
+  #[repr(transparent)]
+  pub struct Handle<T> {
+      ptr: NonNull<T>,
+  }
+
+  pub struct Foo { }
+
+  #[no_mangle]
+  pub extern "C" fn foo_operation(foo: Option<Handle<Foo>>) { }
+  ```
+
+  By default, the exported C++ code would fail to compile, because the function takes `Option<...>`
+  (which is an opaque type) by value:
+
+  ```cpp
+  template<typename T>
+  struct Option<T>;
+
+  template<typename T>
+  using Handle = T;
+
+  struct Foo;
+
+  void foo_operation(Option<Handle<Foo>> foo);
+  ```
+
+  If we annotate `Handle` with `transparent-typedef` (leaving the rest of the code unchanged):
+  ```rust
+  /// cbindgen:transparent-typedef
+  #[repr(transparent)]
+  pub struct Handle<T> {
+      ptr: NonNull<T>,
+  }
+  ```
+
+  Then cbindgen is able to simplify the exported C++ code to just:
+  ```cpp
+  struct Foo;
+
+  void foo_operation(Foo* foo);
+  ```
+
+  NOTE: This annotation does _NOT_ affect user-defined type aliases for transparent structs. If we
+  we adjust the previous example to use a type alias:
+
+  ```rust
+  type NullableFooHandle = Option<Handle<Foo>>;
+
+  #[no_mangle]
+  pub extern "C" fn foo_operation(foo: NullableFooHandle) { }
+  ```
+
+  Then the exported code will use it as expected:
+
+  ```cpp
+  struct Foo;
+
+  using NullableFooHandle = Foo*;
+
+  void foo_operation(NullableFooHandle foo);
+  ```
 
 The rest are just local overrides for the same options found in the cbindgen.toml:
 
@@ -316,27 +385,25 @@ The rest are just local overrides for the same options found in the cbindgen.tom
   / etc(if any). The idea is for this to be used to annotate the operator with
   attributes, for example:
 
-```rust
-/// cbindgen:eq-attributes=MY_ATTRIBUTES
-#[repr(C)]
-pub struct Foo { .. }
-```
+  ```rust
+  /// cbindgen:eq-attributes=MY_ATTRIBUTES
+  #[repr(C)]
+  pub struct Foo { .. }
+  ```
 
-Will generate something like:
+  Will generate something like:
 
-```
-  MY_ATTRIBUTES bool operator==(const Foo& other) const {
-    ...
-  }
-```
+  ```
+    MY_ATTRIBUTES bool operator==(const Foo& other) const {
+      ...
+    }
+  ```
 
-Combined with something like:
+  Combined with something like:
 
-```
-#define MY_ATTRIBUTES [[nodiscard]]
-```
-
-for example.
+  ```
+  #define MY_ATTRIBUTES [[nodiscard]]
+  ```
 
 ### Enum Annotations
 

@@ -18,6 +18,7 @@ use crate::bindgen::ir::{
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
+use crate::bindgen::transparent::ResolveTransparentTypes;
 use crate::bindgen::writer::SourceWriter;
 use crate::bindgen::Bindings;
 
@@ -602,6 +603,18 @@ impl Item for Constant {
 
     fn generic_params(&self) -> &GenericParams {
         GenericParams::empty()
+    }
+}
+
+impl ResolveTransparentTypes for Constant {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
+        // NOTE: We also need to simplify the literal initializer value to match the underlying
+        // type, but that is true for all transparent structs (not just transparent-typedef
+        // structs), and is handled by the `write` method below.
+        Some(Constant {
+            ty: self.ty.transparent_alias(library, GenericParams::empty())?,
+            ..self.clone()
+        })
     }
 }
 
