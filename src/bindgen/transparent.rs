@@ -8,37 +8,36 @@ use crate::bindgen::ir::{
 use crate::bindgen::library::Library;
 
 /// Helper trait that makes it easier to work with `Cow` in iterators
-pub trait IterCow: Iterator {
-    /// Maps from `&T` to `Cow<'a, T>` using the provided function. If the function returns `Some`
+// NOTE: 'i is the lifetime of the iterator itself, and 't is the lifetime of references it returns
+pub trait IterCow<'i, 't: 'i, T: Clone + 't>: Iterator + 'i {
+    /// Maps from `&T` to `Cow<'t, T>` using the provided function. If the function returns `Some`
     /// result, it is returned as `Cow::Owned`; otherwise, return the item as `Cow::Borrowed`.
-    fn cow_map<'a, F, T>(self, f: F) -> impl Iterator<Item = Cow<'a, T>>
+    // NOTE: MSRV 1.70 requires us to return `Box<dyn Iterator>` because support for returning `impl
+    // Iterator` from trait methods didn't land until 1.75. Which in turn requires the lifetime 'i.
+    fn cow_map<F>(self, f: F) -> Box<dyn Iterator<Item = Cow<'t, T>> + 'i>
     where
-        F: FnMut(&T) -> Option<T>,
-        T: Clone + 'a,
-        Self: Iterator<Item = &'a T>;
+        F: FnMut(&T) -> Option<T> + 'i,
+        Self: Iterator<Item = &'t T>;
 
     /// True if any item is `Cow::Owned`
-    fn any_owned<'i, 'a: 'i, T>(self) -> bool
+    fn any_owned(self) -> bool
     where
-        T: Clone + 'a,
-        Self: Iterator<Item = &'i Cow<'a, T>>;
+        Self: Iterator<Item = &'i Cow<'t, T>>;
 }
 
 // Blanket implementation for all iterators
-impl<I: Iterator> IterCow for I {
-    fn cow_map<'a, F, T>(self, mut f: F) -> impl Iterator<Item = Cow<'a, T>>
+impl<'i, 't: 'i, T: Clone + 't, I: Iterator + 'i> IterCow<'i, 't, T> for I {
+    fn cow_map<F>(self, mut f: F) -> Box<dyn Iterator<Item = Cow<'t, T>> + 'i>
     where
-        F: FnMut(&T) -> Option<T>,
-        T: Clone + 'a,
-        Self: Iterator<Item = &'a T>,
+        F: FnMut(&T) -> Option<T> + 'i,
+        Self: Iterator<Item = &'t T>,
     {
-        self.map(move |item| f(item).map_or_else(|| Cow::Borrowed(item), Cow::Owned))
+        Box::new(self.map(move |item| f(item).map_or_else(|| Cow::Borrowed(item), Cow::Owned)))
     }
 
-    fn any_owned<'i, 'a: 'i, T>(mut self) -> bool
+    fn any_owned(mut self) -> bool
     where
-        T: Clone + 'a,
-        Self: Iterator<Item = &'i Cow<'a, T>>,
+        Self: Iterator<Item = &'i Cow<'t, T>>,
     {
         self.any(|item| matches!(item, Cow::Owned(_)))
     }
