@@ -13,8 +13,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item,
-    ItemContainer, Path, Struct, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
+    Struct, ToCondition, Type,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;

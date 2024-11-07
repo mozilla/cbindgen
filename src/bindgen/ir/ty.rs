@@ -5,7 +5,7 @@
 use std::borrow::Cow;
 use syn::ext::IdentExt;
 
-use crate::bindgen::config::{Config};
+use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
@@ -573,86 +573,54 @@ impl Type {
     }
 
     /// Convenience wrapper for callers who prefer `Cow` result over `Option`.
-    pub fn transparent_alias_cow<'a>(&'a self, library: &Library, params: &GenericParams) -> Cow<'a, Type> {
-        self.transparent_alias(library, params).map_or_else(|| Cow::Borrowed(self), Cow::Owned)
+    pub fn transparent_alias_cow<'a>(
+        &'a self,
+        library: &Library,
+        params: &GenericParams,
+    ) -> Cow<'a, Type> {
+        self.transparent_alias(library, params)
+            .map_or_else(|| Cow::Borrowed(self), Cow::Owned)
     }
 
     /// If this type is transparent, recursively replace it with whatever type it aliases.
     pub fn transparent_alias(&self, library: &Library, params: &GenericParams) -> Option<Type> {
-        /*
-        if let Some(resolved) = self.transparent_alias_impl(library, params)
-        {
-            warn!("erased {self:#?}\nas {resolved:#?}");
-            Some(resolved)
-        } else if generic_path.{
-            // process the generics first -- they may change even if this type isn't transparent
-            let generics = generic_path.generics();
-            let new_generics: Vec<_> = generics.iter().map(|arg| match arg {
-                GenericArgument::Type(ty) => {
-                    let new_ty = ty.transparent_alias(library, params)?;
-                    //warn!("GenericArgument::Type {ty:#?}\nerased as {new_ty:#?}");
-                    Some(GenericArgument::Type(new_ty))
-                }
-                _ => None
-            }).collect();
-            let new_generics = new_generics.iter().any(Option::is_some).then(|| -> Vec<_> {
-                new_generics.into_iter().zip(generics).map(|(new_arg, arg)| {
-                    new_arg.unwrap_or_else(|| arg.clone())
-                }).collect()
-            });
-            let generics = new_generics.as_ref().map_or(generics, Vec::as_slice);
-        }
-    }
-    pub fn transparent_alias_impl(&self, library: &Library, params: &GenericParams) -> Option<Type> {
-        warn!("Attempt to erase {self:#?}");
-        */
         match *self {
             Type::Ptr {
                 ref ty,
                 is_const,
                 is_nullable,
                 is_ref,
-            } => {
-                let new_ty = ty.transparent_alias(library, params)?;
-                //warn!("Type::Ptr inner {ty:#?}\nerased as {new_ty:#?}");
-                Some(Type::Ptr {
-                    ty: Box::new(new_ty),
-                    is_const,
-                    is_nullable,
-                    is_ref,
-                })
-            }
+            } => Some(Type::Ptr {
+                ty: Box::new(ty.transparent_alias(library, params)?),
+                is_const,
+                is_nullable,
+                is_ref,
+            }),
             Type::Path(ref generic_path) => {
                 let path = generic_path.path();
                 if params.0.iter().any(|p| p.name() == path) {
-                    return None;
+                    return None; // Don't try to resolve template parameters!
                 }
-                // process the generics first -- they may change even if this type isn't transparent
+                // Resolve the generics first -- they may change even if this type isn't transparent
                 let generics = generic_path.generics();
-                let new_generics: Vec<_> = generics.iter().map(|arg| match arg {
-                    GenericArgument::Type(ty) => {
-                        let new_ty = ty.transparent_alias(library, params)?;
-                        //warn!("GenericArgument::Type {ty:#?}\nerased as {new_ty:#?}");
-                        Some(GenericArgument::Type(new_ty))
-                    }
-                    _ => None
-                }).collect();
-                let new_generics = new_generics.iter().any(Option::is_some).then(|| -> Vec<_> {
-                    new_generics.into_iter().zip(generics).map(|(new_arg, arg)| {
-                        new_arg.unwrap_or_else(|| arg.clone())
-                    }).collect()
-                });
+                let new_generics: Vec<_> = generics
+                    .iter()
+                    .cow_map(|arg| match arg {
+                        GenericArgument::Type(ty) => Some(GenericArgument::Type(
+                            ty.transparent_alias(library, params)?,
+                        )),
+                        _ => None,
+                    })
+                    .collect();
+                let new_generics = new_generics
+                    .iter()
+                    .any_owned()
+                    .then(|| new_generics.into_iter().map(Cow::into_owned).collect());
                 let generics = new_generics.as_ref().map_or(generics, Vec::as_slice);
-                let new_ty = TransparentTypeResolver::transparent_alias_for_path(path, generics, library, params);
-                if new_ty.is_some() {
-                    //warn!("Type::Path {self:#?}\nerased as {new_ty:#?}");
-                    new_ty
-                } else {
-                    //if let Some(ref new_generics) = new_generics {
-                    //    warn!("Type::Path args {path:?} simplified to {new_generics:#?}");
-                    //}
-                    new_generics.map(|g| Type::Path(GenericPath::new(path.clone(), g)))
-                }
+                let ty = TransparentTypeResolver::transparent_alias_for_path(
+                    path, generics, library, params,
+                );
+                ty.or_else(|| Some(Type::Path(GenericPath::new(path.clone(), new_generics?))))
             }
             Type::Primitive(_) => None,
             Type::Array(ref ty, ref expr) => Some(Type::Array(
@@ -666,14 +634,16 @@ impl Type {
                 never_return,
             } => {
                 let ret = ret.transparent_alias_cow(library, params);
-                let new_args: Vec<_> = args.iter().cow_map(|arg| {
-                    let ty = arg.1.transparent_alias(library, params)?;
-                    Some((arg.0.clone(), ty))
-                }).collect();
+                let args: Vec<_> = args
+                    .iter()
+                    .cow_map(|(name, ty)| {
+                        Some((name.clone(), ty.transparent_alias(library, params)?))
+                    })
+                    .collect();
 
-                (ret.cow_is_owned() || new_args.iter().any_owned()).then(|| Type::FuncPtr {
+                (ret.cow_is_owned() || args.iter().any_owned()).then(|| Type::FuncPtr {
                     ret: Box::new(ret.into_owned()),
-                    args: new_args.into_iter().map(Cow::into_owned).collect(),
+                    args: args.into_iter().map(Cow::into_owned).collect(),
                     is_nullable,
                     never_return,
                 })

@@ -62,8 +62,8 @@ impl Library {
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
-        //self.transfer_annotations();
         self.resolve_transparent_types();
+        self.transfer_annotations();
 
         match self.config.function.sort_by.unwrap_or(self.config.sort_by) {
             SortKey::Name => self.functions.sort_by(|x, y| x.path.cmp(&y.path)),
@@ -194,7 +194,6 @@ impl Library {
             .filter(|x| config.export.exclude.iter().any(|y| y == x.path().name()));
     }
 
-    #[allow(unused)]
     fn transfer_annotations(&mut self) {
         let mut annotations = HashMap::new();
 
@@ -320,6 +319,34 @@ impl Library {
         }
     }
 
+    fn resolve_transparent_types(&mut self) {
+        let resolver = TransparentTypeResolver;
+
+        let constants = resolver.resolve_items(self, &self.constants);
+        resolver.install_items(constants, &mut self.constants);
+
+        let globals = resolver.resolve_items(self, &self.globals);
+        resolver.install_items(globals, &mut self.globals);
+
+        let enums = resolver.resolve_items(self, &self.enums);
+        resolver.install_items(enums, &mut self.enums);
+
+        let structs = resolver.resolve_items(self, &self.structs);
+        resolver.install_items(structs, &mut self.structs);
+
+        let unions = resolver.resolve_items(self, &self.unions);
+        resolver.install_items(unions, &mut self.unions);
+
+        let opaque_items = resolver.resolve_items(self, &self.opaque_items);
+        resolver.install_items(opaque_items, &mut self.opaque_items);
+
+        let typedefs = resolver.resolve_items(self, &self.typedefs);
+        resolver.install_items(typedefs, &mut self.typedefs);
+
+        let functions = resolver.resolve_functions(self, &self.functions);
+        resolver.install_functions(functions, &mut self.functions);
+    }
+
     fn resolve_declaration_types(&mut self) {
         if !self.config.style.generate_tag() {
             return;
@@ -367,34 +394,6 @@ impl Library {
         for item in &mut self.functions {
             item.resolve_declaration_types(&resolver);
         }
-    }
-
-    fn resolve_transparent_types(&mut self) {
-        let resolver = TransparentTypeResolver;
-
-        let constants = resolver.resolve_items(self, &self.constants);
-        resolver.install_items(constants, &mut self.constants);
-
-        let globals = resolver.resolve_items(self, &self.globals);
-        resolver.install_items(globals, &mut self.globals);
-
-        let enums = resolver.resolve_items(self, &self.enums);
-        resolver.install_items(enums, &mut self.enums);
-
-        let structs = resolver.resolve_items(self, &self.structs);
-        resolver.install_items(structs, &mut self.structs);
-
-        let unions = resolver.resolve_items(self, &self.unions);
-        resolver.install_items(unions, &mut self.unions);
-
-        let opaque_items = resolver.resolve_items(self, &self.opaque_items);
-        resolver.install_items(opaque_items, &mut self.opaque_items);
-
-        let typedefs = resolver.resolve_items(self, &self.typedefs);
-        resolver.install_items(typedefs, &mut self.typedefs);
-
-        let functions = resolver.resolve_functions(self, &self.functions);
-        resolver.install_functions(functions, &mut self.functions);
     }
 
     fn instantiate_monomorphs(&mut self) {

@@ -10,7 +10,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Enum, GenericArgument, GenericParams, OpaqueItem,
-    Path, Static, Struct, Type, Typedef, Union,
+    Path, Static, Struct, Typedef, Union,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
@@ -43,9 +43,6 @@ pub trait Item {
         !self.generic_params().is_empty()
     }
 
-    fn transparent_alias(&self, _library: &Library, _args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
-        None // not relevant for most types
-    }
     fn rename_for_config(&mut self, _config: &Config) {}
     fn add_dependencies(&self, _library: &Library, _out: &mut Dependencies) {}
     fn instantiate_monomorph(

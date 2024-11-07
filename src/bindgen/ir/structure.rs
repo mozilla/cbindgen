@@ -164,8 +164,13 @@ impl Struct {
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
         let field = self.fields.first()?;
-        self.is_transparent.then(|| Typedef::new_from_struct_field(self, field))
-            //.inspect(|field| warn!("FRJ replaced {self:#?}\nwith {field:#?}"))
+        self.is_transparent
+            .then(|| Typedef::new_from_struct_field(self, field))
+    }
+
+    pub fn transparent_alias(&self, args: &[GenericArgument]) -> Option<Type> {
+        self.as_typedef()
+            .and_then(|typedef| typedef.transparent_alias(args))
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -304,12 +309,6 @@ impl Item for Struct {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
-    }
-
-    fn transparent_alias(&self, library: &Library, args: &[GenericArgument], params: &GenericParams) -> Option<Type> {
-        self.as_typedef().and_then(|typedef| {
-            typedef.transparent_alias(library, args, params)
-        })
     }
 
     fn rename_for_config(&mut self, config: &Config) {

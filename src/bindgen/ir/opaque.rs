@@ -59,6 +59,30 @@ impl OpaqueItem {
             documentation,
         }
     }
+
+    pub fn transparent_alias(&self, args: &[GenericArgument]) -> Option<Type> {
+        if !self.is_generic() {
+            return None;
+        }
+        let Some(GenericArgument::Type(ty)) = args.first() else {
+            return None;
+        };
+        let ty = match self.name() {
+            // NonNull is always transparent, but needs to transform `T`
+            "NonNull" => Type::Ptr {
+                ty: Box::new(ty.clone()),
+                is_const: false,
+                is_nullable: false,
+                is_ref: false,
+            },
+            // NonZero is only transparent if T is zeroable
+            "NonZero" => ty.make_zeroable(false)?,
+            // Option is only transparent if T is non-zeroable or non-nullable
+            "Option" => ty.make_zeroable(true).or_else(|| ty.make_nullable())?,
+            _ => return None,
+        };
+        Some(ty)
+    }
 }
 
 impl Item for OpaqueItem {
@@ -96,48 +120,6 @@ impl Item for OpaqueItem {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
-    }
-
-    fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
-        // NOTE: Our caller already resolved the params, no need to resolve them again here.
-        if !self.is_generic() {
-            return None;
-        }
-        let Some(GenericArgument::Type(ty)) = args.first() else {
-            return None;
-        };
-        // We have to specialize before resolving, in case the args themselves get resolved
-        //
-        // NOTE: Unlike e.g. struct or typedef, specializing opaque types is just a direct
-        // replacement. Otherwise, specializing `Option<NonNull<T>>` for `T` would produce
-        // `Option<NonNull<NonNull<T>>>`. See also `OpaqueItem::instantiate_monomorph` below.
-        let ty = if let Some(GenericArgument::Type(new_ty)) = args.first() {
-            new_ty
-        } else {
-            ty
-        };
-        //let resolved_ty = ty.transparent_alias(library, params);
-        //let ty = resolved_ty.map_or_else(|| Cow::Borrowed(ty), |resolved| Cow::Owned(resolved));
-        let ty = match self.name() {
-            "NonNull" => {
-                //warn!("Processing {self:#?}");
-                Type::Ptr {
-                    ty: Box::new(ty.clone()),
-                    is_const: false,
-                    is_nullable: false,
-                    is_ref: false,
-                }
-            }
-            "NonZero" => ty.make_zeroable(false)?,
-            "Option" => {
-                warn!("Processing {self:#?}\nwith T={ty:#?}");
-                ty.make_zeroable(true).or_else(|| ty.make_nullable().inspect(|n| warn!("=> became {n:#?}")))?
-            }
-            _ => return None,
-        };
-        Some(ty)
-        //let mappings = self.generic_params.call(self.path.name(), args);
-        //Some(ty.specialize(&mappings)).inspect(|x| warn!("specialized {:#?}\nfrom {ty:#?}\nto {x:#?}\nwith mappings {mappings:#?}", args.first()))
     }
 
     fn rename_for_config(&mut self, config: &Config) {
@@ -190,7 +172,7 @@ impl ResolveTransparentTypes for OpaqueItem {
                 generic_params,
                 ..self.clone()
             }),
-            _ => None
+            _ => None,
         }
     }
 }

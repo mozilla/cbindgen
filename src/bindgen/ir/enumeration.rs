@@ -642,27 +642,37 @@ impl ResolveTransparentTypes for Enum {
         // If the enum uses inline tag fields, every variant struct has one. Skip resolving them.
         let params = Self::resolve_generic_params(library, &self.generic_params);
         let skip_inline_tag_field = Self::inline_tag_field(&self.repr);
-        let variants: Vec<_> = self.variants.iter().cow_map(|v| match v.body {
-            VariantBody::Body { ref name, ref body, inline, inline_casts } => {
-                let fields = Self::resolve_fields(library, &body.fields, &params, skip_inline_tag_field);
-                let Cow::Owned(fields) = fields else {
-                    return None;
-                };
-                Some(EnumVariant {
-                    body: VariantBody::Body {
-                        name: name.clone(),
-                        body: Struct {
-                            fields,
-                            ..body.clone()
+        let variants: Vec<_> = self
+            .variants
+            .iter()
+            .cow_map(|v| match v.body {
+                VariantBody::Body {
+                    ref name,
+                    ref body,
+                    inline,
+                    inline_casts,
+                } => {
+                    let fields =
+                        Self::resolve_fields(library, &body.fields, &params, skip_inline_tag_field);
+                    let Cow::Owned(fields) = fields else {
+                        return None;
+                    };
+                    Some(EnumVariant {
+                        body: VariantBody::Body {
+                            name: name.clone(),
+                            body: Struct {
+                                fields,
+                                ..body.clone()
+                            },
+                            inline,
+                            inline_casts,
                         },
-                        inline,
-                        inline_casts,
-                    },
-                    ..v.clone()
-                })
-            }
-            VariantBody::Empty(..) => None,
-        }).collect();
+                        ..v.clone()
+                    })
+                }
+                VariantBody::Empty(..) => None,
+            })
+            .collect();
 
         (params.cow_is_owned() || variants.iter().any_owned()).then(|| Enum {
             generic_params: params.into_owned(),

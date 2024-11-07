@@ -102,6 +102,19 @@ impl Typedef {
         }
     }
 
+    pub fn transparent_alias(&self, args: &[GenericArgument]) -> Option<Type> {
+        matches!(self.annotations.bool(Self::TRANSPARENT_TYPEDEF), Some(true)).then(|| {
+            // Specialize the aliased type (if needed) and return it. We don't need to resolve
+            // params, because our caller processes transparent aliases iteratively to fixpoint.
+            if self.is_generic() {
+                let mappings = self.generic_params.call(self.path.name(), args);
+                self.aliased.specialize(&mappings)
+            } else {
+                self.aliased.clone()
+            }
+        })
+    }
+
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic structs can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.
@@ -154,19 +167,6 @@ impl Item for Typedef {
 
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
-    }
-
-    fn transparent_alias(&self, _library: &Library, args: &[GenericArgument], _params: &GenericParams) -> Option<Type> {
-        matches!(self.annotations.bool(Self::TRANSPARENT_TYPEDEF), Some(true)).then(|| {
-            // Specialize the aliased type (if needed) and return it. We don't need to resolve
-            // params, because our caller processes transparent aliases iteratively to fixpoint.
-            if self.is_generic() {
-                let mappings = self.generic_params.call(self.path.name(), args);
-                self.aliased.specialize(&mappings)
-            } else {
-                self.aliased.clone()
-            }
-        })
     }
 
     fn rename_for_config(&mut self, config: &Config) {

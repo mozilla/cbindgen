@@ -6,8 +6,7 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericParams, Item, ItemContainer, Path,
-    Type,
+    AnnotationSet, Cfg, Documentation, GenericParams, Item, ItemContainer, Path, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::transparent::ResolveTransparentTypes;

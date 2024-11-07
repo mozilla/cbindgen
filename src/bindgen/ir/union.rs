@@ -255,7 +255,6 @@ impl Item for Union {
 
 impl ResolveTransparentTypes for Union {
     fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
-        // Resolve any defaults in the generic params
         let params = Self::resolve_generic_params(library, &self.generic_params);
         let fields = Self::resolve_fields(library, &self.fields, &params, false);
         (params.cow_is_owned() || fields.cow_is_owned()).then(|| Union {

@@ -15,8 +15,9 @@ use crate::bindgen::cargo::{Cargo, PackageRef};
 use crate::bindgen::config::{Config, Language, ParseConfig};
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GenericPath, GenericArgument, GenericParam,
-    GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GenericArgument,
+    GenericParam, GenericParams, GenericPath, ItemMap, OpaqueItem, Path, Static, Struct, Type,
+    Typedef, Union,
 };
 use crate::bindgen::utilities::{SynAbiHelpers, SynAttributeHelpers, SynItemHelpers};
 
@@ -496,7 +497,7 @@ impl Parse {
             self.add_opaque("MaybeUninit", vec!["T"]);
             self.add_opaque("Pin", vec!["T"]);
         } else {
-            // NOTE: Box<T> acts like NonNull<T> in C
+            // NOTE: Box<T> acts like NonNull<T> in C, so emit it as a transparent typedef
             let generics = vec![GenericArgument::Type(tpath.clone())];
             let alias = Type::Path(GenericPath::new(Path::new("NonNull"), generics));
             self.add_transparent_typedef("Box", alias, vec!["T"]);
