@@ -137,13 +137,13 @@ struct FlagValueFold<'a> {
     out_of_line: bool,
 }
 
-impl<'a> FlagValueFold<'a> {
+impl FlagValueFold<'_> {
     fn is_self(&self, ident: &syn::Ident) -> bool {
         ident == self.struct_name || ident == "Self"
     }
 }
 
-impl<'a> Fold for FlagValueFold<'a> {
+impl Fold for FlagValueFold<'_> {
     fn fold_expr(&mut self, node: syn::Expr) -> syn::Expr {
         // bitflags 2 doesn't expose `bits` publically anymore, and the documented way to
         // combine flags is using the `bits` method, e.g.
