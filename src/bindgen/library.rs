@@ -63,7 +63,6 @@ impl Library {
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
         //self.transfer_annotations();
-        //self.simplify_standard_types();
         self.resolve_transparent_types();
 
         match self.config.function.sort_by.unwrap_or(self.config.sort_by) {
@@ -366,29 +365,6 @@ impl Library {
 
         for item in &mut self.functions {
             item.resolve_declaration_types(&resolver);
-        }
-    }
-
-    fn simplify_standard_types(&mut self) {
-        let config = &self.config;
-
-        self.structs.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.enums.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.unions.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.globals.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.typedefs.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        for x in &mut self.functions {
-            x.simplify_standard_types(config);
         }
     }
 

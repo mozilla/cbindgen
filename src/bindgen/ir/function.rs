@@ -117,13 +117,6 @@ impl Function {
         &self.path
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.ret.simplify_standard_types(config);
-        for arg in &mut self.args {
-            arg.ty.simplify_standard_types(config);
-        }
-    }
-
     pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ret.add_dependencies(library, out);
         for arg in &self.args {

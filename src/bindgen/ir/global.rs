@@ -64,10 +64,6 @@ impl Static {
             documentation,
         }
     }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.ty.simplify_standard_types(config);
-    }
 }
 
 impl Item for Static {

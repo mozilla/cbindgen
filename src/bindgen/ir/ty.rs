@@ -519,61 +519,6 @@ impl Type {
         }
     }
 
-    fn simplified_type(&self, config: &Config) -> Option<Self> {
-        let path = match *self {
-            Type::Path(ref p) => p,
-            _ => return None,
-        };
-
-        if path.generics().is_empty() {
-            return None;
-        }
-
-        if path.generics().len() != 1 {
-            return None;
-        }
-
-        let unsimplified_generic = match path.generics()[0] {
-            GenericArgument::Type(ref ty) => ty,
-            GenericArgument::Const(_) => return None,
-        };
-
-        let generic = match unsimplified_generic.simplified_type(config) {
-            Some(generic) => Cow::Owned(generic),
-            None => Cow::Borrowed(unsimplified_generic),
-        };
-        match path.name() {
-            "Option" => generic
-                .make_nullable()
-                .or_else(|| generic.make_zeroable(true)),
-            "NonNull" => Some(Type::Ptr {
-                ty: Box::new(generic.into_owned()),
-                is_const: false,
-                is_nullable: false,
-                is_ref: false,
-            }),
-            "NonZero" => generic.make_zeroable(false),
-            "Box" if config.language != Language::Cxx => Some(Type::Ptr {
-                ty: Box::new(generic.into_owned()),
-                is_const: false,
-                is_nullable: false,
-                is_ref: false,
-            }),
-            "SyncUnsafeCell" | "UnsafeCell" | "Cell" => Some(generic.into_owned()),
-            "ManuallyDrop" | "MaybeUninit" | "Pin" if config.language != Language::Cxx => {
-                Some(generic.into_owned())
-            }
-            _ => None,
-        }
-    }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.visit_types(|ty| ty.simplify_standard_types(config));
-        if let Some(ty) = self.simplified_type(config) {
-            *self = ty;
-        }
-    }
-
     pub fn replace_self_with(&mut self, self_ty: &Path) {
         if let Type::Path(ref mut generic_path) = *self {
             generic_path.replace_self_with(self_ty);

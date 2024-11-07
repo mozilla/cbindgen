@@ -161,12 +161,6 @@ impl Struct {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
-        }
-    }
-
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
         let field = self.fields.first()?;

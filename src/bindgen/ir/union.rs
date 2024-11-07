@@ -95,12 +95,6 @@ impl Union {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
-        }
-    }
-
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         // Generic unions can instantiate monomorphs only once they've been
         // instantiated. See `instantiate_monomorph` for more details.

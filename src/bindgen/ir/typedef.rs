@@ -68,10 +68,6 @@ impl Typedef {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.aliased.simplify_standard_types(config);
-    }
-
     // Used to convert a transparent Struct to a Typedef.
     pub fn new_from_struct_field(item: &Struct, field: &Field) -> Self {
         Self {
