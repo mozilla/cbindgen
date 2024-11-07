@@ -1,19 +1,10 @@
 use std::num::NonZero;
 use std::ptr::NonNull;
 
-pub struct Opaque<U = Alias<i32>>;
-
-#[no_mangle]
-pub extern "C" fn root_opaque(o: Opaque<Alias<Option<NonZero<i32>>>>) {}
-
-#[repr(C)]
-pub struct Struct<U = Alias<U>> {
-    field: U,
-}
 
 /// cbindgen:transparent-typedef
 #[repr(transparent)]
-pub struct Transparent<T, P=T> {
+pub struct Transparent<T, P=NonNull<T>> {
     field: T,
     _phantom: std::marker::PhantomData<P>,
 }
@@ -22,6 +13,19 @@ pub type Typedef<U = Transparent<i64>> = Transparent<U>;
 
 /// cbindgen:transparent-typedef
 pub type Alias<U = Transparent<i64>> = Transparent<U>;
+
+pub struct Opaque<U = Alias<i32>> {
+    field: U,
+}
+
+#[no_mangle]
+pub extern "C" fn root_opaque(o: &Opaque<Alias<Option<NonZero<i32>>>>) {}
+
+#[repr(C)]
+pub struct Struct<'a, U, P = Alias<U>> {
+    field: &'a U,
+    _phantom: std::marker::PhantomData<P>,
+}
 
 #[repr(C)]
 pub struct FullyTransparent1<E = Alias<i64>> {
@@ -49,15 +53,6 @@ pub struct NotTransparent1<'a, E = Option<i64>> {
     ti: &'a Typedef<i32>,
     fi: extern "C" fn(oi: &Option<i32>, si: &Struct<i32>) -> *mut Typedef<i32>,
 }
-
-#[no_mangle]
-pub extern "C" fn test1(
-    a: Struct<i32>,
-    b: Typedef<i32>,
-    c: &Option<i32>,
-    d: Transparent<i32>,
-    e: Alias<i32>,
-) {}
 
 #[no_mangle]
 pub extern "C" fn root1(
@@ -174,7 +169,7 @@ pub extern "C" fn root2(
     n: NotTransparent2<Struct<Option<i32>>>) {}
 
 #[repr(C)]
-pub enum FullyTransparentMany<E = Alias<Option<Transparent<NonZero<Transparent<i64>>>>>> {
+pub enum FullyTransparentMany<E = Alias<Option<Transparent<NonNull<Transparent<i64>>>>>> {
     ont(Option<NonNull<Transparent<E>>>),
     otn(Option<Transparent<NonNull<E>>>),
     ton(Transparent<Option<NonNull<E>>>),

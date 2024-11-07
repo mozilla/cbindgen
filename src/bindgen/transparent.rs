@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-use crate::bindgen::ir::{Constant, Static, Enum, Struct, Union, OpaqueItem, Typedef, Function, Item, ItemMap, GenericParams, GenericArgument, GenericParam, Field};
+use crate::bindgen::ir::{Path, Type, Function, Item, ItemMap, GenericParams, GenericArgument, GenericParam, Field};
 use crate::bindgen::library::Library;
 
 /// Helper trait that makes it easier to work with `Cow` in iterators
@@ -98,59 +98,76 @@ pub trait ResolveTransparentTypes: Sized {
 
 pub type ResolvedItems<T> = HashMap<usize, T>;
 
-/// An indirection that allows to generalize the two-stage process of resolving transparent types.
-#[derive(Default)]
-pub struct TransparentTypeResolver {
-    pub constants: ResolvedItems<Constant>,
-    pub globals: ResolvedItems<Static>,
-    pub enums: ResolvedItems<Enum>,
-    pub structs: ResolvedItems<Struct>,
-    pub unions: ResolvedItems<Union>,
-    pub opaque_items: ResolvedItems<OpaqueItem>,
-    pub typedefs: ResolvedItems<Typedef>,
-    pub functions: ResolvedItems<Function>,
-}
+/// An indirection that allows to generalize the two-stage process of resolving transparent
+/// types. We first resolve transparent aliases and store the results in a hashmap, using a borrowed
+/// reference to the `Library` to resolve the types. In the second step, we install the resolved
+/// types back into the library, which requires a mutable reference.
+pub struct TransparentTypeResolver;
 
 impl TransparentTypeResolver {
+    pub fn transparent_alias_for_path(path: &Path, generics: &[GenericArgument], library: &Library, params: &GenericParams) -> Option<Type> {
+        let Some(items) = library.get_items(path) else {
+            warn!("Unknown type {path:?}");
+            return None;
+        };
+        let mut items = items.into_iter();
+        let item = items.next()?;
+        if let Some(other_item) = items.next() {
+            warn!("Found multiple resolved types for {path:?}: {item:?} and. {other_item:?}");
+            return None;
+        }
+
+        // The type we resolve may itself be transparent, so recurse on it
+        let resolved_type = item.transparent_alias(library, generics, params)?;
+        resolved_type.transparent_alias(library, params).or(Some(resolved_type))
+    }
+
+    pub fn resolve_items<T>(&self, library: &Library, items: &ItemMap<T>) -> ResolvedItems<T>
+    where
+        T: ResolveTransparentTypes + Item + Clone,
+    {
+        let mut resolved = Default::default();
+        let mut i = 0;
+        items.for_all_items(|item| {
+            Self::resolve_item(item, i, &mut resolved, library);
+            i += 1;
+        });
+        resolved
+    }
+    pub fn install_items<T>(&self, mut resolved: ResolvedItems<T>, items: &mut ItemMap<T>)
+    where
+        T: ResolveTransparentTypes + Item + Clone,
+    {
+        let mut i = 0;
+        items.for_all_items_mut(|item| {
+            Self::install_item(item, i, &mut resolved);
+            i += 1;
+        });
+    }
+
+    // Functions do not impl Item
+    pub fn resolve_functions(&self, library: &Library, items: &Vec<Function>) -> ResolvedItems<Function> {
+        let mut functions = Default::default();
+        for (i, item) in items.into_iter().enumerate() {
+            Self::resolve_item(item, i, &mut functions, library);
+        }
+        functions
+    }
+    pub fn install_functions(&self, mut functions: ResolvedItems<Function>, items: &mut Vec<Function>) {
+        for (i, item) in items.into_iter().enumerate() {
+            Self::install_item(item, i, &mut functions);
+        }
+    }
+
+
     fn resolve_item<T: ResolveTransparentTypes>(item: &T, i: usize, resolved: &mut ResolvedItems<T>, library: &Library) {
         if let Some(alias) = item.resolve_transparent_types(library) {
             resolved.insert(i, alias);
         }
     }
-
-    // Functions do not impl Item
-    pub fn resolve_functions(&mut self, library: &Library, items: &Vec<Function>) {
-        for (i, item) in items.into_iter().enumerate() {
-            Self::resolve_item(item, i, &mut self.functions, library);
-        }
-    }
-
-    pub fn resolve_items<T: ResolveTransparentTypes + Item + Clone>(resolved: &mut ResolvedItems<T>, library: &Library, items: &ItemMap<T>) {
-        let mut i = 0;
-        items.for_all_items(|item| {
-            Self::resolve_item(item, i, resolved, library);
-            i += 1;
-        });
-    }
-
     fn install_item<T: ResolveTransparentTypes>(item: &mut T, i: usize, resolved: &mut ResolvedItems<T>) {
         if let Some(alias) = resolved.remove(&i) {
             *item = alias;
         }
-    }
-
-    // Functions do not impl Item
-    pub fn install_functions(&mut self, items: &mut Vec<Function>) {
-        for (i, item) in items.into_iter().enumerate() {
-            Self::install_item(item, i, &mut self.functions);
-        }
-    }
-
-    pub fn install_items<T: ResolveTransparentTypes + Item + Clone>(resolved: &mut ResolvedItems<T>, items: &mut ItemMap<T>) {
-        let mut i = 0;
-        items.for_all_items_mut(|item| {
-            Self::install_item(item, i, resolved);
-            i += 1;
-        });
     }
 }

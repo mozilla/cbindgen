@@ -8,10 +8,10 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, ItemContainer, Path};
+use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
-use crate::bindgen::transparent::{CowIsOwned, IterCow};
+use crate::bindgen::transparent::{CowIsOwned, IterCow, TransparentTypeResolver};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -572,52 +572,7 @@ impl Type {
         }
     }
 
-    pub fn transparent_alias_for_path(&self, path: &Path, generics: &[GenericArgument], library: &Library, params: &GenericParams) -> Option<Type> {
-        let items = library.get_items(path);
-        if items.is_none() {
-            warn!("Unknown type {path:?}");
-            return None;
-        }
-        use crate::bindgen::ir::Item as _;
-        let mut erased_types = items
-            .into_iter()
-            .flatten()
-            .flat_map(|item| match item {
-                ItemContainer::Typedef(t) => t.transparent_alias(library, generics, params),
-                ItemContainer::Struct(s) => {
-                    let t = s.as_typedef()?;
-                    t.transparent_alias(library, generics, params)
-                }
-                ItemContainer::OpaqueItem(o) => {
-                    // Opaque type `O<T>` is tricky, because only certain combinations of `O` and
-                    // `T` are transparent. Further, `T` itself may be a transparent type that must
-                    // be resolved before we can make an accurate decision. Additionally, even if we
-                    // ultimately decide `O<T>` is not transparent, we still need to update `O` to
-                    // reference a resolved `T`. For example, `Option<Transparent<NonZero<i32>>>`
-                    // resolves as `i32` and `Option<Transparent<Foo>>` resolves as `Option<Foo>`.
-                    o.transparent_alias(library, generics, params)
-                }
-                _ => None,
-            })
-            //.inspect(|item| warn!("FRJ: erased {self:#?}\nas {item:#?}"))
-            ;
-        let Some(erased_type) = erased_types.next() else {
-            return None;
-        };
-        if let Some(other_erased_type) = erased_types.next() {
-            warn!(
-                "Found multiple erased types for {:?}: {:?} vs. {:?}",
-                path, erased_type, other_erased_type
-            );
-            return None;
-        }
-        // The type we just resolved may itself be transparent... recurse
-        erased_type.transparent_alias(library, params)
-            //.inspect(|x| warn!("Double erase {path:?}\nfrom {erased_type:#?}\nto{x:#?}"))
-            .or(Some(erased_type))
-    }
-
-    /// Convenience wrapper for callers who prefer `Cow` instead of `Option`
+    /// Convenience wrapper for callers who prefer `Cow` result over `Option`.
     pub fn transparent_alias_cow<'a>(&'a self, library: &Library, params: &GenericParams) -> Cow<'a, Type> {
         self.transparent_alias(library, params).map_or_else(|| Cow::Borrowed(self), Cow::Owned)
     }
@@ -688,7 +643,7 @@ impl Type {
                     }).collect()
                 });
                 let generics = new_generics.as_ref().map_or(generics, Vec::as_slice);
-                let new_ty = self.transparent_alias_for_path(path, generics, library, params);
+                let new_ty = TransparentTypeResolver::transparent_alias_for_path(path, generics, library, params);
                 if new_ty.is_some() {
                     //warn!("Type::Path {self:#?}\nerased as {new_ty:#?}");
                     new_ty
