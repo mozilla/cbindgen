@@ -870,7 +870,7 @@ impl Enum {
             out.write("enum ");
         }
 
-        write!(out, "{} tag;", tag_name);
+        write!(out, "{} tag;", tag_name, self.annotations.atom("tag-field-name").map_or(&"tag", |tag_field_name| tag_field_name.expect("tag-field-name")));
 
         if wrap_tag {
             out.close_brace(true);
