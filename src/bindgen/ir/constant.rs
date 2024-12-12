@@ -18,6 +18,7 @@ use crate::bindgen::ir::{
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
+use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::writer::SourceWriter;
 use crate::bindgen::Bindings;
 
@@ -666,7 +667,21 @@ impl Constant {
             Cow::Borrowed(self.export_name())
         } else {
             let associated_name = match associated_to_struct {
-                Some(s) => Cow::Borrowed(s.export_name()),
+                Some(s) => {
+                    let name = s.export_name();
+                    let rules = s
+                        .annotations
+                        .parse_atom::<RenameRule>("rename-associated-constant");
+                    let rules = rules
+                        .as_ref()
+                        .unwrap_or(&config.structure.rename_associated_constant);
+
+                    if let Some(r) = rules.not_none() {
+                        r.apply(name, IdentifierType::Type)
+                    } else {
+                        Cow::Borrowed(name)
+                    }
+                }
                 None => {
                     let mut name = self.associated_to.as_ref().unwrap().name().to_owned();
                     config.export.rename(&mut name);
