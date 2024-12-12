@@ -95,6 +95,7 @@ rename_fields = "None"
 # must_use = "MUST_USE_STRUCT"
 # deprecated = "DEPRECATED_STRUCT"
 # deprecated_with_note = "DEPRECATED_STRUCT_WITH_NOTE"
+rename_associated_constant = "None"
 derive_constructor = false
 derive_eq = false
 derive_neq = false
