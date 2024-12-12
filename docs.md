@@ -828,6 +828,12 @@ deprecated_with_notes = "DEPRECATED_STRUCT_WITH_NOTE"
 # default: false
 # associated_constants_in_body: false
 
+# The rename rule to apply to the struct name used for prefixing associated
+# constants.
+#
+# default: "None"
+associated_constants_rename_base_name: "None"
+
 # Whether to derive a simple constructor that takes a value for every field.
 # default: false
 derive_constructor = true
