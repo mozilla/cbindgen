@@ -4,14 +4,14 @@
 #include <ostream>
 #include <new>
 
+struct C_A;
+
 constexpr static const int32_t C_H = 10;
 
 enum class C_E : uint8_t {
   x = 0,
   y = 1,
 };
-
-struct C_A;
 
 struct C_C;
 

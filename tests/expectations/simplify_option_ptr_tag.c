@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 struct Opaque;
-
 struct Option_____Opaque;
 
 struct Foo {

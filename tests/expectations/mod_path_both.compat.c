@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct ExportMe;
+
 #define EXPORT_ME_TOO 42
 
 typedef struct ExportMe {

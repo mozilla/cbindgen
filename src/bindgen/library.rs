@@ -5,13 +5,15 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use indexmap::indexmap;
+
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::config::{Config, Language, SortKey};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
-use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
+use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Type, Typedef, Union};
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::ItemType;
 
@@ -73,35 +75,60 @@ impl Library {
             self.instantiate_monomorphs();
         }
         self.remove_excluded();
+
+        let mut resolver = DeclarationTypeResolver::default();
+        self.collect_declaration_types(&mut resolver);
+
         if self.config.language == Language::C {
-            self.resolve_declaration_types();
+            self.resolve_declaration_types(&resolver);
         }
 
         self.rename_items();
 
         let mut dependencies = Dependencies::new();
 
+        let mut ptr_types = Default::default();
         for function in &self.functions {
-            function.add_dependencies(&self, &mut dependencies);
+            function.add_dependencies(&self, &mut dependencies, &mut ptr_types);
         }
         self.globals.for_all_items(|global| {
-            global.add_dependencies(&self, &mut dependencies);
+            global.add_dependencies(&self, &mut dependencies, &mut ptr_types);
         });
         self.constants.for_all_items(|constant| {
-            constant.add_dependencies(&self, &mut dependencies);
+            constant.add_dependencies(&self, &mut dependencies, &mut ptr_types);
         });
         for name in &self.config.export.include {
             let path = Path::new(name.clone());
             if let Some(items) = self.get_items(&path) {
                 if dependencies.items.insert(path) {
                     for item in &items {
-                        item.deref().add_dependencies(&self, &mut dependencies);
+                        item.deref()
+                            .add_dependencies(&self, &mut dependencies, &mut ptr_types);
                     }
                     for item in items {
                         dependencies.order.push(item);
                     }
                 }
             }
+        }
+
+        let mut forward_declarations = indexmap! {};
+        while !ptr_types.is_empty() {
+            let mut remainings = Default::default();
+            for path in ptr_types.into_iter() {
+                if self.config.forward_declarations_enabled() {
+                    let mut path = path.clone();
+                    // `resolve_declaration_types()` is called on each `GenericPath`
+                    // in order to set `ctype`.
+                    path.resolve_declaration_types(&resolver);
+                    // A `GenericPath` for an alias type has no `ctype`.
+                    if path.ctype().is_some() {
+                        forward_declarations.insert(path.path().clone(), Type::Path(path));
+                    }
+                }
+                Type::Path(path).add_dependencies(&self, &mut dependencies, &mut remainings);
+            }
+            ptr_types = remainings;
         }
 
         dependencies.sort();
@@ -138,6 +165,7 @@ impl Library {
             self.config,
             self.structs,
             self.typedefs,
+            forward_declarations,
             constants,
             globals,
             items,
@@ -318,52 +346,56 @@ impl Library {
         }
     }
 
-    fn resolve_declaration_types(&mut self) {
+    fn collect_declaration_types(&self, resolver: &mut DeclarationTypeResolver) {
         if !self.config.style.generate_tag() {
             return;
         }
 
-        let mut resolver = DeclarationTypeResolver::default();
-
         self.structs.for_all_items(|x| {
-            x.collect_declaration_types(&mut resolver);
+            x.collect_declaration_types(resolver);
         });
 
         self.enums.for_all_items(|x| {
-            x.collect_declaration_types(&mut resolver);
+            x.collect_declaration_types(resolver);
         });
 
         self.unions.for_all_items(|x| {
-            x.collect_declaration_types(&mut resolver);
+            x.collect_declaration_types(resolver);
         });
 
         self.typedefs.for_all_items(|x| {
-            x.collect_declaration_types(&mut resolver);
+            x.collect_declaration_types(resolver);
         });
 
         // NOTE: Intentionally last, so that in case there's an opaque type
         // which is conflicting with a non-opaque one, the later wins.
         self.opaque_items.for_all_items(|x| {
-            x.collect_declaration_types(&mut resolver);
+            x.collect_declaration_types(resolver);
         });
+    }
+
+    fn resolve_declaration_types(&mut self, resolver: &DeclarationTypeResolver) {
+        if !self.config.style.generate_tag() {
+            return;
+        }
 
         self.enums
-            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+            .for_all_items_mut(|x| x.resolve_declaration_types(resolver));
 
         self.structs
-            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+            .for_all_items_mut(|x| x.resolve_declaration_types(resolver));
 
         self.unions
-            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+            .for_all_items_mut(|x| x.resolve_declaration_types(resolver));
 
         self.typedefs
-            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+            .for_all_items_mut(|x| x.resolve_declaration_types(resolver));
 
         self.globals
-            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+            .for_all_items_mut(|x| x.resolve_declaration_types(resolver));
 
         for item in &mut self.functions {
-            item.resolve_declaration_types(&resolver);
+            item.resolve_declaration_types(resolver);
         }
     }
 

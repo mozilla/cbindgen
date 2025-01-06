@@ -23,11 +23,11 @@ cdef extern from *:
   cdef struct NotReprC_Point:
     pass
 
-  ctypedef NotReprC_Point Foo;
-
   cdef struct Point:
     int32_t x;
     int32_t y;
+
+  ctypedef NotReprC_Point Foo;
 
   cdef struct MyStruct:
     Point point;

@@ -4,14 +4,15 @@
 
 use std::io::Write;
 
+use indexmap::IndexSet;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
+    AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams,
+    GenericPath, Item, ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -372,7 +373,12 @@ impl Item for Struct {
         }
     }
 
-    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
+    fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut IndexSet<GenericPath>,
+    ) {
         let mut fields = self.fields.iter();
 
         // If there is a tag field, skip it
@@ -381,13 +387,17 @@ impl Item for Struct {
         }
 
         for field in fields {
-            field
-                .ty
-                .add_dependencies_ignoring_generics(&self.generic_params, library, out);
+            field.ty.add_dependencies_ignoring_generics(
+                &self.generic_params,
+                library,
+                out,
+                ptr_types,
+                false,
+            );
         }
 
         for c in &self.associated_constants {
-            c.add_dependencies(library, out);
+            c.add_dependencies(library, out, ptr_types);
         }
     }
 

@@ -9,6 +9,9 @@ DEF BAR = 0
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Foo;
+struct Bar;
+
 #if defined(FOO)
 #define FOO 1
 #endif

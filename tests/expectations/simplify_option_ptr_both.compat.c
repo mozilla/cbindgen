@@ -3,9 +3,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct Opaque Opaque;
-
-typedef struct Option_____Opaque Option_____Opaque;
+struct Opaque;
+struct Option_____Opaque;
 
 typedef struct Foo {
   const struct Opaque *x;

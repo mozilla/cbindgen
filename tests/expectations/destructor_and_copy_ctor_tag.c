@@ -7,11 +7,32 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct Foo_u32;
+union Baz_i32;
+union Taz;
+union Tazzz;
+union Tazzzz;
+union Qux;
+
 enum FillRule {
   A,
   B,
 };
 typedef uint8_t FillRule;
+
+enum Tazz_Tag {
+  Bar4,
+  Taz2,
+};
+typedef uint8_t Tazz_Tag;
+
+union Tazz {
+  Tazz_Tag tag;
+  struct {
+    Tazz_Tag taz2_tag;
+    int32_t taz2;
+  };
+};
 
 /**
  * This will have a destructor manually implemented via variant_body, and
@@ -134,20 +155,6 @@ union Taz {
   struct {
     Taz_Tag taz3_tag;
     struct OwnedSlice_i32 taz3;
-  };
-};
-
-enum Tazz_Tag {
-  Bar4,
-  Taz2,
-};
-typedef uint8_t Tazz_Tag;
-
-union Tazz {
-  Tazz_Tag tag;
-  struct {
-    Tazz_Tag taz2_tag;
-    int32_t taz2;
   };
 };
 

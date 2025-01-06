@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 
+use indexmap::IndexSet;
 use syn::ext::IdentExt;
 
 use crate::bindgen::config::{Config, Language};
@@ -122,10 +123,15 @@ impl Function {
         }
     }
 
-    pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.ret.add_dependencies(library, out);
+    pub fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut IndexSet<GenericPath>,
+    ) {
+        self.ret.add_dependencies(library, out, ptr_types);
         for arg in &self.args {
-            arg.ty.add_dependencies(library, out);
+            arg.ty.add_dependencies(library, out, ptr_types);
         }
     }
 

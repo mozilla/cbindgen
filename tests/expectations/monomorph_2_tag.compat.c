@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 struct A;
-
 struct B;
 
 struct List_A {

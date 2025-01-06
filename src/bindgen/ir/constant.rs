@@ -6,6 +6,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::io::Write;
 
+use indexmap::IndexSet;
 use syn::ext::IdentExt;
 use syn::UnOp;
 
@@ -13,8 +14,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, Item, ItemContainer, Path,
-    Struct, ToCondition, Type,
+    AnnotationSet, Cfg, ConditionWrite, Documentation, GenericParams, GenericPath, Item,
+    ItemContainer, Path, Struct, ToCondition, Type,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -560,8 +561,13 @@ impl Item for Constant {
         &self.path
     }
 
-    fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
-        self.ty.add_dependencies(library, out);
+    fn add_dependencies(
+        &self,
+        library: &Library,
+        out: &mut Dependencies,
+        ptr_types: &mut IndexSet<GenericPath>,
+    ) {
+        self.ty.add_dependencies(library, out, ptr_types);
     }
 
     fn export_name(&self) -> &str {
