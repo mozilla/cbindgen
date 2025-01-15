@@ -1,0 +1,17 @@
+header = """
+"""
+
+[parse]
+parse_deps = true
+[defines]
+"target_os = freebsd" = "DEFINE_FREEBSD"
+
+[export]
+exclude = [
+    "ContainsNoExternTy"
+]
+
+[java_jna]
+extra_defs = """
+class ContainsNoExternTy {}
+"""
