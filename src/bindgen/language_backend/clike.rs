@@ -99,7 +99,11 @@ impl<'a> CLikeLanguageBackend<'a> {
         for namespace in namespaces {
             out.new_line();
             if open {
-                write!(out, "namespace {} {{", namespace)
+                if self.config.language == Language::D {
+                    write!(out, "extern(C++, `{}`) {{", namespace)
+                } else {
+                    write!(out, "namespace {} {{", namespace)
+                }
             } else {
                 write!(out, "}}  // namespace {}", namespace)
             }
@@ -349,17 +353,19 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, "{}", f);
             out.new_line();
         }
-        if let Some(f) = self.config.include_guard() {
-            out.new_line_if_not_start();
-            write!(out, "#ifndef {}", f);
-            out.new_line();
-            write!(out, "#define {}", f);
-            out.new_line();
-        }
-        if self.config.pragma_once {
-            out.new_line_if_not_start();
-            write!(out, "#pragma once");
-            out.new_line();
+        if self.config.language != Language::D {
+            if let Some(f) = self.config.include_guard() {
+                out.new_line_if_not_start();
+                write!(out, "#ifndef {}", f);
+                out.new_line();
+                write!(out, "#define {}", f);
+                out.new_line();
+            }
+            if self.config.pragma_once {
+                out.new_line_if_not_start();
+                write!(out, "#pragma once");
+                out.new_line();
+            }
         }
         if self.config.include_version {
             out.new_line_if_not_start();
@@ -425,6 +431,18 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                         out.new_line();
                     }
                 }
+                Language::D => {
+                    // No add druntime moduule for now (works w/o betterC)
+                    out.write("module cbindgen;");
+                    out.new_line();
+                    out.new_line();
+                    out.write(if self.config.cpp_compat {
+                        "@nogc @safe:"
+                    } else {
+                        "@nogc nothrow @safe:"
+                    });
+                    out.new_line();
+                }
                 _ => {}
             }
         }
@@ -466,7 +484,13 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
     }
 
     fn write_enum<W: Write>(&mut self, out: &mut SourceWriter<W>, e: &Enum) {
-        let size = e.repr.ty.map(|ty| ty.to_primitive().to_repr_c(self.config));
+        let size = e.repr.ty.map(|ty| {
+            if self.config.language == Language::D {
+                ty.to_primitive().to_repr_d(self.config)
+            } else {
+                ty.to_primitive().to_repr_c(self.config)
+            }
+        });
         let has_data = e.tag.is_some();
         let inline_tag_field = Enum::inline_tag_field(&e.repr);
         let tag_name = e.tag_name();
@@ -475,7 +499,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         condition.write_before(self.config, out);
 
         self.write_documentation(out, &e.documentation);
-        self.write_generic_param(out, &e.generic_params);
+        if self.config.language != Language::D {
+            self.write_generic_param(out, &e.generic_params);
+        }
 
         // If the enum has data, we need to emit a struct or union for the data
         // and enum for the tag. C++ supports nested type definitions, so we open
@@ -532,7 +558,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 out.close_brace(false);
                 write!(out, " {};", e.export_name);
             } else {
-                out.close_brace(true);
+                if self.config.language != Language::D {
+                    out.close_brace(true);
+                } else {
+                    out.close_brace(false);
+                }
             }
         }
 
@@ -545,7 +575,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_documentation(out, &s.documentation);
 
-        if !s.is_enum_variant_body {
+        if !s.is_enum_variant_body && self.config.language != Language::D {
             self.write_generic_param(out, &s.generic_params);
         }
 
@@ -594,7 +624,17 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, " {}", s.export_name());
         }
 
+        if self.config.language == Language::D {
+            self.write_generic_param(out, &s.generic_params);
+        }
+
         out.open_brace();
+
+        // D & C struct no have default ctor
+        if self.config.language == Language::D && !self.config.cpp_compat {
+            out.write("@disable this();");
+            out.new_line();
+        }
 
         // Emit the pre_body section, if relevant
         if let Some(body) = self.config.export.pre_body(&s.path) {
@@ -628,7 +668,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             out.close_brace(false);
             write!(out, " {};", s.export_name());
         } else {
-            out.close_brace(true);
+            if self.config.language != Language::D {
+                out.close_brace(true);
+            } else {
+                out.close_brace(false);
+            }
         }
 
         for constant in &s.associated_constants {
@@ -645,7 +689,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_documentation(out, &u.documentation);
 
-        self.write_generic_param(out, &u.generic_params);
+        if self.config.language != Language::D {
+            self.write_generic_param(out, &u.generic_params);
+        }
 
         // The following results in
         // C++ or C with Tag as style:
@@ -679,6 +725,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, " {}", u.export_name);
         }
 
+        if self.config.language == Language::D {
+            self.write_generic_param(out, &u.generic_params);
+        }
         out.open_brace();
 
         // Emit the pre_body section, if relevant
@@ -699,7 +748,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             out.close_brace(false);
             write!(out, " {};", u.export_name);
         } else {
-            out.close_brace(true);
+            if self.config.language != Language::D {
+                out.close_brace(true);
+            } else {
+                out.close_brace(false);
+            }
         }
 
         condition.write_after(self.config, out);
@@ -711,7 +764,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_documentation(out, &o.documentation);
 
-        o.generic_params.write_with_default(self, self.config, out);
+        if self.config.language != Language::D {
+            o.generic_params.write_with_default(self, self.config, out);
+        }
 
         if self.generate_typedef() {
             write!(
@@ -721,7 +776,13 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 o.export_name()
             );
         } else {
-            write!(out, "struct {};", o.export_name());
+            if self.config.language == Language::D {
+                write!(out, "struct {}", o.export_name());
+                o.generic_params.write_with_default(self, self.config, out);
+                out.write(";");
+            } else {
+                write!(out, "struct {};", o.export_name());
+            }
         }
 
         condition.write_after(self.config, out);
@@ -733,10 +794,21 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
 
         self.write_documentation(out, &t.documentation);
 
-        self.write_generic_param(out, &t.generic_params);
+        if self.config.language != Language::D {
+            self.write_generic_param(out, &t.generic_params);
+        }
 
         if self.config.language == Language::Cxx {
             write!(out, "using {} = ", t.export_name());
+            self.write_type(out, &t.aliased);
+        } else if self.config.language == Language::D {
+            if t.is_generic() {
+                write!(out, "alias {}", t.export_name());
+                self.write_generic_param(out, &t.generic_params);
+                out.write(" = ");
+            } else {
+                write!(out, "alias {} = ", t.export_name());
+            }
             self.write_type(out, &t.aliased);
         } else {
             write!(out, "{} ", self.config.language.typedef());
@@ -788,6 +860,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             DocumentationStyle::Auto if self.config.language == Language::Cxx => {
                 DocumentationStyle::Cxx
             }
+            DocumentationStyle::Auto if self.config.language == Language::D => {
+                DocumentationStyle::D
+            }
             DocumentationStyle::Auto => DocumentationStyle::C, // Fallback if `Language` gets extended.
             other => other,
         };
@@ -815,6 +890,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 DocumentationStyle::Doxy => out.write(" *"),
                 DocumentationStyle::C99 => out.write("//"),
                 DocumentationStyle::Cxx => out.write("///"),
+                DocumentationStyle::D => out.write("///"),
                 DocumentationStyle::Auto => unreachable!(), // Auto case should always be covered
             }
 
@@ -883,6 +959,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 write!(out, ")");
             }
             Literal::Cast { ref ty, ref value } => {
+                if self.config.language == Language::D {
+                    out.write("cast");
+                }
                 out.write("(");
                 self.write_type(out, ty);
                 out.write(")");
@@ -902,11 +981,15 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     write!(out, "{}", export_name);
                 }
 
-                write!(out, "{{");
-                if is_constexpr {
-                    out.push_tab();
+                if self.config.language == Language::D {
+                    write!(out, "(");
                 } else {
-                    write!(out, " ");
+                    write!(out, "{{");
+                    if is_constexpr {
+                        out.push_tab();
+                    } else {
+                        write!(out, " ");
+                    }
                 }
                 // In C++, same order as defined is required.
                 let ordered_fields = out.bindings().struct_field_names(path);
@@ -934,6 +1017,8 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                                 // TODO: Some C++ versions (c++20?) now support designated
                                 // initializers, consider generating them.
                                 write!(out, "/* .{} = */ ", ordered_key);
+                            } else if self.config.language == Language::D {
+                                write!(out, "{}: ", ordered_key);
                             } else {
                                 write!(out, ".{} = ", ordered_key);
                             }
@@ -941,13 +1026,17 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                         }
                     }
                 }
-                if is_constexpr {
-                    out.pop_tab();
-                    out.new_line();
+                if self.config.language == Language::D {
+                    write!(out, ")");
                 } else {
-                    write!(out, " ");
+                    if is_constexpr {
+                        out.pop_tab();
+                        out.new_line();
+                    } else {
+                        write!(out, " ");
+                    }
+                    write!(out, " }}");
                 }
-                write!(out, "}}");
             }
         }
     }
@@ -977,6 +1066,16 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 out.new_line();
             }
 
+            if b.config.language == Language::D {
+                out.new_line();
+                if b.config.cpp_compat {
+                    out.write("extern(C++) {");
+                } else {
+                    out.write("extern(C) {");
+                }
+                out.new_line();
+            }
+
             if b.config.cpp_compatible_c() {
                 out.write("#endif // __cplusplus");
                 out.new_line();
@@ -1000,6 +1099,16 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             if b.config.language == Language::Cxx || b.config.cpp_compatible_c() {
                 out.new_line();
                 out.write("}  // extern \"C\"");
+                out.new_line();
+            }
+
+            if b.config.language == Language::D {
+                out.new_line();
+                if b.config.cpp_compat {
+                    out.write("}  // extern(C++)");
+                } else {
+                    out.write("}  // extern(C)");
+                }
                 out.new_line();
             }
 
