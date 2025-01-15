@@ -1,3 +1,4 @@
 {
 no_ignore_root;
+no_ignore_associated_method;
 };
