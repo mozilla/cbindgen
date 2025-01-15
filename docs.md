@@ -782,6 +782,18 @@ rename_args = "PascalCase"
 # default: "None"
 sort_by = "Name"
 
+# This rule specifies whether calling conventions specified in Rust should be
+# translated and emitted in C-like outputs.
+#
+# For example, `extern "cdecl" fn foo() {}` will be emitted as `void
+# __cbindgen_abi_cdecl foo();` and a compiler-specific definition (for Clang, GCC, ICX,
+# and MSVC) will be emitted at the top of the file defining `__cbindgen_abi_cdecl` to
+# the appropriate form for the compiler in the case of `cdecl`, this is `__cdecl` for
+# Clang, ICX, and MSVC and `__attribute__((cdecl))` for GCC.
+#
+# default: true
+emit_calling_convention = true
+
 [struct]
 # A rule to use to rename struct field names. The renaming assumes the input is
 # the Rust standard snake_case, however it acccepts all the different rename_args
