@@ -66,8 +66,10 @@ pub enum ItemContainer {
     Typedef(Typedef),
 }
 
-impl ItemContainer {
-    pub fn deref(&self) -> &dyn Item {
+impl std::ops::Deref for ItemContainer {
+    type Target = dyn Item + 'static;
+
+    fn deref(&self) -> &Self::Target {
         match *self {
             ItemContainer::Constant(ref x) => x,
             ItemContainer::Static(ref x) => x,

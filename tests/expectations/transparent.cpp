@@ -8,6 +8,8 @@ struct DummyStruct;
 
 struct EnumWithAssociatedConstantInImpl;
 
+struct StructWithAssociatedConstantInImpl;
+
 using TransparentComplexWrappingStructTuple = DummyStruct;
 
 using TransparentPrimitiveWrappingStructTuple = uint32_t;
@@ -30,7 +32,21 @@ struct TransparentEmptyStructure {
 
 };
 
-constexpr static const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_TEN = 10;
+using TransparentPointerWrappingStructure = const uint32_t*;
+
+using TransparentIntStruct = int32_t;
+
+using TransparentComplexStruct = DummyStruct;
+
+using TransparentTransparentStruct = TransparentPrimitiveWrappingStructure;
+
+using TransparentNonNullStruct = uint32_t*;
+
+using TransparentOptionNonNullStruct = uint32_t*;
+
+constexpr static const TransparentPrimitiveWrappingStructure StructWithAssociatedConstantInImpl_STRUCT_TEN = 10;
+
+constexpr static const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_ENUM_TEN = 10;
 
 extern "C" {
 
@@ -42,6 +58,23 @@ void root(TransparentComplexWrappingStructTuple a,
           TransparentPrimitiveWrapper<int32_t> f,
           TransparentPrimitiveWithAssociatedConstants g,
           TransparentEmptyStructure h,
-          EnumWithAssociatedConstantInImpl i);
+          TransparentPointerWrappingStructure i,
+          StructWithAssociatedConstantInImpl j,
+          EnumWithAssociatedConstantInImpl k);
+
+void erased_root(uint32_t *a,
+                 uint32_t *b,
+                 TransparentPrimitiveWrappingStructure c,
+                 uint32_t *d,
+                 TransparentIntStruct e,
+                 int32_t f,
+                 DummyStruct g,
+                 uint32_t *h,
+                 int32_t i,
+                 TransparentIntStruct j,
+                 TransparentComplexStruct k,
+                 TransparentTransparentStruct l,
+                 TransparentNonNullStruct m,
+                 TransparentOptionNonNullStruct n);
 
 }  // extern "C"
