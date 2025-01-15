@@ -1,5 +1,19 @@
 # unreleased
 
+# 0.28.0
+
+      * Parse unsafe attributes in https://github.com/mozilla/cbindgen/pull/1020
+      * Fix local override of enum prefix-with-name by jsgf in https://github.com/mozilla/cbindgen/pull/1006
+      * Add rename-all=prefix in https://github.com/mozilla/cbindgen/pull/1021
+      * ir: add support for UnsafeCell and SyncUnsafeCell by alekitto in https://github.com/mozilla/cbindgen/pull/1003
+      * Implement mangling for arrays in https://github.com/mozilla/cbindgen/pull/1022
+      * Fix: Ignore `CARGO_BUILD_TARGET` in tests by bryango in https://github.com/mozilla/cbindgen/pull/1010
+      * Newline for each field for constexpr field constants by youknowone in https://github.com/mozilla/cbindgen/pull/988
+      * Fix clippy warnings by youknowone in https://github.com/mozilla/cbindgen/pull/1026
+      * Add aarch64/arm64 to CI by NickeZ in https://github.com/mozilla/cbindgen/pull/1036
+      * Add `unstable_ir` feature flag that makes the ir pub by heesooy in https://github.com/mozilla/cbindgen/pull/1011
+      * Support generated a symbols file by TheElectronWill in https://github.com/mozilla/cbindgen/pull/916
+
 # 0.27.0
 
       * Revert: The `Config` struct now has a private member.
