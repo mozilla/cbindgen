@@ -807,20 +807,23 @@ impl Parse {
                 &item.attrs,
                 Some(impl_path.clone()),
             ) {
-                Ok(constant) => {
+                Ok(constants) => {
                     info!("Take {}::{}::{}.", crate_name, impl_path, &item.ident);
-                    let mut any = false;
-                    self.structs.for_items_mut(&impl_path, |item| {
-                        any = true;
-                        item.add_associated_constant(constant.clone());
-                    });
-                    // Handle associated constants to other item types that are
-                    // not structs like enums or such as regular constants.
-                    if !any && !self.constants.try_insert(constant) {
-                        error!(
-                            "Conflicting name for constant {}::{}::{}.",
-                            crate_name, impl_path, &item.ident,
-                        );
+
+                    for constant in constants {
+                        let mut any = false;
+                        self.structs.for_items_mut(&impl_path, |item| {
+                            any = true;
+                            item.add_associated_constant(constant.clone());
+                        });
+                        // Handle associated constants to other item types that are
+                        // not structs like enums or such as regular constants.
+                        if !any && !self.constants.try_insert(constant) {
+                            error!(
+                                "Conflicting name for constant {}::{}::{}.",
+                                crate_name, impl_path, &item.ident,
+                            );
+                        }
                     }
                 }
                 Err(msg) => {
@@ -858,12 +861,13 @@ impl Parse {
 
         let path = Path::new(item.ident.unraw().to_string());
         match Constant::load(path, mod_cfg, &item.ty, &item.expr, &item.attrs, None) {
-            Ok(constant) => {
+            Ok(constants) => {
                 info!("Take {}::{}.", crate_name, &item.ident);
-
-                let full_name = constant.path.clone();
-                if !self.constants.try_insert(constant) {
-                    error!("Conflicting name for constant {}", full_name);
+                for constant in constants {
+                    let full_name = constant.path.clone();
+                    if !self.constants.try_insert(constant) {
+                        error!("Conflicting name for constant {}", full_name);
+                    }
                 }
             }
             Err(msg) => {
