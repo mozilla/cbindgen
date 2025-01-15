@@ -120,7 +120,10 @@ impl EnumVariant {
             if inline_tag_field {
                 res.push(Field::from_name_and_type(
                     inline_name.map_or_else(|| "tag".to_string(), |name| format!("{}_tag", name)),
-                    Type::Path(GenericPath::new(Path::new("Tag"), vec![])),
+                    Type::Path {
+                        generic_path: GenericPath::new(Path::new("Tag"), vec![]),
+                        is_volatile: false,
+                    },
                 ));
             }
 
@@ -512,7 +515,10 @@ impl Item for Enum {
                     if let VariantBody::Body { ref mut body, .. } = variant.body {
                         let path = Path::new(new_tag.clone());
                         let generic_path = GenericPath::new(path, vec![]);
-                        body.fields[0].ty = Type::Path(generic_path);
+                        body.fields[0].ty = Type::Path {
+                            generic_path,
+                            is_volatile: false,
+                        };
                     }
                 }
             }
@@ -1182,10 +1188,10 @@ impl Enum {
                     for field in body.fields.iter().skip(skip_fields) {
                         out.new_line();
                         match field.ty {
-                            Type::Array(ref ty, ref length) => {
+                            Type::Array { ref ty, ref len } => {
                                 // arrays are not assignable in C++ so we
                                 // need to manually copy the elements
-                                write!(out, "for (int i = 0; i < {}; i++)", length.as_str());
+                                write!(out, "for (int i = 0; i < {}; i++)", len.as_str());
                                 out.open_brace();
                                 write!(out, "::new (&result.{}.{}[i]) (", variant_name, field.name);
                                 language_backend.write_type(out, ty);
@@ -1253,6 +1259,7 @@ impl Enum {
                         let return_type = Type::Ptr {
                             ty: Box::new(return_type),
                             is_const: const_casts,
+                            is_volatile: false,
                             is_ref: true,
                             is_nullable: false,
                         };
