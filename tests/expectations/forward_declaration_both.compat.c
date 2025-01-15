@@ -1,11 +1,5 @@
-#if 0
-''' '
-#endif
 #if defined(CBINDGEN_STYLE_TYPE)
 /* ANONYMOUS STRUCTS DO NOT SUPPORT FORWARD DECLARATIONS!
-#endif
-#if 0
-' '''
 #endif
 
 
@@ -47,12 +41,6 @@ void root(struct TypeInfo x);
 }  // extern "C"
 #endif  // __cplusplus
 
-#if 0
-''' '
-#endif
 #if defined(CBINDGEN_STYLE_TYPE)
 */
-#endif
-#if 0
-' '''
 #endif

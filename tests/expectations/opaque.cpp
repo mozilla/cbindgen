@@ -1,18 +1,8 @@
-#if 0
-''' '
-#endif
-
-#ifdef __cplusplus
 // These could be added as opaque types I guess.
 template <typename T>
 struct BuildHasherDefault;
 
 struct DefaultHasher;
-#endif
-
-#if 0
-' '''
-#endif
 
 
 #include <cstdarg>
