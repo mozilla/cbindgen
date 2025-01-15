@@ -4,4 +4,5 @@ test_pascal_case;
 test_snake_case;
 test_screaming_snake_case;
 test_gecko_case;
+test_prefix;
 };

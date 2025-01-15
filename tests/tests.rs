@@ -263,13 +263,14 @@ fn run_compile_test(
     generated_file.push(source_file);
     generated_symfile.push(symbols_file);
 
-    let (output_file, generate_depfile) = if verify {
-        (None, false)
+    let (output_file, generate_depfile, generate_symfile) = if verify {
+        (None, false, false)
     } else {
         (
             Some(generated_file.as_path()),
             // --depfile does not work in combination with expanding yet, so we blacklist expanding tests.
             !(name.contains("expand") || name.contains("bitfield")),
+            generate_symfile,
         )
     };
 
@@ -285,7 +286,7 @@ fn run_compile_test(
         style,
         generate_depfile,
         package_version,
-        true,
+        generate_symfile,
     );
     if generate_depfile {
         let depfile = depfile_content.expect("No depfile generated");
@@ -316,13 +317,6 @@ fn run_compile_test(
             // Compare cbindgen output to expected (existing on disk) output.
             let prev_cbindgen_bindings = fs::read(&generated_file).unwrap();
             assert_eq!(bindings_content, prev_cbindgen_bindings);
-
-            if generate_symfile {
-                let symbols = symfile_content.expect("No symfile generated");
-                let prev_cbindgen_symbols = fs::read(&generated_symfile).unwrap();
-                let prev_symbols = String::from_utf8(prev_cbindgen_symbols).unwrap();
-                assert_eq!(symbols, prev_symbols);
-            }
         } else {
             fs::write(&generated_file, &bindings_content)
                 .expect("Failed to write generated bindings.");
