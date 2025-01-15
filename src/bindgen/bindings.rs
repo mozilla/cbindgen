@@ -143,9 +143,9 @@ impl Bindings {
             std::fs::create_dir_all(dir).unwrap();
         }
         let mut writer = BufWriter::new(File::create(symfile_path).unwrap());
-        write!(&mut writer, "{{\n").expect("writing symbol file header failed");
+        writeln!(&mut writer, "{{").expect("writing symbol file header failed");
         for symbol in self.dynamic_symbols_names() {
-            write!(&mut writer, "{};\n", symbol).expect("writing symbol failed");
+            writeln!(&mut writer, "{};", symbol).expect("writing symbol failed");
         }
         write!(&mut writer, "}};").expect("writing symbol file footer failed");
     }
