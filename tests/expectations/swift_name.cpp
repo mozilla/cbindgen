@@ -6,14 +6,14 @@
 #include <ostream>
 #include <new>
 
-template<typename T = void>
-struct Box;
-
 struct Opaque;
 
 struct SelfTypeTestStruct {
   uint8_t times;
 };
+
+template<typename T>
+using Foo = const T*;
 
 struct PointerToOpaque {
   Opaque *ptr;
@@ -27,9 +27,9 @@ void SelfTypeTestStruct_should_exist_ref(const SelfTypeTestStruct *self) CF_SWIF
 
 void SelfTypeTestStruct_should_exist_ref_mut(SelfTypeTestStruct *self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_ref_mut(self:));
 
-void SelfTypeTestStruct_should_not_exist_box(Box<SelfTypeTestStruct> self) CF_SWIFT_NAME(SelfTypeTestStruct.should_not_exist_box(self:));
+void SelfTypeTestStruct_should_not_exist_box(Foo<SelfTypeTestStruct> self) CF_SWIFT_NAME(SelfTypeTestStruct.should_not_exist_box(self:));
 
-Box<SelfTypeTestStruct> SelfTypeTestStruct_should_not_exist_return_box() CF_SWIFT_NAME(SelfTypeTestStruct.should_not_exist_return_box());
+Foo<SelfTypeTestStruct> SelfTypeTestStruct_should_not_exist_return_box() CF_SWIFT_NAME(SelfTypeTestStruct.should_not_exist_return_box());
 
 void SelfTypeTestStruct_should_exist_annotated_self(SelfTypeTestStruct self) CF_SWIFT_NAME(SelfTypeTestStruct.should_exist_annotated_self(self:));
 
@@ -49,7 +49,7 @@ void free_function_should_exist_ref_mut(SelfTypeTestStruct *test_struct) CF_SWIF
 
 void unnamed_argument(SelfTypeTestStruct*);
 
-void free_function_should_not_exist_box(Box<SelfTypeTestStruct> boxed) CF_SWIFT_NAME(free_function_should_not_exist_box(boxed:));
+void free_function_should_not_exist_box(Foo<SelfTypeTestStruct> boxed) CF_SWIFT_NAME(free_function_should_not_exist_box(boxed:));
 
 void free_function_should_exist_annotated_by_name(SelfTypeTestStruct test_struct) CF_SWIFT_NAME(free_function_should_exist_annotated_by_name(test_struct:));
 
