@@ -236,8 +236,7 @@ impl CDecl {
 
         #[allow(clippy::while_let_on_iterator)]
         while let Some(declarator) = iter_rev.next() {
-            let next_is_pointer = iter_rev.peek().map_or(false, |x| x.is_ptr());
-
+            let next_is_pointer = iter_rev.peek().is_some_and(|x| x.is_ptr());
             match *declarator {
                 CDeclarator::Ptr {
                     is_const,
