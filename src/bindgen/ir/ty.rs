@@ -568,7 +568,7 @@ impl Type {
     }
 
     pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.visit_types(|ty| ty.simplify_standard_types(config));
+        self.visit_types_mut(|ty| ty.simplify_standard_types(config));
         if let Some(ty) = self.simplified_type(config) {
             *self = ty;
         }
@@ -578,10 +578,33 @@ impl Type {
         if let Type::Path(ref mut generic_path) = *self {
             generic_path.replace_self_with(self_ty);
         }
-        self.visit_types(|ty| ty.replace_self_with(self_ty))
+        self.visit_types_mut(|ty| ty.replace_self_with(self_ty))
     }
 
-    fn visit_types(&mut self, mut visitor: impl FnMut(&mut Type)) {
+    fn visit_types(&self, mut visitor: impl FnMut(&Type)) {
+        match *self {
+            Type::Array(ref ty, ..) | Type::Ptr { ref ty, .. } => visitor(ty),
+            Type::Path(ref path) => {
+                for generic in path.generics() {
+                    match *generic {
+                        GenericArgument::Type(ref ty) => visitor(ty),
+                        GenericArgument::Const(_) => {}
+                    }
+                }
+            }
+            Type::Primitive(..) => {}
+            Type::FuncPtr {
+                ref ret, ref args, ..
+            } => {
+                visitor(ret);
+                for arg in args {
+                    visitor(&arg.1)
+                }
+            }
+        }
+    }
+
+    fn visit_types_mut(&mut self, mut visitor: impl FnMut(&mut Type)) {
         match *self {
             Type::Array(ref mut ty, ..) | Type::Ptr { ref mut ty, .. } => visitor(ty),
             Type::Path(ref mut path) => {
@@ -625,6 +648,19 @@ impl Type {
                 }
             };
         }
+    }
+
+    /// Visit root paths.
+    /// Includes self and inner types.
+    pub fn visit_root_paths(&self, mut visitor: impl FnMut(Path)) {
+        if let Some(path) = self.get_root_path() {
+            visitor(path);
+        }
+        self.visit_types(|ty| {
+            if let Some(path) = ty.get_root_path() {
+                visitor(path);
+            }
+        });
     }
 
     pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> Type {

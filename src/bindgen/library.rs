@@ -12,6 +12,7 @@ use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
+use crate::bindgen::language_backend::CLikeLanguageBackend;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::ItemType;
 
@@ -105,6 +106,12 @@ impl Library {
         }
 
         dependencies.sort();
+        match self.config.language {
+            Language::C | Language::Cxx => {
+                CLikeLanguageBackend::new(&self.config).resolve_order(&mut dependencies);
+            }
+            Language::Cython => {}
+        }
 
         let items = dependencies.order;
         let constants = if self.config.export.should_generate(ItemType::Constants) {
