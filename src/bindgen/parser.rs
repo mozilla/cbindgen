@@ -543,6 +543,12 @@ impl Parse {
 
                     if let syn::Type::Path(ref path) = *item_impl.self_ty {
                         if let Some(type_name) = path.path.get_ident() {
+                            let trait_name = if let Some(trait_) = &item_impl.trait_ {
+                                Some(&trait_.1.segments[0].ident)
+                            } else {
+                                None
+                            };
+
                             for method in item_impl.items.iter().filter_map(|item| match item {
                                 syn::ImplItem::Fn(method) if !method.should_skip_parsing() => {
                                     Some(method)
@@ -556,6 +562,7 @@ impl Parse {
                                     mod_cfg,
                                     &Path::new(type_name.unraw().to_string()),
                                     method,
+                                    trait_name,
                                 )
                             }
                         }
@@ -652,7 +659,7 @@ impl Parse {
         }
     }
 
-    /// Loads a `fn` declaration inside an `impl` block, if the type is a simple identifier
+    /// Loads a `fn` declaration inside an `impl` block
     fn load_syn_method(
         &mut self,
         config: &Config,
@@ -661,6 +668,7 @@ impl Parse {
         mod_cfg: Option<&Cfg>,
         self_type: &Path,
         item: &syn::ImplItemFn,
+        trait_name: Option<&syn::Ident>,
     ) {
         self.load_fn_declaration(
             config,
@@ -671,6 +679,7 @@ impl Parse {
             Some(self_type),
             &item.sig,
             &item.attrs,
+            trait_name,
         )
     }
 
@@ -692,6 +701,7 @@ impl Parse {
             None,
             &item.sig,
             &item.attrs,
+            None,
         );
     }
 
@@ -706,6 +716,7 @@ impl Parse {
         self_type: Option<&Path>,
         sig: &syn::Signature,
         attrs: &[syn::Attribute],
+        trait_name: Option<&syn::Ident>,
     ) {
         if !config
             .parse
@@ -722,7 +733,11 @@ impl Parse {
             let mut items = Vec::with_capacity(3);
             items.push(crate_name.to_owned());
             if let Some(ref self_type) = self_type {
-                items.push(self_type.to_string());
+                if let Some(trait_name) = trait_name {
+                    items.push(format!("{}::{}", trait_name.to_string(), self_type.to_string()));
+                } else {
+                    items.push(self_type.to_string());
+                }
             }
             items.push(sig.ident.unraw().to_string());
             items.join("::")
@@ -733,7 +748,12 @@ impl Parse {
 
         match (is_extern_c, exported_name) {
             (true, Some(exported_name)) => {
-                let path = Path::new(exported_name);
+                #[cfg(feature = "generate_traits_methods")]
+                let path = if let (Some(trait_name), Some(self_type)) = (trait_name, self_type) {
+                    Path::new(format!("{exported_name}_{}s_{}", trait_name.to_string(), self_type.to_string()))
+                } else {
+                    Path::new(exported_name)
+                };
                 match Function::load(path, self_type, sig, false, attrs, mod_cfg) {
                     Ok(func) => {
                         info!("Take {}.", loggable_item_name());
