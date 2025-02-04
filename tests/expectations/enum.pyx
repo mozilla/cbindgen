@@ -1,17 +1,3 @@
-#if 0
-''' '
-#endif
-
-#ifdef __cplusplus
-template <typename T>
-using Box = T*;
-#endif
-
-#if 0
-' '''
-#endif
-
-
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, uintptr_t
 cdef extern from *:
@@ -199,9 +185,7 @@ cdef extern from *:
             Q q,
             R r);
 
-#if 0
 ''' '
-#endif
 
 #include <stddef.h>
 #include "testing-helpers.h"
@@ -210,6 +194,4 @@ static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p0")
 static_assert(offsetof(CBINDGEN_STRUCT(P), p0) == 1, "unexpected offset for p1");
 static_assert(sizeof(CBINDGEN_STRUCT(P)) == 4, "unexpected size for P");
 
-#if 0
 ' '''
-#endif
