@@ -18,6 +18,7 @@ use crate::bindgen::ir::{
 use crate::bindgen::language_backend::{
     CLikeLanguageBackend, CythonLanguageBackend, LanguageBackend,
 };
+use crate::bindgen::predefines::Predefines;
 use crate::bindgen::writer::SourceWriter;
 
 /// A bindings header that can be written.
@@ -28,6 +29,10 @@ pub struct Bindings {
     struct_map: ItemMap<Struct>,
     typedef_map: ItemMap<Typedef>,
     struct_fileds_memo: RefCell<HashMap<BindgenPath, Rc<Vec<String>>>>,
+    /// Raw code that needs to be inserted at the top of the generated bindings, usually
+    /// based on some condition found in the code itself (motivating example being
+    /// defining compiler and platform independent calling conventions)
+    pub predefines: Predefines,
     pub globals: Vec<Static>,
     pub constants: Vec<Constant>,
     pub items: Vec<ItemContainer>,
@@ -46,6 +51,7 @@ impl Bindings {
         struct_map: ItemMap<Struct>,
         typedef_map: ItemMap<Typedef>,
         constants: Vec<Constant>,
+        predefines: Predefines,
         globals: Vec<Static>,
         items: Vec<ItemContainer>,
         functions: Vec<Function>,
@@ -58,6 +64,7 @@ impl Bindings {
             struct_map,
             typedef_map,
             struct_fileds_memo: Default::default(),
+            predefines,
             globals,
             constants,
             items,

@@ -104,6 +104,13 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         }
     }
 
+    fn write_predefines<W: Write>(
+        &self,
+        _out: &mut SourceWriter<W>,
+        _predefines: &crate::bindgen::predefines::Predefines,
+    ) {
+    }
+
     fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>) {
         out.new_line();
         let header = &self.config.cython.header.as_deref().unwrap_or("*");

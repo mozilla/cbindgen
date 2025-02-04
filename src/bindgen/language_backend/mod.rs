@@ -1,7 +1,8 @@
 use crate::bindgen::ir::{
-    cfg::ConditionWrite, DeprecatedNoteKind, Documentation, Enum, Function, ItemContainer, Literal,
-    OpaqueItem, Static, Struct, ToCondition, Type, Typedef, Union,
+    cfg::ConditionWrite, DeprecatedNoteKind, Documentation, Enum, Function, FunctionAbi,
+    ItemContainer, Literal, OpaqueItem, Static, Struct, ToCondition, Type, Typedef, Union,
 };
+use crate::bindgen::predefines::Predefines;
 use crate::bindgen::writer::SourceWriter;
 use crate::bindgen::{cdecl, Bindings, Layout};
 use crate::Config;
@@ -17,6 +18,7 @@ pub use cython::CythonLanguageBackend;
 pub trait LanguageBackend: Sized {
     fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>);
     fn close_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>);
+    fn write_predefines<W: Write>(&self, out: &mut SourceWriter<W>, predefines: &Predefines);
     fn write_headers<W: Write>(&self, out: &mut SourceWriter<W>, package_version: &str);
     fn write_footers<W: Write>(&mut self, out: &mut SourceWriter<W>);
     fn write_enum<W: Write>(&mut self, out: &mut SourceWriter<W>, e: &Enum);
@@ -94,7 +96,7 @@ pub trait LanguageBackend: Sized {
         }
         cdecl::write_func(self, out, func, layout, config);
 
-        if !func.extern_decl {
+        if !matches!(func.abi, FunctionAbi::None) {
             if let Some(ref postfix) = postfix {
                 write_space(layout, out);
                 write!(out, "{}", postfix);
@@ -118,6 +120,7 @@ pub trait LanguageBackend: Sized {
 
     fn write_bindings<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         self.write_headers(out, &b.package_version);
+        self.write_predefines(out, &b.predefines);
         self.open_namespaces(out);
         self.write_primitive_constants(out, b);
         self.write_items(out, b);
