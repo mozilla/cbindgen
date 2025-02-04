@@ -57,7 +57,7 @@ impl fmt::Display for Error {
                 if !src_path.is_empty() {
                     write!(
                         f,
-                        "\nTry running `rustc -Z parse-only {}` to see a nicer error message",
+                        "\nTry running `rustc -Z parse-crate-root-only {}` to see a nicer error message",
                         src_path,
                     )?
                 }
