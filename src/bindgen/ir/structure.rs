@@ -18,6 +18,7 @@ use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
+use crate::bindgen::transparent::{CowIsOwned, ResolveTransparentTypes};
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::SourceWriter;
 
@@ -160,18 +161,16 @@ impl Struct {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
-        }
-    }
-
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
-        match self.fields.first() {
-            Some(field) if self.is_transparent => Some(Typedef::new_from_struct_field(self, field)),
-            _ => None,
-        }
+        let field = self.fields.first()?;
+        self.is_transparent
+            .then(|| Typedef::new_from_struct_field(self, field))
+    }
+
+    pub fn transparent_alias(&self, args: &[GenericArgument]) -> Option<Type> {
+        self.as_typedef()
+            .and_then(|typedef| typedef.transparent_alias(args))
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -400,5 +399,18 @@ impl Item for Struct {
         let mappings = self.generic_params.call(self.path.name(), generic_values);
         let monomorph = self.specialize(generic_values, &mappings, library.get_config());
         out.insert_struct(library, self, monomorph, generic_values.to_owned());
+    }
+}
+
+impl ResolveTransparentTypes for Struct {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Struct> {
+        // Resolve any defaults in the generic params
+        let params = Self::resolve_generic_params(library, &self.generic_params);
+        let fields = Self::resolve_fields(library, &self.fields, &params, false);
+        (params.cow_is_owned() || fields.cow_is_owned()).then(|| Struct {
+            generic_params: params.into_owned(),
+            fields: fields.into_owned(),
+            ..self.clone()
+        })
     }
 }
