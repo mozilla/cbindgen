@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct TypeInfo;
+
 typedef struct StructInfo {
   const struct TypeInfo *const *fields;
   uintptr_t num_fields;
