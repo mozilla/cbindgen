@@ -748,7 +748,6 @@ impl Parse {
 
         match (is_extern_c, exported_name) {
             (true, Some(exported_name)) => {
-                #[cfg(feature = "generate_traits_methods")]
                 let path = if let (Some(trait_name), Some(self_type)) = (trait_name, self_type) {
                     Path::new(format!("{exported_name}_{}s_{}", trait_name.to_string(), self_type.to_string()))
                 } else {
