@@ -1,7 +1,7 @@
 use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
-    Typedef, Union,
+    Field, GenericParams, Item, Literal, OpaqueItem, PanicMacroKind, ReprAlign, Static, Struct,
+    ToCondition, Type, Typedef, Union,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::rename::IdentifierType;
@@ -948,6 +948,15 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     write!(out, " ");
                 }
                 write!(out, "}}");
+            }
+            Literal::PanicMacro(panic_macro_kind) => {
+                match panic_macro_kind {
+                    PanicMacroKind::Todo => write!(out, r#""not yet implemented""#),
+                    PanicMacroKind::Unreachable => write!(out, r#""reached unreachable code""#),
+                    PanicMacroKind::Unimplemented => write!(out, r#""not implemented""#),
+                    // Debug print of &str and String already add the `"`
+                    PanicMacroKind::Panic(msg) => write!(out, "{:?}", msg),
+                }
             }
         }
     }
