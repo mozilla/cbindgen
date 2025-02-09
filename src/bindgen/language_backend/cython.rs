@@ -1,6 +1,7 @@
 use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type, Typedef, Union,
+    Field, Item, Literal, OpaqueItem, PanicMacroKind, ReprAlign, Static, Struct, ToCondition, Type,
+    Typedef, Union,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::writer::{ListType, SourceWriter};
@@ -404,8 +405,16 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
                 }
                 write!(out, " }}");
             }
-            Literal::PanicMacro(_) => {
-                warn!("SKIP: Not implemented")
+            Literal::PanicMacro(kind) => {
+                out.write("raise TypeError(");
+                match kind {
+                    PanicMacroKind::Todo => write!(out, r#""not yet implemented""#),
+                    PanicMacroKind::Unreachable => write!(out, r#""reached unreachable code""#),
+                    PanicMacroKind::Unimplemented => write!(out, r#""not implemented""#),
+                    // Debug print of &str and String already add the `"`
+                    PanicMacroKind::Panic(msg) => write!(out, "{:?}", msg),
+                }
+                out.write(")");
             }
         }
     }
