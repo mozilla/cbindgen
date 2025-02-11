@@ -50,6 +50,7 @@ impl SynItemHelpers for syn::ImplItemFn {
     fn exported_name(&self) -> Option<String> {
         self.attrs
             .attr_name_value_lookup("export_name")
+            .or_else(|| self.unsafe_attr_name_value_lookup("export_name"))
             .or_else(|| {
                 if self.is_no_mangle() {
                     Some(self.sig.ident.unraw().to_string())
