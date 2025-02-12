@@ -11,4 +11,11 @@ impl DummyStruct {
             dummy_field: 0,
         }
     }
+
+    #[unsafe(no_mangle)]
+    pub extern "C" fn new_dummy_param(dummy_field: i32) -> Self {
+        Self {
+            dummy_field,
+        }
+    }
 }
