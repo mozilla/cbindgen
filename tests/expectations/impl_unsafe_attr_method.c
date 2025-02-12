@@ -8,3 +8,5 @@ typedef struct {
 } DummyStruct;
 
 DummyStruct new_dummy(void);
+
+DummyStruct new_dummy_param(int32_t dummy_field);
