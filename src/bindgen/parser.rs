@@ -533,13 +533,15 @@ impl Parse {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
                 syn::Item::Impl(ref item_impl) => {
-                    let has_assoc_const = item_impl
-                        .items
-                        .iter()
-                        .any(|item| matches!(item, syn::ImplItem::Const(_)));
-                    if has_assoc_const {
-                        impls_with_assoc_consts.push(item_impl);
-                    }
+                    let mut impls_with_assoc_ty = Vec::new();
+
+                    item_impl.items.iter().for_each(|item| {
+                        if matches!(item, syn::ImplItem::Const(_)) {
+                            impls_with_assoc_consts.push(item_impl);
+                        } else if let syn::ImplItem::Type(t) = item {
+                            impls_with_assoc_ty.push((&t.ident, &t.ty));
+                        }
+                    });
 
                     if let syn::Type::Path(ref path) = *item_impl.self_ty {
                         if let Some(type_name) = path.path.get_ident() {
@@ -549,13 +551,46 @@ impl Parse {
                                 }
                                 _ => None,
                             }) {
+                                let mut method = method.clone();
+                                let out = match Type::load_from_output(&method.sig.output) {
+                                    Ok((out, ..)) => out,
+                                    Err(..) => continue,
+                                };
+
+                                for (ident, ty) in &impls_with_assoc_ty {
+                                    let ident = ident.to_string();
+
+                                    if let (Some(out_name), syn::ReturnType::Type(_, t)) =
+                                        (out.get_root_path(), &mut method.sig.output)
+                                    {
+                                        if ident == out_name.to_string() {
+                                            *t = Box::new((*ty).clone());
+                                        }
+                                    }
+
+                                    method.sig.inputs.iter_mut().for_each(|arg| {
+                                        if let syn::FnArg::Typed(t) = arg {
+                                            let attr_ty = match Type::load(&t.ty) {
+                                                Ok(Some(t)) => t,
+                                                _ => return,
+                                            };
+
+                                            if let Some(attr_ty) = attr_ty.get_root_path() {
+                                                if ident == attr_ty.to_string() {
+                                                    t.ty = Box::new((*ty).clone());
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+
                                 self.load_syn_method(
                                     config,
                                     binding_crate_name,
                                     crate_name,
                                     mod_cfg,
                                     &Path::new(type_name.unraw().to_string()),
-                                    method,
+                                    &method,
                                 )
                             }
                         }
