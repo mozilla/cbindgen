@@ -534,10 +534,12 @@ impl Parse {
                 }
                 syn::Item::Impl(ref item_impl) => {
                     let mut impls_with_assoc_ty = Vec::new();
+                    let mut assoc_const_find = false;
 
                     item_impl.items.iter().for_each(|item| {
-                        if matches!(item, syn::ImplItem::Const(_)) {
+                        if matches!(item, syn::ImplItem::Const(_)) && !assoc_const_find {
                             impls_with_assoc_consts.push(item_impl);
+                            assoc_const_find = !assoc_const_find;
                         } else if let syn::ImplItem::Type(t) = item {
                             impls_with_assoc_ty.push((&t.ident, &t.ty));
                         }
