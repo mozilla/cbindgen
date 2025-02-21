@@ -1,0 +1,10 @@
+
+[java_jna]
+extra_defs = """
+class Option_Foo {}
+"""
+
+[export]
+exclude = [
+    "Option_Foo",
+]
