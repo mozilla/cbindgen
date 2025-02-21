@@ -23,6 +23,7 @@ pub enum Language {
     Cxx,
     C,
     Cython,
+    D,
 }
 
 impl FromStr for Language {
@@ -42,6 +43,9 @@ impl FromStr for Language {
             "C" => Ok(Language::C),
             "cython" => Ok(Language::Cython),
             "Cython" => Ok(Language::Cython),
+            "d" => Ok(Language::D),
+            "dlang" => Ok(Language::D),
+            "D" => Ok(Language::D),
             _ => Err(format!("Unrecognized Language: '{}'.", s)),
         }
     }
@@ -54,6 +58,7 @@ impl Language {
         match self {
             Language::Cxx | Language::C => "typedef",
             Language::Cython => "ctypedef",
+            Language::D => "alias",
         }
     }
 }
@@ -166,6 +171,7 @@ pub enum DocumentationStyle {
     C99,
     Doxy,
     Cxx,
+    D,
     Auto,
 }
 
@@ -179,6 +185,7 @@ impl FromStr for DocumentationStyle {
             "cxx" => Ok(DocumentationStyle::Cxx),
             "c++" => Ok(DocumentationStyle::Cxx),
             "doxy" => Ok(DocumentationStyle::Doxy),
+            "dlang" => Ok(DocumentationStyle::D),
             "auto" => Ok(DocumentationStyle::Auto),
             _ => Err(format!("Unrecognized documentation style: '{}'.", s)),
         }
