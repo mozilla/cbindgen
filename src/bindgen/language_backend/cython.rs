@@ -2,7 +2,7 @@ use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
     Field, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type, Typedef, Union,
 };
-use crate::bindgen::language_backend::LanguageBackend;
+use crate::bindgen::language_backend::{ItemContainer, LanguageBackend};
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::DocumentationLength;
 use crate::bindgen::{cdecl, Bindings, Config};
@@ -417,5 +417,9 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         {
             out.write("pass");
         }
+    }
+
+    fn write_declaration<W: Write>(&mut self, _out: &mut SourceWriter<W>, _item: &ItemContainer) {
+        unreachable!();
     }
 }

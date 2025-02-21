@@ -14,11 +14,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-typedef struct {
-  const TypeInfo *const *fields;
-  uintptr_t num_fields;
-} StructInfo;
-
 typedef enum {
   Primitive,
   Struct,
@@ -36,6 +31,11 @@ typedef struct {
 typedef struct {
   TypeData data;
 } TypeInfo;
+
+typedef struct {
+  const TypeInfo *const *fields;
+  uintptr_t num_fields;
+} StructInfo;
 
 void root(TypeInfo x);
 
