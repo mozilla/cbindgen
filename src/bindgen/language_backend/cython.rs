@@ -399,7 +399,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
                         } else {
                             is_first_field = false;
                         }
-                        self.write_literal(out, lit);
+                        self.write_literal(out, &lit.value);
                     }
                 }
                 write!(out, " }}");
