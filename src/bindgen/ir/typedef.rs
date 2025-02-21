@@ -15,7 +15,7 @@ use crate::bindgen::ir::{
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 
 /// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]
@@ -100,6 +100,17 @@ impl Typedef {
             out.insert(alias_path, self.annotations.clone());
             self.annotations = AnnotationSet::new();
         }
+    }
+
+    pub fn find_return_value_monomorphs(
+        &self,
+        monomorphs: &mut ReturnValueMonomorphs<'_>,
+        is_return_value: bool,
+    ) {
+        monomorphs.with_active_cfg(self.cfg.clone(), |m| {
+            self.aliased
+                .find_return_value_monomorphs(m, is_return_value);
+        });
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
