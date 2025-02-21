@@ -306,6 +306,14 @@ pub struct Foo { .. }; // This won't be emitted by cbindgen in the header
 fn bar() -> Foo { .. } // Will be emitted as `struct foo bar();`
 ```
 
+### Volatile annotation
+
+cbindgen will emit the C volatile type qualifier for transparent 1-field structs and struct/union fields that have the `volatile` annotation.
+
+There is no equivalent in rust. You should use `read_volatile` and `write_volatile` to get C-like behavior.
+
+Example usage can be found in `tests/rust/volatile.rs`.
+
 ### Struct Annotations
 
 * field-names=\[field1, field2, ...\] -- sets the names of all the fields in the output struct. These names will be output verbatim, and are not eligible for renaming.
