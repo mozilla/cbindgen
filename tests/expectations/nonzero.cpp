@@ -1,14 +1,4 @@
-#if 0
-''' '
-#endif
-
-#ifdef __cplusplus
 struct NonZeroI64;
-#endif
-
-#if 0
-' '''
-#endif
 
 
 #include <cstdarg>

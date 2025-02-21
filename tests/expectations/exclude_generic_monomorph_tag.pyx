@@ -1,19 +1,13 @@
-#include <stdint.h>
-
-#if 0
 ''' '
-#endif
+
+#include <stdint.h>
 
 typedef uint64_t Option_Foo;
 
-#if 0
-' '''
-#endif
 
-#if 0
+' '''
 from libc.stdint cimport uint64_t
 ctypedef uint64_t Option_Foo
-#endif
 
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
