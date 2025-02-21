@@ -15,5 +15,8 @@ pub struct Foo<T> {
     i: Option<NonNull<NonNull<i32>>>,
 }
 
+/// cbindgen:transparent-typedef
+pub type NonNullPtr<X> = Option<NonNull<X>>;
+
 #[no_mangle]
 pub extern "C" fn root(arg: NonNull<i32>, foo: *mut Foo<u64>, d: NonNull<NonNull<Opaque>>) { }
