@@ -803,7 +803,7 @@ impl Enum {
             write!(out, " {} ", note);
         }
 
-        if config.language != Language::C || config.style.generate_tag() {
+        if config.language != Language::C || config.should_generate_tag(&self.path) {
             write!(out, " {}", self.export_name());
         }
 

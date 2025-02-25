@@ -11,10 +11,77 @@ use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
 
+use super::ir::AnnotationValue;
+
+/// Annotation that allows specifying a prefix for function arguments.
+/// It can be used like this:
+/// ```rust
+/// /// cbindgen:function-arg-prefix[bar]=_In_
+/// fn foo(bar: *const u64) {}
+/// ```
+///
+/// This will generate the following code:
+/// ```c
+/// void root(_In_ uint64_t* input);
+/// ```
+pub const ANNOTATION_FUNCTION_ARG_PREFIX: &str = "function-arg-prefix";
+
+/// Annotation that allows specifying a prefix for function arguments.
+/// It can be used like this:
+/// ```rust
+/// /// cbindgen:function-arg-ident-prefix[bar]=_NonNull
+/// fn foo(bar: *const u64) {}
+/// ```
+///
+/// This will generate the following code:
+/// ```c
+/// void root(uint64_t* _NonNull input);
+/// ```
+pub const ANNOTATION_FUNCTION_ARG_IDENT_PREFIX: &str = "function-arg-ident-prefix";
+
+/// Annotation that allows specifying a prefix for function declarations.
+/// It can be used like this:
+/// ```rust
+/// /// cbindgen:function-prefix=TEST_MACRO
+/// fn root(input: *const u64) {}
+/// ```
+///
+/// This will generate the following code:
+/// ```c
+/// TEST_MACRO void root(uint64_t* input);
+/// ```
+pub const ANNOTATION_FUNCTION_PREFIX: &str = "function-prefix";
+
+/// Annotation that allows specifying a prefix for function declarations.
+/// It can be used like this:
+/// ```rust
+/// /// cbindgen:function-postfix=TEST_MACRO
+/// fn root(input: *const u64) {}
+/// ```
+///
+/// This will generate the following code:
+/// ```c
+/// void root(uint64_t* input) TEST_MACRO;
+/// ```
+pub const ANNOTATION_FUNCTION_POSTFIX: &str = "function-postfix";
+
+/// Annotation that allows specifying a prefix for function declarations.
+/// It can be used like this:
+/// ```rust
+/// /// cbindgen:function-ident-prefix=TEST_MACRO
+/// fn root(input: *const u64) {}
+/// ```
+///
+/// This will generate the following code:
+/// ```c
+/// void TEST_MACRO root(uint64_t* input) ;
+/// ```
+pub const ANNOTATION_FUNCTION_IDENT_PREFIX: &str = "function-ident-prefix";
+
 // This code is for translating Rust types into C declarations.
 // See Section 6.7, Declarations, in the C standard for background.
 // http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf
-
+#[derive(Debug)]
 enum CDeclarator {
     Ptr {
         is_const: bool,
@@ -23,9 +90,10 @@ enum CDeclarator {
     },
     Array(String),
     Func {
-        args: Vec<(Option<String>, CDecl)>,
+        args: Vec<CFuncArg>,
         layout: Layout,
         never_return: bool,
+        postfix: Option<String>,
     },
 }
 
@@ -35,6 +103,13 @@ impl CDeclarator {
     }
 }
 
+#[derive(Debug)]
+struct CFuncArg {
+    ident: Option<String>,
+    r#type: CDecl,
+}
+
+#[derive(Debug)]
 struct CDecl {
     type_qualifers: String,
     type_name: String,
@@ -42,6 +117,11 @@ struct CDecl {
     declarators: Vec<CDeclarator>,
     type_ctype: Option<DeclarationType>,
     deprecated: Option<String>,
+    // Prefix that should be added before the declaration
+    prefix: Option<String>,
+    // Prefix that should be added before the
+    // identifier but not as a part of the identifier
+    ident_prefix: Option<String>,
 }
 
 impl CDecl {
@@ -53,6 +133,8 @@ impl CDecl {
             declarators: Vec::new(),
             type_ctype: None,
             deprecated: None,
+            prefix: None,
+            ident_prefix: None,
         }
     }
 
@@ -87,21 +169,60 @@ impl CDecl {
     }
 
     fn build_func(&mut self, f: &Function, layout: Layout, config: &Config) {
+        let arg_ident_prefixes = f
+            .annotations
+            .dict(ANNOTATION_FUNCTION_ARG_IDENT_PREFIX)
+            .unwrap_or_default();
+        let arg_prefixes = f
+            .annotations
+            .dict(ANNOTATION_FUNCTION_ARG_PREFIX)
+            .unwrap_or_default();
+
         let args = f
             .args
             .iter()
             .map(|arg| {
-                (
-                    arg.name.clone(),
-                    CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref(), config),
-                )
+                let ident_prefix = arg
+                    .name
+                    .as_ref()
+                    .and_then(|name| arg_ident_prefixes.get(name).cloned());
+                let ident_prefix = match ident_prefix {
+                    Some(AnnotationValue::Atom(prefix)) => prefix,
+                    _ => None,
+                };
+
+                let prefix = arg
+                    .name
+                    .as_ref()
+                    .and_then(|name| arg_prefixes.get(name).cloned());
+
+                let prefix = match prefix {
+                    Some(AnnotationValue::Atom(prefix)) => prefix,
+                    _ => None,
+                };
+
+                let mut arg = CFuncArg {
+                    ident: arg.name.clone(),
+                    r#type: CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref(), config),
+                };
+
+                arg.r#type.ident_prefix = ident_prefix;
+                arg.r#type.prefix = prefix;
+                arg
             })
             .collect();
+
         self.declarators.push(CDeclarator::Func {
             args,
             layout,
             never_return: f.never_return,
+            postfix: f.annotations.atom(ANNOTATION_FUNCTION_POSTFIX).flatten(),
         });
+        self.ident_prefix = f
+            .annotations
+            .atom(ANNOTATION_FUNCTION_IDENT_PREFIX)
+            .flatten();
+        self.prefix = f.annotations.atom(ANNOTATION_FUNCTION_PREFIX).flatten();
         self.deprecated.clone_from(&f.annotations.deprecated);
         self.build_type(&f.ret, false, config);
     }
@@ -175,7 +296,10 @@ impl CDecl {
             } => {
                 let args = args
                     .iter()
-                    .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty, config)))
+                    .map(|(ref name, ref ty)| CFuncArg {
+                        ident: name.clone(),
+                        r#type: CDecl::from_type(ty, config),
+                    })
                     .collect();
                 self.declarators.push(CDeclarator::Ptr {
                     is_const: false,
@@ -186,6 +310,7 @@ impl CDecl {
                     args,
                     layout: config.function.args,
                     never_return: *never_return,
+                    postfix: None,
                 });
                 self.build_type(ret, false, config);
             }
@@ -199,6 +324,12 @@ impl CDecl {
         ident: Option<&str>,
         config: &Config,
     ) {
+        if config.language != Language::Cython {
+            if let Some(prefix) = &self.prefix {
+                write!(out, "{} ", prefix);
+            }
+        }
+
         // Write the type-specifier and type-qualifier first
         if !self.type_qualifers.is_empty() {
             write!(out, "{} ", self.type_qualifers);
@@ -268,6 +399,12 @@ impl CDecl {
 
         // Write the identifier
         if let Some(ident) = ident {
+            if config.language != Language::Cython {
+                if let Some(prefix) = &self.ident_prefix {
+                    write!(out, "{} ", prefix);
+                }
+            }
+
             write!(out, "{}", ident);
         }
 
@@ -293,11 +430,12 @@ impl CDecl {
                     ref args,
                     ref layout,
                     never_return,
+                    ref postfix,
+                    ..
                 } => {
                     if last_was_pointer {
                         out.write(")");
                     }
-
                     out.write("(");
                     if args.is_empty() && config.language == Language::C {
                         out.write("void");
@@ -307,20 +445,20 @@ impl CDecl {
                         language_backend: &mut LB,
                         out: &mut SourceWriter<F>,
                         config: &Config,
-                        args: &[(Option<String>, CDecl)],
+                        args: &[CFuncArg],
                     ) {
                         let align_length = out.line_length_for_align();
                         out.push_set_spaces(align_length);
-                        for (i, (arg_ident, arg_ty)) in args.iter().enumerate() {
+                        for (i, arg) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(",");
                                 out.new_line();
                             }
 
                             // Convert &Option<String> to Option<&str>
-                            let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
+                            let arg_ident = arg.ident.as_ref().map(|x| x.as_ref());
 
-                            arg_ty.write(language_backend, out, arg_ident, config);
+                            arg.r#type.write(language_backend, out, arg_ident, config);
                         }
                         out.pop_tab();
                     }
@@ -329,17 +467,17 @@ impl CDecl {
                         language_backend: &mut LB,
                         out: &mut SourceWriter<F>,
                         config: &Config,
-                        args: &[(Option<String>, CDecl)],
+                        args: &[CFuncArg],
                     ) {
-                        for (i, (arg_ident, arg_ty)) in args.iter().enumerate() {
+                        for (i, arg) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(", ");
                             }
 
                             // Convert &Option<String> to Option<&str>
-                            let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
+                            let arg_ident = arg.ident.as_ref().map(|x| x.as_ref());
 
-                            arg_ty.write(language_backend, out, arg_ident, config);
+                            arg.r#type.write(language_backend, out, arg_ident, config);
                         }
                     }
 
@@ -360,6 +498,12 @@ impl CDecl {
                     if never_return && config.language != Language::Cython {
                         if let Some(ref no_return_attr) = config.function.no_return {
                             out.write_fmt(format_args!(" {}", no_return_attr));
+                        }
+                    }
+
+                    if config.language != Language::Cython {
+                        if let Some(attr) = postfix {
+                            write!(out, " {}", attr);
                         }
                     }
 

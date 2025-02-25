@@ -15,7 +15,7 @@ typedef enum {
   Baz1_Prepended,
 } MyCLikeEnum_Prepended;
 
-typedef struct {
+typedef struct MyFancyStruct {
   int32_t i;
 #ifdef __cplusplus
     inline void foo();
@@ -28,7 +28,7 @@ typedef enum {
   Baz,
 } MyFancyEnum_Tag;
 
-typedef struct {
+typedef struct MyFancyEnum {
   MyFancyEnum_Tag tag;
   union {
     struct {
@@ -43,13 +43,13 @@ typedef struct {
 #endif
 } MyFancyEnum;
 
-typedef union {
+typedef union MyUnion {
   float f;
   uint32_t u;
   int32_t extra_member;
 } MyUnion;
 
-typedef struct {
+typedef struct MyFancyStruct_Prepended {
 #ifdef __cplusplus
     inline void prepended_wohoo();
 #endif
@@ -62,7 +62,7 @@ typedef enum {
   Baz_Prepended,
 } MyFancyEnum_Prepended_Tag;
 
-typedef struct {
+typedef struct MyFancyEnum_Prepended {
 #ifdef __cplusplus
     inline void wohoo();
 #endif
@@ -77,7 +77,7 @@ typedef struct {
   };
 } MyFancyEnum_Prepended;
 
-typedef union {
+typedef union MyUnion_Prepended {
     int32_t extra_member;
   float f;
   uint32_t u;

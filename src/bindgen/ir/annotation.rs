@@ -9,6 +9,7 @@ use std::str::FromStr;
 
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::utilities::SynAttributeHelpers;
+use regex::Regex;
 
 // A system for specifying properties on items. Annotations are
 // given through document comments and parsed by this code.
@@ -29,6 +30,7 @@ pub enum AnnotationValue {
     List(Vec<String>),
     Atom(Option<String>),
     Bool(bool),
+    Dict(HashMap<String, AnnotationValue>),
 }
 
 /// A set of annotations specified by a document comment.
@@ -113,6 +115,10 @@ impl AnnotationSet {
         let deprecated = attrs.find_deprecated_note();
         let mut annotations = HashMap::new();
 
+        // Regex to extract the index name from an annotation
+        let annotation_name_regex = Regex::new(r"(?m)([a-zA-Z0-9_-]+)(\[([a-zA-Z0-9_-]+)\])?")
+            .expect("Failed to build annotation regex!");
+
         // Look at each line for an annotation
         for line in lines {
             debug_assert!(line.starts_with("cbindgen:"));
@@ -127,34 +133,53 @@ impl AnnotationSet {
                 return Err(format!("Couldn't parse {}.", line));
             }
 
-            // Grab the name that this annotation is modifying
-            let name = parts[0];
+            let captures = annotation_name_regex.captures(parts[0]).ok_or_else(|| {
+                format!("Couldn't parse annotation {:?} in line {}", parts[0], line)
+            })?;
 
-            // If the annotation only has a name, assume it's setting a bool flag
-            if parts.len() == 1 {
-                annotations.insert(name.to_string(), AnnotationValue::Bool(true));
-                continue;
-            }
+            // Grab the name that this annotation is modifying
+            let name = captures
+                .get(1)
+                .ok_or_else(|| {
+                    format!("Couldn't parse annotation {:?} in line {}", parts[0], line)
+                })?
+                .as_str();
+
+            // Check if this annotation is a dictionary
+            let index = captures.get(3).map(|capture| capture.as_str());
 
             // Parse the value we're setting the name to
-            let value = parts[1];
+            let value = if parts.len() == 1 {
+                // If the annotation only has a name, assume it's setting a bool flag
+                AnnotationValue::Bool(true)
+            } else {
+                parse_value(parts[1])
+            };
 
-            if let Some(x) = parse_list(value) {
-                annotations.insert(name.to_string(), AnnotationValue::List(x));
-                continue;
+            match index {
+                Some(index) => {
+                    // Create a new dictionary entry if it doesn't exist
+                    let entry = annotations
+                        .entry(name.to_string())
+                        .or_insert(AnnotationValue::Dict(HashMap::new()));
+
+                    match entry {
+                        AnnotationValue::Dict(ref mut dict) => {
+                            dict.insert(index.to_string(), value);
+                        }
+                        _ => {
+                            // This is here so a mistyped cbindgen:foo[bar]=baz doesn't silently discard all previous dictionary entries.
+                            return Err(format!(
+                                "Attempted to change type of annotation {} in line {}",
+                                name, line
+                            ));
+                        }
+                    }
+                }
+                None => {
+                    annotations.insert(name.to_string(), value);
+                }
             }
-            if let Ok(x) = value.parse::<bool>() {
-                annotations.insert(name.to_string(), AnnotationValue::Bool(x));
-                continue;
-            }
-            annotations.insert(
-                name.to_string(),
-                if value.is_empty() {
-                    AnnotationValue::Atom(None)
-                } else {
-                    AnnotationValue::Atom(Some(value.to_string()))
-                },
-            );
         }
 
         Ok(AnnotationSet {
@@ -190,6 +215,13 @@ impl AnnotationSet {
         }
     }
 
+    pub fn dict(&self, name: &str) -> Option<HashMap<String, AnnotationValue>> {
+        match self.annotations.get(name) {
+            Some(AnnotationValue::Dict(x)) => Some(x.clone()),
+            _ => None,
+        }
+    }
+
     pub fn parse_atom<T>(&self, name: &str) -> Option<T>
     where
         T: Default + FromStr,
@@ -204,19 +236,57 @@ impl AnnotationSet {
     }
 }
 
+/// Parse a value into an annotation value.
+fn parse_value(value: &str) -> AnnotationValue {
+    if let Some(x) = parse_list(value) {
+        return AnnotationValue::List(x);
+    }
+    if let Ok(x) = value.parse::<bool>() {
+        return AnnotationValue::Bool(x);
+    }
+    if value.is_empty() {
+        return AnnotationValue::Atom(None);
+    }
+    AnnotationValue::Atom(Some(value.to_string()))
+}
+
 /// Parse lists like "[x, y, z]". This is not implemented efficiently or well.
 fn parse_list(list: &str) -> Option<Vec<String>> {
+    // Remove leading and trailing whitespace
+    let list = list.trim();
+
+    // Ensure that the list is at least 2 characters long
     if list.len() < 2 {
         return None;
     }
 
+    // Ensure that the list starts and ends with brackets
     match (list.chars().next(), list.chars().last()) {
-        (Some('['), Some(']')) => Some(
-            list[1..list.len() - 1]
-                .split(',')
-                .map(|x| x.trim().to_string())
-                .collect(),
-        ),
-        _ => None,
+        (Some('['), Some(']')) => {}
+        _ => return None,
     }
+
+    let mut items = Vec::new();
+    let mut current = String::new();
+    let mut escape = false;
+
+    for c in list[1..list.len() - 1].chars() {
+        if escape {
+            current.push(c);
+            escape = false;
+        } else if c == '\\' {
+            escape = true;
+        } else if c == ',' {
+            items.push(current.trim().to_string());
+            current.clear();
+        } else {
+            current.push(c);
+        }
+    }
+
+    if !current.is_empty() {
+        items.push(current.trim().to_string());
+    }
+
+    Some(items)
 }
