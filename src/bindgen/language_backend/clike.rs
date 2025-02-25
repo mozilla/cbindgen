@@ -590,7 +590,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, " {}", note);
         }
 
-        if self.config.language != Language::C || self.config.style.generate_tag() {
+        if self.config.language != Language::C || self.config.should_generate_tag(&s.path) {
             write!(out, " {}", s.export_name());
         }
 
@@ -675,7 +675,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             }
         }
 
-        if self.config.language != Language::C || self.config.style.generate_tag() {
+        if self.config.language != Language::C || self.config.should_generate_tag(&u.path) {
             write!(out, " {}", u.export_name);
         }
 

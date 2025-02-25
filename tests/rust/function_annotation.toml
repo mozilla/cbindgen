@@ -1,0 +1,6 @@
+after_includes = """
+#define TEST_MACRO
+#ifndef _In_
+#define _In_
+#endif
+"""
