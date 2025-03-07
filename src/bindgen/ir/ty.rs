@@ -627,6 +627,38 @@ impl Type {
         }
     }
 
+    pub fn try_set_assoc_name<T>(&mut self, assoc_name: T) -> Result<(), String>
+    where
+        T: Into<String>,
+    {
+        let mut current = self;
+        loop {
+            match current {
+                Type::Ptr { ref mut ty, .. } => current = ty,
+                Type::Path(ref mut generic) => {
+                    generic.set_assoc_ty(assoc_name);
+
+                    break Ok(());
+                }
+                _ => {
+                    break Err(format!(
+                        "Failed to set path ({}) for type {:?}",
+                        assoc_name.into(),
+                        current
+                    ))
+                }
+            }
+        }
+    }
+
+    pub fn name_is_self(&self) -> bool {
+        if let Some(name) = self.get_root_path() {
+            name.name() == "Self"
+        } else {
+            false
+        }
+    }
+
     pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> Type {
         match *self {
             Type::Ptr {

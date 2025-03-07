@@ -264,6 +264,15 @@ impl GenericPath {
         // Caller deals with generics.
     }
 
+    pub fn set_assoc_ty<T>(&mut self, assoc_ty_name: T)
+    where
+        T: Into<String>,
+    {
+        let path = assoc_ty_name.into();
+        self.path = Path::new(&path);
+        self.export_name = path;
+    }
+
     pub fn path(&self) -> &Path {
         &self.path
     }
