@@ -702,6 +702,7 @@ impl Parse {
     }
 
     /// Loads a `fn` declaration inside an `impl` block, if the type is a simple identifier
+    #[allow(clippy::too_many_arguments)]
     fn load_syn_assoc_methods(
         &mut self,
         config: &Config,
@@ -766,32 +767,25 @@ impl Parse {
                                 // Search and replacement of the type of method with associative
                                 // types
                                 items_ty.iter().for_each(|&ty| {
-                                    if ret_path.name() == &ty.ident.to_string() {
-                                        match method.ret.try_set_assoc_name(format!("{}_{}_{}", self_path.name(), trait_ident, ty.ident)) {
-                                            Err(e) => {
-                                                warn!("It is not possible to chage return type for method {}::{} - ({})", crate_name, method.path.name(), e);
-                                                return;
-                                            }
-                                            Ok(..) => {}
+                                    if ty.ident == ret_path.name() {
+                                        if let Err(e) = method.ret.try_set_assoc_name(format!("{}_{}_{}", self_path.name(), trait_ident, ty.ident)) {
+                                            warn!("It is not possible to chage return type for method {}::{} - ({})", crate_name, method.path.name(), e);
+                                            return;
                                         }
                                     }
                                     // Removing all arguments with `void` type
                                     method.args.retain(|arg| if let (Some(p), syn::Type::Tuple(syn::TypeTuple { ref elems, .. })) = (arg.ty.get_root_path(), &ty.ty) {
-                                        !(elems.is_empty() && p.name() == &ty.ident.to_string())
+                                        !(elems.is_empty() && ty.ident == p.name())
                                     } else {
                                         true
                                     });
                                     if let Some(arg) = method.args.iter_mut().find(|arg| if let Some(p) = arg.ty.get_root_path() {
-                                        p.name() == &ty.ident.to_string()
+                                        ty.ident == p.name()
                                     } else {
                                         false
                                     }) {
-                                        match arg.ty.try_set_assoc_name(format!("{}_{}_{}", self_path.name(), trait_ident, ty.ident)) {
-                                            Err(e) => {
-                                                warn!("It is not possible to chage method's argument {}::{} - ({})", crate_name, method.path.name(), e);
-                                                return;
-                                            }
-                                            Ok(..) => {}
+                                        if let Err(e) = arg.ty.try_set_assoc_name(format!("{}_{}_{}", self_path.name(), trait_ident, ty.ident)) {
+                                            warn!("It is not possible to chage method's argument {}::{} - ({})", crate_name, method.path.name(), e);
                                         }
                                     }
                                 });
