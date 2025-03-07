@@ -8,14 +8,22 @@ struct Dummy0 {
   uintptr_t dummy;
 };
 
+using Dummy0_DummyTrait_DummyOut = Dummy0;
+
+using Dummy0_DummyTrait_DummyIn1 = Dummy0;
+
+using Dummy1_DummyTrait_DummyOut = int32_t;
+
 struct Dummy1 {
   uintptr_t dummy;
 };
 
+using Dummy1_DummyTrait_DummyIn1 = uintptr_t;
+
 extern "C" {
 
-Dummy0 dummy_Dummy0(Dummy0 self, uintptr_t in_);
+Dummy0_DummyTrait_DummyOut dummy_Dummy0(Dummy0 self, Dummy0_DummyTrait_DummyIn1 _in1);
 
-int32_t dummy_Dummy1(Dummy1 self);
+Dummy1_DummyTrait_DummyOut dummy_Dummy1(Dummy1 self, Dummy1_DummyTrait_DummyIn1 _in1);
 
 }  // extern "C"

@@ -9,9 +9,17 @@ cdef extern from *:
   ctypedef struct Dummy0:
     uintptr_t dummy;
 
+  ctypedef Dummy0 Dummy0_DummyTrait_DummyOut;
+
+  ctypedef Dummy0 Dummy0_DummyTrait_DummyIn1;
+
+  ctypedef int32_t Dummy1_DummyTrait_DummyOut;
+
   ctypedef struct Dummy1:
     uintptr_t dummy;
 
-  Dummy0 dummy_Dummy0(Dummy0 self, uintptr_t in_);
+  ctypedef uintptr_t Dummy1_DummyTrait_DummyIn1;
 
-  int32_t dummy_Dummy1(Dummy1 self);
+  Dummy0_DummyTrait_DummyOut dummy_Dummy0(Dummy0 self, Dummy0_DummyTrait_DummyIn1 _in1);
+
+  Dummy1_DummyTrait_DummyOut dummy_Dummy1(Dummy1 self, Dummy1_DummyTrait_DummyIn1 _in1);

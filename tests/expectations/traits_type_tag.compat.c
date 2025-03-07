@@ -7,17 +7,25 @@ struct Dummy0 {
   uintptr_t dummy;
 };
 
+typedef struct Dummy0 Dummy0_DummyTrait_DummyOut;
+
+typedef struct Dummy0 Dummy0_DummyTrait_DummyIn1;
+
+typedef int32_t Dummy1_DummyTrait_DummyOut;
+
 struct Dummy1 {
   uintptr_t dummy;
 };
+
+typedef uintptr_t Dummy1_DummyTrait_DummyIn1;
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-struct Dummy0 dummy_Dummy0(struct Dummy0 self, uintptr_t in_);
+Dummy0_DummyTrait_DummyOut dummy_Dummy0(struct Dummy0 self, Dummy0_DummyTrait_DummyIn1 _in1);
 
-int32_t dummy_Dummy1(struct Dummy1 self);
+Dummy1_DummyTrait_DummyOut dummy_Dummy1(struct Dummy1 self, Dummy1_DummyTrait_DummyIn1 _in1);
 
 #ifdef __cplusplus
 }  // extern "C"
