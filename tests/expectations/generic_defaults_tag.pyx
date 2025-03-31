@@ -18,4 +18,9 @@ cdef extern from *:
 
   ctypedef Foo_i64 Baz_i64;
 
+  cdef struct NeverUsedWithDefault_i32:
+    int32_t field;
+
   void foo_root(Foo_i16 f, Bar_i32__u32 b, Baz_i64 z);
+
+  void with_i32(NeverUsedWithDefault_i32 x);

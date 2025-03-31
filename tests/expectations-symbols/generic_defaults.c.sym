@@ -1,3 +1,4 @@
 {
 foo_root;
+with_i32;
 };
