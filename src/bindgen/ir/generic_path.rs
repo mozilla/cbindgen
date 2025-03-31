@@ -6,7 +6,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
-use crate::bindgen::ir::{ConstExpr, Path, Type};
+use crate::bindgen::ir::{ConstExpr, Path, PrimitiveType, Type};
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::SourceWriter;
@@ -42,7 +42,7 @@ impl GenericParam {
             }) => {
                 let default = match default.as_ref().map(Type::load).transpose()? {
                     None => None,
-                    Some(None) => Err(format!("unsupported generic type default: {:?}", default))?,
+                    Some(None) => Some(GenericArgument::Type(Type::Primitive(PrimitiveType::Void))),
                     Some(Some(ty)) => Some(GenericArgument::Type(ty)),
                 };
                 Ok(Some(GenericParam {
