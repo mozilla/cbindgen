@@ -22,6 +22,11 @@ jobs:
     - name: Install stable
       uses: dtolnay/rust-toolchain@stable
 
+    - name: Install cross libc
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libc6-arm64-cross
+
     - name: semver
       run: |
         cargo +stable install cargo-semver-checks --locked
@@ -30,10 +35,12 @@ jobs:
     - name: Build cbindgen
       run: |
         cargo +stable build --release
+        cargo +stable build --target aarch64-unknown-linux-gnu --release
 
     - name: Strip cbindgen
       run: |
         strip target/release/cbindgen
+        strip target/aarch64-unknown-linux-gnu/release/cbindgen
 
     - name: Handle release data and files
       id: tagName
@@ -51,6 +58,6 @@ jobs:
     - name: Create a release
       run: |
         TAG=${{ steps.tagName.outputs.version }}
-        gh release create ${TAG} --title "${TAG}" --notes-file "CHANGES.txt" --draft 'target/release/cbindgen#cbindgen-ubuntu20.04'
+        gh release create ${TAG} --title "${TAG}" --notes-file "CHANGES.txt" --draft 'target/release/cbindgen#cbindgen-ubuntu20.04' 'target/aarch64-unknown-linux-gnu/release/cbindgen#cbindgen-ubuntu20.04-aarch64'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
