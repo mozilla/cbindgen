@@ -195,6 +195,15 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn exclude_item_prefix<S: AsRef<str>>(mut self, item_name: S) -> Builder {
+        self.config
+            .export
+            .prefix_excludes
+            .push(String::from(item_name.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_parse_deps(mut self, parse_deps: bool) -> Builder {
         self.config.parse.parse_deps = parse_deps;
         self
