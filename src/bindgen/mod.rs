@@ -67,3 +67,4 @@ pub use self::builder::Builder;
 pub use self::config::Profile; // disambiguate with cargo::Profile
 pub use self::config::*;
 pub use self::error::Error;
+pub use self::library::Library;
