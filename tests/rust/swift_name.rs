@@ -1,3 +1,9 @@
+// A stand-in for Box<T>, since Box<T> is undefined behavior in C++
+#[repr(transparent)]
+pub struct Foo<T> {
+    data: *const T,
+}
+
 #[export_name="rust_print_hello_world"]
 pub extern fn say_hello() {
   println!("Hello, World!");
@@ -23,13 +29,13 @@ impl SelfTypeTestStruct {
 
   #[export_name="SelfTypeTestStruct_should_not_exist_box"]
   #[no_mangle]
-  pub extern fn should_not_exist_box(self: Box<SelfTypeTestStruct>) {
+  pub extern fn should_not_exist_box(self: Foo<SelfTypeTestStruct>) {
     println!("should_not_exist_box");
   }
 
   #[export_name="SelfTypeTestStruct_should_not_exist_return_box"]
   #[no_mangle]
-  pub extern fn should_not_exist_box() -> Box<Self> {
+  pub extern fn should_not_exist_box() -> Foo<Self> {
     println!("should_not_exist_box");
   }
 
@@ -92,7 +98,7 @@ pub extern fn unnamed_argument(_: &mut SelfTypeTestStruct) {
 
 #[no_mangle]
 #[allow(unused_variables)]
-pub extern fn free_function_should_not_exist_box(boxed: Box<SelfTypeTestStruct>) {
+pub extern fn free_function_should_not_exist_box(boxed: Foo<SelfTypeTestStruct>) {
   println!("free_function_should_not_exist_box");
 }
 

@@ -160,9 +160,6 @@ fn compile(
             command.arg("-Wno-attributes");
             // clang warns about unused const variables.
             command.arg("-Wno-unused-const-variable");
-            // clang also warns about returning non-instantiated templates (they could
-            // be specialized, but they're not so it's fine).
-            command.arg("-Wno-return-type-c-linkage");
             // deprecated warnings should not be errors as it's intended
             command.arg("-Wno-deprecated-declarations");
 
@@ -205,7 +202,21 @@ fn compile(
 
     println!("Running: {:?}", command);
     let out = command.output().expect("failed to compile");
-    assert!(out.status.success(), "Output failed to compile: {:?}", out);
+    if !out.status.success() {
+        let stdout = match str::from_utf8(&out.stdout) {
+            Ok(s) => s.to_string(),
+            Err(_) => format!("{:?}", out.stdout),
+        };
+        let stderr = match str::from_utf8(&out.stderr) {
+            Ok(s) => s.to_string(),
+            Err(_) => format!("{:?}", out.stderr),
+        };
+        println!("Output failed to compile: {:?}", out.status);
+        println!("=== STDOUT ===\n{}", stdout);
+        println!("=== STDERR ===\n{}", stderr);
+        println!("==============");
+        assert!(out.status.success());
+    }
 
     if object.exists() {
         fs::remove_file(object).unwrap();

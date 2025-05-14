@@ -17,7 +17,7 @@ use crate::bindgen::ir::{
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
 use crate::bindgen::writer::{ListType, SourceWriter};
@@ -316,6 +316,16 @@ impl Enum {
     /// Enum with data turns into a union of structs with each struct having its own tag field.
     pub(crate) fn inline_tag_field(repr: &Repr) -> bool {
         repr.style != ReprStyle::C
+    }
+
+    pub fn find_return_value_monomorphs(&self, monomorphs: &mut ReturnValueMonomorphs<'_>) {
+        monomorphs.with_active_cfg(self.cfg.clone(), |m| {
+            for v in &self.variants {
+                if let VariantBody::Body { ref body, .. } = v.body {
+                    body.find_return_value_monomorphs(m);
+                }
+            }
+        });
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
