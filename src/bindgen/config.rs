@@ -493,6 +493,9 @@ pub struct StructConfig {
     /// Whether associated constants should be in the body. Only applicable to
     /// non-transparent structs, and in C++-only.
     pub associated_constants_in_body: bool,
+    /// The rename rule to apply to the struct name used for prefixing associated
+    /// constants
+    pub rename_associated_constant: RenameRule,
     /// The way to annotate this struct as #[must_use].
     pub must_use: Option<String>,
     /// The way to annotation this function as #[deprecated] without notes
