@@ -272,7 +272,7 @@ While output configuration is primarily done through the cbindgen.toml, in some 
 pub struct Point(pub f32, pub f32);
 ```
 
-An annotation may be a bool, string (no quotes), or list of strings. If just the annotation's name is provided, `=true` is assumed. The annotation parser is currently fairly naive and lacks any capacity for escaping, so don't try to make any strings with `=`, `,`, `[` or `]`.
+An annotation may be a bool, string (no quotes), or list of strings. If just the annotation's name is provided, `=true` is assumed. The annotation parser is somewhat naive. `,`, `]` and any opening brackets (`[`) after the initial one in lists can be escaped with a backslash. In other annotations values, like string, dict or bool those special character can not currently be escaped. `=` can not currently be escaped at all.
 
 Most annotations are just local overrides for identical settings in the cbindgen.toml, but a few are unique because they don't make sense in a global context. The set of supported annotation are as follows:
 
@@ -305,6 +305,35 @@ pub struct Foo { .. }; // This won't be emitted by cbindgen in the header
 #[repr(C)]
 fn bar() -> Foo { .. } // Will be emitted as `struct foo bar();`
 ```
+
+### Function annotations
+
+It's sometimes useful to add attributes or macros to functions in C and C++. This can be done by specifying one of the following annotations:
+
+* function-arg-prefix\[arg\]
+* function-prefix
+* function-postfix
+* function-ident-prefix
+
+The following Rust code:
+
+```rust
+#[no_mangle]
+/// cbindgen:function-prefix=PREFIX_MACRO
+/// cbindgen:function-postfix=POSTFIX_MACRO
+/// cbindgen:function-ident-prefix=IDENT_PREFIX_MACRO
+/// cbindgen:function-arg-ident-prefix[input]=_Nonnull
+/// cbindgen:function-arg-prefix[input]=_In_
+pub extern "C" fn root(input: *const u64, input_size: u64) {}
+```
+
+will generate the following C code:
+
+```c
+PREFIX_MACRO void IDENT_PREFIX_MACRO root(_In_ const uint64_t *_Nonnull input, uint64_t input_size) POSTFIX_MACRO;
+```
+
+These annotations are not supported and will be ignored when using Cython.
 
 ### Struct Annotations
 
