@@ -145,15 +145,23 @@ impl GenericParams {
         out: &mut SourceWriter<F>,
         with_default: bool,
     ) {
-        if !self.0.is_empty() && config.language == Language::Cxx {
-            out.write("template<");
+        if (!self.0.is_empty() && config.language == Language::Cxx) || (!self.0.is_empty() && config.language == Language::D) {
+            out.write(if config.language == Language::D {
+                "("
+            } else {
+                "template<"
+            });
             for (i, item) in self.0.iter().enumerate() {
                 if i != 0 {
                     out.write(", ");
                 }
                 match item.ty {
                     GenericParamType::Type => {
-                        write!(out, "typename {}", item.name);
+                        if config.language == Language::D {
+                            write!(out, "{}", item.name);
+                        } else {
+                            write!(out, "typename {}", item.name);
+                        }
                         if let Some(GenericArgument::Type(ref ty)) = item.default {
                             write!(out, " = ");
                             cdecl::write_type(language_backend, out, ty, config);
@@ -171,8 +179,14 @@ impl GenericParams {
                     }
                 }
             }
-            out.write(">");
-            out.new_line();
+            out.write(if config.language == Language::D {
+                ")"
+            } else {
+                ">"
+            });
+            if config.language != Language::D {
+                out.new_line();
+            }
         }
     }
 
