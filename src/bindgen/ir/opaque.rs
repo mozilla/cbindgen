@@ -2,15 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
+
 use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Documentation, GenericArgument, GenericParams, Item, ItemContainer, Path,
+    Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent::ResolveTransparentTypes;
 
 #[derive(Debug, Clone)]
 pub struct OpaqueItem {
@@ -54,6 +58,30 @@ impl OpaqueItem {
             annotations,
             documentation,
         }
+    }
+
+    pub fn transparent_alias(&self, args: &[GenericArgument]) -> Option<Type> {
+        if !self.is_generic() {
+            return None;
+        }
+        let Some(GenericArgument::Type(ty)) = args.first() else {
+            return None;
+        };
+        let ty = match self.name() {
+            // NonNull is always transparent, but needs to transform `T`
+            "NonNull" => Type::Ptr {
+                ty: Box::new(ty.clone()),
+                is_const: false,
+                is_nullable: false,
+                is_ref: false,
+            },
+            // NonZero is only transparent if T is zeroable
+            "NonZero" => ty.make_zeroable(false)?,
+            // Option is only transparent if T is non-zeroable or non-nullable
+            "Option" => ty.make_zeroable(true).or_else(|| ty.make_nullable())?,
+            _ => return None,
+        };
+        Some(ty)
     }
 }
 
@@ -134,5 +162,17 @@ impl Item for OpaqueItem {
         );
 
         out.insert_opaque(self, monomorph, generic_values.to_owned());
+    }
+}
+
+impl ResolveTransparentTypes for OpaqueItem {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
+        match Self::resolve_generic_params(library, &self.generic_params) {
+            Cow::Owned(generic_params) => Some(OpaqueItem {
+                generic_params,
+                ..self.clone()
+            }),
+            _ => None,
+        }
     }
 }

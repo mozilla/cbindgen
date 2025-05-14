@@ -16,6 +16,7 @@ use crate::bindgen::ir::{
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent::{CowIsOwned, ResolveTransparentTypes};
 
 /// A type alias that is represented as a C typedef
 #[derive(Debug, Clone)]
@@ -30,6 +31,9 @@ pub struct Typedef {
 }
 
 impl Typedef {
+    // Name of the annotation that identifies a transparent typedef.
+    pub const TRANSPARENT_TYPEDEF: &'static str = "transparent-typedef";
+
     pub fn load(item: &syn::ItemType, mod_cfg: Option<&Cfg>) -> Result<Typedef, String> {
         if let Some(x) = Type::load(&item.ty)? {
             let path = Path::new(item.ident.unraw().to_string());
@@ -66,10 +70,6 @@ impl Typedef {
         }
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.aliased.simplify_standard_types(config);
-    }
-
     // Used to convert a transparent Struct to a Typedef.
     pub fn new_from_struct_field(item: &Struct, field: &Field) -> Self {
         Self {
@@ -100,6 +100,19 @@ impl Typedef {
             out.insert(alias_path, self.annotations.clone());
             self.annotations = AnnotationSet::new();
         }
+    }
+
+    pub fn transparent_alias(&self, args: &[GenericArgument]) -> Option<Type> {
+        matches!(self.annotations.bool(Self::TRANSPARENT_TYPEDEF), Some(true)).then(|| {
+            // Specialize the aliased type (if needed) and return it. We don't need to resolve
+            // params, because our caller processes transparent aliases iteratively to fixpoint.
+            if self.is_generic() {
+                let mappings = self.generic_params.call(self.path.name(), args);
+                self.aliased.specialize(&mappings)
+            } else {
+                self.aliased.clone()
+            }
+        })
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
@@ -190,5 +203,18 @@ impl Item for Typedef {
         );
 
         out.insert_typedef(library, self, monomorph, generic_values.to_owned());
+    }
+}
+
+impl ResolveTransparentTypes for Typedef {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Typedef> {
+        // Resolve any defaults in the generic params
+        let params = Self::resolve_generic_params(library, &self.generic_params);
+        let aliased = self.aliased.transparent_alias_cow(library, &params);
+        (params.cow_is_owned() || aliased.cow_is_owned()).then(|| Typedef {
+            aliased: aliased.into_owned(),
+            generic_params: params.into_owned(),
+            ..self.clone()
+        })
     }
 }
