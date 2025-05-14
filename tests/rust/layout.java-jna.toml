@@ -1,0 +1,27 @@
+header = """
+"""
+
+[layout]
+packed = "CBINDGEN_PACKED"
+aligned_n = "CBINDGEN_ALIGNED"
+
+[export]
+include = [
+	"Align1Struct",
+	"Align2Struct",
+	"Align4Struct",
+	"Align8Struct",
+	"Align32Struct",
+	"PackedStruct",
+	"Align1Union",
+	"Align4Union",
+	"Align16Union",
+	"PackedUnion",
+	"UnsupportedPacked4Struct",
+	"UnsupportedPacked4Union",
+	"UnsupportedAlign4Enum",
+	"RustAlign4Struct",
+	"RustPackedStruct",
+	"RustAlign4Union",
+	"RustPackedUnion",
+]
