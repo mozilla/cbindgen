@@ -738,7 +738,7 @@ deprecated = "DEPRECATED_FUNC"
 # would involve emitting the name of a macro which you define in a
 # platform-specific way. e.g. "DEPRECATED_FUNC_WITH_NOTE(note)"
 # default: nothing is emitted for deprecated functions
-deprecated_with_notes = "DEPRECATED_FUNC_WITH_NOTE"
+deprecated_with_note = "DEPRECATED_FUNC_WITH_NOTE"
 
 # An optional string that will be used in the attribute position for functions
 # that don't return (that return `!` in Rust).
@@ -827,7 +827,7 @@ deprecated = "DEPRECATED_STRUCT"
 # would involve emitting the name of a macro which you define in a
 # platform-specific way. e.g. "DEPRECATED_STRUCT_WITH_NOTE(note)"
 # default: nothing is emitted for deprecated structs
-deprecated_with_notes = "DEPRECATED_STRUCT_WITH_NOTE"
+deprecated_with_note = "DEPRECATED_STRUCT_WITH_NOTE"
 
 # Whether a Rust type with associated consts should emit those consts inside the
 # type's body. Otherwise they will be emitted trailing and with the type's name
@@ -957,7 +957,7 @@ deprecated = "DEPRECATED_ENUM"
 # would involve emitting the name of a macro which you define in a
 # platform-specific way. e.g. "DEPRECATED_ENUM_WITH_NOTE(note)"
 # default: nothing is emitted for deprecated enums
-deprecated_with_notes = "DEPRECATED_ENUM_WITH_NOTE"
+deprecated_with_note = "DEPRECATED_ENUM_WITH_NOTE"
 
 # An optional string that should come after the name of any enum variant which has been
 # marked as `#[deprecated]` without note. For instance, "__attribute__((deprecated))"
@@ -974,7 +974,7 @@ deprecated_variant = "DEPRECATED_ENUM_VARIANT"
 # emitting the name of a macro which you define in a platform-specific
 # way. e.g. "DEPRECATED_ENUM_WITH_NOTE(note)"
 # default: nothing is emitted for deprecated enum variants
-deprecated_variant_with_notes = "DEPRECATED_ENUM_VARIANT_WITH_NOTE({})"
+deprecated_variant_with_note = "DEPRECATED_ENUM_VARIANT_WITH_NOTE({})"
 
 # Whether enums with fields should generate destructors. This exists so that generic
 # enums can be properly instantiated with payloads that are C++ types with
