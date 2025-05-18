@@ -879,6 +879,8 @@ impl ParseConfig {
 pub struct PtrConfig {
     /// Optional attribute to apply to pointers that are required to not be null
     pub non_null_attribute: Option<String>,
+    /// Optional attribute to apply to pointers that may be null
+    pub nullable_attribute: Option<String>,
 }
 
 /// Settings specific to Cython bindings.
