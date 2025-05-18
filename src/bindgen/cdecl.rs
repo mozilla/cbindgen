@@ -247,9 +247,15 @@ impl CDecl {
                     if is_const {
                         out.write("const ");
                     }
-                    if !is_nullable && !is_ref && config.language != Language::Cython {
-                        if let Some(attr) = &config.pointer.non_null_attribute {
-                            write!(out, "{} ", attr);
+                    if config.language != Language::Cython {
+                        if !is_nullable && !is_ref {
+                            if let Some(attr) = &config.pointer.non_null_attribute {
+                                write!(out, "{} ", attr);
+                            }
+                        } else if is_nullable {
+                            if let Some(attr) = &config.pointer.nullable_attribute {
+                                write!(out, "{} ", attr);
+                            }
                         }
                     }
                 }
