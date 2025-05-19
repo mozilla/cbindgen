@@ -1,12 +1,15 @@
-use crate::bindgen::ir::{
-    to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
-    Typedef, Union,
-};
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{cdecl, Bindings, Config, Language};
+use crate::bindgen::{
+    ir::{
+        to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum,
+        EnumVariant, Field, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct,
+        ToCondition, Type, Typedef, Union,
+    },
+    predefines::Predefines,
+};
 use crate::bindgen::{DocumentationLength, DocumentationStyle};
 use std::io::Write;
 
@@ -442,6 +445,17 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         if let Some(ref line) = self.config.after_includes {
             write!(out, "{}", line);
             out.new_line();
+        }
+    }
+
+    fn write_predefines<W: Write>(&self, out: &mut SourceWriter<W>, predefines: &Predefines) {
+        if self.config.function.emit_calling_convention {
+            predefines.calling_conventions().iter().for_each(|abi| {
+                if let Some(c_definition) = abi.as_clike_definition() {
+                    out.write(c_definition);
+                    out.new_line();
+                }
+            });
         }
     }
 

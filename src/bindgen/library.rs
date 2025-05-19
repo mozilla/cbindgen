@@ -13,6 +13,7 @@ use crate::bindgen::error::Error;
 use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::predefines::Predefines;
 use crate::bindgen::ItemType;
 
 #[derive(Debug, Clone)]
@@ -134,11 +135,14 @@ impl Library {
             vec![]
         };
 
+        let predefines = Predefines::new(&functions);
+
         Ok(Bindings::new(
             self.config,
             self.structs,
             self.typedefs,
             constants,
+            predefines,
             globals,
             items,
             functions,
