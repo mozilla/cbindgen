@@ -15,6 +15,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
+use crate::bindgen::transparent::{CowIsOwned, ResolveTransparentTypes};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone)]
@@ -91,12 +92,6 @@ impl Union {
             cfg,
             annotations,
             documentation,
-        }
-    }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
         }
     }
 
@@ -255,5 +250,17 @@ impl Item for Union {
         );
 
         out.insert_union(library, self, monomorph, generic_values.to_owned());
+    }
+}
+
+impl ResolveTransparentTypes for Union {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
+        let params = Self::resolve_generic_params(library, &self.generic_params);
+        let fields = Self::resolve_fields(library, &self.fields, &params, false);
+        (params.cow_is_owned() || fields.cow_is_owned()).then(|| Union {
+            generic_params: params.into_owned(),
+            fields: fields.into_owned(),
+            ..self.clone()
+        })
     }
 }

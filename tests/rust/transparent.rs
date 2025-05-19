@@ -16,6 +16,10 @@ struct TransparentComplexWrappingStructure { only_field: DummyStruct }
 #[repr(transparent)]
 struct TransparentPrimitiveWrappingStructure { only_field: u32 }
 
+// Transparent struct wrapping a pointer
+#[repr(transparent)]
+struct TransparentPointerWrappingStructure { only_field: *const u32 }
+
 // Transparent struct wrapper with a marker wrapping a struct.
 #[repr(transparent)]
 struct TransparentComplexWrapper<T> {
@@ -53,10 +57,18 @@ impl TransparentPrimitiveWithAssociatedConstants {
     };
 }
 
+struct StructWithAssociatedConstantInImpl { }
+
+impl StructWithAssociatedConstantInImpl {
+    pub const STRUCT_TEN: TransparentPrimitiveWrappingStructure =
+        TransparentPrimitiveWrappingStructure { only_field: 10 };
+}
+
 enum EnumWithAssociatedConstantInImpl { A }
 
 impl EnumWithAssociatedConstantInImpl {
-    pub const TEN: TransparentPrimitiveWrappingStructure = TransparentPrimitiveWrappingStructure { only_field: 10 };
+    pub const ENUM_TEN: TransparentPrimitiveWrappingStructure =
+        TransparentPrimitiveWrappingStructure { only_field: 10 };
 }
 
 #[no_mangle]
@@ -69,5 +81,59 @@ pub extern "C" fn root(
     f: TransparentPrimitiveWrapper<i32>,
     g: TransparentPrimitiveWithAssociatedConstants,
     h: TransparentEmptyStructure,
-    i: EnumWithAssociatedConstantInImpl,
+    i: TransparentPointerWrappingStructure,
+    j: StructWithAssociatedConstantInImpl,
+    k: EnumWithAssociatedConstantInImpl,
+) { }
+
+#[repr(transparent)]
+/// cbindgen:transparent-typedef
+struct ErasedTransparentNonNullPointerWrappingStruct { only_field: NonNull<u32> }
+
+#[repr(transparent)]
+/// cbindgen:transparent-typedef
+struct ErasedTransparentOptionalNonNullPointerWrappingStruct { only_field: Option<NonNull<u32>> }
+
+#[repr(transparent)]
+/// cbindgen:transparent-typedef
+struct ErasedTransparentWrappingAnotherTransparentStruct { only_field: TransparentPrimitiveWrappingStructure }
+
+/// cbindgen:transparent-typedef
+#[repr(transparent)]
+struct ErasedTransparentWrappingTransparentNonNullPointerStruct { only_field: ErasedTransparentNonNullPointerWrappingStruct }
+
+// Transparent structure wrapping another type
+#[repr(transparent)]
+/// cbindgen:transparent-typedef
+struct ErasedTransparentStructWrappingAnotherType<T> { only_field: T }
+
+type TransparentIntStruct = ErasedTransparentStructWrappingAnotherType<i32>;
+type TransparentComplexStruct = ErasedTransparentStructWrappingAnotherType<DummyStruct>;
+type TransparentTransparentStruct = ErasedTransparentStructWrappingAnotherType<TransparentPrimitiveWrappingStructure>;
+type TransparentNonNullStruct = ErasedTransparentStructWrappingAnotherType<NonNull<u32>>;
+type TransparentOptionNonNullStruct = ErasedTransparentStructWrappingAnotherType<Option<NonNull<u32>>>;
+
+/// cbindgen:transparent-typedef
+type ErasedTransparentIntStruct = ErasedTransparentStructWrappingAnotherType<i32>;
+/// cbindgen:transparent-typedef
+type ErasedTransparentComplexStruct = ErasedTransparentStructWrappingAnotherType<DummyStruct>;
+/// cbindgen:transparent-typedef
+type ErasedTransparentOptionNonNullStruct = ErasedTransparentStructWrappingAnotherType<Option<NonNull<u32>>>;
+
+#[no_mangle]
+pub extern "C" fn erased_root(
+    a: ErasedTransparentNonNullPointerWrappingStruct,
+    b: ErasedTransparentOptionalNonNullPointerWrappingStruct,
+    c: ErasedTransparentWrappingAnotherTransparentStruct,
+    d: ErasedTransparentWrappingTransparentNonNullPointerStruct,
+    e: ErasedTransparentStructWrappingAnotherType<TransparentIntStruct>,
+    f: ErasedTransparentStructWrappingAnotherType<ErasedTransparentIntStruct>,
+    g: ErasedTransparentStructWrappingAnotherType<ErasedTransparentComplexStruct>,
+    h: ErasedTransparentStructWrappingAnotherType<ErasedTransparentOptionNonNullStruct>,
+    i: ErasedTransparentIntStruct,
+    j: TransparentIntStruct,
+    k: TransparentComplexStruct,
+    l: TransparentTransparentStruct,
+    m: TransparentNonNullStruct,
+    n: TransparentOptionNonNullStruct,
 ) { }

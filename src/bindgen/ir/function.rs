@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 use syn::ext::IdentExt;
@@ -9,11 +10,14 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{
+    AnnotationSet, Cfg, Documentation, GenericParams, GenericPath, Path, Type,
+};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
+use crate::bindgen::transparent::{CowIsOwned, IterCow, ResolveTransparentTypes};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone)]
@@ -115,13 +119,6 @@ impl Function {
         &self.path
     }
 
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        self.ret.simplify_standard_types(config);
-        for arg in &mut self.args {
-            arg.ty.simplify_standard_types(config);
-        }
-    }
-
     pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.ret.add_dependencies(library, out);
         for arg in &self.args {
@@ -216,6 +213,29 @@ impl Function {
                 arg.array_length = ptrs_as_arrays.get(name).cloned();
             }
         }
+    }
+}
+
+impl ResolveTransparentTypes for Function {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Function> {
+        let empty = GenericParams::empty();
+        let ret = self.ret.transparent_alias_cow(library, empty);
+        let args: Vec<_> = self
+            .args
+            .iter()
+            .cow_map(|arg| {
+                Some(FunctionArgument {
+                    ty: arg.ty.transparent_alias(library, empty)?,
+                    ..arg.clone()
+                })
+            })
+            .collect();
+
+        (ret.cow_is_owned() || args.iter().any_owned()).then(|| Function {
+            ret: ret.into_owned(),
+            args: args.into_iter().map(Cow::into_owned).collect(),
+            ..self.clone()
+        })
     }
 }
 

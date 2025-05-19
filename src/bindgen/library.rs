@@ -13,6 +13,7 @@ use crate::bindgen::error::Error;
 use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
 use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::transparent::TransparentTypeResolver;
 use crate::bindgen::ItemType;
 
 #[derive(Debug, Clone)]
@@ -61,8 +62,8 @@ impl Library {
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
+        self.resolve_transparent_types();
         self.transfer_annotations();
-        self.simplify_standard_types();
 
         match self.config.function.sort_by.unwrap_or(self.config.sort_by) {
             SortKey::Name => self.functions.sort_by(|x, y| x.path.cmp(&y.path)),
@@ -95,7 +96,7 @@ impl Library {
             if let Some(items) = self.get_items(&path) {
                 if dependencies.items.insert(path) {
                     for item in &items {
-                        item.deref().add_dependencies(&self, &mut dependencies);
+                        item.add_dependencies(&self, &mut dependencies);
                     }
                     for item in items {
                         dependencies.order.push(item);
@@ -318,6 +319,34 @@ impl Library {
         }
     }
 
+    fn resolve_transparent_types(&mut self) {
+        let resolver = TransparentTypeResolver;
+
+        let constants = resolver.resolve_items(self, &self.constants);
+        resolver.install_items(constants, &mut self.constants);
+
+        let globals = resolver.resolve_items(self, &self.globals);
+        resolver.install_items(globals, &mut self.globals);
+
+        let enums = resolver.resolve_items(self, &self.enums);
+        resolver.install_items(enums, &mut self.enums);
+
+        let structs = resolver.resolve_items(self, &self.structs);
+        resolver.install_items(structs, &mut self.structs);
+
+        let unions = resolver.resolve_items(self, &self.unions);
+        resolver.install_items(unions, &mut self.unions);
+
+        let opaque_items = resolver.resolve_items(self, &self.opaque_items);
+        resolver.install_items(opaque_items, &mut self.opaque_items);
+
+        let typedefs = resolver.resolve_items(self, &self.typedefs);
+        resolver.install_items(typedefs, &mut self.typedefs);
+
+        let functions = resolver.resolve_functions(self, &self.functions);
+        resolver.install_functions(functions, &mut self.functions);
+    }
+
     fn resolve_declaration_types(&mut self) {
         if !self.config.style.generate_tag() {
             return;
@@ -364,29 +393,6 @@ impl Library {
 
         for item in &mut self.functions {
             item.resolve_declaration_types(&resolver);
-        }
-    }
-
-    fn simplify_standard_types(&mut self) {
-        let config = &self.config;
-
-        self.structs.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.enums.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.unions.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.globals.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        self.typedefs.for_all_items_mut(|x| {
-            x.simplify_standard_types(config);
-        });
-        for x in &mut self.functions {
-            x.simplify_standard_types(config);
         }
     }
 

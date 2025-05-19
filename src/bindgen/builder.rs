@@ -368,7 +368,7 @@ impl Builder {
         let mut result = Parse::new();
 
         if self.std_types {
-            result.add_std_types();
+            result.add_std_types(self.config.language);
         }
 
         for x in &self.srcs {
