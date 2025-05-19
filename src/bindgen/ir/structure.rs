@@ -118,7 +118,7 @@ impl Struct {
     pub fn new(
         path: Path,
         generic_params: GenericParams,
-        fields: Vec<Field>,
+        mut fields: Vec<Field>,
         has_tag_field: bool,
         is_enum_variant_body: bool,
         alignment: Option<ReprAlign>,
@@ -144,6 +144,20 @@ impl Struct {
         }
 
         let export_name = path.name().to_owned();
+        if annotations.bool("volatile").unwrap_or(false) {
+            if is_transparent && fields.len() == 1 {
+                if let Some(volatile_ty) = fields[0].ty.make_volatile(true) {
+                    fields[0].ty = volatile_ty;
+                } else {
+                    error!(
+                        "Field of structure {:?} cannot be made volatile",
+                        export_name
+                    );
+                }
+            } else {
+                error!("Structure {:?} cannot be volatile, it must be transparent and have exactly 1 field", export_name);
+            }
+        }
         Self {
             path,
             export_name,
