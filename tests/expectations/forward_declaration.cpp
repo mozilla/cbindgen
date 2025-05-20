@@ -15,6 +15,8 @@
 #include <ostream>
 #include <new>
 
+struct TypeInfo;
+
 struct StructInfo {
   const TypeInfo *const *fields;
   uintptr_t num_fields;

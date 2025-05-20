@@ -1,14 +1,19 @@
+use multimap::MultiMap;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::io::Write;
+
+use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
-    Typedef, Union,
+    Field, GenericParams, Item, Literal, OpaqueItem, Path, ReprAlign, Static, Struct, ToCondition,
+    Type, Typedef, Union,
 };
-use crate::bindgen::language_backend::LanguageBackend;
+use crate::bindgen::language_backend::{ItemContainer, LanguageBackend};
 use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{cdecl, Bindings, Config, Language};
 use crate::bindgen::{DocumentationLength, DocumentationStyle};
-use std::io::Write;
 
 pub struct CLikeLanguageBackend<'a> {
     config: &'a Config,
@@ -17,6 +22,28 @@ pub struct CLikeLanguageBackend<'a> {
 impl<'a> CLikeLanguageBackend<'a> {
     pub fn new(config: &'a Config) -> Self {
         Self { config }
+    }
+
+    /// Resolve the item order by checking inter dependencies, reordering items and adding forward declarations.
+    pub fn resolve_order(&self, dependencies: &mut Dependencies) {
+        let mut resolver = ResolveOrder::new_preserve_order(self.config, dependencies);
+        if let Err(n) = resolver.resolve() {
+            warn!("resolve_order: failed with {n} pending items, continuing anyway...");
+        }
+        for (index, &item_index) in resolver.order.iter().enumerate() {
+            let path = resolver.dependencies.order[item_index].deref().path();
+            let state = &resolver.states[item_index];
+            trace!("DONE {} <- {} {} is {:?}", index, item_index, path, state);
+        }
+        for &item_index in resolver.pending.iter() {
+            let path = resolver.dependencies.order[item_index].deref().path();
+            let state = &resolver.states[item_index];
+            warn!("PENDING {} {} is {:?}", item_index, path, state);
+        }
+        resolver.apply();
+        for (index, item) in dependencies.order.iter().enumerate() {
+            trace!("APPLY {} {}", index, item.deref().path());
+        }
     }
 
     fn write_enum_variant<W: Write>(&mut self, out: &mut SourceWriter<W>, u: &EnumVariant) {
@@ -1009,4 +1036,611 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             }
         }
     }
+
+    fn write_declaration<W: Write>(&mut self, out: &mut SourceWriter<W>, d: &ItemContainer) {
+        let some_condition = d.deref().cfg().map(|cfg| cfg.to_condition(self.config));
+        if let Some(condition) = &some_condition {
+            condition.write_before(self.config, out);
+        }
+
+        match d {
+            ItemContainer::Struct(ref s) => write!(out, "struct {};", s.export_name),
+            ItemContainer::Union(ref u) => write!(out, "union {};", u.export_name),
+            ItemContainer::Enum(ref e) => {
+                if self.config.language == Language::C {
+                    write!(out, "enum {};", e.export_name);
+                } else {
+                    unreachable!();
+                }
+            }
+            _ => unreachable!(),
+        }
+
+        if let Some(condition) = &some_condition {
+            condition.write_after(self.config, out);
+        }
+    }
+}
+
+/// State of an item.
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum ResolveOrderState {
+    Pending,            // cannot be used
+    Declaration(usize), // declared, can be used in pointers and references
+    Alias(Path),        // declared, defined when path is defined
+    Defined,            // defined (and declared), can be used
+}
+
+/// What the resolver wants.
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+pub enum ResolveOrderWants {
+    Declaration(Path),
+    Definition(Path),
+}
+impl ResolveOrderWants {
+    pub fn path(&self) -> &Path {
+        match self {
+            Self::Declaration(ref path) => path,
+            Self::Definition(ref path) => path,
+        }
+    }
+}
+
+/// Resolve the order of dependencies.
+///
+/// Can try to preserve the original order.
+/// Assumes all unknown paths are defined.
+/// Multiple items can have the same path.
+///
+/// Algorithm:
+/// - if no pending items: done
+/// - if countdown is over or no item: give up
+/// - if no unresolved dependencies: alias or define item, reset countdown or retry pending
+/// - if can declare dependencies: declare dependencies, alias or define item, reset countdown or retry pending
+/// - next item, decrease countdown
+pub struct ResolveOrder<'a> {
+    /// Configuration.
+    pub config: &'a Config,
+    /// Contains items that need to be resolved.
+    pub dependencies: &'a mut Dependencies,
+    /// Location of each path.
+    pub paths2indexes: MultiMap<Path, usize>,
+    /// Contains the state of each item.
+    pub states: Vec<ResolveOrderState>,
+    /// The pending order of items.
+    pub pending: Vec<usize>,
+    /// Current pending item being processed.
+    pub current: usize,
+    /// When to give up.
+    pub countdown: Option<usize>,
+    /// The resolved order of items.
+    pub order: Vec<usize>,
+}
+
+impl<'a> ResolveOrder<'a> {
+    /// Create a new resolver capable of changing the order of the dependencies.
+    ///
+    /// Does not try to preserve the original order.
+    pub fn new(config: &'a Config, dependencies: &'a mut Dependencies) -> Self {
+        let num_items = dependencies.order.len();
+        let mut paths2indexes: MultiMap<Path, usize> = MultiMap::new();
+        for (item_index, item) in dependencies.order.iter().enumerate() {
+            let path = item.deref().path().clone();
+            paths2indexes.insert(path, item_index);
+        }
+        let states = vec![ResolveOrderState::Pending; num_items];
+        let pending: Vec<usize> = (0..num_items).collect();
+        Self {
+            config,
+            dependencies,
+            paths2indexes,
+            states,
+            pending,
+            current: 0,
+            countdown: Some(num_items),
+            order: Vec::new(),
+        }
+    }
+
+    /// Create a new resolver capable of changing the order of the dependencies.
+    ///
+    /// Tries to preserve the original order.
+    pub fn new_preserve_order(config: &'a Config, dependencies: &'a mut Dependencies) -> Self {
+        let mut resolver = Self::new(config, dependencies);
+        resolver.countdown = None;
+        resolver
+    }
+
+    /// Apply the computed order to the dependencies, consuming the resolver.
+    ///
+    /// Pending dependencies are assume resolved.
+    pub fn apply(mut self) {
+        self.order.extend(self.pending);
+        sort_by_order(&mut self.dependencies.order, self.order);
+    }
+
+    /// Resolve dependencies by computing a new order of items.
+    ///
+    /// Can add item declarations.
+    ///
+    /// Returns `Ok(())` when done.
+    /// Returns `Err(n)` when it gives up with `n` pending items.
+    pub fn resolve(&mut self) -> Result<(), usize> {
+        loop {
+            if self.pending.is_empty() {
+                trace!("resolve: done");
+                return Ok(());
+            }
+            let give_up = if let Some(n) = self.countdown {
+                if self.current == self.pending.len() {
+                    self.current = 0;
+                }
+                n == 0
+            } else {
+                self.current == self.pending.len()
+            };
+            if give_up {
+                let n = self.pending.len();
+                trace!("resolve: give up with {n} pending items");
+                return Err(n);
+            }
+            trace!(
+                "resolve: trying index {} of {}...",
+                self.current,
+                self.pending.len()
+            );
+            let item_index = self.pending[self.current];
+            let unresolved = self.unresolved_of(item_index);
+            if unresolved.is_empty() {
+                self.alias_or_define(item_index);
+                if self.countdown.is_some() {
+                    self.countdown = Some(self.pending.len());
+                } else {
+                    self.current = 0;
+                }
+                continue;
+            }
+            if let Some(declarations) = self.declarations(&unresolved) {
+                for declaration in declarations.into_iter() {
+                    self.declare(declaration);
+                }
+                self.alias_or_define(item_index);
+                if self.countdown.is_some() {
+                    self.countdown = Some(self.pending.len());
+                } else {
+                    self.current = 0;
+                }
+                continue;
+            }
+            // try next item
+            trace!(
+                "resolve: {} depends on {}",
+                self.dependencies.order[item_index].deref().path(),
+                self.unresolved_string(&unresolved),
+            );
+            self.current += 1;
+            if let Some(n) = self.countdown {
+                self.countdown = Some(n - 1);
+            }
+        }
+    }
+
+    /// Alias an item or define an item.
+    pub fn alias_or_define(&mut self, item_index: usize) {
+        let path = self.dependencies.order[item_index].deref().path();
+        if let Some(target) = self.alias_of(item_index) {
+            let is_defined = self
+                .paths2indexes
+                .get_vec(&target)
+                .expect("vec")
+                .iter()
+                .all(|&index| self.states[index] == ResolveOrderState::Defined);
+            if !is_defined {
+                trace!("alias_or_define: {path} alias to {target}");
+                self.states[item_index] = ResolveOrderState::Alias(target);
+                self.done(item_index);
+                return;
+            }
+            trace!("alias_or_define: {target} is defined");
+        }
+        self.define(item_index);
+    }
+
+    /// Define an item.
+    pub fn define(&mut self, item_index: usize) {
+        let path = self.dependencies.order[item_index].deref().path().clone();
+        trace!("define: {path} defined");
+        self.states[item_index] = ResolveOrderState::Defined;
+        self.done(item_index);
+
+        // also define alias to item
+        let mut define_alias_to = vec![path];
+        while let Some(defined) = define_alias_to.pop() {
+            for (path, indexes) in self.paths2indexes.iter_all() {
+                for &index in indexes.iter() {
+                    if matches!(self.states[index], ResolveOrderState::Alias(ref target) if target == &defined)
+                    {
+                        // also define alias to alias
+                        define_alias_to.push(path.clone());
+                        trace!("define: {path} alias to {defined} defined");
+                        self.states[index] = ResolveOrderState::Defined;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Add item declaration.
+    pub fn declare(&mut self, state: ResolveOrderState) {
+        if let ResolveOrderState::Declaration(target) = state {
+            let pending_item = self.dependencies.order[target].clone();
+            let item = ItemContainer::Declaration(Box::new(pending_item));
+            let path = item.deref().path().clone();
+            trace!("declare: {path} declared");
+            let item_index = self.dependencies.order.len();
+            self.dependencies.order.push(item);
+            self.paths2indexes.insert(path, item_index);
+            self.states.push(state);
+            self.order.push(item_index);
+            assert_eq!(
+                self.dependencies.order.len(),
+                self.pending.len() + self.order.len()
+            );
+        } else {
+            unreachable!();
+        }
+    }
+
+    /// Move item from the pending list to the order list.
+    pub fn done(&mut self, item_index: usize) {
+        self.pending.remove(
+            self.pending
+                .iter()
+                .position(|&index| index == item_index)
+                .expect("pending index"),
+        );
+        self.order.push(item_index);
+        assert_eq!(
+            self.dependencies.order.len(),
+            self.pending.len() + self.order.len()
+        );
+    }
+
+    /// Get the string of unresolved dependencies.
+    pub fn unresolved_string(&self, unresolved: &HashSet<ResolveOrderWants>) -> String {
+        let unresolved: Vec<_> = unresolved.iter().map(|want| want.path().name()).collect();
+        unresolved.join(",")
+    }
+
+    /// Get the unresolved dependencies of an item.
+    pub fn unresolved_of(&self, item_index: usize) -> HashSet<ResolveOrderWants> {
+        // gather wants
+        struct GatherWants {
+            what: HashMap<Path, ResolveOrderWants>,
+        }
+        impl GatherWants {
+            fn new() -> Self {
+                Self {
+                    what: HashMap::new(),
+                }
+            }
+            fn want_declaration_of_path(&mut self, path: &Path) {
+                if self.what.contains_key(path) {
+                    // already want declaration or definition
+                    return;
+                }
+                trace!("unresolved_of: want declaration of {path}");
+                let want = ResolveOrderWants::Declaration(path.clone());
+                self.what.insert(path.clone(), want);
+            }
+            fn want_definition_of_path(&mut self, path: &Path) {
+                if matches!(self.what.get(path), Some(ResolveOrderWants::Definition(_))) {
+                    // already want definition
+                    return;
+                }
+                let path = path.clone();
+                trace!("unresolved_of: want definition of {path}");
+                let want = ResolveOrderWants::Definition(path.clone());
+                self.what.insert(path, want);
+            }
+            fn want_declaration_of_type(&mut self, x: &Type) {
+                match x {
+                    Type::Ptr { ref ty, .. } => {
+                        ty.visit_root_paths(|path| {
+                            self.want_declaration_of_path(&path);
+                        });
+                    }
+                    Type::Path(ref generic_path) => {
+                        self.want_declaration_of_path(generic_path.path());
+                    }
+                    Type::Primitive(_) => {}
+                    Type::Array(ref ty, ..) => {
+                        self.want_declaration_of_type(ty);
+                    }
+                    Type::FuncPtr {
+                        ref ret, ref args, ..
+                    } => {
+                        self.want_declaration_of_type(ret);
+                        for (_, ty) in args {
+                            self.want_declaration_of_type(ty)
+                        }
+                    }
+                }
+            }
+            fn want_definition_of_type(&mut self, x: &Type) {
+                match x {
+                    Type::Ptr { ref ty, .. } => {
+                        ty.visit_root_paths(|path| {
+                            self.want_declaration_of_path(&path);
+                        });
+                    }
+                    Type::Path(ref generic_path) => {
+                        self.want_definition_of_path(&generic_path.path().clone());
+                    }
+                    Type::Primitive(_) => {}
+                    Type::Array(ref ty, ..) => {
+                        self.want_definition_of_type(ty);
+                    }
+                    Type::FuncPtr {
+                        ref ret, ref args, ..
+                    } => {
+                        self.want_declaration_of_type(ret);
+                        for (_, ty) in args {
+                            self.want_declaration_of_type(ty)
+                        }
+                    }
+                }
+            }
+        }
+        let mut wants = GatherWants::new();
+        match &self.dependencies.order[item_index] {
+            ItemContainer::Typedef(ref x) => {
+                wants.want_declaration_of_type(&x.aliased);
+            }
+            ItemContainer::Struct(ref x) => {
+                for field in x.fields.iter() {
+                    wants.want_definition_of_type(&field.ty);
+                }
+            }
+            ItemContainer::Union(ref x) => {
+                for field in x.fields.iter() {
+                    wants.want_definition_of_type(&field.ty);
+                }
+            }
+            _ => {}
+        }
+
+        // resolve wants
+        let item_path = self.dependencies.order[item_index].deref().path();
+        let mut unresolved: HashSet<ResolveOrderWants> = HashSet::new();
+        for (_, want) in wants.what.into_iter() {
+            match want {
+                ResolveOrderWants::Declaration(ref dependency) => {
+                    if !self.is_declared(dependency) {
+                        trace!("unresolved_of: {dependency} not declared");
+                        unresolved.insert(want);
+                    }
+                }
+                ResolveOrderWants::Definition(ref dependency) => {
+                    if !self.is_defined(dependency) {
+                        trace!("unresolved_of: {dependency} not defined");
+                        unresolved.insert(want);
+                    }
+                }
+            }
+        }
+        unresolved.retain(|want| {
+            if let ResolveOrderWants::Declaration(ref dependency) = want {
+                if dependency == item_path {
+                    trace!("unresolved_of: {dependency} assume self declared");
+                    return false;
+                }
+            }
+            true
+        });
+        unresolved
+    }
+
+    /// Try to get declarations of all unresolved dependencies.
+    pub fn declarations(
+        &self,
+        unresolved: &HashSet<ResolveOrderWants>,
+    ) -> Option<Vec<ResolveOrderState>> {
+        let mut declarations = Vec::new();
+        for want in unresolved.iter() {
+            match want {
+                ResolveOrderWants::Declaration(ref path) => {
+                    for &item_index in self.paths2indexes.get_vec(path).expect("vec").iter() {
+                        if let Some(declaration) = self.declaration_of(item_index) {
+                            declarations.push(declaration);
+                            continue;
+                        }
+                        trace!("declarations: {path} cannot be declared");
+                        return None;
+                    }
+                }
+                ResolveOrderWants::Definition(ref path) => {
+                    trace!("declarations: {path} cannot be defined");
+                    return None;
+                }
+            }
+        }
+        Some(declarations)
+    }
+
+    /// Try to get the declaration of an item.
+    pub fn declaration_of(&self, item_index: usize) -> Option<ResolveOrderState> {
+        let item = &self.dependencies.order[item_index];
+        let path = item.deref().path();
+        match item {
+            ItemContainer::Struct(_) | ItemContainer::Union(_) => {
+                if self.will_be_named(item_index) {
+                    trace!("declaration_of: {path} can be declared");
+                    return Some(ResolveOrderState::Declaration(item_index));
+                }
+            }
+            ItemContainer::Enum(_) => {
+                if self.will_be_named(item_index) && self.config.language == Language::C {
+                    // C allows, Cxx errors
+                    trace!("declaration_of: {path} can be declared");
+                    return Some(ResolveOrderState::Declaration(item_index));
+                }
+            }
+            _ => {}
+        }
+        trace!("declaration_of: {path} cannot be declared");
+        None
+    }
+
+    /// Try to get the target of an alias item.
+    pub fn alias_of(&self, item_index: usize) -> Option<Path> {
+        let item = &self.dependencies.order[item_index];
+        if let ItemContainer::Typedef(ref x) = item {
+            if let Type::Path(ref generic_path) = x.aliased {
+                let path = item.deref().path();
+                let target = generic_path.path();
+                trace!("alias_of: {path} is alias of {target}");
+                return Some(target.clone());
+            }
+        }
+        None
+    }
+
+    /// Check if a path is declared.
+    pub fn is_declared(&self, path: &Path) -> bool {
+        if let Some(indexes) = self.paths2indexes.get_vec(path) {
+            let is_declared = indexes.iter().all(|&index| {
+                match self.states[index] {
+                    ResolveOrderState::Pending => {
+                        indexes.iter().any(|&declaration_index| {
+                            matches!(self.states[declaration_index], ResolveOrderState::Declaration(target) if target == index)
+                        })
+                    }
+                    _ => true,
+                }
+            });
+            if is_declared {
+                trace!("is_declared: {path} is declared");
+            } else {
+                trace!("is_declared: {path} is not declared");
+            }
+            is_declared
+        } else {
+            trace!("is_declared: {path} is assume declared");
+            true
+        }
+    }
+
+    /// Check if a path is defined.
+    pub fn is_defined(&self, path: &Path) -> bool {
+        if let Some(indexes) = self.paths2indexes.get_vec(path) {
+            let mut is_defined = false;
+            for &index in indexes.iter() {
+                match self.states[index] {
+                    ResolveOrderState::Pending => {
+                        is_defined = false;
+                        break;
+                    }
+                    ResolveOrderState::Declaration(_) => {}
+                    ResolveOrderState::Defined => is_defined = true,
+                    ResolveOrderState::Alias(ref target) => {
+                        // assume path is defined if it is an alias to path
+                        is_defined = target == path;
+                        if !is_defined {
+                            break;
+                        }
+                    }
+                }
+            }
+            if is_defined {
+                trace!("is_defined: {path} is defined");
+            } else {
+                trace!("is_defined: {path} is not defined");
+            }
+            is_defined
+        } else {
+            trace!("is_defined: {path} is assume defined");
+            true
+        }
+    }
+
+    /// Check if the language backend will write names.
+    pub fn will_be_named(&self, item_index: usize) -> bool {
+        let item = &self.dependencies.order[item_index];
+        match item {
+            ItemContainer::Struct(_) | ItemContainer::Union(_) => {
+                // see docs for codegen option `style="type"`
+                self.config.language != Language::C || self.config.style.generate_tag()
+            }
+            _ => true,
+        }
+    }
+}
+
+/// Put the data values in the target order.
+///
+/// Panics if the data and the order have different sizes.
+pub fn sort_by_order<T>(data: &mut [T], mut order: Vec<usize>) {
+    assert_eq!(data.len(), order.len());
+    for mut to in 0..order.len() {
+        let mut from = order[to];
+        if from != to {
+            // swap the whole chain of data into place
+            order[to] = to;
+            while order[from] != from {
+                data.swap(from, to);
+                to = from;
+                from = order[to];
+                order[to] = to;
+            }
+        }
+    }
+}
+
+#[test]
+fn test_sort_by_order() {
+    macro_rules! test {
+        ($a:literal, $b:literal, $c:literal, $d:literal) => {
+            let order = [$a, $b, $c, $d];
+            let expect = [
+                stringify!($a),
+                stringify!($b),
+                stringify!($c),
+                stringify!($d),
+            ];
+            let mut data = ["0", "1", "2", "3"];
+            sort_by_order(&mut data, order.to_vec());
+            assert!(
+                expect == data,
+                "order {:?} produced {:?}, but {:?} was expected",
+                order,
+                data,
+                expect
+            );
+        };
+    }
+    test!(0, 1, 2, 3);
+    test!(0, 1, 3, 2);
+    test!(0, 2, 1, 3);
+    test!(0, 2, 3, 1);
+    test!(0, 3, 1, 2);
+    test!(0, 3, 2, 1);
+    test!(1, 0, 2, 3);
+    test!(1, 0, 3, 2);
+    test!(1, 2, 0, 3);
+    test!(1, 2, 3, 0);
+    test!(1, 3, 0, 2);
+    test!(1, 3, 2, 0);
+    test!(2, 0, 1, 3);
+    test!(2, 0, 3, 1);
+    test!(2, 1, 0, 3);
+    test!(2, 1, 3, 0);
+    test!(2, 3, 0, 1);
+    test!(2, 3, 1, 0);
+    test!(3, 0, 1, 2);
+    test!(3, 0, 2, 1);
+    test!(3, 1, 0, 2);
+    test!(3, 1, 2, 0);
+    test!(3, 2, 0, 1);
+    test!(3, 2, 1, 0);
 }

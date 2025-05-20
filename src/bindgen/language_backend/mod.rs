@@ -25,6 +25,7 @@ pub trait LanguageBackend: Sized {
     fn write_opaque_item<W: Write>(&mut self, out: &mut SourceWriter<W>, o: &OpaqueItem);
     fn write_type_def<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Typedef);
     fn write_static<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Static);
+    fn write_declaration<W: Write>(&mut self, out: &mut SourceWriter<W>, item: &ItemContainer);
 
     fn write_function<W: Write>(
         &mut self,
@@ -172,6 +173,7 @@ pub trait LanguageBackend: Sized {
                 ItemContainer::Union(ref x) => self.write_union(out, x),
                 ItemContainer::OpaqueItem(ref x) => self.write_opaque_item(out, x),
                 ItemContainer::Typedef(ref x) => self.write_type_def(out, x),
+                ItemContainer::Declaration(ref x) => self.write_declaration(out, x),
             }
             out.new_line();
         }
