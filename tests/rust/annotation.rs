@@ -32,6 +32,14 @@ enum H {
     Everyone
 }
 
+/// cbindgen:no-export
+#[no_mangle]
+pub extern "C" fn no_export_fn() {}
+
+/// cbindgen:no-export
+#[no_mangle]
+pub static NO_EXPORT_NUMBER: i32 = 10;
+
 #[no_mangle]
 pub extern "C" fn root(
     x: A,

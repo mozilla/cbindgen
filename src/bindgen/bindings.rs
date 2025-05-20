@@ -133,8 +133,16 @@ impl Bindings {
     pub fn dynamic_symbols_names(&self) -> impl Iterator<Item = &str> {
         use crate::bindgen::ir::Item;
 
-        let function_names = self.functions.iter().map(|f| f.path().name());
-        let global_names = self.globals.iter().map(|g| g.export_name());
+        let function_names = self
+            .functions
+            .iter()
+            .filter(|f| f.annotations.should_export())
+            .map(|f| f.path().name());
+        let global_names = self
+            .globals
+            .iter()
+            .filter(|s| s.annotations.should_export())
+            .map(|g| g.export_name());
         function_names.chain(global_names)
     }
 
