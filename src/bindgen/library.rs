@@ -10,9 +10,11 @@ use crate::bindgen::config::{Config, Language, SortKey};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
-use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
-use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::ir::{
+    Constant, Enum, Function, Item, ItemContainer, ItemMap, OpaqueItem, Path, Static, Struct,
+    Typedef, Union,
+};
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::ItemType;
 
 #[derive(Debug, Clone)]
@@ -80,6 +82,12 @@ impl Library {
         self.rename_items();
 
         let mut dependencies = Dependencies::new();
+
+        if self.config.language == Language::Cxx
+            && self.config.export.instantiate_return_value_monomorphs
+        {
+            self.instantiate_return_value_monomorphs(&mut dependencies);
+        }
 
         for function in &self.functions {
             function.add_dependencies(&self, &mut dependencies);
@@ -445,6 +453,30 @@ impl Library {
             .for_all_items_mut(|x| x.mangle_paths(&monomorphs));
         for x in &mut self.functions {
             x.mangle_paths(&monomorphs);
+        }
+    }
+
+    fn instantiate_return_value_monomorphs(&mut self, dependencies: &mut Dependencies) {
+        let mut monomorphs = ReturnValueMonomorphs::new(self);
+        self.structs
+            .for_all_items(|x| x.find_return_value_monomorphs(&mut monomorphs));
+        self.unions
+            .for_all_items(|x| x.find_return_value_monomorphs(&mut monomorphs));
+        self.enums
+            .for_all_items(|x| x.find_return_value_monomorphs(&mut monomorphs));
+        self.typedefs
+            .for_all_items(|x| x.find_return_value_monomorphs(&mut monomorphs, false));
+        for x in &self.functions {
+            x.find_return_value_monomorphs(&mut monomorphs);
+        }
+
+        let struct_name = match self.config.export.return_value_monomorphs_struct_name {
+            Some(ref name) => name,
+            _ => "__cbindgen_return_value_monomorphs",
+        };
+        if let Some((struct_name, struct_def)) = monomorphs.into_struct(struct_name) {
+            self.structs.try_insert(struct_def);
+            struct_name.add_dependencies(self, dependencies);
         }
     }
 }

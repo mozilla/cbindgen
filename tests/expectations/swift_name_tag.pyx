@@ -14,6 +14,8 @@ cdef extern from *:
   cdef struct SelfTypeTestStruct:
     uint8_t times;
 
+  ctypedef const SelfTypeTestStruct *Foo_SelfTypeTestStruct;
+
   cdef struct PointerToOpaque:
     Opaque *ptr;
 
@@ -23,9 +25,9 @@ cdef extern from *:
 
   void SelfTypeTestStruct_should_exist_ref_mut(SelfTypeTestStruct *self);
 
-  void SelfTypeTestStruct_should_not_exist_box(SelfTypeTestStruct *self);
+  void SelfTypeTestStruct_should_not_exist_box(Foo_SelfTypeTestStruct self);
 
-  SelfTypeTestStruct *SelfTypeTestStruct_should_not_exist_return_box();
+  Foo_SelfTypeTestStruct SelfTypeTestStruct_should_not_exist_return_box();
 
   void SelfTypeTestStruct_should_exist_annotated_self(SelfTypeTestStruct self);
 
@@ -45,7 +47,7 @@ cdef extern from *:
 
   void unnamed_argument(SelfTypeTestStruct*);
 
-  void free_function_should_not_exist_box(SelfTypeTestStruct *boxed);
+  void free_function_should_not_exist_box(Foo_SelfTypeTestStruct boxed);
 
   void free_function_should_exist_annotated_by_name(SelfTypeTestStruct test_struct);
 

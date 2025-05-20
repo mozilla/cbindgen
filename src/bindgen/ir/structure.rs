@@ -15,7 +15,7 @@ use crate::bindgen::ir::{
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
 use crate::bindgen::utilities::IterHelpers;
@@ -168,10 +168,17 @@ impl Struct {
 
     /// Attempts to convert this struct to a typedef (only works for transparent structs).
     pub fn as_typedef(&self) -> Option<Typedef> {
-        match self.fields.first() {
-            Some(field) if self.is_transparent => Some(Typedef::new_from_struct_field(self, field)),
-            _ => None,
-        }
+        let field = self.fields.first()?;
+        self.is_transparent
+            .then(|| Typedef::new_from_struct_field(self, field))
+    }
+
+    pub fn find_return_value_monomorphs(&self, monomorphs: &mut ReturnValueMonomorphs<'_>) {
+        monomorphs.with_active_cfg(self.cfg.clone(), |m| {
+            for field in &self.fields {
+                field.ty.find_return_value_monomorphs(m, false);
+            }
+        });
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {

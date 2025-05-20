@@ -9,9 +9,11 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{
+    AnnotationSet, Cfg, Documentation, GenericParams, GenericPath, Path, Type,
+};
 use crate::bindgen::library::Library;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
 use crate::bindgen::utilities::IterHelpers;
@@ -47,6 +49,11 @@ impl Function {
         attrs: &[syn::Attribute],
         mod_cfg: Option<&Cfg>,
     ) -> Result<Function, String> {
+        let GenericParams(generics) = GenericParams::load(&sig.generics)?;
+        if !generics.is_empty() {
+            return Err("Generic functions are not supported".to_owned());
+        }
+
         let mut args = sig.inputs.iter().try_skip_map(|x| x.as_argument())?;
         if sig.variadic.is_some() {
             args.push(FunctionArgument {
@@ -129,6 +136,11 @@ impl Function {
         }
     }
 
+    pub fn find_return_value_monomorphs(&self, monomorphs: &mut ReturnValueMonomorphs<'_>) {
+        monomorphs.with_active_cfg(self.cfg.clone(), |m| {
+            m.handle_function(&self.ret, self.args.iter().map(|arg| &arg.ty));
+        });
+    }
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
         self.ret.add_monomorphs(library, out);
         for arg in &self.args {

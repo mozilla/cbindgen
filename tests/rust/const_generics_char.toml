@@ -1,0 +1,2 @@
+[export]
+instantiate_return_value_monomorphs = true

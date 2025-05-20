@@ -42,7 +42,7 @@ impl DefineKey<'_> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Cfg {
     Boolean(String),
     Named(String, String),
@@ -129,10 +129,10 @@ impl syn::parse::Parse for Cfg {
 
 impl Cfg {
     pub fn join(cfgs: &[Cfg]) -> Option<Cfg> {
-        if cfgs.is_empty() {
-            None
-        } else {
-            Some(Cfg::All(cfgs.to_owned()))
+        match cfgs {
+            [] => None,
+            [cfg] => Some(cfg.clone()),
+            _ => Some(Cfg::All(cfgs.to_owned())),
         }
     }
 

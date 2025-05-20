@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{GenericArgument, GenericParams, GenericPath, Path};
 use crate::bindgen::library::Library;
-use crate::bindgen::monomorph::Monomorphs;
+use crate::bindgen::monomorph::{Monomorphs, ReturnValueMonomorphs};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -738,6 +738,22 @@ impl Type {
 
     pub fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         self.add_dependencies_ignoring_generics(&GenericParams::default(), library, out)
+    }
+
+    pub fn find_return_value_monomorphs(
+        &self,
+        monomorphs: &mut ReturnValueMonomorphs<'_>,
+        is_return_value: bool,
+    ) {
+        match self {
+            Type::Ptr { ty, .. } => ty.find_return_value_monomorphs(monomorphs, false),
+            Type::Path(generic) => monomorphs.handle_return_value_path(generic, is_return_value),
+            Type::Primitive(_) => {}
+            Type::Array(ty, _) => ty.find_return_value_monomorphs(monomorphs, false),
+            Type::FuncPtr { ret, args, .. } => {
+                monomorphs.handle_function(ret, args.iter().map(|(_, arg)| arg))
+            }
+        }
     }
 
     pub fn add_monomorphs(&self, library: &Library, out: &mut Monomorphs) {
