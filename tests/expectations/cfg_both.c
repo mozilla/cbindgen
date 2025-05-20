@@ -77,8 +77,18 @@ typedef struct ConditionalField {
 #endif
   ;
 } ConditionalField;
-#define ConditionalField_ZERO (ConditionalField){ .field = 0 }
-#define ConditionalField_ONE (ConditionalField){ .field = 1 }
+#define ConditionalField_ZERO (ConditionalField){ __ConditionalField_field(0) }
+#if defined(X11)
+#define __ConditionalField_field(v) .field = (v)
+#else
+#define __ConditionalField_field(v)
+#endif
+#define ConditionalField_ONE (ConditionalField){ __ConditionalField_field(1) }
+#if defined(X11)
+#define __ConditionalField_field(v) .field = (v)
+#else
+#define __ConditionalField_field(v)
+#endif
 
 typedef struct Normal {
   int32_t x;
