@@ -159,12 +159,7 @@ pub trait LanguageBackend: Sized {
 
     fn write_items<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         for item in &b.items {
-            if item
-                .deref()
-                .annotations()
-                .bool("no-export")
-                .unwrap_or(false)
-            {
+            if !item.deref().annotations().should_export() {
                 continue;
             }
 
@@ -198,6 +193,9 @@ pub trait LanguageBackend: Sized {
 
     fn write_globals_default<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         for global in &b.globals {
+            if !global.annotations.should_export() {
+                continue;
+            }
             out.new_line_if_not_start();
             self.write_static(out, global);
             out.new_line();
@@ -210,6 +208,9 @@ pub trait LanguageBackend: Sized {
 
     fn write_functions_default<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         for function in &b.functions {
+            if !function.annotations.should_export() {
+                continue;
+            }
             out.new_line_if_not_start();
             self.write_function(&b.config, out, function);
             out.new_line();
