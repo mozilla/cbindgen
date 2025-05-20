@@ -100,16 +100,17 @@ impl AnnotationSet {
     }
 
     pub fn load(attrs: &[syn::Attribute]) -> Result<AnnotationSet, String> {
-        let lines = attrs.get_comment_lines();
-        let lines: Vec<&str> = lines
+        let attrs_lines = attrs.get_comment_lines();
+        let lines: Vec<(usize, &str)> = attrs_lines
             .iter()
-            .filter_map(|line| {
+            .enumerate()
+            .filter_map(|(i, line)| {
                 let line = line.trim_start();
                 if !line.starts_with("cbindgen:") {
                     return None;
                 }
 
-                Some(line)
+                Some((i, line))
             })
             .collect();
 
@@ -118,21 +119,17 @@ impl AnnotationSet {
         let mut annotations = HashMap::new();
 
         // Look at each line for an annotation
-        for line in lines {
+        for (mut i, line) in lines {
             debug_assert!(line.starts_with("cbindgen:"));
 
             // Remove the "cbindgen:" prefix
             let annotation = &line[9..];
 
             // Split the annotation in two
-            let parts: Vec<&str> = annotation.split('=').map(|x| x.trim()).collect();
-
-            if parts.len() > 2 {
-                return Err(format!("Couldn't parse {}.", line));
-            }
+            let parts: Vec<&str> = annotation.split('=').collect();
 
             // Grab the name that this annotation is modifying
-            let name = parts[0];
+            let name = parts[0].trim();
 
             // If the annotation only has a name, assume it's setting a bool flag
             if parts.len() == 1 {
@@ -141,9 +138,49 @@ impl AnnotationSet {
             }
 
             // Parse the value we're setting the name to
-            let value = parts[1];
+            let first_line = parts[1..].join("=").to_string();
 
-            if let Some(x) = parse_list(value) {
+            let suffix = first_line.trim();
+            let mut value_lines = vec![suffix.to_string()];
+            let suffix_index = first_line
+                .find(suffix)
+                .ok_or("Could not find suffix in line")?;
+            let prefix = first_line[..suffix_index].to_string();
+
+            while let Some(last) = value_lines.last() {
+                if !last.ends_with('\\') {
+                    break;
+                }
+
+                i += 1;
+                let s = &attrs_lines[i];
+                value_lines.push(s.to_string());
+            }
+
+            let value = value_lines
+                .iter()
+                .take(value_lines.len() - 1)
+                .map(|l| {
+                    let mut l = l
+                        .chars()
+                        .take(l.len() - 1)
+                        .collect::<String>()
+                        .trim_end()
+                        .to_string();
+
+                    if let Some(line) = l.find(&prefix) {
+                        if line == 0 {
+                            l = l.replacen(&prefix, "", 1);
+                        }
+                    }
+
+                    l
+                })
+                .chain(value_lines.last().cloned())
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            if let Some(x) = parse_list(&value) {
                 annotations.insert(name.to_string(), AnnotationValue::List(x));
                 continue;
             }
