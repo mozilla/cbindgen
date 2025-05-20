@@ -233,7 +233,7 @@ impl Bindings {
 
     pub fn write<F: Write>(&self, file: F) {
         match self.config.language {
-            Language::Cxx | Language::C => {
+            Language::Cxx | Language::C | Language::D => {
                 self.write_with_backend(file, &mut CLikeLanguageBackend::new(&self.config))
             }
             Language::Cython => {

@@ -222,6 +222,57 @@ impl PrimitiveType {
         }
     }
 
+    pub fn to_repr_d(&self, config: &Config) -> &'static str {
+        match *self {
+            PrimitiveType::Void => "void",
+            PrimitiveType::Bool => "bool",
+            PrimitiveType::Char => "char",
+            PrimitiveType::SChar => "byte",
+            PrimitiveType::UChar => "ubyte",
+            // NOTE: It'd be nice to use a char32_t, but:
+            //
+            //  * uchar.h is not present on mac (see #423).
+            //
+            //  * char32_t isn't required to be compatible with Rust's char, as
+            //    the C++ spec only requires it to be the same size as
+            //    uint_least32_t, which is _not_ guaranteed to be 4-bytes.
+            //
+            PrimitiveType::Char32 => "uint",
+            PrimitiveType::Integer {
+                kind,
+                signed,
+                zeroable: _,
+            } => match (kind, signed) {
+                (IntKind::Short, true) => "short",
+                (IntKind::Short, false) => "ushort",
+                (IntKind::Int, true) => "int",
+                (IntKind::Int, false) => "uint",
+                (IntKind::Long, true) => "long",
+                (IntKind::Long, false) => "ulong",
+                (IntKind::LongLong, true) => "long long",
+                (IntKind::LongLong, false) => "ulong long",
+                (IntKind::SizeT, true) => "long",
+                (IntKind::SizeT, false) => "ulong",
+                (IntKind::Size, true) if config.usize_is_size_t => "long",
+                (IntKind::Size, false) if config.usize_is_size_t => "ulong",
+                (IntKind::Size, true) => "long",
+                (IntKind::Size, false) => "ulong",
+                (IntKind::B8, true) => "byte",
+                (IntKind::B8, false) => "ubyte",
+                (IntKind::B16, true) => "short",
+                (IntKind::B16, false) => "ushort",
+                (IntKind::B32, true) => "int",
+                (IntKind::B32, false) => "uint",
+                (IntKind::B64, true) => "long",
+                (IntKind::B64, false) => "ulong",
+            },
+            PrimitiveType::Float => "float",
+            PrimitiveType::Double => "double",
+            PrimitiveType::PtrDiffT => "long",
+            PrimitiveType::VaList => "...",
+        }
+    }
+
     fn can_cmp_order(&self) -> bool {
         !matches!(*self, PrimitiveType::Bool)
     }
