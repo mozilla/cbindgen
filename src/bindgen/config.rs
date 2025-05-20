@@ -899,6 +899,78 @@ pub struct CythonConfig {
     pub cimports: BTreeMap<String, Vec<String>>,
 }
 
+/// A line field can be a single line `field = "line"` or a struct `field = { language = "C", line = "struct" }`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum Line {
+    AnyBackend(String),
+    WithBackend { language: Language, line: String },
+}
+impl Line {
+    pub fn line_for(&self, target: Language) -> Option<&str> {
+        match *self {
+            Line::AnyBackend(ref line) => Some(line.as_str()),
+            Line::WithBackend { language, ref line } if language == target => Some(line.as_str()),
+            _ => None,
+        }
+    }
+}
+impl From<String> for Line {
+    fn from(value: String) -> Self {
+        Self::AnyBackend(value)
+    }
+}
+
+/// A text field can be a line field or a sequence of lines or structs:
+/// ```toml
+/// field = [
+///    "sequence of lines",
+///    { language = "C", line = "or structs" },
+/// ]
+/// ```
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum Text {
+    Line(Line),
+    Lines(Vec<Line>),
+}
+impl Text {
+    pub fn is_empty(&self) -> bool {
+        match *self {
+            Text::Line(_) => false,
+            Text::Lines(ref lines) => lines.is_empty(),
+        }
+    }
+    pub fn text_for(&self, target: Language) -> Vec<&str> {
+        let mut text = Vec::new();
+        match self {
+            Text::Line(line) => {
+                if let Some(s) = line.line_for(target) {
+                    text.push(s);
+                }
+            }
+            Text::Lines(lines) => {
+                for line in lines.iter() {
+                    if let Some(s) = line.line_for(target) {
+                        text.push(s);
+                    }
+                }
+            }
+        }
+        text
+    }
+}
+impl From<String> for Text {
+    fn from(value: String) -> Self {
+        Self::Line(value.into())
+    }
+}
+impl Default for Text {
+    fn default() -> Self {
+        Self::Lines(Vec::new())
+    }
+}
+
 /// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -906,15 +978,15 @@ pub struct CythonConfig {
 #[serde(default)]
 pub struct Config {
     /// Optional text to output at the beginning of the file
-    pub header: Option<String>,
+    pub header: Text,
     /// A list of additional includes to put at the beginning of the generated header
     pub includes: Vec<String>,
     /// A list of additional system includes to put at the beginning of the generated header
     pub sys_includes: Vec<String>,
     /// Optional verbatim code added after the include blocks
-    pub after_includes: Option<String>,
+    pub after_includes: Text,
     /// Optional text to output at the end of the file
-    pub trailer: Option<String>,
+    pub trailer: Text,
     /// Optional name to use for an include guard
     pub include_guard: Option<String>,
     /// Add a `#pragma once` guard
@@ -1037,11 +1109,11 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Config {
         Config {
-            header: None,
+            header: Text::default(),
             includes: Vec::new(),
             sys_includes: Vec::new(),
-            after_includes: None,
-            trailer: None,
+            after_includes: Text::default(),
+            trailer: Text::default(),
             include_guard: None,
             pragma_once: false,
             autogen_warning: None,

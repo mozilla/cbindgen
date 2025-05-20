@@ -344,9 +344,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, "/* Package version: {} */", package_version);
             out.new_line();
         }
-        if let Some(ref f) = self.config.header {
+        for line in self.config.header.text_for(self.config.language) {
             out.new_line_if_not_start();
-            write!(out, "{}", f);
+            write!(out, "{}", line);
             out.new_line();
         }
         if let Some(f) = self.config.include_guard() {
@@ -379,7 +379,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         if self.config.no_includes
             && self.config.sys_includes().is_empty()
             && self.config.includes().is_empty()
-            && self.config.after_includes.is_none()
+            && self.config.after_includes.is_empty()
         {
             return;
         }
@@ -439,7 +439,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             out.new_line();
         }
 
-        if let Some(ref line) = self.config.after_includes {
+        for line in self.config.after_includes.text_for(self.config.language) {
             write!(out, "{}", line);
             out.new_line();
         }

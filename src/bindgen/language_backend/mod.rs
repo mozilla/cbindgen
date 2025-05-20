@@ -218,10 +218,10 @@ pub trait LanguageBackend: Sized {
     }
 
     fn write_trailer<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
-        if let Some(ref f) = b.config.trailer {
+        for line in b.config.trailer.text_for(b.config.language) {
             out.new_line_if_not_start();
-            write!(out, "{}", f);
-            if !f.ends_with('\n') {
+            write!(out, "{}", line);
+            if !line.ends_with('\n') {
                 out.new_line();
             }
         }
