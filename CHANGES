@@ -1,5 +1,19 @@
 # unreleased
 
+# 0.29.0
+
+      * Support no-export annotation for statics and functions.
+      * Fixed conditional fields of constexpr literal structs
+      * Add rename rule for generated associated constant
+      * Upgrade heck to 0.5
+      * Add support for an optional nullable attribute
+      * docs.md: Fix deprecated_with_note and deprecated_variant_with_note being spelled as 'notes'
+      * Fix generic with "void" default
+      * Fixed error generation of structures using the keyword as inside arrays
+      * Added test for unsafe(no_mangle) attribute
+      * Fixed handling of trait methods containing the unsafe attribute
+      * Rename -Zparse-only
+
 # 0.28.0
 
       * Parse unsafe attributes in https://github.com/mozilla/cbindgen/pull/1020
