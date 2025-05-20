@@ -90,6 +90,11 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install Cython==3.0.2
 
+    - name: Install Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: master
+
     - name: Build
       run: |
         cargo +stable build --verbose

@@ -23,6 +23,7 @@ pub enum Language {
     Cxx,
     C,
     Cython,
+    Zig,
 }
 
 impl FromStr for Language {
@@ -42,6 +43,8 @@ impl FromStr for Language {
             "C" => Ok(Language::C),
             "cython" => Ok(Language::Cython),
             "Cython" => Ok(Language::Cython),
+            "zig" => Ok(Language::Zig),
+            "Zig" => Ok(Language::Zig),
             _ => Err(format!("Unrecognized Language: '{}'.", s)),
         }
     }
@@ -54,6 +57,7 @@ impl Language {
         match self {
             Language::Cxx | Language::C => "typedef",
             Language::Cython => "ctypedef",
+            Language::Zig => "pub const",
         }
     }
 }
@@ -167,6 +171,7 @@ pub enum DocumentationStyle {
     Doxy,
     Cxx,
     Auto,
+    Zig,
 }
 
 impl FromStr for DocumentationStyle {
@@ -180,6 +185,7 @@ impl FromStr for DocumentationStyle {
             "c++" => Ok(DocumentationStyle::Cxx),
             "doxy" => Ok(DocumentationStyle::Doxy),
             "auto" => Ok(DocumentationStyle::Auto),
+            "zig" => Ok(DocumentationStyle::Zig),
             _ => Err(format!("Unrecognized documentation style: '{}'.", s)),
         }
     }
@@ -238,6 +244,14 @@ impl Style {
             "cdef "
         } else {
             "ctypedef "
+        }
+    }
+
+    pub fn zig_def(self) -> &'static str {
+        if self.generate_tag() {
+            "pub const "
+        } else {
+            "pub extern"
         }
     }
 }
@@ -714,6 +728,8 @@ pub struct ConstantConfig {
     pub allow_static_const: bool,
     /// Whether a generated constant should be constexpr in C++ mode.
     pub allow_constexpr: bool,
+    /// Whether a generated compile-time should be comptime in Zig mode.
+    pub allow_comptime: bool,
     /// Sort key for constants
     pub sort_by: Option<SortKey>,
 }
@@ -723,6 +739,7 @@ impl Default for ConstantConfig {
         ConstantConfig {
             allow_static_const: true,
             allow_constexpr: true,
+            allow_comptime: true,
             sort_by: None,
         }
     }
@@ -899,6 +916,15 @@ pub struct CythonConfig {
     pub cimports: BTreeMap<String, Vec<String>>,
 }
 
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[serde(deny_unknown_fields)]
+#[serde(default)]
+pub struct ZigConfig {
+    pub header: Option<String>,
+    pub cimports: BTreeMap<String, Vec<String>>,
+}
+
 /// A collection of settings to customize the generated bindings.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -1023,6 +1049,8 @@ pub struct Config {
     pub only_target_dependencies: bool,
     /// Configuration options specific to Cython.
     pub cython: CythonConfig,
+    /// Configuration options specific to Zig.
+    pub zig: ZigConfig,
     #[doc(hidden)]
     #[serde(skip)]
     /// Internal field for tracking from which file the config was loaded.
@@ -1075,6 +1103,7 @@ impl Default for Config {
             pointer: PtrConfig::default(),
             only_target_dependencies: false,
             cython: CythonConfig::default(),
+            zig: ZigConfig::default(),
             config_path: None,
         }
     }
@@ -1086,7 +1115,7 @@ impl Config {
     }
 
     pub(crate) fn include_guard(&self) -> Option<&str> {
-        if self.language == Language::Cython {
+        if self.language == Language::Cython || self.language == Language::Zig {
             None
         } else {
             self.include_guard.as_deref()
@@ -1094,7 +1123,7 @@ impl Config {
     }
 
     pub(crate) fn includes(&self) -> &[String] {
-        if self.language == Language::Cython {
+        if self.language == Language::Cython || self.language == Language::Zig {
             &[]
         } else {
             &self.includes
@@ -1102,7 +1131,7 @@ impl Config {
     }
 
     pub(crate) fn sys_includes(&self) -> &[String] {
-        if self.language == Language::Cython {
+        if self.language == Language::Cython || self.language == Language::Zig {
             &[]
         } else {
             &self.sys_includes
