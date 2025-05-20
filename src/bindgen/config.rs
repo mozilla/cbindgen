@@ -1106,6 +1106,20 @@ impl Config {
         }
     }
 
+    pub(crate) fn should_generate_tag(&self, path: &Path) -> bool {
+        // We're compiling with `-Wnon-c-typedef-for-linkage` so if we're building
+        // C++ bindings with C compatibility the user might insert code pre- or post-body
+        // that contains a function declaration. We need to generate a tag in this case or
+        // the code wouldn't compile.
+        // This will override the users preferences for this particular path.
+        let pre_body = self.export.pre_body(path).is_some();
+        let post_body = self.export.post_body(path).is_some();
+
+        let force_tags = self.cpp_compatible_c() && (pre_body || post_body);
+
+        self.style.generate_tag() || force_tags
+    }
+
     pub fn from_file<P: AsRef<StdPath>>(file_name: P) -> Result<Config, String> {
         let config_text = fs::read_to_string(file_name.as_ref()).map_err(|_| {
             format!(
