@@ -76,6 +76,9 @@ fn run_cbindgen(
         Language::Cython => {
             command.arg("--lang").arg("cython");
         }
+        Language::JavaJna => {
+            command.arg("--lang").arg("java-jna");
+        }
     }
 
     if package_version {
@@ -86,8 +89,15 @@ fn run_cbindgen(
         command.arg("--style").arg(style_str(style));
     }
 
+    let specific_config = path.with_extension(format!("{}.toml", language));
+    let specific_config_folder = path.join(format!("cbindgen.{}.toml", language));
     let config = path.with_extension("toml");
-    if config.exists() {
+
+    if specific_config.exists() {
+        command.arg("--config").arg(specific_config);
+    } else if specific_config_folder.exists() {
+        command.arg("--config").arg(specific_config_folder);
+    } else if config.exists() {
         command.arg("--config").arg(config);
     }
 
@@ -139,6 +149,7 @@ fn compile(
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
         Language::C => env::var("CC").unwrap_or_else(|_| "gcc".to_owned()),
         Language::Cython => env::var("CYTHON").unwrap_or_else(|_| "cython".to_owned()),
+        Language::JavaJna => env::var("JAVAC").unwrap_or_else(|_| "javac".to_string()),
     };
 
     let file_name = cbindgen_output
@@ -201,11 +212,40 @@ fn compile(
             command.arg("-o").arg(&object);
             command.arg(cbindgen_output);
         }
+        Language::JavaJna => {
+            let jna_jar = Path::new(env!("CARGO_TARGET_TMPDIR")).join("jna-5.13.0.jar");
+
+            println!("using {jna_jar:?}");
+            if !jna_jar.exists() {
+                if !Command::new("curl")
+                    .arg("--output")
+                    .arg(&jna_jar)
+                    .arg(
+                        "https://repo1.maven.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.jar",
+                    )
+                    .status()
+                    .unwrap()
+                    .success()
+                {
+                    panic!("Failed to download JNA for java tests");
+                }
+            }
+
+            command.arg("-cp").arg(&jna_jar);
+            command.arg("-d").arg(tmp_dir);
+            command.arg(cbindgen_output);
+        }
     }
 
     println!("Running: {:?}", command);
     let out = command.output().expect("failed to compile");
-    assert!(out.status.success(), "Output failed to compile: {:?}", out);
+    assert!(
+        out.status.success(),
+        "Output failed to compile: status {}\nstdout:\n{}\n\n\nstderr:\n{}",
+        out.status,
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
 
     if object.exists() {
         fs::remove_file(object).unwrap();
@@ -252,6 +292,7 @@ fn run_compile_test(
         // is extension-sensitive and won't work on them, so we use implementation files (`.pyx`)
         // in the test suite.
         Language::Cython => ".pyx",
+        Language::JavaJna => ".java",
     };
 
     let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();
@@ -411,6 +452,17 @@ fn test_file(name: &'static str, filename: &'static str) {
             /* generate_symfile = */ false,
         );
     }
+
+    run_compile_test(
+        name,
+        test,
+        tmp_dir,
+        Language::JavaJna,
+        /* cpp_compat = */ false,
+        None,
+        &mut HashSet::new(),
+        false,
+    );
 }
 
 macro_rules! test_file {

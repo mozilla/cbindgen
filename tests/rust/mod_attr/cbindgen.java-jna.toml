@@ -1,0 +1,7 @@
+header = """
+"""
+
+[defines]
+"foo" = "FOO"
+"bar" = "BAR"
+# "feature = foobar" = "FOOBAR"

@@ -16,7 +16,7 @@ use crate::bindgen::ir::{
     Constant, Function, ItemContainer, ItemMap, Path as BindgenPath, Static, Struct, Type, Typedef,
 };
 use crate::bindgen::language_backend::{
-    CLikeLanguageBackend, CythonLanguageBackend, LanguageBackend,
+    CLikeLanguageBackend, CythonLanguageBackend, JavaJnaLanguageBackend, LanguageBackend,
 };
 use crate::bindgen::writer::SourceWriter;
 
@@ -37,6 +37,7 @@ pub struct Bindings {
     /// and shouldn't do anything when written anywhere.
     noop: bool,
     pub package_version: String,
+    binding_crate_lib_name: String,
 }
 
 impl Bindings {
@@ -52,6 +53,7 @@ impl Bindings {
         source_files: Vec<path::PathBuf>,
         noop: bool,
         package_version: String,
+        binding_crate_lib_name: String,
     ) -> Bindings {
         Bindings {
             config,
@@ -65,6 +67,7 @@ impl Bindings {
             source_files,
             noop,
             package_version,
+            binding_crate_lib_name,
         }
     }
 
@@ -239,6 +242,10 @@ impl Bindings {
             Language::Cython => {
                 self.write_with_backend(file, &mut CythonLanguageBackend::new(&self.config))
             }
+            Language::JavaJna => self.write_with_backend(
+                file,
+                &mut JavaJnaLanguageBackend::new(&self.config, self.binding_crate_lib_name.clone()),
+            ),
         }
     }
 

@@ -1,0 +1,5 @@
+header = """
+"""
+
+[ptr]
+non_null_attribute = "CBINDGEN_NONNULL"

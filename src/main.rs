@@ -2,23 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::env;
-use std::io;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
-
 extern crate clap;
 #[macro_use]
 extern crate log;
 extern crate proc_macro2;
 #[macro_use]
+extern crate quote;
+#[macro_use]
 extern crate serde;
 extern crate serde_json;
 #[macro_use]
-extern crate quote;
-#[macro_use]
 extern crate syn;
 extern crate toml;
+
+use std::env;
+use std::io;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
 
@@ -165,7 +165,19 @@ fn main() {
                 .long("lang")
                 .value_name("LANGUAGE")
                 .help("Specify the language to output bindings in")
-                .value_parser(["c++", "C++", "c", "C", "cython", "Cython"]),
+                .value_parser([
+                    "c++",
+                    "C++", 
+                    "c", 
+                    "C", 
+                    "cython", 
+                    "Cython", 
+                    "Java-JNA",
+                    "Java-Jna",
+                    "java-jna",
+                    "JavaJNA",
+                    "JavaJna",
+                    "javajna"]),
         )
         .arg(
             Arg::new("package-version")

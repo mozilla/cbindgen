@@ -10,9 +10,12 @@ use std::io::Write;
 
 mod clike;
 mod cython;
+mod java_jna;
 
 pub use clike::CLikeLanguageBackend;
 pub use cython::CythonLanguageBackend;
+pub use java_jna::JavaJnaLanguageBackend;
+pub(crate) use java_jna::{java_writable_literal, wrap_java_value};
 
 pub trait LanguageBackend: Sized {
     fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>);
