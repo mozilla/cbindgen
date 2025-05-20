@@ -14,6 +14,33 @@ cdef extern from *:
 
 cdef extern from *:
 
+  IF PLATFORM_UNIX:
+    const uint32_t FOO_CONST # = 0
+
+  IF PLATFORM_WIN:
+    const uint32_t FOO_CONST # = 1
+
+  IF not (PLATFORM_UNIX or PLATFORM_WIN):
+    const uint32_t FOO_CONST # = 61453
+
+  IF PLATFORM_UNIX:
+    const uint8_t BAR_CONST # = 0
+
+  IF PLATFORM_WIN:
+    const uint8_t BAR_CONST # = raise TypeError("reached unreachable code")
+
+  IF not (PLATFORM_UNIX or PLATFORM_WIN):
+    const uint8_t BAR_CONST # = 1
+
+  IF (X11 and PLATFORM_UNIX):
+    const uint8_t BAZ_CONST # = 0
+
+  IF (X11 and PLATFORM_WIN):
+    const uint8_t BAZ_CONST # = 1
+
+  IF (X11 and not (PLATFORM_UNIX or PLATFORM_WIN)):
+    const uint8_t BAZ_CONST # = raise TypeError("Baz error")
+
   IF (PLATFORM_WIN or M_32):
     cdef enum:
       A,

@@ -1,9 +1,34 @@
+pub const FOO_CONST: u32 = if cfg!(unix) {
+    0
+} else if cfg!(windows) {
+    1
+} else {
+    0xF00D
+};
+
+pub const BAR_CONST: u8 = if cfg!(unix) {
+    0
+} else if cfg!(windows) {
+    unreachable!()
+} else {
+    1
+};
+
+#[cfg(x11)]
+pub const BAZ_CONST: u8 = if cfg!(unix) {
+    0
+} else if cfg!(windows) {
+    1
+} else {
+    panic!("Baz error")
+};
+
 #[cfg(all(unix, x11))]
 #[repr(u32)]
 enum FooType {
-  A,
-  B,
-  C,
+    A,
+    B,
+    C,
 }
 
 #[cfg(all(unix, x11))]
@@ -14,12 +39,12 @@ struct FooHandle {
     y: f32,
 }
 
-#[cfg(any(windows, target_pointer_width="32"))]
+#[cfg(any(windows, target_pointer_width = "32"))]
 #[repr(u32)]
 enum BarType {
-  A,
-  B,
-  C,
+    A,
+    B,
+    C,
 }
 
 #[repr(u8)]
@@ -29,10 +54,12 @@ pub enum C {
     #[cfg(windows)]
     C3,
     #[cfg(unix)]
-    C5 { int: i32 },
+    C5 {
+        int: i32,
+    },
 }
 
-#[cfg(any(windows, target_pointer_width="32"))]
+#[cfg(any(windows, target_pointer_width = "32"))]
 #[repr(C)]
 struct BarHandle {
     ty: BarType,
@@ -62,17 +89,14 @@ impl ConditionalField {
 
 #[cfg(all(unix, x11))]
 #[no_mangle]
-pub extern "C" fn root(a: FooHandle, c: C)
-{ }
+pub extern "C" fn root(a: FooHandle, c: C) {}
 
-#[cfg(any(windows, target_pointer_width="32"))]
+#[cfg(any(windows, target_pointer_width = "32"))]
 #[no_mangle]
-pub extern "C" fn root(a: BarHandle, c: C)
-{ }
+pub extern "C" fn root(a: BarHandle, c: C) {}
 
 #[no_mangle]
-pub extern "C" fn cond(a: ConditionalField)
-{ }
+pub extern "C" fn cond(a: ConditionalField) {}
 
 // src/lib.rs
 #[repr(C)]
