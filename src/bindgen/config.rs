@@ -327,6 +327,15 @@ pub struct ExportConfig {
     pub include: Vec<String>,
     /// A list of items to not include in the generated bindings
     pub exclude: Vec<String>,
+    /// Whether to export structs even if they're not part of the public
+    /// API.
+    pub structs: bool,
+    /// Whether to export enums even if they're not part of the public
+    /// API.
+    pub enums: bool,
+    /// Whether to export unions even if they're not part of the public
+    /// API.
+    pub unions: bool,
     /// Table of name conversions to apply to item names
     pub rename: HashMap<String, String>,
     /// Table of raw strings to prepend to the body of items.
