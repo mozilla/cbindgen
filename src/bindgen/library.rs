@@ -60,6 +60,15 @@ impl Library {
         }
     }
 
+    fn export_unconditional<I: Item + Clone>(&self, items: &ItemMap<I>, deps: &mut Dependencies) {
+        items.for_all_items(|item| {
+            if deps.items.insert(item.path().clone()) {
+                item.add_dependencies(&self, deps);
+                deps.order.push(item.container());
+            }
+        });
+    }
+
     pub fn generate(mut self) -> Result<Bindings, Error> {
         self.transfer_annotations();
         self.simplify_standard_types();
@@ -90,6 +99,16 @@ impl Library {
         self.constants.for_all_items(|constant| {
             constant.add_dependencies(&self, &mut dependencies);
         });
+        if self.config.export.structs {
+            self.export_unconditional(&self.structs, &mut dependencies);
+        }
+        if self.config.export.enums {
+            self.export_unconditional(&self.enums, &mut dependencies);
+        }
+        if self.config.export.unions {
+            self.export_unconditional(&self.unions, &mut dependencies);
+        }
+
         for name in &self.config.export.include {
             let path = Path::new(name.clone());
             if let Some(items) = self.get_items(&path) {

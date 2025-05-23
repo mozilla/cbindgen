@@ -605,6 +605,24 @@ include = ["MyOrphanStruct", "MyGreatTypeRename"]
 # default: []
 exclude = ["Bad"]
 
+# If this value is true, struct bindings will be generated even if they don't appear
+# in the public API.
+#
+# default: false
+structs = false
+
+# If this value is true, enum bindings will be generated even if they don't appear
+# in the public API.
+#
+# default: false
+enums = false
+
+# If this value is true, union bindings will be generated even if they don't appear
+# in the public API.
+#
+# default: false
+unions = false
+
 # A prefix to add before the name of every item
 # default: no prefix is added
 prefix = "CAPI_"
