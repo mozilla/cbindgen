@@ -24,11 +24,11 @@ struct TypeData {
   enum class Tag {
     Primitive,
     Struct,
-  };
-
-  struct Struct_Body {
+  };struct Struct_Body {
     StructInfo _0;
   };
+
+
 
   Tag tag;
   union {

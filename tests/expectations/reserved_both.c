@@ -17,11 +17,12 @@ enum C_Tag {
   D,
 };
 typedef uint8_t C_Tag;
-
 typedef struct D_Body {
   int32_t namespace_;
   float float_;
 } D_Body;
+
+
 
 typedef struct C {
   C_Tag tag;
@@ -35,6 +36,7 @@ enum E_Tag {
   Float,
 };
 typedef uint8_t E_Tag;
+
 
 typedef struct E {
   E_Tag tag;
@@ -53,6 +55,7 @@ enum F_Tag {
   float_,
 };
 typedef uint8_t F_Tag;
+
 
 typedef struct F {
   F_Tag tag;

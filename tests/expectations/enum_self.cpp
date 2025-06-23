@@ -15,7 +15,6 @@ union Bar {
     Max,
     Other,
   };
-
   struct Min_Body {
     Tag tag;
     Foo<Bar> _0;
@@ -25,6 +24,8 @@ union Bar {
     Tag tag;
     Foo<Bar> _0;
   };
+
+
 
   struct {
     Tag tag;

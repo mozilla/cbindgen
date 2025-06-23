@@ -15,6 +15,7 @@ enum Status
 typedef uint32_t Status;
 #endif // __cplusplus
 
+
 typedef struct {
   int32_t a;
   float b;

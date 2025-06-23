@@ -16,7 +16,6 @@ struct H {
     H_Bar,
     H_Baz,
   };
-
   struct H_Foo_Body {
     int16_t _0;
   };
@@ -25,6 +24,8 @@ struct H {
     uint8_t x;
     int16_t y;
   };
+
+
 
   Tag tag;
   union {
@@ -93,7 +94,6 @@ struct J {
     J_Bar,
     J_Baz,
   };
-
   struct J_Foo_Body {
     int16_t _0;
   };
@@ -102,6 +102,8 @@ struct J {
     uint8_t x;
     int16_t y;
   };
+
+
 
   Tag tag;
   union {
@@ -170,7 +172,6 @@ union K {
     K_Bar,
     K_Baz,
   };
-
   struct K_Foo_Body {
     Tag tag;
     int16_t _0;
@@ -181,6 +182,8 @@ union K {
     uint8_t x;
     int16_t y;
   };
+
+
 
   struct {
     Tag tag;

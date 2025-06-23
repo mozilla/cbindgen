@@ -23,7 +23,6 @@ cdef extern from *:
     Image,
     ClearScreen,
   ctypedef uint8_t DisplayItem_Tag;
-
   cdef struct Fill_Body:
     DisplayItem_Tag tag;
     Rect _0;
@@ -33,6 +32,8 @@ cdef extern from *:
     DisplayItem_Tag tag;
     uint32_t id;
     Rect bounds;
+
+
 
   cdef union DisplayItem:
     DisplayItem_Tag tag;

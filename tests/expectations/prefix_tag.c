@@ -20,6 +20,7 @@ enum PREFIX_AbsoluteFontWeight_Tag {
 };
 typedef uint8_t PREFIX_AbsoluteFontWeight_Tag;
 
+
 union PREFIX_AbsoluteFontWeight {
   PREFIX_AbsoluteFontWeight_Tag tag;
   struct {

@@ -20,12 +20,13 @@ cdef extern from *:
     Baz_i32,
     Bazz_i32,
   ctypedef uint8_t StyleFoo_i32_Tag;
-
   cdef struct StyleFoo_Body_i32:
     StyleFoo_i32_Tag tag;
     int32_t x;
     StylePoint_i32 y;
     StylePoint_f32 z;
+
+
 
   cdef union StyleFoo_i32:
     StyleFoo_i32_Tag tag;
@@ -38,12 +39,13 @@ cdef extern from *:
     Bar2_i32,
     Bar3_i32,
     Bar4_i32,
-
   cdef struct StyleBar1_Body_i32:
     int32_t x;
     StylePoint_i32 y;
     StylePoint_f32 z;
     int32_t (*u)(int32_t);
+
+
 
   cdef struct StyleBar_i32:
     StyleBar_i32_Tag tag;
@@ -60,12 +62,13 @@ cdef extern from *:
     Bar2_u32,
     Bar3_u32,
     Bar4_u32,
-
   cdef struct StyleBar1_Body_u32:
     int32_t x;
     StylePoint_u32 y;
     StylePoint_f32 z;
     int32_t (*u)(int32_t);
+
+
 
   cdef struct StyleBar_u32:
     StyleBar_u32_Tag tag;
@@ -79,6 +82,7 @@ cdef extern from *:
     Baz3,
   ctypedef uint8_t StyleBaz_Tag;
 
+
   cdef union StyleBaz:
     StyleBaz_Tag tag;
     StyleBar_u32 baz1;
@@ -89,6 +93,7 @@ cdef extern from *:
     Taz2,
     Taz3,
   ctypedef uint8_t StyleTaz_Tag;
+
 
   cdef struct StyleTaz:
     StyleTaz_Tag tag;

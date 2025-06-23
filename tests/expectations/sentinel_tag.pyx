@@ -14,6 +14,7 @@ cdef extern from *:
     A_Sentinel,
   ctypedef uint8_t A;
 
+
   cdef enum:
     B_B1,
     B_B2,
@@ -22,6 +23,7 @@ cdef extern from *:
     B_Sentinel,
   ctypedef uint8_t B;
 
+
   cdef enum:
     C_C1,
     C_C2,
@@ -29,7 +31,6 @@ cdef extern from *:
     # Must be last for serialization purposes
     C_Sentinel,
   ctypedef uint8_t C_Tag;
-
   cdef struct C_C1_Body:
     C_Tag tag;
     uint32_t a;
@@ -37,6 +38,8 @@ cdef extern from *:
   cdef struct C_C2_Body:
     C_Tag tag;
     uint32_t b;
+
+
 
   cdef union C:
     C_Tag tag;

@@ -14,3 +14,4 @@ enum StyleOnlyThisShouldBeGenerated
 #ifndef __cplusplus
 typedef uint8_t StyleOnlyThisShouldBeGenerated;
 #endif // __cplusplus
+

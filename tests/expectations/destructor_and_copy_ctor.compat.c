@@ -19,6 +19,7 @@ enum FillRule
 typedef uint8_t FillRule;
 #endif // __cplusplus
 
+
 /**
  * This will have a destructor manually implemented via variant_body, and
  * similarly a Drop impl in Rust.
@@ -57,7 +58,6 @@ enum Foo_u32_Tag
 #ifndef __cplusplus
 typedef uint8_t Foo_u32_Tag;
 #endif // __cplusplus
-
 typedef struct {
   FillRule fill;
   OwnedSlice_u32 coords;
@@ -67,6 +67,8 @@ typedef struct {
   FillRule fill;
   OwnedSlice_i32 coords;
 } Slice4_Body_u32;
+
+
 
 typedef struct {
   Foo_u32_Tag tag;
@@ -105,7 +107,6 @@ enum Baz_i32_Tag
 #ifndef __cplusplus
 typedef uint8_t Baz_i32_Tag;
 #endif // __cplusplus
-
 typedef struct {
   Baz_i32_Tag tag;
   FillRule fill;
@@ -117,6 +118,8 @@ typedef struct {
   FillRule fill;
   OwnedSlice_i32 coords;
 } Slice24_Body_i32;
+
+
 
 typedef union {
   Baz_i32_Tag tag;
@@ -149,6 +152,7 @@ enum Taz_Tag
 typedef uint8_t Taz_Tag;
 #endif // __cplusplus
 
+
 typedef union {
   Taz_Tag tag;
   struct {
@@ -173,6 +177,7 @@ enum Tazz_Tag
 typedef uint8_t Tazz_Tag;
 #endif // __cplusplus
 
+
 typedef union {
   Tazz_Tag tag;
   struct {
@@ -193,6 +198,7 @@ enum Tazzz_Tag
 typedef uint8_t Tazzz_Tag;
 #endif // __cplusplus
 
+
 typedef union {
   Tazzz_Tag tag;
   struct {
@@ -212,6 +218,7 @@ enum Tazzzz_Tag
 #ifndef __cplusplus
 typedef uint8_t Tazzzz_Tag;
 #endif // __cplusplus
+
 
 typedef union {
   Tazzzz_Tag tag;
@@ -236,6 +243,7 @@ enum Qux_Tag
 #ifndef __cplusplus
 typedef uint8_t Qux_Tag;
 #endif // __cplusplus
+
 
 typedef union {
   Qux_Tag tag;

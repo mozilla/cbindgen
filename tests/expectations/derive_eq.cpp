@@ -25,7 +25,6 @@ union Bar {
     FooNamed,
     FooParen,
   };
-
   struct Bazz_Body {
     Tag tag;
     Foo named;
@@ -67,6 +66,8 @@ union Bar {
              _1 != aOther._1;
     }
   };
+
+
 
   struct {
     Tag tag;

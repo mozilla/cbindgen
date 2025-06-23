@@ -28,15 +28,15 @@ struct MyFancyEnum {
     Foo,
     Bar,
     Baz,
-  };
-
-  struct Bar_Body {
+  };struct Bar_Body {
     int32_t _0;
   };
 
   struct Baz_Body {
     int32_t _0;
   };
+
+
 
   Tag tag;
   union {
@@ -69,15 +69,15 @@ struct MyFancyEnum_Prepended {
     Foo_Prepended,
     Bar_Prepended,
     Baz_Prepended,
-  };
-
-  struct Bar_Prepended_Body {
+  };struct Bar_Prepended_Body {
     int32_t _0;
   };
 
   struct Baz_Prepended_Body {
     int32_t _0;
   };
+
+
 
   Tag tag;
   union {

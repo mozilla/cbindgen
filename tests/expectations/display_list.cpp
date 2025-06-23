@@ -24,7 +24,6 @@ union DisplayItem {
     Image,
     ClearScreen,
   };
-
   struct Fill_Body {
     Tag tag;
     Rect _0;
@@ -36,6 +35,8 @@ union DisplayItem {
     uint32_t id;
     Rect bounds;
   };
+
+
 
   struct {
     Tag tag;

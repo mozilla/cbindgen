@@ -20,6 +20,7 @@ enum Bar_Tag
 typedef uint8_t Bar_Tag;
 #endif // __cplusplus
 
+
 typedef union Bar {
   Bar_Tag tag;
   struct {

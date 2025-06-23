@@ -14,6 +14,7 @@ enum A {
 };
 typedef uint8_t A;
 
+
 enum B {
   B_B1,
   B_B2,
@@ -25,6 +26,7 @@ enum B {
 };
 typedef uint8_t B;
 
+
 enum C_Tag {
   C_C1,
   C_C2,
@@ -35,7 +37,6 @@ enum C_Tag {
   C_Sentinel,
 };
 typedef uint8_t C_Tag;
-
 typedef struct C_C1_Body {
   C_Tag tag;
   uint32_t a;
@@ -45,6 +46,8 @@ typedef struct C_C2_Body {
   C_Tag tag;
   uint32_t b;
 } C_C2_Body;
+
+
 
 typedef union C {
   C_Tag tag;

@@ -10,3 +10,4 @@ cdef extern from *:
     Foo,
     Bar,
   ctypedef uint8_t OnlyThisShouldBeGenerated;
+

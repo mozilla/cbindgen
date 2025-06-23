@@ -9,6 +9,7 @@ enum class C : uint32_t {
   Y,
 };
 
+
 inline std::ostream& operator<<(std::ostream& stream, const C& instance) {
   switch (instance) {
     case C::X: stream << "X"; break;
@@ -54,6 +55,7 @@ union F {
     Baz,
   };
 
+
   friend std::ostream& operator<<(std::ostream& stream, const Tag& instance) {
     using Tag = F::Tag;
     switch (instance) {
@@ -72,9 +74,7 @@ union F {
       case Tag::Baz: stream << "Baz"; break;
     }
     return stream;
-  }
-
-  struct Foo_Body {
+  }struct Foo_Body {
     Tag tag;
     int16_t _0;
 
@@ -96,6 +96,8 @@ union F {
     }
   };
 
+
+
   struct {
     Tag tag;
   };
@@ -109,6 +111,7 @@ struct H {
     There,
     Everyone,
   };
+
 
   friend std::ostream& operator<<(std::ostream& stream, const Tag& instance) {
     using Tag = H::Tag;
@@ -128,9 +131,7 @@ struct H {
       case Tag::Everyone: stream << "Everyone"; break;
     }
     return stream;
-  }
-
-  struct Hello_Body {
+  }struct Hello_Body {
     int16_t _0;
 
     friend std::ostream& operator<<(std::ostream& stream, const Hello_Body& instance) {
@@ -148,6 +149,8 @@ struct H {
     }
   };
 
+
+
   Tag tag;
   union {
     Hello_Body hello;
@@ -160,7 +163,6 @@ struct I {
     ThereAgain,
     SomethingElse,
   };
-
   struct ThereAgain_Body {
     uint8_t x;
     int16_t y;
@@ -170,6 +172,8 @@ struct I {
                             << "y=" << instance.y << " }";
     }
   };
+
+
 
   Tag tag;
   union {

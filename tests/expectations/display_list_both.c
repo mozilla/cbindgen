@@ -23,7 +23,6 @@ enum DisplayItem_Tag {
   ClearScreen,
 };
 typedef uint8_t DisplayItem_Tag;
-
 typedef struct Fill_Body {
   DisplayItem_Tag tag;
   struct Rect _0;
@@ -35,6 +34,8 @@ typedef struct Image_Body {
   uint32_t id;
   struct Rect bounds;
 } Image_Body;
+
+
 
 typedef union DisplayItem {
   DisplayItem_Tag tag;

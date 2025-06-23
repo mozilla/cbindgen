@@ -20,9 +20,11 @@ cdef extern from *:
     A # = 0,
   ctypedef int32_t DeprecatedEnum;
 
+
   cdef enum:
     B # = 0,
   ctypedef int32_t DeprecatedEnumWithNote;
+
 
   cdef enum:
     C # = 0,
@@ -30,6 +32,7 @@ cdef extern from *:
     E # = 2,
     F # = 3,
   ctypedef int32_t EnumWithDeprecatedVariants;
+
 
   ctypedef struct DeprecatedStruct:
     int32_t a;
@@ -42,7 +45,6 @@ cdef extern from *:
     Bar,
     Baz,
   ctypedef uint8_t EnumWithDeprecatedStructVariants_Tag;
-
   ctypedef struct Bar_Body:
     EnumWithDeprecatedStructVariants_Tag tag;
     uint8_t x;
@@ -52,6 +54,8 @@ cdef extern from *:
     EnumWithDeprecatedStructVariants_Tag tag;
     uint8_t x;
     uint8_t y;
+
+
 
   ctypedef union EnumWithDeprecatedStructVariants:
     EnumWithDeprecatedStructVariants_Tag tag;

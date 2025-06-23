@@ -8,3 +8,4 @@ enum OnlyThisShouldBeGenerated {
   Bar,
 };
 typedef uint8_t OnlyThisShouldBeGenerated;
+

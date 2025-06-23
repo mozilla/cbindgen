@@ -18,6 +18,7 @@ enum class BarType : uint32_t {
   B,
   C,
 };
+
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -26,6 +27,7 @@ enum class FooType : uint32_t {
   B,
   C,
 };
+
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -58,7 +60,6 @@ union C {
     C5,
 #endif
   };
-
 #if defined(PLATFORM_UNIX)
   struct C5_Body {
     Tag tag;
@@ -72,6 +73,8 @@ union C {
     }
   };
 #endif
+
+
 
   struct {
     Tag tag;

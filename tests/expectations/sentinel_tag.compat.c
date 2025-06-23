@@ -20,6 +20,7 @@ enum A
 typedef uint8_t A;
 #endif // __cplusplus
 
+
 enum B
 #ifdef __cplusplus
   : uint8_t
@@ -37,6 +38,7 @@ enum B
 typedef uint8_t B;
 #endif // __cplusplus
 
+
 enum C_Tag
 #ifdef __cplusplus
   : uint8_t
@@ -53,7 +55,6 @@ enum C_Tag
 #ifndef __cplusplus
 typedef uint8_t C_Tag;
 #endif // __cplusplus
-
 struct C_C1_Body {
   C_Tag tag;
   uint32_t a;
@@ -63,6 +64,8 @@ struct C_C2_Body {
   C_Tag tag;
   uint32_t b;
 };
+
+
 
 union C {
   C_Tag tag;

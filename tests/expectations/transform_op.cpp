@@ -19,7 +19,6 @@ union StyleFoo {
     Baz,
     Bazz,
   };
-
   struct Foo_Body {
     Tag tag;
     int32_t x;
@@ -36,6 +35,8 @@ union StyleFoo {
     Tag tag;
     StylePoint<T> _0;
   };
+
+
 
   struct {
     Tag tag;
@@ -129,9 +130,7 @@ struct StyleBar {
     Bar2,
     Bar3,
     Bar4,
-  };
-
-  struct StyleBar1_Body {
+  };struct StyleBar1_Body {
     int32_t x;
     StylePoint<T> y;
     StylePoint<float> z;
@@ -145,6 +144,8 @@ struct StyleBar {
   struct StyleBar3_Body {
     StylePoint<T> _0;
   };
+
+
 
   Tag tag;
   union {
@@ -239,7 +240,6 @@ union StyleBaz {
     Baz2,
     Baz3,
   };
-
   struct Baz1_Body {
     Tag tag;
     StyleBar<uint32_t> _0;
@@ -249,6 +249,8 @@ union StyleBaz {
     Tag tag;
     StylePoint<int32_t> _0;
   };
+
+
 
   struct {
     Tag tag;
@@ -315,7 +317,6 @@ struct StyleTaz {
     Taz2,
     Taz3,
   };
-
   struct StyleTaz1_Body {
     StyleBar<uint32_t> _0;
   };
@@ -323,6 +324,8 @@ struct StyleTaz {
   struct StyleTaz2_Body {
     StyleBaz _0;
   };
+
+
 
   Tag tag;
   union {

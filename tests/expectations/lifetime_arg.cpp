@@ -12,11 +12,11 @@ struct E {
   enum class Tag {
     V,
     U,
-  };
-
-  struct U_Body {
+  };struct U_Body {
     const uint8_t *_0;
   };
+
+
 
   Tag tag;
   union {

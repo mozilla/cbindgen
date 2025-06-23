@@ -10,6 +10,7 @@ cdef extern from *:
     BarSome,
     BarThing,
 
+
   cdef struct FooU8:
     uint8_t a;
 

@@ -15,6 +15,7 @@ enum BindingType
 typedef uint32_t BindingType;
 #endif // __cplusplus
 
+
 typedef struct {
   BindingType ty;
 } BindGroupLayoutEntry;

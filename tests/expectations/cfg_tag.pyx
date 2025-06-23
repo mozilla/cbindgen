@@ -21,12 +21,14 @@ cdef extern from *:
       C,
     ctypedef uint32_t BarType;
 
+
   IF (PLATFORM_UNIX and X11):
     cdef enum:
       A,
       B,
       C,
     ctypedef uint32_t FooType;
+
 
   IF (PLATFORM_UNIX and X11):
     cdef struct FooHandle:
@@ -40,10 +42,11 @@ cdef extern from *:
     C3,
     C5,
   ctypedef uint8_t C_Tag;
-
   cdef struct C5_Body:
     C_Tag tag;
     int32_t int_;
+
+
 
   cdef union C:
     C_Tag tag;

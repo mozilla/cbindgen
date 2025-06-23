@@ -18,6 +18,7 @@ enum BarType {
   C,
 };
 typedef uint32_t BarType;
+
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -27,6 +28,7 @@ enum FooType {
   C,
 };
 typedef uint32_t FooType;
+
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -48,13 +50,14 @@ enum C_Tag {
 #endif
 };
 typedef uint8_t C_Tag;
-
 #if defined(PLATFORM_UNIX)
 typedef struct C5_Body {
   C_Tag tag;
   int32_t int_;
 } C5_Body;
 #endif
+
+
 
 typedef union C {
   C_Tag tag;

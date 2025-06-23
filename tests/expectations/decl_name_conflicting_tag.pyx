@@ -11,6 +11,7 @@ cdef extern from *:
     NotBuffer # = 1,
   ctypedef uint32_t BindingType;
 
+
   cdef struct BindGroupLayoutEntry:
     BindingType ty;
 

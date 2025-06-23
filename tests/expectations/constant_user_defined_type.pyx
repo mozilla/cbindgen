@@ -9,6 +9,7 @@ cdef extern from *:
   ctypedef enum E:
     V,
 
+
   ctypedef struct S:
     uint8_t field;
 

@@ -15,6 +15,7 @@ cdef extern from *:
     B,
   ctypedef uint8_t FillRule;
 
+
   # This will have a destructor manually implemented via variant_body, and
   # similarly a Drop impl in Rust.
   ctypedef struct OwnedSlice_u32:
@@ -39,7 +40,6 @@ cdef extern from *:
     Slice3_u32,
     Slice4_u32,
   ctypedef uint8_t Foo_u32_Tag;
-
   ctypedef struct Slice3_Body_u32:
     FillRule fill;
     OwnedSlice_u32 coords;
@@ -47,6 +47,8 @@ cdef extern from *:
   ctypedef struct Slice4_Body_u32:
     FillRule fill;
     OwnedSlice_i32 coords;
+
+
 
   ctypedef struct Foo_u32:
     Foo_u32_Tag tag;
@@ -68,7 +70,6 @@ cdef extern from *:
     Slice23_i32,
     Slice24_i32,
   ctypedef uint8_t Baz_i32_Tag;
-
   ctypedef struct Slice23_Body_i32:
     Baz_i32_Tag tag;
     FillRule fill;
@@ -78,6 +79,8 @@ cdef extern from *:
     Baz_i32_Tag tag;
     FillRule fill;
     OwnedSlice_i32 coords;
+
+
 
   ctypedef union Baz_i32:
     Baz_i32_Tag tag;
@@ -93,6 +96,7 @@ cdef extern from *:
     Taz3,
   ctypedef uint8_t Taz_Tag;
 
+
   ctypedef union Taz:
     Taz_Tag tag;
     int32_t taz1;
@@ -103,6 +107,7 @@ cdef extern from *:
     Taz2,
   ctypedef uint8_t Tazz_Tag;
 
+
   ctypedef union Tazz:
     Tazz_Tag tag;
     int32_t taz2;
@@ -111,6 +116,7 @@ cdef extern from *:
     Bar5,
     Taz5,
   ctypedef uint8_t Tazzz_Tag;
+
 
   ctypedef union Tazzz:
     Tazzz_Tag tag;
@@ -121,6 +127,7 @@ cdef extern from *:
     Taz7,
   ctypedef uint8_t Tazzzz_Tag;
 
+
   ctypedef union Tazzzz:
     Tazzzz_Tag tag;
     int32_t taz6;
@@ -130,6 +137,7 @@ cdef extern from *:
     Qux1,
     Qux2,
   ctypedef uint8_t Qux_Tag;
+
 
   ctypedef union Qux:
     Qux_Tag tag;

@@ -9,6 +9,7 @@ enum class C : uint32_t {
   Y,
 };
 
+
 struct A {
   int32_t m0;
 
@@ -35,7 +36,6 @@ union F {
     Bar,
     Baz,
   };
-
   struct Foo_Body {
     Tag tag;
     int16_t _0;
@@ -46,6 +46,8 @@ union F {
     uint8_t x;
     int16_t y;
   };
+
+
 
   struct {
     Tag tag;
@@ -94,7 +96,6 @@ struct H {
     There,
     Everyone,
   };
-
   struct Hello_Body {
     int16_t _0;
   };
@@ -103,6 +104,8 @@ struct H {
     uint8_t x;
     int16_t y;
   };
+
+
 
   Tag tag;
   union {

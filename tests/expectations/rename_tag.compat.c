@@ -17,6 +17,7 @@ enum C_E
 typedef uint8_t C_E;
 #endif // __cplusplus
 
+
 struct C_A;
 
 struct C_C;

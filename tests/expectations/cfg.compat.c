@@ -24,6 +24,7 @@ enum BarType
 #ifndef __cplusplus
 typedef uint32_t BarType;
 #endif // __cplusplus
+
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -39,6 +40,7 @@ enum FooType
 #ifndef __cplusplus
 typedef uint32_t FooType;
 #endif // __cplusplus
+
 #endif
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
@@ -66,13 +68,14 @@ enum C_Tag
 #ifndef __cplusplus
 typedef uint8_t C_Tag;
 #endif // __cplusplus
-
 #if defined(PLATFORM_UNIX)
 typedef struct {
   C_Tag tag;
   int32_t int_;
 } C5_Body;
 #endif
+
+
 
 typedef union {
   C_Tag tag;

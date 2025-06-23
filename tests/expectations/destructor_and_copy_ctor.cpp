@@ -13,6 +13,7 @@ enum class FillRule : uint8_t {
   B,
 };
 
+
 /// This will have a destructor manually implemented via variant_body, and
 /// similarly a Drop impl in Rust.
 template<typename T>
@@ -38,7 +39,6 @@ struct Foo {
     Slice3,
     Slice4,
   };
-
   struct Polygon1_Body {
     Polygon<T> _0;
   };
@@ -60,6 +60,8 @@ struct Foo {
     FillRule fill;
     OwnedSlice<int32_t> coords;
   };
+
+
 
   Tag tag;
   union {
@@ -187,7 +189,6 @@ union Baz {
     Slice23,
     Slice24,
   };
-
   struct Polygon21_Body {
     Tag tag;
     Polygon<T> _0;
@@ -214,6 +215,8 @@ union Baz {
     FillRule fill;
     OwnedSlice<int32_t> coords;
   };
+
+
 
   struct {
     Tag tag;
@@ -337,7 +340,6 @@ union Taz {
     Taz1,
     Taz3,
   };
-
   struct Taz1_Body {
     Tag tag;
     int32_t _0;
@@ -347,6 +349,8 @@ union Taz {
     Tag tag;
     OwnedSlice<int32_t> _0;
   };
+
+
 
   struct {
     Tag tag;
@@ -423,11 +427,12 @@ union Tazz {
     Bar4,
     Taz2,
   };
-
   struct Taz2_Body {
     Tag tag;
     int32_t _0;
   };
+
+
 
   struct {
     Tag tag;
@@ -468,11 +473,12 @@ union Tazzz {
     Bar5,
     Taz5,
   };
-
   struct Taz5_Body {
     Tag tag;
     int32_t _0;
   };
+
+
 
   struct {
     Tag tag;
@@ -528,7 +534,6 @@ union Tazzzz {
     Taz6,
     Taz7,
   };
-
   struct Taz6_Body {
     Tag tag;
     int32_t _0;
@@ -538,6 +543,8 @@ union Tazzzz {
     Tag tag;
     uint32_t _0;
   };
+
+
 
   struct {
     Tag tag;
@@ -604,7 +611,6 @@ union Qux {
     Qux1,
     Qux2,
   };
-
   struct Qux1_Body {
     Tag tag;
     int32_t _0;
@@ -622,6 +628,8 @@ union Qux {
       return _0 == other._0;
     }
   };
+
+
 
   struct {
     Tag tag;

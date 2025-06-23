@@ -25,6 +25,7 @@ enum A {
 };
 typedef uint64_t A;
 
+
 enum B {
   b1 = 0,
   b2 = 2,
@@ -32,6 +33,7 @@ enum B {
   b4 = 5,
 };
 typedef uint32_t B;
+
 
 enum C {
   c1 = 0,
@@ -41,6 +43,7 @@ enum C {
 };
 typedef uint16_t C;
 
+
 enum D {
   d1 = 0,
   d2 = 2,
@@ -48,6 +51,7 @@ enum D {
   d4 = 5,
 };
 typedef uint8_t D;
+
 
 enum E {
   e1 = 0,
@@ -57,6 +61,7 @@ enum E {
 };
 typedef uintptr_t E;
 
+
 enum F {
   f1 = 0,
   f2 = 2,
@@ -64,6 +69,7 @@ enum F {
   f4 = 5,
 };
 typedef intptr_t F;
+
 
 enum L {
   l1,
@@ -78,6 +84,7 @@ enum M {
   m3 = 1,
 };
 typedef int8_t M;
+
 
 enum N {
   n1,
@@ -94,6 +101,7 @@ enum O {
 };
 typedef int8_t O;
 
+
 struct J;
 
 struct K;
@@ -106,12 +114,13 @@ enum G_Tag {
   Baz,
 };
 typedef uint8_t G_Tag;
-
 struct Bar_Body {
   G_Tag tag;
   uint8_t x;
   int16_t y;
 };
+
+
 
 union G {
   G_Tag tag;
@@ -126,12 +135,12 @@ enum H_Tag {
   H_Foo,
   H_Bar,
   H_Baz,
-};
-
-struct H_Bar_Body {
+};struct H_Bar_Body {
   uint8_t x;
   int16_t y;
 };
+
+
 
 struct H {
   enum H_Tag tag;
@@ -149,11 +158,12 @@ enum ExI_Tag {
   ExI_Baz,
 };
 typedef uint8_t ExI_Tag;
-
 struct ExI_Bar_Body {
   uint8_t x;
   int16_t y;
 };
+
+
 
 struct ExI {
   ExI_Tag tag;
@@ -170,12 +180,13 @@ enum P_Tag {
   P1,
 };
 typedef uint8_t P_Tag;
-
 struct P1_Body {
   uint8_t _0;
   uint8_t _1;
   uint8_t _2;
 };
+
+
 
 struct P {
   P_Tag tag;
@@ -208,12 +219,12 @@ enum R_Tag {
   IRFoo,
   IRBar,
   IRBaz,
-};
-
-struct IRBar_Body {
+};struct IRBar_Body {
   uint8_t x;
   int16_t y;
 };
+
+
 
 struct R {
   enum R_Tag tag;

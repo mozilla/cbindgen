@@ -15,6 +15,7 @@ enum C
 typedef uint32_t C;
 #endif // __cplusplus
 
+
 typedef struct {
   int32_t m0;
 } A;
@@ -36,12 +37,13 @@ enum F_Tag
 #ifndef __cplusplus
 typedef uint8_t F_Tag;
 #endif // __cplusplus
-
 typedef struct {
   F_Tag tag;
   uint8_t x;
   int16_t y;
 } Bar_Body;
+
+
 
 typedef union {
   F_Tag tag;
@@ -64,11 +66,12 @@ enum H_Tag
 #ifndef __cplusplus
 typedef uint8_t H_Tag;
 #endif // __cplusplus
-
 typedef struct {
   uint8_t x;
   int16_t y;
 } There_Body;
+
+
 
 typedef struct {
   H_Tag tag;

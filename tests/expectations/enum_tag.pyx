@@ -27,12 +27,14 @@ cdef extern from *:
     a4 # = 5,
   ctypedef uint64_t A;
 
+
   cdef enum:
     b1 # = 0,
     b2 # = 2,
     b3,
     b4 # = 5,
   ctypedef uint32_t B;
+
 
   cdef enum:
     c1 # = 0,
@@ -41,12 +43,14 @@ cdef extern from *:
     c4 # = 5,
   ctypedef uint16_t C;
 
+
   cdef enum:
     d1 # = 0,
     d2 # = 2,
     d3,
     d4 # = 5,
   ctypedef uint8_t D;
+
 
   cdef enum:
     e1 # = 0,
@@ -55,6 +59,7 @@ cdef extern from *:
     e4 # = 5,
   ctypedef uintptr_t E;
 
+
   cdef enum:
     f1 # = 0,
     f2 # = 2,
@@ -62,11 +67,13 @@ cdef extern from *:
     f4 # = 5,
   ctypedef intptr_t F;
 
+
   cdef enum L:
     l1,
     l2,
     l3,
     l4,
+
 
   cdef enum:
     m1 # = -1,
@@ -74,11 +81,13 @@ cdef extern from *:
     m3 # = 1,
   ctypedef int8_t M;
 
+
   cdef enum N:
     n1,
     n2,
     n3,
     n4,
+
 
   cdef enum:
     o1,
@@ -86,6 +95,7 @@ cdef extern from *:
     o3,
     o4,
   ctypedef int8_t O;
+
 
   cdef struct J:
     pass
@@ -101,11 +111,12 @@ cdef extern from *:
     Bar,
     Baz,
   ctypedef uint8_t G_Tag;
-
   cdef struct Bar_Body:
     G_Tag tag;
     uint8_t x;
     int16_t y;
+
+
 
   cdef union G:
     G_Tag tag;
@@ -116,10 +127,11 @@ cdef extern from *:
     H_Foo,
     H_Bar,
     H_Baz,
-
   cdef struct H_Bar_Body:
     uint8_t x;
     int16_t y;
+
+
 
   cdef struct H:
     H_Tag tag;
@@ -131,10 +143,11 @@ cdef extern from *:
     ExI_Bar,
     ExI_Baz,
   ctypedef uint8_t ExI_Tag;
-
   cdef struct ExI_Bar_Body:
     uint8_t x;
     int16_t y;
+
+
 
   cdef struct ExI:
     ExI_Tag tag;
@@ -145,11 +158,12 @@ cdef extern from *:
     P0,
     P1,
   ctypedef uint8_t P_Tag;
-
   cdef struct P1_Body:
     uint8_t _0;
     uint8_t _1;
     uint8_t _2;
+
+
 
   cdef struct P:
     P_Tag tag;
@@ -160,6 +174,7 @@ cdef extern from *:
     Ok,
     Err,
 
+
   cdef struct Q:
     Q_Tag tag;
     uint32_t *ok;
@@ -169,10 +184,11 @@ cdef extern from *:
     IRFoo,
     IRBar,
     IRBaz,
-
   cdef struct IRBar_Body:
     uint8_t x;
     int16_t y;
+
+
 
   cdef struct R:
     R_Tag tag;

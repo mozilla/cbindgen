@@ -8,3 +8,4 @@ enum class OnlyThisShouldBeGenerated : uint8_t {
   Foo,
   Bar,
 };
+

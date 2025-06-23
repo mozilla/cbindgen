@@ -9,6 +9,7 @@ enum BindingType {
 };
 typedef uint32_t BindingType;
 
+
 struct BindGroupLayoutEntry {
   BindingType ty;
 };

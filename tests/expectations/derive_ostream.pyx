@@ -11,6 +11,7 @@ cdef extern from *:
     Y,
   ctypedef uint32_t C;
 
+
   ctypedef struct A:
     int32_t _0;
 
@@ -28,11 +29,12 @@ cdef extern from *:
     Bar,
     Baz,
   ctypedef uint8_t F_Tag;
-
   ctypedef struct Bar_Body:
     F_Tag tag;
     uint8_t x;
     int16_t y;
+
+
 
   ctypedef union F:
     F_Tag tag;
@@ -44,10 +46,11 @@ cdef extern from *:
     There,
     Everyone,
   ctypedef uint8_t H_Tag;
-
   ctypedef struct There_Body:
     uint8_t x;
     int16_t y;
+
+
 
   ctypedef struct H:
     H_Tag tag;
@@ -58,10 +61,11 @@ cdef extern from *:
     ThereAgain,
     SomethingElse,
   ctypedef uint8_t I_Tag;
-
   ctypedef struct ThereAgain_Body:
     uint8_t x;
     int16_t y;
+
+
 
   ctypedef struct I:
     I_Tag tag;
