@@ -16,7 +16,6 @@ cdef extern from *:
     FooNamed,
     FooParen,
   ctypedef uint8_t Bar_Tag;
-
   ctypedef struct Bazz_Body:
     Bar_Tag tag;
     Foo named;
@@ -30,6 +29,8 @@ cdef extern from *:
     Bar_Tag tag;
     int32_t _0;
     Foo _1;
+
+
 
   ctypedef union Bar:
     Bar_Tag tag;

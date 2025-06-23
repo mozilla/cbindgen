@@ -16,6 +16,7 @@ enum class E : int8_t {
   H = (int8_t)false,
 };
 
+
 extern "C" {
 
 void root(const E*);

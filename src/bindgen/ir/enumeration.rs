@@ -506,7 +506,14 @@ impl Item for Enum {
     }
 
     fn rename_for_config(&mut self, config: &Config) {
-        config.export.rename(&mut self.export_name);
+        // Check if the export_name already contains the prefix to avoid double prefixing
+        if let Some(ref prefix) = config.export.prefix {
+            if !self.export_name.starts_with(prefix) {
+                config.export.rename(&mut self.export_name);
+            }
+        } else {
+            config.export.rename(&mut self.export_name);
+        }
 
         if config.language != Language::Cxx && self.tag.is_some() && !self.external_tag {
             // it makes sense to always prefix Tag with type name in C
@@ -608,15 +615,20 @@ impl Item for Enum {
         out: &mut Monomorphs,
     ) {
         let config = library.get_config();
-        let external_tag = config.enumeration.merge_generic_tags;
+        // Only use external tags for generic enums when merge_generic_tags is enabled
+        let external_tag = config.enumeration.merge_generic_tags && !generic_values.is_empty();
 
         let tag = if external_tag {
-            let new_tag = format!("{}_Tag", self.export_name());
-            let path = Path::new(new_tag.clone());
+            // Calculate what the prefixed tag name should be
+            let mut prefixed_export_name = self.export_name().to_string();
+            config.export.rename(&mut prefixed_export_name);
+            let final_tag = format!("{}_Tag", prefixed_export_name);
 
             if !out.contains(&GenericPath::new(self.path.clone(), vec![])) {
-                let tag = Enum::new(
-                    path,
+                // Create the shared tag enum with the final prefixed name
+                let tag_path = Path::new(final_tag.clone());
+                let tag_enum = Enum::new(
+                    tag_path,
                     GenericParams::default(),
                     self.repr,
                     self.variants.clone(),
@@ -627,10 +639,10 @@ impl Item for Enum {
                     self.documentation.clone(),
                 );
 
-                out.insert_enum(library, self, tag, vec![]);
+                out.insert_enum(library, self, tag_enum, vec![]);
             }
 
-            Some(new_tag)
+            Some(final_tag)
         } else {
             self.tag.clone()
         };
@@ -811,6 +823,11 @@ impl Enum {
                 out.new_line_if_not_start();
                 out.write("#endif // __cplusplus");
             }
+        }
+
+        // Add a newline after the tag enum to ensure proper spacing
+        if size.is_some() || config.language == Language::Cython {
+            out.new_line();
         }
 
         // Emit convenience methods for the tag enum.

@@ -13,6 +13,7 @@ cdef extern from *:
     y # = 1,
   ctypedef uint8_t C_E;
 
+
   ctypedef struct C_A:
     pass
 

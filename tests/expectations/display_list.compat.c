@@ -29,7 +29,6 @@ enum DisplayItem_Tag
 #ifndef __cplusplus
 typedef uint8_t DisplayItem_Tag;
 #endif // __cplusplus
-
 typedef struct {
   DisplayItem_Tag tag;
   Rect _0;
@@ -41,6 +40,8 @@ typedef struct {
   uint32_t id;
   Rect bounds;
 } Image_Body;
+
+
 
 typedef union {
   DisplayItem_Tag tag;

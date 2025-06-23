@@ -12,6 +12,7 @@ enum class A : uint8_t {
   A_Sentinel,
 };
 
+
 enum class B : uint8_t {
   B_B1,
   B_B2,
@@ -19,6 +20,7 @@ enum class B : uint8_t {
   /// Must be last for serialization purposes
   B_Sentinel,
 };
+
 
 union C {
   enum class Tag : uint8_t {
@@ -28,7 +30,6 @@ union C {
     /// Must be last for serialization purposes
     C_Sentinel,
   };
-
   struct C_C1_Body {
     Tag tag;
     uint32_t a;
@@ -38,6 +39,8 @@ union C {
     Tag tag;
     uint32_t b;
   };
+
+
 
   struct {
     Tag tag;

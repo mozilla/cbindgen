@@ -22,6 +22,7 @@ enum E
 typedef int8_t E;
 #endif // __cplusplus
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

@@ -1,0 +1,6 @@
+{
+process_result;
+process_str_result;
+get_option_int;
+get_option_str;
+};

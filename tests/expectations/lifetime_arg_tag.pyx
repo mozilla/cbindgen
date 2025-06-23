@@ -13,6 +13,7 @@ cdef extern from *:
     V,
     U,
 
+
   cdef struct E:
     E_Tag tag;
     const uint8_t *u;

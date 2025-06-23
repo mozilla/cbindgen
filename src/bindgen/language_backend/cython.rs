@@ -129,7 +129,10 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         self.write_documentation(out, &e.documentation);
 
         // Emit the tag enum and everything related to it.
-        e.write_tag_enum(self.config, self, out, size, Self::write_enum_variant);
+        // Skip writing the tag enum if this is a specialized monomorph with an external tag
+        if !e.external_tag {
+            e.write_tag_enum(self.config, self, out, size, Self::write_enum_variant);
+        }
 
         // If the enum has data, we need to emit structs for the variants and gather them together.
         if has_data {

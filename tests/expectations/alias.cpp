@@ -9,6 +9,7 @@ enum class Status : uint32_t {
   Err,
 };
 
+
 struct Dep {
   int32_t a;
   float b;

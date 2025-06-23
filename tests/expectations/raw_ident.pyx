@@ -11,6 +11,7 @@ cdef extern from *:
     b,
   ctypedef uint8_t Enum;
 
+
   ctypedef struct Struct:
     Enum field;
 

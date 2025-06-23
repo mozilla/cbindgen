@@ -20,13 +20,14 @@ enum StyleFoo_i32_Tag {
   Bazz_i32,
 };
 typedef uint8_t StyleFoo_i32_Tag;
-
 typedef struct StyleFoo_Body_i32 {
   StyleFoo_i32_Tag tag;
   int32_t x;
   struct StylePoint_i32 y;
   struct StylePoint_f32 z;
 } StyleFoo_Body_i32;
+
+
 
 typedef union StyleFoo_i32 {
   StyleFoo_i32_Tag tag;
@@ -46,14 +47,14 @@ typedef enum StyleBar_i32_Tag {
   Bar2_i32,
   Bar3_i32,
   Bar4_i32,
-} StyleBar_i32_Tag;
-
-typedef struct StyleBar1_Body_i32 {
+} StyleBar_i32_Tag;typedef struct StyleBar1_Body_i32 {
   int32_t x;
   struct StylePoint_i32 y;
   struct StylePoint_f32 z;
   int32_t (*u)(int32_t);
 } StyleBar1_Body_i32;
+
+
 
 typedef struct StyleBar_i32 {
   StyleBar_i32_Tag tag;
@@ -78,14 +79,14 @@ typedef enum StyleBar_u32_Tag {
   Bar2_u32,
   Bar3_u32,
   Bar4_u32,
-} StyleBar_u32_Tag;
-
-typedef struct StyleBar1_Body_u32 {
+} StyleBar_u32_Tag;typedef struct StyleBar1_Body_u32 {
   int32_t x;
   struct StylePoint_u32 y;
   struct StylePoint_f32 z;
   int32_t (*u)(int32_t);
 } StyleBar1_Body_u32;
+
+
 
 typedef struct StyleBar_u32 {
   StyleBar_u32_Tag tag;
@@ -107,6 +108,7 @@ enum StyleBaz_Tag {
 };
 typedef uint8_t StyleBaz_Tag;
 
+
 typedef union StyleBaz {
   StyleBaz_Tag tag;
   struct {
@@ -125,6 +127,7 @@ enum StyleTaz_Tag {
   Taz3,
 };
 typedef uint8_t StyleTaz_Tag;
+
 
 typedef struct StyleTaz {
   StyleTaz_Tag tag;

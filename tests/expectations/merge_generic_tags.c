@@ -8,6 +8,8 @@ typedef enum {
   None,
 } COption_Tag;
 
+
+
 typedef struct {
   COption_Tag tag;
   union {
@@ -16,6 +18,8 @@ typedef struct {
     };
   };
 } COption_u8;
+
+
 
 typedef struct {
   COption_Tag tag;

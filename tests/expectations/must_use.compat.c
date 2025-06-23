@@ -20,6 +20,7 @@ enum MaybeOwnedPtr_i32_Tag
 typedef uint8_t MaybeOwnedPtr_i32_Tag;
 #endif // __cplusplus
 
+
 typedef struct MUST_USE_STRUCT {
   MaybeOwnedPtr_i32_Tag tag;
   union {

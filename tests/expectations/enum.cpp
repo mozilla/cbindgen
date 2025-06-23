@@ -25,12 +25,14 @@ enum class A : uint64_t {
   a4 = 5,
 };
 
+
 enum class B : uint32_t {
   b1 = 0,
   b2 = 2,
   b3,
   b4 = 5,
 };
+
 
 enum class C : uint16_t {
   c1 = 0,
@@ -39,12 +41,14 @@ enum class C : uint16_t {
   c4 = 5,
 };
 
+
 enum class D : uint8_t {
   d1 = 0,
   d2 = 2,
   d3,
   d4 = 5,
 };
+
 
 enum class E : uintptr_t {
   e1 = 0,
@@ -53,12 +57,14 @@ enum class E : uintptr_t {
   e4 = 5,
 };
 
+
 enum class F : intptr_t {
   f1 = 0,
   f2 = 2,
   f3,
   f4 = 5,
 };
+
 
 enum class L {
   l1,
@@ -72,6 +78,7 @@ enum class M : int8_t {
   m2 = 0,
   m3 = 1,
 };
+
 
 enum N {
   n1,
@@ -87,6 +94,7 @@ enum O : int8_t {
   o4,
 };
 
+
 struct J;
 
 struct K;
@@ -99,7 +107,6 @@ union G {
     Bar,
     Baz,
   };
-
   struct Foo_Body {
     Tag tag;
     int16_t _0;
@@ -110,6 +117,8 @@ union G {
     uint8_t x;
     int16_t y;
   };
+
+
 
   struct {
     Tag tag;
@@ -123,9 +132,7 @@ struct H {
     H_Foo,
     H_Bar,
     H_Baz,
-  };
-
-  struct H_Foo_Body {
+  };struct H_Foo_Body {
     int16_t _0;
   };
 
@@ -133,6 +140,8 @@ struct H {
     uint8_t x;
     int16_t y;
   };
+
+
 
   Tag tag;
   union {
@@ -147,7 +156,6 @@ struct ExI {
     ExI_Bar,
     ExI_Baz,
   };
-
   struct ExI_Foo_Body {
     int16_t _0;
   };
@@ -156,6 +164,8 @@ struct ExI {
     uint8_t x;
     int16_t y;
   };
+
+
 
   Tag tag;
   union {
@@ -169,7 +179,6 @@ struct P {
     P0,
     P1,
   };
-
   struct P0_Body {
     uint8_t _0;
   };
@@ -179,6 +188,8 @@ struct P {
     uint8_t _1;
     uint8_t _2;
   };
+
+
 
   Tag tag;
   union {
@@ -191,15 +202,15 @@ struct Q {
   enum class Tag {
     Ok,
     Err,
-  };
-
-  struct Ok_Body {
+  };struct Ok_Body {
     Box<uint32_t> _0;
   };
 
   struct Err_Body {
     uint32_t _0;
   };
+
+
 
   Tag tag;
   union {
@@ -213,9 +224,7 @@ struct R {
     IRFoo,
     IRBar,
     IRBaz,
-  };
-
-  struct IRFoo_Body {
+  };struct IRFoo_Body {
     int16_t _0;
   };
 
@@ -223,6 +232,8 @@ struct R {
     uint8_t x;
     int16_t y;
   };
+
+
 
   Tag tag;
   union {

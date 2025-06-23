@@ -14,6 +14,7 @@ enum Bar_Tag {
 };
 typedef uint8_t Bar_Tag;
 
+
 union Bar {
   Bar_Tag tag;
   struct {

@@ -7,11 +7,11 @@
 struct Foo {
   enum class Tag {
     A,
-  };
-
-  struct A_Body {
+  };struct A_Body {
     float _0[20];
   };
+
+
 
   Tag tag;
   union {

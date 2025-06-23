@@ -9,6 +9,7 @@ enum class BindingType : uint32_t {
   NotBuffer = 1,
 };
 
+
 struct BindGroupLayoutEntry {
   BindingType ty;
 };

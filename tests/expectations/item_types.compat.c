@@ -14,3 +14,4 @@ enum OnlyThisShouldBeGenerated
 #ifndef __cplusplus
 typedef uint8_t OnlyThisShouldBeGenerated;
 #endif // __cplusplus
+

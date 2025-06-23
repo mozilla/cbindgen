@@ -18,9 +18,11 @@ enum class DEPRECATED_ENUM DeprecatedEnum : int32_t {
   A = 0,
 };
 
+
 enum class DEPRECATED_ENUM_WITH_NOTE("This is a note") DeprecatedEnumWithNote : int32_t {
   B = 0,
 };
+
 
 enum class EnumWithDeprecatedVariants : int32_t {
   C = 0,
@@ -28,6 +30,7 @@ enum class EnumWithDeprecatedVariants : int32_t {
   E DEPRECATED_ENUM_VARIANT_WITH_NOTE("This is a note") = 2,
   F DEPRECATED_ENUM_VARIANT_WITH_NOTE("This is a note") = 3,
 };
+
 
 struct DEPRECATED_STRUCT DeprecatedStruct {
   int32_t a;
@@ -43,7 +46,6 @@ union EnumWithDeprecatedStructVariants {
     Bar DEPRECATED_ENUM_VARIANT,
     Baz DEPRECATED_ENUM_VARIANT_WITH_NOTE("This is a note"),
   };
-
   struct Foo_Body {
     Tag tag;
     int16_t _0;
@@ -60,6 +62,8 @@ union EnumWithDeprecatedStructVariants {
     uint8_t x;
     uint8_t y;
   };
+
+
 
   struct {
     Tag tag;

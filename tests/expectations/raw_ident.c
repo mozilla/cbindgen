@@ -9,6 +9,7 @@ enum Enum {
 };
 typedef uint8_t Enum;
 
+
 typedef struct {
   Enum field;
 } Struct;

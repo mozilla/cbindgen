@@ -15,6 +15,7 @@ cdef extern from *:
     Other,
   ctypedef uint8_t Bar_Tag;
 
+
   cdef union Bar:
     Bar_Tag tag;
     Foo_Bar min;

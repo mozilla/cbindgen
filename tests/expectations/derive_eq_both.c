@@ -15,7 +15,6 @@ enum Bar_Tag {
   FooParen,
 };
 typedef uint8_t Bar_Tag;
-
 typedef struct Bazz_Body {
   Bar_Tag tag;
   struct Foo named;
@@ -32,6 +31,8 @@ typedef struct FooParen_Body {
   int32_t _0;
   struct Foo _1;
 } FooParen_Body;
+
+
 
 typedef union Bar {
   Bar_Tag tag;

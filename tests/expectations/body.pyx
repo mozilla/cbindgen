@@ -11,10 +11,12 @@ cdef extern from *:
     Bar1,
     Baz1,
 
+
   ctypedef enum MyCLikeEnum_Prepended:
     Foo1_Prepended,
     Bar1_Prepended,
     Baz1_Prepended,
+
 
   ctypedef struct MyFancyStruct:
     int32_t i;
@@ -26,6 +28,7 @@ cdef extern from *:
     Foo,
     Bar,
     Baz,
+
 
   ctypedef struct MyFancyEnum:
     MyFancyEnum_Tag tag;
@@ -50,6 +53,7 @@ cdef extern from *:
     Foo_Prepended,
     Bar_Prepended,
     Baz_Prepended,
+
 
   ctypedef struct MyFancyEnum_Prepended:
 #ifdef __cplusplus

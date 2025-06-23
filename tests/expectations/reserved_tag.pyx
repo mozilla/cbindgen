@@ -17,10 +17,11 @@ cdef extern from *:
   cdef enum:
     D,
   ctypedef uint8_t C_Tag;
-
   cdef struct D_Body:
     int32_t namespace_;
     float float_;
+
+
 
   cdef struct C:
     C_Tag tag;
@@ -31,6 +32,7 @@ cdef extern from *:
     Float,
   ctypedef uint8_t E_Tag;
 
+
   cdef struct E:
     E_Tag tag;
     double double_;
@@ -40,6 +42,7 @@ cdef extern from *:
     double_,
     float_,
   ctypedef uint8_t F_Tag;
+
 
   cdef struct F:
     F_Tag tag;

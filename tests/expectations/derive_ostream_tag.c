@@ -9,6 +9,7 @@ enum C {
 };
 typedef uint32_t C;
 
+
 struct A {
   int32_t _0;
 };
@@ -30,12 +31,13 @@ enum F_Tag {
   Baz,
 };
 typedef uint8_t F_Tag;
-
 struct Bar_Body {
   F_Tag tag;
   uint8_t x;
   int16_t y;
 };
+
+
 
 union F {
   F_Tag tag;
@@ -52,11 +54,12 @@ enum H_Tag {
   Everyone,
 };
 typedef uint8_t H_Tag;
-
 struct There_Body {
   uint8_t x;
   int16_t y;
 };
+
+
 
 struct H {
   H_Tag tag;
@@ -73,11 +76,12 @@ enum I_Tag {
   SomethingElse,
 };
 typedef uint8_t I_Tag;
-
 struct ThereAgain_Body {
   uint8_t x;
   int16_t y;
 };
+
+
 
 struct I {
   I_Tag tag;

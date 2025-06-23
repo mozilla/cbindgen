@@ -25,6 +25,7 @@ cdef extern from *:
     Primitive,
     Struct,
 
+
   ctypedef struct TypeData:
     TypeData_Tag tag;
     StructInfo struct_;

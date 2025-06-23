@@ -21,7 +21,6 @@ enum Bar_Tag
 #ifndef __cplusplus
 typedef uint8_t Bar_Tag;
 #endif // __cplusplus
-
 typedef struct {
   Bar_Tag tag;
   Foo named;
@@ -38,6 +37,8 @@ typedef struct {
   int32_t _0;
   Foo _1;
 } FooParen_Body;
+
+
 
 typedef union {
   Bar_Tag tag;

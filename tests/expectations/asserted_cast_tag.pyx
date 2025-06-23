@@ -18,10 +18,11 @@ cdef extern from *:
     H_Bar,
     H_Baz,
   ctypedef uint8_t H_Tag;
-
   cdef struct H_Bar_Body:
     uint8_t x;
     int16_t y;
+
+
 
   cdef struct H:
     H_Tag tag;
@@ -33,10 +34,11 @@ cdef extern from *:
     J_Bar,
     J_Baz,
   ctypedef uint8_t J_Tag;
-
   cdef struct J_Bar_Body:
     uint8_t x;
     int16_t y;
+
+
 
   cdef struct J:
     J_Tag tag;
@@ -48,11 +50,12 @@ cdef extern from *:
     K_Bar,
     K_Baz,
   ctypedef uint8_t K_Tag;
-
   cdef struct K_Bar_Body:
     K_Tag tag;
     uint8_t x;
     int16_t y;
+
+
 
   cdef union K:
     K_Tag tag;

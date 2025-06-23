@@ -9,6 +9,7 @@ cdef extern from *:
   cdef enum Foo_Tag:
     A,
 
+
   cdef struct Foo:
     Foo_Tag tag;
     float a[20];

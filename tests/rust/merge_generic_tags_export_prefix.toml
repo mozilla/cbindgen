@@ -1,0 +1,7 @@
+[export]
+prefix = "Prefix_"
+
+[enum]
+merge_generic_tags = true
+prefix_with_name = true
+rename_variants = "ScreamingSnakeCase" 

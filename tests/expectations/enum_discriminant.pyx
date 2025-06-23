@@ -18,4 +18,5 @@ cdef extern from *:
     H # = <int8_t>False,
   ctypedef int8_t E;
 
+
   void root(const E*);

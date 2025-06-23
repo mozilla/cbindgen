@@ -15,11 +15,12 @@ enum H_Tag {
   H_Baz,
 };
 typedef uint8_t H_Tag;
-
 typedef struct H_Bar_Body {
   uint8_t x;
   int16_t y;
 } H_Bar_Body;
+
+
 
 typedef struct H {
   H_Tag tag;
@@ -37,11 +38,12 @@ enum J_Tag {
   J_Baz,
 };
 typedef uint8_t J_Tag;
-
 typedef struct J_Bar_Body {
   uint8_t x;
   int16_t y;
 } J_Bar_Body;
+
+
 
 typedef struct J {
   J_Tag tag;
@@ -59,12 +61,13 @@ enum K_Tag {
   K_Baz,
 };
 typedef uint8_t K_Tag;
-
 typedef struct K_Bar_Body {
   K_Tag tag;
   uint8_t x;
   int16_t y;
 } K_Bar_Body;
+
+
 
 typedef union K {
   K_Tag tag;

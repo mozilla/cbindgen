@@ -9,11 +9,11 @@ struct COption {
   enum class Tag {
     COption_Some,
     COption_None,
-  };
-
-  struct COption_Some_Body {
+  };struct COption_Some_Body {
     T _0;
   };
+
+
 
   Tag tag;
   union {
@@ -25,4 +25,4 @@ extern "C" {
 
 void root(COption<uint8_t> a, COption<uint32_t> b);
 
-} // extern "C"
+}  // extern "C"

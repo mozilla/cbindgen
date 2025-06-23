@@ -15,6 +15,7 @@ enum IE
 typedef ptrdiff_t IE;
 #endif // __cplusplus
 
+
 enum UE
 #ifdef __cplusplus
   : size_t
@@ -25,6 +26,7 @@ enum UE
 #ifndef __cplusplus
 typedef size_t UE;
 #endif // __cplusplus
+
 
 typedef size_t Usize;
 

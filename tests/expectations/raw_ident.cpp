@@ -9,6 +9,7 @@ enum class Enum : uint8_t {
   b,
 };
 
+
 struct Struct {
   Enum field;
 };

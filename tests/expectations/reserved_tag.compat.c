@@ -23,11 +23,12 @@ enum C_Tag
 #ifndef __cplusplus
 typedef uint8_t C_Tag;
 #endif // __cplusplus
-
 struct D_Body {
   int32_t namespace_;
   float float_;
 };
+
+
 
 struct C {
   C_Tag tag;
@@ -47,6 +48,7 @@ enum E_Tag
 #ifndef __cplusplus
 typedef uint8_t E_Tag;
 #endif // __cplusplus
+
 
 struct E {
   E_Tag tag;
@@ -71,6 +73,7 @@ enum F_Tag
 #ifndef __cplusplus
 typedef uint8_t F_Tag;
 #endif // __cplusplus
+
 
 struct F {
   F_Tag tag;

@@ -8,6 +8,8 @@ typedef enum {
   COption_None,
 } COption_Tag;
 
+
+
 typedef struct {
   COption_Tag tag;
   union {
@@ -16,6 +18,8 @@ typedef struct {
     };
   };
 } COption_u8;
+
+
 
 typedef struct {
   COption_Tag tag;
@@ -33,5 +37,5 @@ extern "C" {
 void root(COption_u8 a, COption_u32 b);
 
 #ifdef __cplusplus
-} // extern "C"
-#endif // __cplusplus
+}  // extern "C"
+#endif  // __cplusplus
