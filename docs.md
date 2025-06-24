@@ -513,7 +513,7 @@ no_includes = false
 # default: false
 cpp_compat = false
 
-# A list of lines to add verbatim after the includes block
+# A block of text to add verbatim after the includes block
 after_includes = "#define VERSION 1"
 
 
