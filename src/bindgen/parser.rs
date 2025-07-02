@@ -798,7 +798,7 @@ impl Parse {
                 return;
             }
 
-            let path = Path::new(item.ident.unraw().to_string());
+            let path = Path::new(item.ident.unraw().to_string() + impl_path.name());
             match Constant::load(
                 path,
                 mod_cfg,

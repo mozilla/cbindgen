@@ -547,7 +547,15 @@ impl Constant {
         documentation: Documentation,
         associated_to: Option<Path>,
     ) -> Self {
-        let export_name = path.name().to_owned();
+        let export_name = match associated_to.clone() {
+            Some(associated_to) => path
+                .name()
+                .strip_suffix(associated_to.name())
+                .unwrap()
+                .to_owned(),
+            None => path.name().to_owned(),
+        };
+
         Self {
             path,
             export_name,
