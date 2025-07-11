@@ -54,15 +54,15 @@ pub enum Cfg {
 impl fmt::Display for Cfg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Cfg::Boolean(key) => write!(f, "{}", key),
-            Cfg::Named(key, value) => write!(f, "{} = {:?}", key, value),
+            Cfg::Boolean(key) => write!(f, "{key}"),
+            Cfg::Named(key, value) => write!(f, "{key} = {value:?}"),
             Cfg::Any(cfgs) => {
                 write!(f, "any(")?;
                 for (index, cfg) in cfgs.iter().enumerate() {
                     if index > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}", cfg)?;
+                    write!(f, "{cfg}")?;
                 }
                 write!(f, ")")
             }
@@ -72,11 +72,11 @@ impl fmt::Display for Cfg {
                     if index > 0 {
                         write!(f, ", ")?;
                     }
-                    write!(f, "{}", cfg)?;
+                    write!(f, "{cfg}")?;
                 }
                 write!(f, ")")
             }
-            Cfg::Not(cfg) => write!(f, "not({})", cfg),
+            Cfg::Not(cfg) => write!(f, "not({cfg})"),
         }
     }
 }
@@ -276,10 +276,10 @@ impl Condition {
         match *self {
             Condition::Define(ref define) => {
                 if config.language == Language::Cython {
-                    write!(out, "{}", define);
+                    write!(out, "{define}");
                 } else {
                     out.write("defined(");
-                    write!(out, "{}", define);
+                    write!(out, "{define}");
                     out.write(")");
                 }
             }

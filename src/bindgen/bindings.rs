@@ -153,7 +153,7 @@ impl Bindings {
         let mut writer = BufWriter::new(File::create(symfile_path).unwrap());
         writeln!(&mut writer, "{{").expect("writing symbol file header failed");
         for symbol in self.dynamic_symbols_names() {
-            writeln!(&mut writer, "{};", symbol).expect("writing symbol failed");
+            writeln!(&mut writer, "{symbol};").expect("writing symbol failed");
         }
         write!(&mut writer, "}};").expect("writing symbol file footer failed");
     }

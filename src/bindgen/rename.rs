@@ -140,7 +140,7 @@ impl FromStr for RenameRule {
 
             s if s.starts_with(PREFIX) => Ok(RenameRule::Prefix(s[PREFIX_LEN..].to_string())),
 
-            _ => Err(format!("Unrecognized RenameRule: '{}'.", s)),
+            _ => Err(format!("Unrecognized RenameRule: '{s}'.")),
         }
     }
 }

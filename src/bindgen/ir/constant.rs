@@ -76,7 +76,7 @@ pub(crate) fn to_known_assoc_constant(associated_to: &Path, name: &str) -> Optio
         },
         _ => return None,
     };
-    Some(format!("{}_{}", prefix, name))
+    Some(format!("{prefix}_{name}"))
 }
 
 #[derive(Debug, Clone)]
@@ -333,8 +333,7 @@ impl Literal {
                     syn::BinOp::ShrAssign(..) => ">>=",
                     currently_unknown => {
                         return Err(format!(
-                            "unsupported binary operator: {:?}",
-                            currently_unknown
+                            "unsupported binary operator: {currently_unknown:?}"
                         ))
                     }
                 };
@@ -351,7 +350,7 @@ impl Literal {
                     syn::Lit::Byte(ref value) => Ok(Literal::Expr(format!("{}", value.value()))),
                     syn::Lit::Char(ref value) => Ok(Literal::Expr(match value.value() as u32 {
                         0..=255 => format!("'{}'", value.value().escape_default()),
-                        other_code => format!(r"U'\U{:08X}'", other_code),
+                        other_code => format!(r"U'\U{other_code:08X}'"),
                     })),
                     syn::Lit::Int(ref value) => {
                         let suffix = match value.suffix() {
@@ -467,7 +466,7 @@ impl Literal {
                             name: path.segments[1].ident.to_string(),
                         }
                     }
-                    _ => return Err(format!("Unsupported path expression. {:?}", path)),
+                    _ => return Err(format!("Unsupported path expression. {path:?}")),
                 })
             }
 
@@ -729,12 +728,12 @@ impl Constant {
                 }
 
                 language_backend.write_type(out, &self.ty);
-                write!(out, " {} = ", name);
+                write!(out, " {name} = ");
                 language_backend.write_literal(out, value);
                 write!(out, ";");
             }
             Language::Cxx | Language::C => {
-                write!(out, "#define {} ", name);
+                write!(out, "#define {name} ");
                 language_backend.write_literal(out, value);
             }
             Language::Cython => {
@@ -742,7 +741,7 @@ impl Constant {
                 language_backend.write_type(out, &self.ty);
                 // For extern Cython declarations the initializer is ignored,
                 // but still useful as documentation, so we write it as a comment.
-                write!(out, " {} # = ", name);
+                write!(out, " {name} # = ");
                 language_backend.write_literal(out, value);
             }
         }

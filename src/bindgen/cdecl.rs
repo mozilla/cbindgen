@@ -112,22 +112,19 @@ impl CDecl {
                 if is_const {
                     assert!(
                         self.type_qualifers.is_empty(),
-                        "error generating cdecl for {:?}",
-                        t
+                        "error generating cdecl for {t:?}"
                     );
                     "const".clone_into(&mut self.type_qualifers);
                 }
 
                 assert!(
                     self.type_name.is_empty(),
-                    "error generating cdecl for {:?}",
-                    t
+                    "error generating cdecl for {t:?}"
                 );
                 generic.export_name().clone_into(&mut self.type_name);
                 assert!(
                     self.type_generic_args.is_empty(),
-                    "error generating cdecl for {:?}",
-                    t
+                    "error generating cdecl for {t:?}"
                 );
                 generic.generics().clone_into(&mut self.type_generic_args);
                 self.type_ctype = generic.ctype().cloned();
@@ -136,16 +133,14 @@ impl CDecl {
                 if is_const {
                     assert!(
                         self.type_qualifers.is_empty(),
-                        "error generating cdecl for {:?}",
-                        t
+                        "error generating cdecl for {t:?}"
                     );
                     "const".clone_into(&mut self.type_qualifers);
                 }
 
                 assert!(
                     self.type_name.is_empty(),
-                    "error generating cdecl for {:?}",
-                    t
+                    "error generating cdecl for {t:?}"
                 );
                 self.type_name = p.to_repr_c(config).to_string();
             }
@@ -250,11 +245,11 @@ impl CDecl {
                     if config.language != Language::Cython {
                         if !is_nullable && !is_ref {
                             if let Some(attr) = &config.pointer.non_null_attribute {
-                                write!(out, "{} ", attr);
+                                write!(out, "{attr} ");
                             }
                         } else if is_nullable {
                             if let Some(attr) = &config.pointer.nullable_attribute {
-                                write!(out, "{} ", attr);
+                                write!(out, "{attr} ");
                             }
                         }
                     }
@@ -274,7 +269,7 @@ impl CDecl {
 
         // Write the identifier
         if let Some(ident) = ident {
-            write!(out, "{}", ident);
+            write!(out, "{ident}");
         }
 
         // Write the right part of declarators after the identifier
@@ -291,7 +286,7 @@ impl CDecl {
                     if last_was_pointer {
                         out.write(")");
                     }
-                    write!(out, "[{}]", constant);
+                    write!(out, "[{constant}]");
 
                     last_was_pointer = false;
                 }
@@ -365,7 +360,7 @@ impl CDecl {
 
                     if never_return && config.language != Language::Cython {
                         if let Some(ref no_return_attr) = config.function.no_return {
-                            out.write_fmt(format_args!(" {}", no_return_attr));
+                            out.write_fmt(format_args!(" {no_return_attr}"));
                         }
                     }
 

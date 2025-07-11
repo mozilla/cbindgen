@@ -119,7 +119,7 @@ impl EnumVariant {
 
             if inline_tag_field {
                 res.push(Field::from_name_and_type(
-                    inline_name.map_or_else(|| "tag".to_string(), |name| format!("{}_tag", name)),
+                    inline_name.map_or_else(|| "tag".to_string(), |name| format!("{name}_tag")),
                     Type::Path(GenericPath::new(Path::new("Tag"), vec![])),
                 ));
             }
@@ -669,15 +669,15 @@ impl Enum {
                         .annotations
                         .deprecated_note(config, DeprecatedNoteKind::Enum)
                     {
-                        write!(out, " {}", note);
+                        write!(out, " {note}");
                     }
-                    write!(out, " {}", tag_name);
+                    write!(out, " {tag_name}");
 
                     if config.cpp_compatible_c() {
                         out.new_line();
                         out.write("#ifdef __cplusplus");
                         out.new_line();
-                        write!(out, "  : {}", prim);
+                        write!(out, "  : {prim}");
                         out.new_line();
                         out.write("#endif // __cplusplus");
                         out.new_line();
@@ -691,10 +691,10 @@ impl Enum {
                         .annotations
                         .deprecated_note(config, DeprecatedNoteKind::Enum)
                     {
-                        write!(out, " {}", note);
+                        write!(out, " {note}");
                     }
                     if config.style.generate_tag() {
-                        write!(out, " {}", tag_name);
+                        write!(out, " {tag_name}");
                     }
                 }
             }
@@ -707,7 +707,7 @@ impl Enum {
 
                 if self.annotations.must_use(config) {
                     if let Some(ref anno) = config.enumeration.must_use {
-                        write!(out, " {}", anno)
+                        write!(out, " {anno}")
                     }
                 }
 
@@ -715,12 +715,12 @@ impl Enum {
                     .annotations
                     .deprecated_note(config, DeprecatedNoteKind::Enum)
                 {
-                    write!(out, " {}", note);
+                    write!(out, " {note}");
                 }
 
-                write!(out, " {}", tag_name);
+                write!(out, " {tag_name}");
                 if let Some(prim) = size {
-                    write!(out, " : {}", prim);
+                    write!(out, " : {prim}");
                 }
             }
             Language::Cython => {
@@ -746,7 +746,7 @@ impl Enum {
         // Close the tag enum.
         if config.language == Language::C && size.is_none() && config.style.generate_typedef() {
             out.close_brace(false);
-            write!(out, " {};", tag_name);
+            write!(out, " {tag_name};");
         } else {
             out.close_brace(true);
         }
@@ -792,7 +792,7 @@ impl Enum {
 
         if self.annotations.must_use(config) {
             if let Some(ref anno) = config.structure.must_use {
-                write!(out, " {}", anno);
+                write!(out, " {anno}");
             }
         }
 
@@ -800,7 +800,7 @@ impl Enum {
             .annotations
             .deprecated_note(config, DeprecatedNoteKind::Struct)
         {
-            write!(out, " {} ", note);
+            write!(out, " {note} ");
         }
 
         if config.language != Language::C || config.style.generate_tag() {
@@ -870,7 +870,7 @@ impl Enum {
             out.write("enum ");
         }
 
-        write!(out, "{} tag;", tag_name);
+        write!(out, "{tag_name} tag;");
 
         if wrap_tag {
             out.close_brace(true);
@@ -1003,7 +1003,7 @@ impl Enum {
                 );
                 out.new_line();
             }
-            write!(out, "switch ({})", instance);
+            write!(out, "switch ({instance})");
             out.open_brace();
             let vec: Vec<_> = self
                 .variants
@@ -1019,12 +1019,12 @@ impl Enum {
                 language_backend,
                 &vec[..],
                 ListType::Join(""),
-                |_, out, s| write!(out, "{}", s),
+                |_, out, s| write!(out, "{s}"),
             );
             out.close_brace(false);
             out.new_line();
 
-            write!(out, "return {};", stream);
+            write!(out, "return {stream};");
             out.close_brace(false);
 
             if has_data {
@@ -1052,7 +1052,7 @@ impl Enum {
                 );
                 out.new_line();
 
-                write!(out, "switch ({}.tag)", instance);
+                write!(out, "switch ({instance}.tag)");
                 out.open_brace();
                 let vec: Vec<_> = self
                     .variants
@@ -1085,12 +1085,12 @@ impl Enum {
                     language_backend,
                     &vec[..],
                     ListType::Join(""),
-                    |_, out, s| write!(out, "{}", s),
+                    |_, out, s| write!(out, "{s}"),
                 );
                 out.close_brace(false);
                 out.new_line();
 
-                write!(out, "return {};", stream);
+                write!(out, "return {stream};");
                 out.close_brace(false);
             }
         }
@@ -1270,7 +1270,7 @@ impl Enum {
                     out.open_brace();
                     write!(out, "{}(Is{}());", assert_name, variant.export_name);
                     out.new_line();
-                    write!(out, "return {}", member_name);
+                    write!(out, "return {member_name}");
                     if inline_casts {
                         write!(out, "._0");
                     }
@@ -1313,7 +1313,7 @@ impl Enum {
                 self.export_name, other
             );
             out.open_brace();
-            write!(out, "if (tag != {}.tag)", other);
+            write!(out, "if (tag != {other}.tag)");
             out.open_brace();
             write!(out, "return false;");
             out.close_brace(false);
@@ -1364,7 +1364,7 @@ impl Enum {
                     self.export_name, other
                 );
                 out.open_brace();
-                write!(out, "return !(*this == {});", other);
+                write!(out, "return !(*this == {other});");
                 out.close_brace(false);
             }
         }
@@ -1438,7 +1438,7 @@ impl Enum {
                 self.export_name, self.export_name, other
             );
             out.new_line();
-            write!(out, " : tag({}.tag)", other);
+            write!(out, " : tag({other}.tag)");
             out.open_brace();
             write!(out, "switch (tag)");
             out.open_brace();
@@ -1484,7 +1484,7 @@ impl Enum {
                     self.export_name, self.export_name, other
                 );
                 out.open_brace();
-                write!(out, "if (this != &{})", other);
+                write!(out, "if (this != &{other})");
                 out.open_brace();
                 write!(out, "this->~{}();", self.export_name);
                 out.new_line();

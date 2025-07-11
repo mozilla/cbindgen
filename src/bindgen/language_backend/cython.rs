@@ -44,12 +44,12 @@ impl<'a> CythonLanguageBackend<'a> {
 impl LanguageBackend for CythonLanguageBackend<'_> {
     fn write_headers<W: Write>(&self, out: &mut SourceWriter<W>, package_version: &str) {
         if self.config.package_version {
-            write!(out, "''' Package version: {} '''", package_version);
+            write!(out, "''' Package version: {package_version} '''");
             out.new_line();
         }
         if let Some(ref f) = self.config.header {
             out.new_line_if_not_start();
-            write!(out, "{}", f);
+            write!(out, "{f}");
             out.new_line();
         }
 
@@ -64,7 +64,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         }
         if let Some(ref f) = &self.config.autogen_warning {
             out.new_line_if_not_start();
-            write!(out, "{}", f);
+            write!(out, "{f}");
             out.new_line();
         }
 
@@ -99,7 +99,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
         }
 
         if let Some(ref line) = &self.config.after_includes {
-            write!(out, "{}", line);
+            write!(out, "{line}");
             out.new_line();
         }
     }
@@ -107,7 +107,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
     fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>) {
         out.new_line();
         let header = &self.config.cython.header.as_deref().unwrap_or("*");
-        write!(out, "cdef extern from {}", header);
+        write!(out, "cdef extern from {header}");
         out.open_brace();
     }
 
@@ -180,7 +180,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
 
         if s.annotations.must_use(self.config) {
             if let Some(ref anno) = &self.config.structure.must_use {
-                write!(out, " {}", anno);
+                write!(out, " {anno}");
             }
         }
 
@@ -188,7 +188,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
             .annotations
             .deprecated_note(self.config, DeprecatedNoteKind::Struct)
         {
-            write!(out, " {}", note);
+            write!(out, " {note}");
         }
 
         write!(out, " {}", s.export_name());
@@ -328,7 +328,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
 
         // Cython uses Python-style comments, so `documentation_style` is not relevant.
         for line in &d.doc_comment[..end] {
-            write!(out, "#{}", line);
+            write!(out, "#{line}");
             out.new_line();
         }
     }
@@ -338,7 +338,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
             Literal::Expr(v) => match &**v {
                 "true" => write!(out, "True"),
                 "false" => write!(out, "False"),
-                v => write!(out, "{}", v),
+                v => write!(out, "{v}"),
             },
             Literal::Path {
                 ref associated_to,
@@ -346,11 +346,11 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
             } => {
                 if let Some((ref path, ref export_name)) = associated_to {
                     if let Some(known) = to_known_assoc_constant(path, name) {
-                        return write!(out, "{}", known);
+                        return write!(out, "{known}");
                     }
-                    write!(out, "{}_", export_name)
+                    write!(out, "{export_name}_")
                 }
-                write!(out, "{}", name)
+                write!(out, "{name}")
             }
             Literal::FieldAccess {
                 ref base,
@@ -358,10 +358,10 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
             } => {
                 write!(out, "(");
                 self.write_literal(out, base);
-                write!(out, ").{}", field);
+                write!(out, ").{field}");
             }
             Literal::PostfixUnaryOp { op, ref value } => {
-                write!(out, "{}", op);
+                write!(out, "{op}");
                 self.write_literal(out, value);
             }
             Literal::BinOp {
@@ -371,7 +371,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
             } => {
                 write!(out, "(");
                 self.write_literal(out, left);
-                write!(out, " {} ", op);
+                write!(out, " {op} ");
                 self.write_literal(out, right);
                 write!(out, ")");
             }
@@ -386,7 +386,7 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
                 fields,
                 path,
             } => {
-                write!(out, "<{}>", export_name);
+                write!(out, "<{export_name}>");
 
                 write!(out, "{{ ");
                 let mut is_first_field = true;
