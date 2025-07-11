@@ -41,7 +41,7 @@ impl fmt::Display for Error {
         match self {
             Error::Io(ref err) => err.fmt(f),
             Error::Utf8(ref err) => err.fmt(f),
-            Error::Compile(ref err) => write!(f, "{}", err),
+            Error::Compile(ref err) => write!(f, "{err}"),
         }
     }
 }

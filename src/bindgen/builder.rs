@@ -272,7 +272,7 @@ impl Builder {
     #[allow(unused)]
     pub fn with_target_os_define(mut self, platform: &str, preprocessor_define: &str) -> Builder {
         self.config.defines.insert(
-            format!("target_os = {}", platform),
+            format!("target_os = {platform}"),
             preprocessor_define.to_owned(),
         );
         self
@@ -280,10 +280,9 @@ impl Builder {
 
     #[allow(unused)]
     pub fn with_define(mut self, key: &str, value: &str, preprocessor_define: &str) -> Builder {
-        self.config.defines.insert(
-            format!("{} = {}", key, value),
-            preprocessor_define.to_owned(),
-        );
+        self.config
+            .defines
+            .insert(format!("{key} = {value}"), preprocessor_define.to_owned());
         self
     }
 

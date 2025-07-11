@@ -123,8 +123,7 @@ impl Repr {
                     // Only permit a single alignment-setting repr.
                     if let Some(old_align) = repr.align {
                         return Err(format!(
-                            "Conflicting #[repr(align(...))] type hints {:?} and {:?}.",
-                            old_align, align
+                            "Conflicting #[repr(align(...))] type hints {old_align:?} and {align:?}."
                         ));
                     }
                     repr.align = Some(align);
@@ -134,11 +133,11 @@ impl Repr {
                     // Must be a positive integer.
                     let align = match arg.parse::<u64>() {
                         Ok(align) => align,
-                        Err(_) => return Err(format!("Non-unsigned #[repr(align({}))].", arg)),
+                        Err(_) => return Err(format!("Non-unsigned #[repr(align({arg}))].")),
                     };
                     // Must be a power of 2.
                     if !align.is_power_of_two() || align == 0 {
-                        return Err(format!("Invalid alignment to #[repr(align({}))].", align));
+                        return Err(format!("Invalid alignment to #[repr(align({align}))]."));
                     }
                     // Only permit a single alignment-setting repr.
                     if let Some(old_align) = repr.align {
@@ -152,9 +151,9 @@ impl Repr {
                     continue;
                 }
                 (path, arg) => match arg {
-                    None => return Err(format!("Unsupported #[repr({})].", path)),
+                    None => return Err(format!("Unsupported #[repr({path})].")),
                     Some(arg) => {
-                        return Err(format!("Unsupported #[repr({}({}))].", path, arg));
+                        return Err(format!("Unsupported #[repr({path}({arg}))]."));
                     }
                 },
             };
@@ -164,8 +163,7 @@ impl Repr {
             };
             if let Some(old_ty) = repr.ty {
                 return Err(format!(
-                    "Conflicting #[repr(...)] type hints {:?} and {:?}.",
-                    old_ty, ty
+                    "Conflicting #[repr(...)] type hints {old_ty:?} and {ty:?}."
                 ));
             }
             repr.ty = Some(ty);

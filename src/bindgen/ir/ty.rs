@@ -262,7 +262,7 @@ impl ConstExpr {
                     syn::Lit::Int(ref len) => len.base10_digits().to_string(),
                     syn::Lit::Byte(ref byte) => u8::to_string(&byte.value()),
                     syn::Lit::Char(ref ch) => u32::to_string(&ch.value().into()),
-                    _ => return Err(format!("can't handle const expression {:?}", lit)),
+                    _ => return Err(format!("can't handle const expression {lit:?}")),
                 };
                 Ok(ConstExpr::Value(val))
             }
@@ -271,7 +271,7 @@ impl ConstExpr {
                 Ok(ConstExpr::Name(generic_path.export_name().to_owned()))
             }
             syn::Expr::Cast(ref cast) => Ok(ConstExpr::load(&cast.expr)?),
-            _ => Err(format!("can't handle const expression {:?}", expr)),
+            _ => Err(format!("can't handle const expression {expr:?}")),
         }
     }
 
@@ -459,7 +459,7 @@ impl Type {
             syn::Type::Verbatim(ref tokens) if tokens.to_string() == "..." => {
                 Type::Primitive(PrimitiveType::VaList)
             }
-            _ => return Err(format!("Unsupported type: {:?}", ty)),
+            _ => return Err(format!("Unsupported type: {ty:?}")),
         };
 
         Ok(Some(converted))

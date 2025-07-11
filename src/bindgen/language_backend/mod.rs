@@ -75,12 +75,12 @@ pub trait LanguageBackend: Sized {
             out.write("extern ");
         } else {
             if let Some(ref prefix) = prefix {
-                write!(out, "{}", prefix);
+                write!(out, "{prefix}");
                 write_space(layout, out);
             }
             if func.annotations.must_use(config) {
                 if let Some(ref anno) = config.function.must_use {
-                    write!(out, "{}", anno);
+                    write!(out, "{anno}");
                     write_space(layout, out);
                 }
             }
@@ -88,7 +88,7 @@ pub trait LanguageBackend: Sized {
                 .annotations
                 .deprecated_note(config, DeprecatedNoteKind::Function)
             {
-                write!(out, "{}", note);
+                write!(out, "{note}");
                 write_space(layout, out);
             }
         }
@@ -97,14 +97,14 @@ pub trait LanguageBackend: Sized {
         if !func.extern_decl {
             if let Some(ref postfix) = postfix {
                 write_space(layout, out);
-                write!(out, "{}", postfix);
+                write!(out, "{postfix}");
             }
         }
 
         if let Some(ref swift_name_macro) = config.function.swift_name_macro {
             if let Some(swift_name) = func.swift_name(config) {
                 // XXX Should this account for `layout`?
-                write!(out, " {}({})", swift_name_macro, swift_name);
+                write!(out, " {swift_name_macro}({swift_name})");
             }
         }
 
@@ -220,7 +220,7 @@ pub trait LanguageBackend: Sized {
     fn write_trailer<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         if let Some(ref f) = b.config.trailer {
             out.new_line_if_not_start();
-            write!(out, "{}", f);
+            write!(out, "{f}");
             if !f.ends_with('\n') {
                 out.new_line();
             }

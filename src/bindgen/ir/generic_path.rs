@@ -62,7 +62,7 @@ impl GenericParam {
             }) => match Type::load(ty)? {
                 None => {
                     // A type that evaporates, like PhantomData.
-                    Err(format!("unsupported const generic type: {:?}", ty))
+                    Err(format!("unsupported const generic type: {ty:?}"))
                 }
                 Some(ty) => Ok(Some(GenericParam {
                     name: Path::new(ident.unraw().to_string()),
@@ -308,8 +308,7 @@ impl GenericPath {
     pub fn load(path: &syn::Path) -> Result<Self, String> {
         assert!(
             !path.segments.is_empty(),
-            "{:?} doesn't have any segments",
-            path
+            "{path:?} doesn't have any segments"
         );
         let last_segment = path.segments.last().unwrap();
         let name = last_segment.ident.unraw().to_string();
@@ -330,7 +329,7 @@ impl GenericPath {
                 syn::GenericArgument::Const(ref x) => {
                     Ok(Some(GenericArgument::Const(ConstExpr::load(x)?)))
                 }
-                _ => Err(format!("can't handle generic argument {:?}", x)),
+                _ => Err(format!("can't handle generic argument {x:?}")),
             })?,
             syn::PathArguments::Parenthesized(_) => {
                 return Err("Path contains parentheses.".to_owned());

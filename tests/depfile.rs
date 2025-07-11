@@ -18,7 +18,7 @@ fn test_project(project_path: &str) {
     }
     let project_dir = PathBuf::from(project_path);
 
-    let cbindgen_define = format!("-DCBINDGEN_PATH={}", CBINDGEN_PATH);
+    let cbindgen_define = format!("-DCBINDGEN_PATH={CBINDGEN_PATH}");
     cmake_configure
         .arg("-S")
         .arg(project_path)
@@ -30,9 +30,7 @@ fn test_project(project_path: &str) {
     let stderr_str = String::from_utf8(output.stderr).unwrap();
     assert!(
         output.status.success(),
-        "Configuring test project failed: stdout: `{}`, stderr: `{}`",
-        stdout_str,
-        stderr_str
+        "Configuring test project failed: stdout: `{stdout_str}`, stderr: `{stderr_str}`"
     );
     let depfile_path = build_dir.join("depfile.d");
     assert!(
@@ -46,14 +44,12 @@ fn test_project(project_path: &str) {
     let output = cmake_build.output().expect("Failed to execute process");
     assert!(
         output.status.success(),
-        "Building test project failed: {:?}",
-        output
+        "Building test project failed: {output:?}"
     );
     let out_str = String::from_utf8(output.stdout).unwrap();
     assert!(
         out_str.contains("Running cbindgen"),
-        "cbindgen rule did not run. Output: {}",
-        out_str
+        "cbindgen rule did not run. Output: {out_str}"
     );
 
     assert!(
@@ -91,8 +87,7 @@ fn test_project(project_path: &str) {
     let output = cmake_build.output().expect("Failed to execute process");
     assert!(
         output.status.success(),
-        "Building test project failed: {:?}",
-        output
+        "Building test project failed: {output:?}"
     );
     let out_str = String::from_utf8(output.stdout).unwrap();
     assert!(

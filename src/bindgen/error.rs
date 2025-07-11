@@ -32,16 +32,14 @@ impl fmt::Display for Error {
         match *self {
             Error::CargoMetadata(ref path, ref error) => write!(
                 f,
-                "Couldn't execute `cargo metadata` with manifest {:?}: {:?}",
-                path, error
+                "Couldn't execute `cargo metadata` with manifest {path:?}: {error:?}"
             ),
             Error::CargoToml(ref path, ref error) => {
-                write!(f, "Couldn't load manifest file {:?}: {:?}", path, error)
+                write!(f, "Couldn't load manifest file {path:?}: {error:?}")
             }
             Error::CargoExpand(ref crate_name, ref error) => write!(
                 f,
-                "Parsing crate `{}`: couldn't run `cargo rustc -Zunpretty=expanded`: {:?}",
-                crate_name, error
+                "Parsing crate `{crate_name}`: couldn't run `cargo rustc -Zunpretty=expanded`: {error:?}"
             ),
             Error::ParseSyntaxError {
                 ref crate_name,
@@ -50,15 +48,13 @@ impl fmt::Display for Error {
             } => {
                 write!(
                     f,
-                    "Parsing crate `{}`:`{}`:\n{:?}",
-                    crate_name, src_path, error
+                    "Parsing crate `{crate_name}`:`{src_path}`:\n{error:?}"
                 )?;
 
                 if !src_path.is_empty() {
                     write!(
                         f,
-                        "\nTry running `rustc -Z parse-crate-root-only {}` to see a nicer error message",
-                        src_path,
+                        "\nTry running `rustc -Z parse-crate-root-only {src_path}` to see a nicer error message",
                     )?
                 }
                 Ok(())
@@ -68,8 +64,7 @@ impl fmt::Display for Error {
                 ref src_path,
             } => write!(
                 f,
-                "Parsing crate `{}`: cannot open file `{}`.",
-                crate_name, src_path
+                "Parsing crate `{crate_name}`: cannot open file `{src_path}`."
             ),
         }
     }

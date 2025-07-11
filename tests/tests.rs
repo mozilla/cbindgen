@@ -39,7 +39,7 @@ fn run_cbindgen(
     generate_symfile: bool,
 ) -> CBindgenOutput {
     assert!(
-        !output.is_none() || !(generate_depfile || generate_symfile),
+        output.is_some() || !(generate_depfile || generate_symfile),
         "generating a depfile or symfile requires outputting to a path"
     );
     let program = Path::new(CBINDGEN_PATH);
@@ -93,7 +93,7 @@ fn run_cbindgen(
 
     command.arg(path);
 
-    println!("Running: {:?}", command);
+    println!("Running: {command:?}");
     let cbindgen_output = command.output().expect("failed to execute process");
 
     assert!(
@@ -115,7 +115,8 @@ fn run_cbindgen(
     };
 
     fn read_to_string(f: NamedTempFile) -> String {
-        std::fs::read_to_string(&f).expect(&format!("Failed to read file as String: {:?}", f))
+        std::fs::read_to_string(&f)
+            .unwrap_or_else(|_| panic!("Failed to read file as String: {f:?}"))
     }
     let depfile_content = depfile.map(read_to_string);
     let symfile_content = symfile.map(read_to_string);
@@ -203,9 +204,9 @@ fn compile(
         }
     }
 
-    println!("Running: {:?}", command);
+    println!("Running: {command:?}");
     let out = command.output().expect("failed to compile");
-    assert!(out.status.success(), "Output failed to compile: {:?}", out);
+    assert!(out.status.success(), "Output failed to compile: {out:?}");
 
     if object.exists() {
         fs::remove_file(object).unwrap();
@@ -257,7 +258,7 @@ fn run_compile_test(
     let skip_warning_as_error = name.rfind(SKIP_WARNING_AS_ERROR_SUFFIX).is_some();
 
     let source_file =
-        format!("{}{}{}", name, style_ext, lang_ext).replace(SKIP_WARNING_AS_ERROR_SUFFIX, "");
+        format!("{name}{style_ext}{lang_ext}").replace(SKIP_WARNING_AS_ERROR_SUFFIX, "");
     let symbols_file = format!("{source_file}.sym");
 
     generated_file.push(source_file);
@@ -298,9 +299,7 @@ fn run_compile_test(
         // All the tests here only have one sourcefile.
         assert!(
             sources.contains(path.to_str().unwrap()),
-            "Path: {:?}, Depfile contents: {}",
-            path,
-            depfile
+            "Path: {path:?}, Depfile contents: {depfile}"
         );
         assert_eq!(rules.count(), 0, "More than 1 rule in the depfile");
     }
