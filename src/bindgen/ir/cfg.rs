@@ -213,10 +213,7 @@ impl ToCondition for Cfg {
                 if let Some((_, define)) = define {
                     Some(Condition::Define(define.to_owned()))
                 } else {
-                    warn!(
-                        "Missing `[defines]` entry for `{}` in cbindgen config.",
-                        self,
-                    );
+                    warn!("Missing `[defines]` entry for `{self}` in cbindgen config.",);
                     None
                 }
             }
@@ -227,10 +224,7 @@ impl ToCondition for Cfg {
                 if let Some((_, define)) = define {
                     Some(Condition::Define(define.to_owned()))
                 } else {
-                    warn!(
-                        "Missing `[defines]` entry for `{}` in cbindgen config.",
-                        self,
-                    );
+                    warn!("Missing `[defines]` entry for `{self}` in cbindgen config.",);
                     None
                 }
             }

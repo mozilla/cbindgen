@@ -55,7 +55,7 @@ impl Cargo {
             match cargo_lock::lock(&lock_path) {
                 Ok(lock) => Some(lock),
                 Err(x) => {
-                    warn!("Couldn't load lock file {:?}: {:?}", lock_path, x);
+                    warn!("Couldn't load lock file {lock_path:?}: {x:?}");
                     None
                 }
             }
@@ -157,7 +157,7 @@ impl Cargo {
                     if versions.next().is_none() {
                         version
                     } else {
-                        warn!("when looking for a version for package {}, multiple versions where found", dep_name);
+                        warn!("when looking for a version for package {dep_name}, multiple versions where found");
                         None
                     }
                 });

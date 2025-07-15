@@ -190,7 +190,7 @@ fn discover_target(manifest_path: &Path) -> Option<String> {
     //
     // NOTE: We set the current directory in case of rustup shenanigans.
     let rustc = env::var("RUSTC").unwrap_or_else(|_| String::from("rustc"));
-    debug!("Discovering host platform by {:?}", rustc);
+    debug!("Discovering host platform by {rustc:?}");
 
     let rustc_output = Command::new(rustc)
         .current_dir(manifest_path.parent().unwrap())

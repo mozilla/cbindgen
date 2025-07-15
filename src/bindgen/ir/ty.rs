@@ -714,9 +714,8 @@ impl Type {
                         }
                     } else {
                         warn!(
-                            "Can't find {}. This usually means that this type was incompatible or \
-                             not found.",
-                            path
+                            "Can't find {path}. This usually means that this type was incompatible or \
+                             not found."
                         );
                     }
                 }
@@ -837,9 +836,8 @@ impl Type {
                     *generic_path = GenericPath::new(mangled_path.clone(), vec![]);
                 } else {
                     warn!(
-                        "Cannot find a mangling for generic path {:?}. This usually means that a \
-                         type referenced by this generic was incompatible or not found.",
-                        generic_path
+                        "Cannot find a mangling for generic path {generic_path:?}. This usually means that a \
+                         type referenced by this generic was incompatible or not found."
                     );
                 }
             }

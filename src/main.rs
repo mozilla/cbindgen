@@ -35,7 +35,7 @@ fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
             config.language = bindgen::Language::from_str(lang).unwrap();
         }
         Err(reason) => {
-            error!("{}", reason);
+            error!("{reason}");
             return;
         }
         _ => (),
@@ -69,7 +69,7 @@ fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
             config.parse.expand.profile = bindgen::Profile::from_str(profile).unwrap();
         }
         Err(e) => {
-            error!("{}", e);
+            error!("{e}");
             return;
         }
         _ => (),
@@ -338,7 +338,7 @@ fn main() {
     let bindings = match load_bindings(&input, &matches) {
         Ok(bindings) => bindings,
         Err(msg) => {
-            error!("{}", msg);
+            error!("{msg}");
             error!("Couldn't generate bindings for {}.", input.display());
             std::process::exit(1);
         }

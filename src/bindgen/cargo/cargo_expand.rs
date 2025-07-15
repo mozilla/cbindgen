@@ -131,7 +131,7 @@ pub fn expand(
     cmd.arg("--verbose");
     cmd.arg("--");
     cmd.arg("-Zunpretty=expanded");
-    info!("Command: {:?}", cmd);
+    info!("Command: {cmd:?}");
     let output = cmd.output()?;
 
     let src = from_utf8(&output.stdout)?.to_owned();

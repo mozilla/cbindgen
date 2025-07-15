@@ -196,8 +196,7 @@ impl Function {
                     .collect();
                 if parts.len() != 2 {
                     warn!(
-                        "{:?} does not follow the correct syntax, so the annotation is being ignored",
-                        parts
+                        "{parts:?} does not follow the correct syntax, so the annotation is being ignored"
                     );
                     continue;
                 }

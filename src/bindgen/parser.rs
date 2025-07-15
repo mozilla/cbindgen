@@ -131,7 +131,7 @@ impl Parser<'_> {
         // If we have a whitelist, check it
         if let Some(ref include) = self.config.parse.include {
             if !include.iter().any(|name| name == pkg_name) {
-                debug!("Excluding crate {}", pkg_name);
+                debug!("Excluding crate {pkg_name}");
                 return false;
             }
         }
@@ -610,7 +610,7 @@ impl Parse {
         item: &syn::ItemForeignMod,
     ) {
         if !item.abi.is_c() && !item.abi.is_omitted() {
-            info!("Skip {} - (extern block must be extern C).", crate_name);
+            info!("Skip {crate_name} - (extern block must be extern C).");
             return;
         }
 
@@ -770,7 +770,7 @@ impl Parse {
         let ty = match Type::load(impl_ty) {
             Ok(ty) => ty,
             Err(e) => {
-                warn!("Skipping associated constants for {:?}: {:?}", impl_ty, e);
+                warn!("Skipping associated constants for {impl_ty:?}: {e:?}");
                 return;
             }
         };
@@ -783,10 +783,7 @@ impl Parse {
         let impl_path = match ty.get_root_path() {
             Some(p) => p,
             None => {
-                warn!(
-                    "Couldn't find path for {:?}, skipping associated constants",
-                    ty
-                );
+                warn!("Couldn't find path for {ty:?}, skipping associated constants");
                 return;
             }
         };
@@ -863,7 +860,7 @@ impl Parse {
 
                 let full_name = constant.path.clone();
                 if !self.constants.try_insert(constant) {
-                    error!("Conflicting name for constant {}", full_name);
+                    error!("Conflicting name for constant {full_name}");
                 }
             }
             Err(msg) => {
@@ -1015,7 +1012,7 @@ impl Parse {
         let bitflags = match bitflags::parse(item.mac.tokens.clone()) {
             Ok(bf) => bf,
             Err(e) => {
-                warn!("Failed to parse bitflags invocation: {:?}", e);
+                warn!("Failed to parse bitflags invocation: {e:?}");
                 return;
             }
         };
