@@ -15,8 +15,8 @@ enum DefineKey<'a> {
     Named(&'a str, &'a str),
 }
 
-impl DefineKey<'_> {
-    fn load(key: &str) -> DefineKey {
+impl<'a> DefineKey<'a> {
+    fn load(key: &'a str) -> Self {
         // TODO: dirty parser
         if !key.contains('=') {
             return DefineKey::Boolean(key);
