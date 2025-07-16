@@ -371,24 +371,19 @@ impl_syn_item_helper!(syn::ItemTraitAlias);
 /// Helper function for accessing Abi information
 pub trait SynAbiHelpers {
     fn is_c(&self) -> bool;
+    fn is_cmse(&self) -> bool;
     fn is_omitted(&self) -> bool;
 }
 
 impl SynAbiHelpers for Option<syn::Abi> {
     fn is_c(&self) -> bool {
-        if let Some(ref abi) = *self {
-            if let Some(ref lit_string) = abi.name {
-                return matches!(lit_string.value().as_str(), "C" | "C-unwind");
-            }
-        }
-        false
+        self.as_ref().is_some_and(|abi| abi.is_c())
+    }
+    fn is_cmse(&self) -> bool {
+        self.as_ref().is_some_and(|abi| abi.is_cmse())
     }
     fn is_omitted(&self) -> bool {
-        if let Some(ref abi) = *self {
-            abi.name.is_none()
-        } else {
-            false
-        }
+        self.as_ref().is_some_and(|abi| abi.is_omitted())
     }
 }
 
@@ -396,6 +391,16 @@ impl SynAbiHelpers for syn::Abi {
     fn is_c(&self) -> bool {
         if let Some(ref lit_string) = self.name {
             matches!(lit_string.value().as_str(), "C" | "C-unwind")
+        } else {
+            false
+        }
+    }
+    fn is_cmse(&self) -> bool {
+        if let Some(ref lit_string) = self.name {
+            return matches!(
+                lit_string.value().as_str(),
+                "cmse-nonsecure-entry" | "cmse-nonsecure-call"
+            );
         } else {
             false
         }

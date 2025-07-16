@@ -728,7 +728,7 @@ impl Parse {
             items.join("::")
         };
 
-        let is_extern_c = sig.abi.is_omitted() || sig.abi.is_c();
+        let is_extern_c = sig.abi.is_omitted() || sig.abi.is_c() || sig.abi.is_cmse();
         let exported_name = named_symbol.exported_name();
 
         match (is_extern_c, exported_name) {
