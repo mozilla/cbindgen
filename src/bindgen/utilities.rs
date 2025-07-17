@@ -397,10 +397,10 @@ impl SynAbiHelpers for syn::Abi {
     }
     fn is_cmse(&self) -> bool {
         if let Some(ref lit_string) = self.name {
-            return matches!(
+            matches!(
                 lit_string.value().as_str(),
                 "cmse-nonsecure-entry" | "cmse-nonsecure-call"
-            );
+            )
         } else {
             false
         }
