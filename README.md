@@ -87,6 +87,7 @@ in production:
 * [stylo](https://searchfox.org/mozilla-central/source/layout/style) ([generated header](https://searchfox.org/mozilla-central/source/__GENERATED__/layout/style/ServoStyleConsts.h))
 * [maturin](https://github.com/PyO3/maturin)
 * [tquic](https://github.com/Tencent/tquic) ([generated header](https://github.com/Tencent/tquic/blob/develop/include/tquic.h))
+* [metatensor](https://github.com/metatensor/metatensor) ([generated header](https://github.com/metatensor/metatensor/blob/main/metatensor-core/include/metatensor.h))
 
 If you're using `cbindgen` and would like to be added to this list, please open
 a pull request!
