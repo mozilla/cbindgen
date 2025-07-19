@@ -263,7 +263,7 @@ impl Parser<'_> {
 
         let mod_dir = mod_path.parent().unwrap();
 
-        let is_mod_rs = depth == 0 || mod_path.ends_with("mod.rs");
+        let is_mod_rs = mod_path.ends_with("lib.rs") || mod_path.ends_with("mod.rs");
         let submod_dir = if is_mod_rs {
             mod_dir
         } else {
