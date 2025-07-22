@@ -335,6 +335,8 @@ pub struct ExportConfig {
     pub body: HashMap<String, String>,
     /// A prefix to add before the name of every item
     pub prefix: Option<String>,
+    /// A list of items not to add a prefix to (should one be specified).
+    pub prefix_excludes: Vec<String>,
     /// Types of items to generate.
     pub item_types: Vec<ItemType>,
     /// Whether renaming overrides or extends prefixing.
@@ -376,7 +378,9 @@ impl ExportConfig {
             }
         }
         if let Some(ref prefix) = self.prefix {
-            item_name.insert_str(0, prefix);
+            if !self.prefix_excludes.contains(&item_name) {
+                item_name.insert_str(0, prefix);
+            }
         }
     }
 }
