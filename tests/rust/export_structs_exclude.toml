@@ -1,0 +1,3 @@
+[export]
+structs = true
+exclude = ["Bar"]

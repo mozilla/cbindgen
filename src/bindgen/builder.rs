@@ -180,6 +180,24 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn export_structs(mut self, export: bool) -> Builder {
+        self.config.export.structs = export;
+        self
+    }
+
+    #[allow(unused)]
+    pub fn export_enums(mut self, export: bool) -> Builder {
+        self.config.export.enums = export;
+        self
+    }
+
+    #[allow(unused)]
+    pub fn export_unions(mut self, export: bool) -> Builder {
+        self.config.export.unions = export;
+        self
+    }
+
+    #[allow(unused)]
     pub fn rename_item<S: AsRef<str>>(mut self, from: S, to: S) -> Builder {
         self.config
             .export
