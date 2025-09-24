@@ -149,6 +149,19 @@ pub trait SynAttributeHelpers {
         })
     }
 
+    /// Searches for attributes like `#[test = "..."]`.
+    /// Example:
+    /// - `item.has_attr_namevalue("test")` => `#[test = "..."]`
+    fn has_attr_namevalue(&self, name: &str) -> bool {
+        self.attrs().iter().any(|attr| {
+            if let syn::Meta::NameValue(nv) = &attr.meta {
+                nv.path.is_ident(name)
+            } else {
+                false
+            }
+        })
+    }
+
     /// Searches for attributes like `#[unsafe(test)]`.
     /// Example:
     /// - `item.has_unsafe_attr_word("test")` => `#[unsafe(test)]`
