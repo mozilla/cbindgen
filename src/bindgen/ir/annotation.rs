@@ -113,7 +113,7 @@ impl AnnotationSet {
             })
             .collect();
 
-        let must_use = attrs.has_attr_word("must_use");
+        let must_use = attrs.has_attr_word("must_use") || attrs.has_attr_namevalue("must_use");
         let deprecated = attrs.find_deprecated_note();
         let mut annotations = HashMap::new();
 
