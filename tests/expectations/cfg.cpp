@@ -4,6 +4,7 @@ DEF PLATFORM_WIN = 0
 DEF X11 = 0
 DEF M_32 = 0
 #endif
+#define PLATFORM_UNIX 1
 
 
 #include <cstdarg>
@@ -28,19 +29,84 @@ enum class FooType : uint32_t {
 };
 #endif
 
+struct Flags {
+  uint8_t _0;
+
+  constexpr explicit operator bool() const {
+    return !!_0;
+  }
+  constexpr Flags operator~() const {
+    return Flags { static_cast<decltype(_0)>(~_0) };
+  }
+  constexpr Flags operator|(const Flags& other) const {
+    return Flags { static_cast<decltype(_0)>(this->_0 | other._0) };
+  }
+  Flags& operator|=(const Flags& other) {
+    *this = (*this | other);
+    return *this;
+  }
+  constexpr Flags operator&(const Flags& other) const {
+    return Flags { static_cast<decltype(_0)>(this->_0 & other._0) };
+  }
+  Flags& operator&=(const Flags& other) {
+    *this = (*this & other);
+    return *this;
+  }
+  constexpr Flags operator^(const Flags& other) const {
+    return Flags { static_cast<decltype(_0)>(this->_0 ^ other._0) };
+  }
+  Flags& operator^=(const Flags& other) {
+    *this = (*this ^ other);
+    return *this;
+  }
+  bool operator==(const Flags& other) const {
+    return _0 == other._0;
+  }
+  bool operator!=(const Flags& other) const {
+    return _0 != other._0;
+  }
+};
+/// none
+constexpr static const Flags Flags_NONE = Flags{
+  /* ._0 = */ (uint8_t)0
+};
+#if defined(PLATFORM_WIN)
+constexpr static const Flags Flags_A = Flags{
+  /* ._0 = */ (uint8_t)(1 << 0)
+};
+#endif
+#if defined(PLATFORM_UNIX)
+constexpr static const Flags Flags_A = Flags{
+  /* ._0 = */ (uint8_t)(1 << 1)
+};
+#endif
+#if defined(PLATFORM_WIN)
+constexpr static const Flags Flags_B = Flags{
+  /* ._0 = */ (uint8_t)((Flags_A)._0 | (1 << 3))
+};
+#endif
+#if defined(PLATFORM_UNIX)
+constexpr static const Flags Flags_B = Flags{
+  /* ._0 = */ (uint8_t)((Flags_A)._0 | (1 << 4))
+};
+#endif
+
 #if (defined(PLATFORM_UNIX) && defined(X11))
 struct FooHandle {
   FooType ty;
+  Flags flags;
   int32_t x;
   float y;
 
   bool operator==(const FooHandle& other) const {
     return ty == other.ty &&
+           flags == other.flags &&
            x == other.x &&
            y == other.y;
   }
   bool operator!=(const FooHandle& other) const {
     return ty != other.ty ||
+           flags != other.flags ||
            x != other.x ||
            y != other.y;
   }

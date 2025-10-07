@@ -4,6 +4,7 @@ DEF PLATFORM_WIN = 0
 DEF X11 = 0
 DEF M_32 = 0
 #endif
+#define PLATFORM_UNIX 1
 
 
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
@@ -28,9 +29,23 @@ cdef extern from *:
       C,
     ctypedef uint32_t FooType;
 
+  ctypedef struct Flags:
+    uint8_t _0;
+  # none
+  const Flags Flags_NONE # = <Flags>{ <uint8_t>0 }
+  IF PLATFORM_WIN:
+    const Flags Flags_A # = <Flags>{ <uint8_t>(1 << 0) }
+  IF PLATFORM_UNIX:
+    const Flags Flags_A # = <Flags>{ <uint8_t>(1 << 1) }
+  IF PLATFORM_WIN:
+    const Flags Flags_B # = <Flags>{ <uint8_t>((Flags_A)._0 | (1 << 3)) }
+  IF PLATFORM_UNIX:
+    const Flags Flags_B # = <Flags>{ <uint8_t>((Flags_A)._0 | (1 << 4)) }
+
   IF (PLATFORM_UNIX and X11):
     ctypedef struct FooHandle:
       FooType ty;
+      Flags flags;
       int32_t x;
       float y;
 
