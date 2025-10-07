@@ -5,6 +5,7 @@ DEF PLATFORM_WIN = 0
 DEF X11 = 0
 DEF M_32 = 0
 #endif
+#define PLATFORM_UNIX 1
 """
 
 [defines]
@@ -23,3 +24,6 @@ private_default_tagged_enum_constructor = true
 [struct]
 derive_eq = true
 derive_neq = true
+
+[macro_expansion]
+bitflags = true

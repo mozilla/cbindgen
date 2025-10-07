@@ -6,10 +6,30 @@ enum FooType {
   C,
 }
 
+
+#[repr(C)]
+pub struct Flags(u8);
+bitflags! {
+    impl Flags: u8 {
+        /// none
+        const NONE = 0;
+        #[cfg(windows)]
+        const A = 1 << 0;
+        #[cfg(unix)]
+        const A = 1 << 1;
+
+        #[cfg(windows)]
+        const B = Self::A.bits() | (1 << 3);
+        #[cfg(unix)]
+        const B = Self::A.bits() | (1 << 4);
+    }
+}
+
 #[cfg(all(unix, x11))]
 #[repr(C)]
 struct FooHandle {
     ty: FooType,
+    flags: Flags,
     x: i32,
     y: f32,
 }
