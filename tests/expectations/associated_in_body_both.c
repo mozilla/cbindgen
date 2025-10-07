@@ -1,3 +1,10 @@
+#if 0
+DEF PLATFORM_UNIX = 0
+DEF PLATFORM_WIN = 0
+#endif
+#define PLATFORM_UNIX 1
+
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -34,6 +41,12 @@ typedef struct StyleAlignFlags {
 #define StyleAlignFlags_FLEX_START (StyleAlignFlags){ .bits = (uint8_t)(1 << 3) }
 #define StyleAlignFlags_MIXED (StyleAlignFlags){ .bits = (uint8_t)(((1 << 4) | (StyleAlignFlags_FLEX_START).bits) | (StyleAlignFlags_END).bits) }
 #define StyleAlignFlags_MIXED_SELF (StyleAlignFlags){ .bits = (uint8_t)(((1 << 5) | (StyleAlignFlags_FLEX_START).bits) | (StyleAlignFlags_END).bits) }
+#if defined(PLATFORM_WIN)
+#define StyleAlignFlags_PLATFORM_BIT (StyleAlignFlags){ .bits = (uint8_t)(1 << 6) }
+#endif
+#if defined(PLATFORM_UNIX)
+#define StyleAlignFlags_PLATFORM_BIT (StyleAlignFlags){ .bits = (uint8_t)(1 << 7) }
+#endif
 
 /**
  * An arbitrary identifier for a native (OS compositor) surface

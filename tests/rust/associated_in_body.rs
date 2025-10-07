@@ -18,6 +18,10 @@ bitflags! {
         const FLEX_START = 1 << 3;
         const MIXED = 1 << 4 | AlignFlags::FLEX_START.bits | AlignFlags::END.bits;
         const MIXED_SELF = 1 << 5 | AlignFlags::FLEX_START.bits | AlignFlags::END.bits;
+        #[cfg(windows)]
+        const PLATFORM_BIT = 1 << 6;
+        #[cfg(unix)]
+        const PLATFORM_BIT = 1 << 7;
     }
 }
 
