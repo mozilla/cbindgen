@@ -1,3 +1,11 @@
+header = """
+#if 0
+DEF PLATFORM_UNIX = 0
+DEF PLATFORM_WIN = 0
+#endif
+#define PLATFORM_UNIX 1
+"""
+
 [struct]
 associated_constants_in_body = true
 
@@ -9,3 +17,7 @@ prefix = "Style" # Just ensuring they play well together :)
 
 [const]
 allow_constexpr = true
+
+[defines]
+"unix" = "PLATFORM_UNIX"
+"windows" = "PLATFORM_WIN"

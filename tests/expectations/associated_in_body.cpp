@@ -1,3 +1,10 @@
+#if 0
+DEF PLATFORM_UNIX = 0
+DEF PLATFORM_WIN = 0
+#endif
+#define PLATFORM_UNIX 1
+
+
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
@@ -45,6 +52,12 @@ struct StyleAlignFlags {
   static const StyleAlignFlags FLEX_START;
   static const StyleAlignFlags MIXED;
   static const StyleAlignFlags MIXED_SELF;
+#if defined(PLATFORM_WIN)
+  static const StyleAlignFlags PLATFORM_BIT;
+#endif
+#if defined(PLATFORM_UNIX)
+  static const StyleAlignFlags PLATFORM_BIT;
+#endif
 };
 /// 'auto'
 constexpr inline const StyleAlignFlags StyleAlignFlags::AUTO = StyleAlignFlags{
@@ -75,6 +88,16 @@ constexpr inline const StyleAlignFlags StyleAlignFlags::MIXED = StyleAlignFlags{
 constexpr inline const StyleAlignFlags StyleAlignFlags::MIXED_SELF = StyleAlignFlags{
   /* .bits = */ (uint8_t)(((1 << 5) | (StyleAlignFlags::FLEX_START).bits) | (StyleAlignFlags::END).bits)
 };
+#if defined(PLATFORM_WIN)
+constexpr inline const StyleAlignFlags StyleAlignFlags::PLATFORM_BIT = StyleAlignFlags{
+  /* .bits = */ (uint8_t)(1 << 6)
+};
+#endif
+#if defined(PLATFORM_UNIX)
+constexpr inline const StyleAlignFlags StyleAlignFlags::PLATFORM_BIT = StyleAlignFlags{
+  /* .bits = */ (uint8_t)(1 << 7)
+};
+#endif
 
 /// An arbitrary identifier for a native (OS compositor) surface
 struct StyleNativeSurfaceId {

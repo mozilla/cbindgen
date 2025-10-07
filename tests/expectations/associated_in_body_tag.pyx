@@ -1,3 +1,10 @@
+#if 0
+DEF PLATFORM_UNIX = 0
+DEF PLATFORM_WIN = 0
+#endif
+#define PLATFORM_UNIX 1
+
+
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, uintptr_t
 cdef extern from *:
@@ -24,6 +31,10 @@ cdef extern from *:
   const StyleAlignFlags StyleAlignFlags_FLEX_START # = <StyleAlignFlags>{ <uint8_t>(1 << 3) }
   const StyleAlignFlags StyleAlignFlags_MIXED # = <StyleAlignFlags>{ <uint8_t>(((1 << 4) | (StyleAlignFlags_FLEX_START).bits) | (StyleAlignFlags_END).bits) }
   const StyleAlignFlags StyleAlignFlags_MIXED_SELF # = <StyleAlignFlags>{ <uint8_t>(((1 << 5) | (StyleAlignFlags_FLEX_START).bits) | (StyleAlignFlags_END).bits) }
+  IF PLATFORM_WIN:
+    const StyleAlignFlags StyleAlignFlags_PLATFORM_BIT # = <StyleAlignFlags>{ <uint8_t>(1 << 6) }
+  IF PLATFORM_UNIX:
+    const StyleAlignFlags StyleAlignFlags_PLATFORM_BIT # = <StyleAlignFlags>{ <uint8_t>(1 << 7) }
 
   # An arbitrary identifier for a native (OS compositor) surface
   cdef struct StyleNativeSurfaceId:

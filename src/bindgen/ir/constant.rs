@@ -636,13 +636,16 @@ impl Constant {
         debug_assert!(config.structure.associated_constants_in_body);
         debug_assert!(config.constant.allow_static_const);
 
+        let condition = self.cfg.to_condition(config);
+        condition.write_before(config, out);
         if let Type::Ptr { is_const: true, .. } = self.ty {
             out.write("static ");
         } else {
             out.write("static const ");
         }
         language_backend.write_type(out, &self.ty);
-        write!(out, " {};", self.export_name())
+        write!(out, " {};", self.export_name());
+        condition.write_after(config, out);
     }
 
     pub fn write<F: Write, LB: LanguageBackend>(
