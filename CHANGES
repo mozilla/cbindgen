@@ -1,5 +1,9 @@
 # unreleased
 
+# 0.29.2
+
+      * Request serde's std feature to avoid issues with newer toml versions.
+
 # 0.29.1
 
       * cf13c2b enum: Track dependencies properly in enumerations.
