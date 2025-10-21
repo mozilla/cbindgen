@@ -105,7 +105,11 @@ impl EnumVariant {
         config: &Config,
     ) -> Result<Self, String> {
         let discriminant = match variant.discriminant {
-            Some((_, ref expr)) => Some(Literal::load(expr)?),
+            Some((_, ref expr)) => {
+                let mut discriminant = Literal::load(expr)?;
+                discriminant.replace_self_with(self_path);
+                Some(discriminant)
+            }
             None => None,
         };
 
@@ -257,6 +261,9 @@ impl EnumVariant {
     fn add_dependencies(&self, library: &Library, out: &mut Dependencies) {
         if let VariantBody::Body { ref body, .. } = self.body {
             body.add_dependencies(library, out);
+        }
+        if let Some(ref d) = self.discriminant {
+            d.add_dependencies(library, out);
         }
     }
 

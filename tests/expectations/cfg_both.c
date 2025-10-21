@@ -12,15 +12,6 @@ DEF M_32 = 0
 #include <stdint.h>
 #include <stdlib.h>
 
-#if (defined(PLATFORM_WIN) || defined(M_32))
-enum BarType {
-  A,
-  B,
-  C,
-};
-typedef uint32_t BarType;
-#endif
-
 #if (defined(PLATFORM_UNIX) && defined(X11))
 enum FooType {
   A,
@@ -28,6 +19,15 @@ enum FooType {
   C,
 };
 typedef uint32_t FooType;
+#endif
+
+#if (defined(PLATFORM_WIN) || defined(M_32))
+enum BarType {
+  A,
+  B,
+  C,
+};
+typedef uint32_t BarType;
 #endif
 
 typedef struct Flags {

@@ -1,0 +1,23 @@
+header = """
+#if 0
+''' '
+#endif
+
+// FIXME: Mis-generated in C mode with enum.prefix_with_name = false, and in
+// C++ mode with it set to true...
+#if defined(__cplusplus) && !defined(CBINDGEN_CPP_COMPAT)
+"""
+
+trailer = """
+#endif
+#if 0
+' '''
+#endif
+"""
+
+[enum]
+enum_class = true
+# prefix_with_name = true
+
+[struct]
+associated_constants_in_body = true

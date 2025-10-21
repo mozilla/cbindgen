@@ -135,6 +135,7 @@ fn compile(
     language: Language,
     style: Option<Style>,
     skip_warning_as_error: bool,
+    cpp_compat: bool,
 ) {
     let cc = match language {
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
@@ -186,6 +187,10 @@ fn compile(
                     "CBINDGEN_STYLE_{}",
                     style_str(style).to_uppercase()
                 ));
+            }
+
+            if cpp_compat {
+                command.arg("-D").arg("CBINDGEN_CPP_COMPAT");
             }
 
             command.arg("-o").arg(&object);
@@ -339,6 +344,7 @@ fn run_compile_test(
             language,
             style,
             skip_warning_as_error,
+            cpp_compat,
         );
 
         if language == Language::C && cpp_compat {
@@ -349,6 +355,7 @@ fn run_compile_test(
                 Language::Cxx,
                 style,
                 skip_warning_as_error,
+                cpp_compat,
             );
         }
     }

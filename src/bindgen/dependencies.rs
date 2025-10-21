@@ -5,7 +5,10 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use crate::bindgen::ir::{ItemContainer, Path};
+use crate::bindgen::{
+    ir::{ItemContainer, Path},
+    library::Library,
+};
 
 /// A dependency list is used for gathering what order to output the types.
 #[derive(Default)]
@@ -22,6 +25,25 @@ impl Dependencies {
         }
     }
 
+    pub fn add(&mut self, library: &Library, path: &Path) {
+        let Some(items) = library.get_items(path) else {
+            warn!(
+                "Can't find {path}. This usually means that this type was incompatible or not found."
+            );
+            return;
+        };
+        if self.items.contains(path) {
+            return;
+        }
+        self.items.insert(path.clone());
+        for item in &items {
+            item.deref().add_dependencies(library, self);
+        }
+        for item in items {
+            self.order.push(item);
+        }
+    }
+
     pub fn sort(&mut self) {
         // Sort untagged enums and opaque structs into their own layers because they don't
         // depend on each other or anything else.
@@ -29,7 +51,7 @@ impl Dependencies {
             (ItemContainer::Enum(x), ItemContainer::Enum(y))
                 if x.tag.is_none() && y.tag.is_none() =>
             {
-                x.path.cmp(&y.path)
+                Ordering::Equal
             }
             (ItemContainer::Enum(x), _) if x.tag.is_none() => Ordering::Less,
             (_, ItemContainer::Enum(x)) if x.tag.is_none() => Ordering::Greater,

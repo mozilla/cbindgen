@@ -4,15 +4,15 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum IE {
-  IV,
-};
-typedef ptrdiff_t IE;
-
 enum UE {
   UV,
 };
 typedef size_t UE;
+
+enum IE {
+  IV,
+};
+typedef ptrdiff_t IE;
 
 typedef size_t Usize;
 

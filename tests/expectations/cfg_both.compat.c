@@ -12,21 +12,6 @@ DEF M_32 = 0
 #include <stdint.h>
 #include <stdlib.h>
 
-#if (defined(PLATFORM_WIN) || defined(M_32))
-enum BarType
-#ifdef __cplusplus
-  : uint32_t
-#endif // __cplusplus
- {
-  A,
-  B,
-  C,
-};
-#ifndef __cplusplus
-typedef uint32_t BarType;
-#endif // __cplusplus
-#endif
-
 #if (defined(PLATFORM_UNIX) && defined(X11))
 enum FooType
 #ifdef __cplusplus
@@ -39,6 +24,21 @@ enum FooType
 };
 #ifndef __cplusplus
 typedef uint32_t FooType;
+#endif // __cplusplus
+#endif
+
+#if (defined(PLATFORM_WIN) || defined(M_32))
+enum BarType
+#ifdef __cplusplus
+  : uint32_t
+#endif // __cplusplus
+ {
+  A,
+  B,
+  C,
+};
+#ifndef __cplusplus
+typedef uint32_t BarType;
 #endif // __cplusplus
 #endif
 

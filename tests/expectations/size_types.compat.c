@@ -4,17 +4,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum IE
-#ifdef __cplusplus
-  : ptrdiff_t
-#endif // __cplusplus
- {
-  IV,
-};
-#ifndef __cplusplus
-typedef ptrdiff_t IE;
-#endif // __cplusplus
-
 enum UE
 #ifdef __cplusplus
   : size_t
@@ -24,6 +13,17 @@ enum UE
 };
 #ifndef __cplusplus
 typedef size_t UE;
+#endif // __cplusplus
+
+enum IE
+#ifdef __cplusplus
+  : ptrdiff_t
+#endif // __cplusplus
+ {
+  IV,
+};
+#ifndef __cplusplus
+typedef ptrdiff_t IE;
 #endif // __cplusplus
 
 typedef size_t Usize;
