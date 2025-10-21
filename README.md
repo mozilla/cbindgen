@@ -7,7 +7,7 @@
 [Api Rustdoc]: https://img.shields.io/badge/api-rustdoc-blue.svg
 [rustdoc]: https://docs.rs/cbindgen
 
-[Read the full user docs here!](https://github.com/mozilla/cbindgen/blob/master/docs.md)
+[Read the full user docs here!](https://github.com/mozilla/cbindgen/blob/main/docs.md)
 
 cbindgen creates C/C++11 headers for Rust libraries which expose a public C API.
 
