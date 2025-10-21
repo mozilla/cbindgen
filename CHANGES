@@ -1,5 +1,15 @@
 # unreleased
 
+# 0.29.1
+
+      * cf13c2b enum: Track dependencies properly in enumerations.
+      * 307d1e9 constant: Handle cfg in associated constants.
+      * 0902d02 Remove "display" feature from the toml crate
+      * 9068410 Fix incorrect detection of duplicated constants
+      * 451e768 docs: Correct after_include type in example config (fix)
+      * aff68c6 cargo update
+      * 09666f6 Update toml to 0.9
+
 # 0.29.0
 
       * Support no-export annotation for statics and functions.
