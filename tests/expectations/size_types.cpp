@@ -5,12 +5,12 @@
 #include <ostream>
 #include <new>
 
-enum class IE : ptrdiff_t {
-  IV,
-};
-
 enum class UE : size_t {
   UV,
+};
+
+enum class IE : ptrdiff_t {
+  IV,
 };
 
 using Usize = size_t;

@@ -7,12 +7,12 @@ cdef extern from *:
 cdef extern from *:
 
   cdef enum:
-    IV,
-  ctypedef ptrdiff_t IE;
-
-  cdef enum:
     UV,
   ctypedef size_t UE;
+
+  cdef enum:
+    IV,
+  ctypedef ptrdiff_t IE;
 
   ctypedef size_t Usize;
 

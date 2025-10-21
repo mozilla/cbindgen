@@ -15,19 +15,19 @@ cdef extern from *:
 
 cdef extern from *:
 
-  IF (PLATFORM_WIN or M_32):
-    cdef enum:
-      A,
-      B,
-      C,
-    ctypedef uint32_t BarType;
-
   IF (PLATFORM_UNIX and X11):
     cdef enum:
       A,
       B,
       C,
     ctypedef uint32_t FooType;
+
+  IF (PLATFORM_WIN or M_32):
+    cdef enum:
+      A,
+      B,
+      C,
+    ctypedef uint32_t BarType;
 
   cdef struct Flags:
     uint8_t _0;

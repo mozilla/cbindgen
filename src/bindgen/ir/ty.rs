@@ -701,23 +701,7 @@ impl Type {
                 }
                 let path = generic.path();
                 if !generic_params.iter().any(|param| param.name() == path) {
-                    if let Some(items) = library.get_items(path) {
-                        if !out.items.contains(path) {
-                            out.items.insert(path.clone());
-
-                            for item in &items {
-                                item.deref().add_dependencies(library, out);
-                            }
-                            for item in items {
-                                out.order.push(item);
-                            }
-                        }
-                    } else {
-                        warn!(
-                            "Can't find {path}. This usually means that this type was incompatible or \
-                             not found."
-                        );
-                    }
+                    out.add(library, path);
                 }
             }
             Type::Primitive(_) => {}

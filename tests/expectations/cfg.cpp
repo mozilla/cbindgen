@@ -13,16 +13,16 @@ DEF M_32 = 0
 #include <ostream>
 #include <new>
 
-#if (defined(PLATFORM_WIN) || defined(M_32))
-enum class BarType : uint32_t {
+#if (defined(PLATFORM_UNIX) && defined(X11))
+enum class FooType : uint32_t {
   A,
   B,
   C,
 };
 #endif
 
-#if (defined(PLATFORM_UNIX) && defined(X11))
-enum class FooType : uint32_t {
+#if (defined(PLATFORM_WIN) || defined(M_32))
+enum class BarType : uint32_t {
   A,
   B,
   C,
