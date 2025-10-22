@@ -58,11 +58,10 @@ jobs:
         sed '$ d' | awk '{$1=$1};1' > CHANGES.txt
 
     - name: Create a release
-      env:
-        TAG: ${{ steps.tagName.outputs.version }}
       run: |
         cp target/release/cbindgen cbindgen-ubuntu22.04
         cp target/aarch64-unknown-linux-gnu/release/cbindgen cbindgen-ubuntu22.04-aarch64
         gh release create ${TAG} --title "${TAG}" --notes-file "CHANGES.txt" --draft cbindgen-ubuntu22.04 cbindgen-ubuntu22.04-aarch64
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TAG: ${{ steps.tagName.outputs.version }}
