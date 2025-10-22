@@ -37,8 +37,10 @@ jobs:
       uses: dtolnay/rust-toolchain@1.74
 
     - name: Build with minimum supported Rust version
+      env:
+        NAME: ${{steps.msrv.outputs.name}}
       run: |
-        cargo +${{steps.msrv.outputs.name}} test nonexistent-test --verbose
+        cargo +$NAME test nonexistent-test --verbose
 
   build:
     runs-on: ubuntu-24.04
