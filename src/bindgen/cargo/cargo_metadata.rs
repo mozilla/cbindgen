@@ -230,8 +230,7 @@ pub fn metadata(
                 None
             };
 
-            let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
-            let mut cmd = Command::new(cargo);
+            let mut cmd = Command::new("cargo");
             cmd.arg("metadata");
             cmd.arg("--all-features");
             cmd.arg("--format-version").arg("1");

@@ -69,8 +69,7 @@ pub fn expand(
     expand_features: &Option<Vec<String>>,
     profile: Profile,
 ) -> Result<String, Error> {
-    let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
-    let mut cmd = Command::new(cargo);
+    let mut cmd = Command::new("cargo");
 
     let mut _temp_dir = None; // drop guard
     if use_tempdir {
