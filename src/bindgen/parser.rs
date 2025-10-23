@@ -495,6 +495,7 @@ impl Parse {
         items: &'a [syn::Item],
     ) -> Vec<&'a syn::ItemMod> {
         let mut impls_with_assoc_consts = Vec::new();
+        let mut impls_with_assoc_fn = Vec::new();
         let mut nested_modules = Vec::new();
 
         for item in items {
@@ -533,33 +534,23 @@ impl Parse {
                     self.load_syn_ty(crate_name, mod_cfg, item);
                 }
                 syn::Item::Impl(ref item_impl) => {
-                    let has_assoc_const = item_impl
-                        .items
-                        .iter()
-                        .any(|item| matches!(item, syn::ImplItem::Const(_)));
-                    if has_assoc_const {
-                        impls_with_assoc_consts.push(item_impl);
-                    }
+                    let mut assoc_const_find = false;
+                    let mut assoc_method_find = false;
 
-                    if let syn::Type::Path(ref path) = *item_impl.self_ty {
-                        if let Some(type_name) = path.path.get_ident() {
-                            for method in item_impl.items.iter().filter_map(|item| match item {
-                                syn::ImplItem::Fn(method) if !method.should_skip_parsing() => {
-                                    Some(method)
-                                }
-                                _ => None,
-                            }) {
-                                self.load_syn_method(
-                                    config,
-                                    binding_crate_name,
-                                    crate_name,
-                                    mod_cfg,
-                                    &Path::new(type_name.unraw().to_string()),
-                                    method,
-                                )
-                            }
+                    item_impl.items.iter().any(|item| {
+                        if matches!(item, syn::ImplItem::Const(_)) && !assoc_const_find {
+                            impls_with_assoc_consts.push(item_impl);
+                            assoc_const_find = true;
+                        } else if matches!(item, syn::ImplItem::Fn(_))
+                            && !assoc_method_find
+                            && matches!(*item_impl.self_ty, syn::Type::Path(_))
+                        {
+                            impls_with_assoc_fn.push(item_impl);
+                            assoc_method_find = true;
                         }
-                    }
+
+                        assoc_const_find && assoc_method_find
+                    });
                 }
                 syn::Item::Macro(ref item) => {
                     self.load_builtin_macro(config, crate_name, mod_cfg, item);
@@ -573,6 +564,15 @@ impl Parse {
 
         for item_impl in impls_with_assoc_consts {
             self.load_syn_assoc_consts_from_impl(crate_name, mod_cfg, item_impl)
+        }
+        for item_impl in impls_with_assoc_fn {
+            self.load_syn_assoc_methods_tys_from_impl(
+                config,
+                binding_crate_name,
+                crate_name,
+                mod_cfg,
+                item_impl,
+            );
         }
 
         nested_modules
@@ -597,6 +597,55 @@ impl Parse {
             mod_cfg,
             &item_impl.self_ty,
             associated_constants,
+        );
+    }
+
+    fn load_syn_assoc_methods_tys_from_impl(
+        &mut self,
+        config: &Config,
+        binding_crate_name: &str,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        item_impl: &syn::ItemImpl,
+    ) {
+        let mut associated_tys = Vec::new();
+        let mut associated_methods = Vec::new();
+        item_impl.items.iter().for_each(|item| match item {
+            syn::ImplItem::Fn(ref assocciated_method) => {
+                if !assocciated_method.should_skip_parsing() {
+                    associated_methods.push(assocciated_method)
+                }
+            }
+            syn::ImplItem::Type(ref assoc_ty) => associated_tys.push(assoc_ty),
+            _ => {}
+        });
+
+        let trait_ident = if let Some((_, ref path, _)) = item_impl.trait_ {
+            if let Some(ident) = path.get_ident() {
+                self.load_syn_assoc_tys(
+                    crate_name,
+                    mod_cfg,
+                    ident,
+                    &item_impl.self_ty,
+                    &associated_tys,
+                );
+
+                Some(ident)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        self.load_syn_assoc_methods(
+            config,
+            binding_crate_name,
+            crate_name,
+            mod_cfg,
+            &item_impl.self_ty,
+            associated_methods,
+            associated_tys,
+            trait_ident,
         );
     }
 
@@ -653,25 +702,113 @@ impl Parse {
     }
 
     /// Loads a `fn` declaration inside an `impl` block, if the type is a simple identifier
-    fn load_syn_method(
+    #[allow(clippy::too_many_arguments)]
+    fn load_syn_assoc_methods(
         &mut self,
         config: &Config,
         binding_crate_name: &str,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
-        self_type: &Path,
-        item: &syn::ImplItemFn,
+        self_type: &syn::Type,
+        items_fn: Vec<&syn::ImplItemFn>,
+        items_ty: Vec<&syn::ImplItemType>,
+        trait_ident: Option<&syn::Ident>,
     ) {
-        self.load_fn_declaration(
-            config,
-            binding_crate_name,
-            crate_name,
-            mod_cfg,
-            item,
-            Some(self_type),
-            &item.sig,
-            &item.attrs,
-        )
+        let self_path = if let syn::Type::Path(ref path) = self_type {
+            if let Some(type_name) = path.path.get_ident() {
+                Path::new(type_name.unraw().to_string())
+            } else {
+                info!(
+                    "Skip {}::{:?} - (Path name not found)",
+                    crate_name, path.path
+                );
+                return;
+            }
+        } else {
+            info!("Skip ({:?}) - (Incompatible self type)", self_type);
+            return;
+        };
+
+        for item in items_fn {
+            if !config
+                .parse
+                .should_generate_top_level_item(crate_name, binding_crate_name)
+            {
+                info!(
+                    "Skip {}::{} - (fn's outside of the binding crate are not used).",
+                    crate_name, &item.sig.ident
+                );
+                return;
+            }
+
+            let loggable_item_name = format!("{}::{}::{}", crate_name, self_path, item.sig.ident);
+
+            let is_extern_c = item.sig.abi.is_omitted() || item.sig.abi.is_c();
+            let exported_name = item.exported_name();
+
+            match (is_extern_c, exported_name) {
+                (true, Some(exported_name)) => {
+                    let path = Path::new(exported_name);
+                    match Function::load(
+                        path,
+                        Some(&self_path),
+                        &item.sig,
+                        false,
+                        &item.attrs,
+                        mod_cfg,
+                    ) {
+                        Ok(mut method) => {
+                            info!("Take method {}.", loggable_item_name);
+                            if let Some(trait_ident) = trait_ident {
+                                let ret_path = match method.ret.get_root_path() {
+                                    Some(p) => p,
+                                    None => Path::new(""),
+                                };
+                                // Search and replacement of the type of method with associative
+                                // types
+                                items_ty.iter().for_each(|&ty| {
+                                    if ty.ident == ret_path.name() {
+                                        if let Err(e) = method.ret.try_set_assoc_name(format!("{}_{}_{}", self_path.name(), trait_ident, ty.ident)) {
+                                            warn!("It is not possible to chage return type for method {}::{} - ({})", crate_name, method.path.name(), e);
+                                            return;
+                                        }
+                                    }
+                                    // Removing all arguments with `void` type
+                                    method.args.retain(|arg| if let (Some(p), syn::Type::Tuple(syn::TypeTuple { ref elems, .. })) = (arg.ty.get_root_path(), &ty.ty) {
+                                        !(elems.is_empty() && ty.ident == p.name())
+                                    } else {
+                                        true
+                                    });
+                                    if let Some(arg) = method.args.iter_mut().find(|arg| if let Some(p) = arg.ty.get_root_path() {
+                                        ty.ident == p.name()
+                                    } else {
+                                        false
+                                    }) {
+                                        if let Err(e) = arg.ty.try_set_assoc_name(format!("{}_{}_{}", self_path.name(), trait_ident, ty.ident)) {
+                                            warn!("It is not possible to chage method's argument {}::{} - ({})", crate_name, method.path.name(), e);
+                                        }
+                                    }
+                                });
+                            }
+                            self.functions.push(method);
+                        }
+                        Err(msg) => {
+                            error!("Cannot use fn {} ({}).", loggable_item_name, msg);
+                        }
+                    }
+                }
+                (true, None) => {
+                    warn!(
+                        "Skipping {} - (not `no_mangle`, and has no `export_name` attribute)",
+                        loggable_item_name
+                    );
+                }
+                (false, Some(_exported_name)) => {
+                    warn!("Skipping {} - (not `extern \"C\"`)", loggable_item_name);
+                }
+                (false, None) => {}
+            }
+        }
     }
 
     /// Loads a `fn` declaration
@@ -689,7 +826,6 @@ impl Parse {
             crate_name,
             mod_cfg,
             item,
-            None,
             &item.sig,
             &item.attrs,
         );
@@ -703,7 +839,6 @@ impl Parse {
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         named_symbol: &dyn SynItemHelpers,
-        self_type: Option<&Path>,
         sig: &syn::Signature,
         attrs: &[syn::Attribute],
     ) {
@@ -718,15 +853,7 @@ impl Parse {
             return;
         }
 
-        let loggable_item_name = || {
-            let mut items = Vec::with_capacity(3);
-            items.push(crate_name.to_owned());
-            if let Some(ref self_type) = self_type {
-                items.push(self_type.to_string());
-            }
-            items.push(sig.ident.unraw().to_string());
-            items.join("::")
-        };
+        let loggable_item_name = format!("{}::{}", crate_name, sig.ident);
 
         let is_extern_c = sig.abi.is_omitted() || sig.abi.is_c();
         let exported_name = named_symbol.exported_name();
@@ -734,24 +861,24 @@ impl Parse {
         match (is_extern_c, exported_name) {
             (true, Some(exported_name)) => {
                 let path = Path::new(exported_name);
-                match Function::load(path, self_type, sig, false, attrs, mod_cfg) {
+                match Function::load(path, None, sig, false, attrs, mod_cfg) {
                     Ok(func) => {
-                        info!("Take {}.", loggable_item_name());
+                        info!("Take {}.", loggable_item_name);
                         self.functions.push(func);
                     }
                     Err(msg) => {
-                        error!("Cannot use fn {} ({}).", loggable_item_name(), msg);
+                        error!("Cannot use fn {} ({}).", loggable_item_name, msg);
                     }
                 }
             }
             (true, None) => {
                 warn!(
                     "Skipping {} - (not `no_mangle`, and has no `export_name` attribute)",
-                    loggable_item_name()
+                    loggable_item_name
                 );
             }
             (false, Some(_exported_name)) => {
-                warn!("Skipping {} - (not `extern \"C\"`)", loggable_item_name());
+                warn!("Skipping {} - (not `extern \"C\"`)", loggable_item_name);
             }
             (false, None) => {}
         }
@@ -816,6 +943,66 @@ impl Parse {
                     if !any && !self.constants.try_insert(constant) {
                         error!(
                             "Conflicting name for constant {}::{}::{}.",
+                            crate_name, impl_path, &item.ident,
+                        );
+                    }
+                }
+                Err(msg) => {
+                    warn!("Skip {}::{} - ({})", crate_name, &item.ident, msg);
+                }
+            }
+        }
+    }
+
+    fn load_syn_assoc_tys(
+        &mut self,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        trait_ident: &syn::Ident,
+        self_ty: &syn::Type,
+        items: &Vec<&syn::ImplItemType>,
+    ) {
+        let ty = match Type::load(self_ty) {
+            Ok(ty) => ty,
+            Err(e) => {
+                warn!("Skipping associated types for {:?}: {:?}", self_ty, e);
+                return;
+            }
+        };
+
+        let ty = match ty {
+            Some(ty) => ty,
+            None => return,
+        };
+
+        let impl_path = match ty.get_root_path() {
+            Some(p) => p,
+            None => {
+                warn!("Couldn't find path for {:?}, skipping associated types", ty);
+                return;
+            }
+        };
+
+        let self_ty = match Type::load(self_ty) {
+            Ok(ty) => ty,
+            Err(e) => {
+                warn!("Skipping self types for {:?}: {:?}", self_ty, e);
+                return;
+            }
+        };
+
+        let self_ty = match self_ty {
+            Some(ty) => ty,
+            None => return,
+        };
+
+        for &item in items {
+            match Typedef::load_impl(item, mod_cfg, trait_ident, &self_ty) {
+                Ok(ty) => {
+                    info!("Take {}::{}::{}.", crate_name, impl_path, &item.ident);
+                    if !self.typedefs.try_insert(ty) {
+                        error!(
+                            "Conflicting name for types {}::{}::{}.",
                             crate_name, impl_path, &item.ident,
                         );
                     }
