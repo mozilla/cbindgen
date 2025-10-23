@@ -750,7 +750,13 @@ impl Constant {
                 }
 
                 if config.constant.allow_static_const {
-                    out.write(if in_body { "inline " } else { "static " });
+                    out.write(if in_body && config.constant.allow_inline {
+                        "inline "
+                    } else if !in_body {
+                        "static "
+                    } else {
+                        ""
+                    });
                 }
 
                 if let Type::Ptr { is_const: true, .. } = self.ty {
