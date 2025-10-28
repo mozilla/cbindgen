@@ -6,7 +6,7 @@ use std::path;
 
 use crate::bindgen::bindings::Bindings;
 use crate::bindgen::cargo::Cargo;
-use crate::bindgen::config::{Braces, Config, Language, Profile, Style};
+use crate::bindgen::config::{Braces, Config, Language, LineEndingStyle, Profile, Style};
 use crate::bindgen::error::Error;
 use crate::bindgen::library::Library;
 use crate::bindgen::parser::{self, Parse};
@@ -340,6 +340,12 @@ impl Builder {
         debug_assert!(self.lockfile.is_none());
         debug_assert!(self.lib_cargo.is_none());
         self.lockfile = Some(path::PathBuf::from(lockfile.as_ref()));
+        self
+    }
+
+    #[allow(unused)]
+    pub fn with_line_endings(mut self, line_ending_style: LineEndingStyle) -> Builder {
+        self.config.line_endings = line_ending_style;
         self
     }
 
