@@ -1,0 +1,6 @@
+[const]
+allow_constexpr = false
+allow_inline = false
+
+[struct]
+associated_constants_in_body = true
