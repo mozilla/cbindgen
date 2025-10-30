@@ -15,8 +15,8 @@ use crate::bindgen::cargo::{Cargo, PackageRef};
 use crate::bindgen::config::{Config, ParseConfig};
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GenericParam,
-    GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, AnnotationValue, AssocTypeId, Cfg, Constant, Documentation, Enum, Function,
+    GenericParam, GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::utilities::{SynAbiHelpers, SynAttributeHelpers, SynItemHelpers};
 
@@ -420,6 +420,10 @@ pub struct Parse {
     pub functions: Vec<Function>,
     pub source_files: Vec<FilePathBuf>,
     pub package_version: String,
+    pub assoc_types: HashMap<AssocTypeId, (Type, u8)>,
+    // If A depends on B e.g. impl trait for A{ type inner = B }
+    // Key is B, Value is all A's
+    pending_assoc_types: HashMap<AssocTypeId, Vec<AssocTypeId>>,
 }
 
 impl Parse {
@@ -435,6 +439,8 @@ impl Parse {
             functions: Vec::new(),
             source_files: Vec::new(),
             package_version: String::new(),
+            assoc_types: HashMap::new(),
+            pending_assoc_types: HashMap::new(),
         }
     }
 
@@ -484,6 +490,7 @@ impl Parse {
         self.functions.extend_from_slice(&other.functions);
         self.source_files.extend_from_slice(&other.source_files);
         self.package_version.clone_from(&other.package_version);
+        self.assoc_types.clone_from(&other.assoc_types);
     }
 
     fn load_syn_crate_mod<'a>(
@@ -560,6 +567,8 @@ impl Parse {
                             }
                         }
                     }
+
+                    self.load_syn_impl(item_impl);
                 }
                 syn::Item::Macro(ref item) => {
                     self.load_builtin_macro(config, crate_name, mod_cfg, item);
@@ -576,6 +585,164 @@ impl Parse {
         }
 
         nested_modules
+    }
+
+    fn load_syn_impl(&mut self, item_impl: &syn::ItemImpl) {
+        let trait_ = if let Some((_, path, _)) = &item_impl.trait_ {
+            Path::new(path.segments.last().unwrap().ident.to_string())
+        } else {
+            return;
+        };
+
+        fn try_type_load(ty: &syn::Type) -> Result<Type, ()> {
+            match Type::load(ty) {
+                Ok(opt) => match opt {
+                    Some(output) => return Ok(output),
+                    None => {
+                        warn!("Err parsing assoc type in impl: Valid but empty type");
+                    }
+                },
+                Err(msg) => {
+                    warn!("Err parsing assoc type in impl: {}", msg);
+                }
+            }
+
+            Err(())
+        }
+
+        for impl_item in &item_impl.items {
+            if let syn::ImplItem::Type(impl_item_type) = impl_item {
+                let ty = if let Ok(ty) = try_type_load(&item_impl.self_ty) {
+                    ty
+                } else {
+                    continue;
+                };
+
+                let ident = impl_item_type.ident.to_string();
+                let ident = Path::new(ident);
+
+                let key = AssocTypeId {
+                    ty: Box::new(ty),
+                    trait_: trait_.clone(),
+                    ident,
+                };
+
+                let syn_type = &impl_item_type.ty;
+
+                let mut conc_type = if let Ok(ty) = try_type_load(syn_type) {
+                    ty
+                } else {
+                    continue;
+                };
+
+                // Check if concrete type is another associated type
+                let output = Parse::find_dependings_assoc_types(&self.assoc_types, &mut conc_type);
+                let count = output.len();
+
+                for id in output {
+                    self.pending_assoc_types
+                        .entry(id)
+                        .or_default()
+                        .push(key.clone());
+                }
+
+                self.assoc_types
+                    .insert(key.clone(), (conc_type.clone(), count as u8));
+
+                // Check if fully resolved, if so, check whether other types depend on this key
+                if count == 0 {
+                    Parse::resolve_dependent_assoc_types(
+                        &mut self.pending_assoc_types,
+                        &mut self.assoc_types,
+                        &key,
+                        &conc_type,
+                    );
+                }
+            }
+        }
+    }
+
+    // Find all types that `concrete_type` depends on to be fully resolved
+    fn find_dependings_assoc_types(
+        assoc_types: &HashMap<AssocTypeId, (Type, u8)>,
+        concrete_type: &mut Type,
+    ) -> Vec<AssocTypeId> {
+        match concrete_type {
+            Type::Ptr { ty: ty_, .. } => Parse::find_dependings_assoc_types(assoc_types, ty_),
+            Type::Array(ty_, _) => Parse::find_dependings_assoc_types(assoc_types, ty_),
+            Type::FuncPtr { ret, args, .. } => args
+                .iter_mut()
+                .flat_map(|(_, ty_)| Parse::find_dependings_assoc_types(assoc_types, ty_))
+                .chain(Parse::find_dependings_assoc_types(assoc_types, ret))
+                .collect(),
+            Type::Path(generic_path) => {
+                if let Some(id) = generic_path.assoc() {
+                    if let Some((ty, 0)) = assoc_types.get(id) {
+                        *concrete_type = ty.clone();
+                    } else {
+                        return vec![id.clone()];
+                    }
+                }
+                vec![]
+            }
+            Type::Primitive(_) => vec![],
+        }
+    }
+
+    // Given key k that is fully resolved, check what depends on k and resolve those
+    fn resolve_dependent_assoc_types(
+        pending_types: &mut HashMap<AssocTypeId, Vec<AssocTypeId>>,
+        assoc_types: &mut HashMap<AssocTypeId, (Type, u8)>,
+        key: &AssocTypeId,
+        resolved_ty: &Type,
+    ) {
+        let mut to_resolve = Vec::new();
+        if let Some(id_vec) = pending_types.remove(key) {
+            for id in id_vec {
+                if let Some((curr_ty, count)) = assoc_types.get_mut(&id) {
+                    Parse::check_satisfy_id(key, resolved_ty, curr_ty, count);
+                    if *count == 0 {
+                        to_resolve.push(id.clone());
+                    }
+                }
+            }
+        }
+
+        for id in to_resolve {
+            let curr_ty = assoc_types.get(&id).unwrap().0.clone();
+            Parse::resolve_dependent_assoc_types(pending_types, assoc_types, &id, &curr_ty);
+        }
+    }
+
+    fn check_satisfy_id(
+        resolved_key: &AssocTypeId,
+        resolved_ty: &Type,
+        curr_ty: &mut Type,
+        count: &mut u8,
+    ) {
+        match curr_ty {
+            Type::Ptr { ty: ty_, .. } => {
+                Parse::check_satisfy_id(resolved_key, resolved_ty, ty_, count);
+            }
+            Type::Array(ty_, _) => {
+                Parse::check_satisfy_id(resolved_key, resolved_ty, ty_, count);
+            }
+            Type::FuncPtr { ret, args, .. } => {
+                Parse::check_satisfy_id(resolved_key, resolved_ty, ret, count);
+                for (_, ty_) in args {
+                    Parse::check_satisfy_id(resolved_key, resolved_ty, ty_, count)
+                }
+            }
+            Type::Path(generic_path) => {
+                if let Some(id) = generic_path.assoc() {
+                    if id == resolved_key {
+                        *curr_ty = resolved_ty.clone();
+                        *count -= 1;
+                    }
+                }
+            }
+            Type::Primitive(_) => {}
+        }
     }
 
     fn load_syn_assoc_consts_from_impl(

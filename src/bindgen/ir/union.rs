@@ -8,8 +8,8 @@ use crate::bindgen::config::{Config, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Repr, ReprAlign, ReprStyle,
+    AnnotationSet, AssocTypeResolver, Cfg, Documentation, Field, GenericArgument, GenericParams,
+    Item, ItemContainer, Path, Repr, ReprAlign, ReprStyle,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -255,5 +255,12 @@ impl Item for Union {
         );
 
         out.insert_union(library, self, monomorph, generic_values.to_owned());
+    }
+
+    fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        self.generic_params.resolve_assoc_types(resolver);
+        for field in self.fields.iter_mut() {
+            field.ty.resolve_assoc_types(resolver);
+        }
     }
 }
