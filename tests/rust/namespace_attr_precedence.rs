@@ -5,7 +5,7 @@ use std::os::raw::c_char;
 pub extern "C" fn uses_global_namespace() {}
 
 /// A function with per-item namespace - should override global namespace
-#[cbindgen_macro::namespace = "ffi::bar"]
+#[cbindgen_macro::namespace("ffi::bar")]
 #[no_mangle]
 pub extern "C" fn uses_item_namespace(a: *const c_char) {}
 

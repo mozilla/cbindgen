@@ -4,7 +4,7 @@
 
 //! Procedural macro attributes for cbindgen.
 //!
-//! This crate provides the `#[cbindgen::namespace]` attribute that can be used
+//! This crate provides the `#[cbindgen_macro::namespace()]` attribute that can be used
 //! to specify C++ namespaces for individual functions in generated headers.
 //!
 //! # Example
@@ -12,7 +12,7 @@
 //! ```rust,ignore
 //! use cbindgen_macro::namespace;
 //!
-//! #[namespace = "ffi::bar"]
+//! #[namespace("ffi::bar")]
 //! #[no_mangle]
 //! pub extern "C" fn foo() {}
 //! ```
@@ -31,7 +31,7 @@ use proc_macro::TokenStream;
 /// # Example
 ///
 /// ```rust,ignore
-/// #[cbindgen_macro::namespace = "ffi::bar"]
+/// #[cbindgen_macro::namespace("ffi::bar")]
 /// #[no_mangle]
 /// pub extern "C" fn foo() {}
 /// ```

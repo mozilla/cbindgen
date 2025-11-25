@@ -411,7 +411,7 @@ arg: *mut T --> T arg[]
 
 ### Per-Item Namespace Attribute (C++ only)
 
-You can use the `#[cbindgen_macro::namespace = "..."]` attribute to specify a C++ namespace for individual functions. This is useful when you want different functions to be placed in different namespaces.
+You can use the `#[cbindgen_macro::namespace("...")]` attribute to specify a C++ namespace for individual functions. This is useful when you want different functions to be placed in different namespaces.
 
 First, add the `cbindgen-macro` crate to your dependencies:
 
@@ -423,7 +423,7 @@ cbindgen-macro = { path = "path/to/cbindgen/cbindgen-macro" }
 Then use the attribute on your functions:
 
 ```rust
-#[cbindgen_macro::namespace = "ffi::bar"]
+#[cbindgen_macro::namespace("ffi::bar")]
 #[no_mangle]
 pub extern "C" fn foo(a: *const c_char) {}
 ```

@@ -294,23 +294,14 @@ pub trait SynAttributeHelpers {
             .next()
     }
 
-    /// Looks up the `#[cbindgen::namespace = "..."]` or `#[cbindgen_macro::namespace = "..."]`
+    /// Looks up the `#[cbindgen::namespace("...")]` or `#[cbindgen_macro::namespace("...")]`
     /// attribute and parses it into a vector of namespace segments.
     /// Supports `::` as the separator.
     /// For example, `"ffi::bar"` becomes `["ffi", "bar"]`.
     fn get_cbindgen_namespace(&self) -> Option<Vec<String>> {
         for attr in self.attrs() {
-            if let syn::Meta::NameValue(syn::MetaNameValue {
-                path,
-                value:
-                    syn::Expr::Lit(syn::ExprLit {
-                        lit: syn::Lit::Str(lit),
-                        ..
-                    }),
-                ..
-            }) = &attr.meta
-            {
-                // Check for #[cbindgen::namespace = "..."] or #[cbindgen_macro::namespace = "..."]
+            // Handle #[cbindgen_macro::namespace("...")] or #[cbindgen::namespace("...")] syntax
+            if let syn::Meta::List(syn::MetaList { path, tokens, .. }) = &attr.meta {
                 if path.segments.len() == 2 {
                     let first = &path.segments[0];
                     let second = &path.segments[1];
@@ -318,7 +309,10 @@ pub trait SynAttributeHelpers {
                     if (first_ident == "cbindgen" || first_ident == "cbindgen_macro")
                         && second.ident == "namespace"
                     {
-                        let value = lit.value();
+                        // Parse the tokens inside the parentheses as a string literal
+                        let tokens_str = tokens.to_string();
+                        // Remove surrounding quotes if present
+                        let value = tokens_str.trim_matches('"').to_string();
                         if value.is_empty() {
                             return Some(Vec::new());
                         }
