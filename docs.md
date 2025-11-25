@@ -409,12 +409,21 @@ arg: *const T --> const T arg[]
 arg: *mut T --> T arg[]
 ```
 
-### Per-Item Namespace Annotation (C++ only)
+### Per-Item Namespace Attribute (C++ only)
 
-You can use the `/// cbindgen:namespace=...` annotation to specify a C++ namespace for individual functions. This is useful when you want different functions to be placed in different namespaces.
+You can use the `#[cbindgen_macro::namespace = "..."]` attribute to specify a C++ namespace for individual functions. This is useful when you want different functions to be placed in different namespaces.
+
+First, add the `cbindgen-macro` crate to your dependencies:
+
+```toml
+[dependencies]
+cbindgen-macro = { path = "path/to/cbindgen/cbindgen-macro" }
+```
+
+Then use the attribute on your functions:
 
 ```rust
-/// cbindgen:namespace=ffi::bar
+#[cbindgen_macro::namespace = "ffi::bar"]
 #[no_mangle]
 pub extern "C" fn foo(a: *const c_char) {}
 ```
@@ -437,11 +446,11 @@ void foo(const char *a);
 
 **Key points:**
 
-* Use `::` as the namespace separator (e.g., `ffi::bar` becomes nested namespaces `namespace ffi { namespace bar { ... } }`)
-* This annotation only affects C++ output; it is ignored for C and Cython output
+* Use `::` as the namespace separator (e.g., `"ffi::bar"` becomes nested namespaces `namespace ffi { namespace bar { ... } }`)
+* This attribute only affects C++ output; it is ignored for C and Cython output
 * Functions with the same namespace path will be grouped together in the generated header
-* If both a global `namespace` in `cbindgen.toml` and a per-item `cbindgen:namespace` are specified, the per-item namespace is nested inside the global namespace
-* Functions without this annotation will use the global namespace (if configured) or no namespace
+* If both a global `namespace` in `cbindgen.toml` and a per-item namespace attribute are specified, the per-item namespace is nested inside the global namespace
+* Functions without this attribute will use the global namespace (if configured) or no namespace
 
 ## Generating Swift Bindings
 
