@@ -14,7 +14,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::utilities::IterHelpers;
+use crate::bindgen::utilities::{IterHelpers, SynAttributeHelpers};
 
 #[derive(Debug, Clone)]
 pub struct FunctionArgument {
@@ -36,6 +36,9 @@ pub struct Function {
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
     pub never_return: bool,
+    /// Per-item C++ namespace path from `#[cbindgen::namespace = "..."]` attribute.
+    /// For example, `["ffi", "bar"]` for `#[cbindgen::namespace = "ffi::bar"]`.
+    pub namespace: Option<Vec<String>>,
 }
 
 impl Function {
@@ -65,6 +68,9 @@ impl Function {
             ret.replace_self_with(self_path);
         }
 
+        // Parse the #[cbindgen::namespace = "..."] attribute
+        let namespace = attrs.get_cbindgen_namespace();
+
         Ok(Function {
             path,
             self_type_path: self_type_path.cloned(),
@@ -75,6 +81,7 @@ impl Function {
             annotations: AnnotationSet::load(attrs)?,
             documentation: Documentation::load(attrs),
             never_return,
+            namespace,
         })
     }
 
