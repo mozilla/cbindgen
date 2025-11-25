@@ -6,7 +6,7 @@ cdef extern from *:
 
 cdef extern from *:
 
-  # A function without namespace attribute - uses global namespace
+  # A function without namespace annotation - uses global namespace
   void global_function();
 
   # A function with a single namespace

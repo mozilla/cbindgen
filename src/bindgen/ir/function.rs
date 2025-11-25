@@ -14,7 +14,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
 use crate::bindgen::reserved;
-use crate::bindgen::utilities::{IterHelpers, SynAttributeHelpers};
+use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone)]
 pub struct FunctionArgument {
@@ -36,8 +36,8 @@ pub struct Function {
     pub annotations: AnnotationSet,
     pub documentation: Documentation,
     pub never_return: bool,
-    /// Per-item C++ namespace path from `#[cbindgen::namespace = "..."]` attribute.
-    /// For example, `["ffi", "bar"]` for `#[cbindgen::namespace = "ffi::bar"]`.
+    /// Per-item C++ namespace path from `/// cbindgen:namespace=...` annotation.
+    /// For example, `["ffi", "bar"]` for `/// cbindgen:namespace=ffi::bar`.
     pub namespace: Option<Vec<String>>,
 }
 
@@ -68,8 +68,24 @@ impl Function {
             ret.replace_self_with(self_path);
         }
 
-        // Parse the #[cbindgen::namespace = "..."] attribute
-        let namespace = attrs.get_cbindgen_namespace();
+        let annotations = AnnotationSet::load(attrs)?;
+
+        // Parse the namespace from the /// cbindgen:namespace=... annotation
+        let namespace = annotations.atom("namespace").and_then(|ns_opt| {
+            // ns_opt is Option<String> - None means just "cbindgen:namespace" without value
+            ns_opt.map(|ns_str| {
+                if ns_str.is_empty() {
+                    Vec::new()
+                } else {
+                    // Split by "::" separator
+                    ns_str
+                        .split("::")
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                }
+            })
+        });
 
         Ok(Function {
             path,
@@ -78,7 +94,7 @@ impl Function {
             args,
             extern_decl,
             cfg: Cfg::append(mod_cfg, Cfg::load(attrs)),
-            annotations: AnnotationSet::load(attrs)?,
+            annotations,
             documentation: Documentation::load(attrs),
             never_return,
             namespace,

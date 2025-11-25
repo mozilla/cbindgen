@@ -8,7 +8,7 @@ extern "C" {
 #endif // __cplusplus
 
 /**
- * A function without namespace attribute - uses global namespace
+ * A function without namespace annotation - uses global namespace
  */
 void global_function(void);
 

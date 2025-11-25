@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 /**
- * A function without namespace attribute - should use global namespace
+ * A function without namespace annotation - should use global namespace
  */
 void uses_global_namespace(void);
 
@@ -14,6 +14,6 @@ void uses_global_namespace(void);
 void uses_item_namespace(const char *a);
 
 /**
- * Another function without namespace attribute - should use global namespace
+ * Another function without namespace annotation - should use global namespace
  */
 void also_uses_global_namespace(void);
