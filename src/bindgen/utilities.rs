@@ -425,13 +425,43 @@ impl SynAttributeHelpers for [syn::Attribute] {
 }
 
 fn split_doc_attr(input: &str) -> Vec<String> {
-    input
-        // Convert two newline (indicate "new paragraph") into two line break.
-        .replace("\n\n", "  \n  \n")
-        // Convert newline after two spaces (indicate "line break") into line break.
-        .split("  \n")
-        // Convert single newline (indicate hard-wrapped) into space.
-        .map(|s| s.replace('\n', " "))
-        .map(|s| s.trim_end().to_string())
-        .collect()
+    if !input.contains('\n') {
+        // This is a special case for single-line doc comments, which normally already contain a leading space
+        // if it is desired.
+        return vec![input.to_owned()];
+    }
+
+    // Calculate the common leading whitespace across all non-empty lines, so we can trim it from all lines while
+    // preserving relative indentation. This is important for items nested (esp. in modules) where the doc comment
+    // is usually indented to the same level as the item, leaving whitespace at the beginning of each line.
+    // We want to trim that, but preserve relative indentation.
+    // Note: we assume you aren't using mixed tabs and spaces, but that is probably safe to assume for rust code
+    // which is usually indented with spaces.
+    let common_indent = input
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.chars().take_while(|c| c.is_whitespace()).count())
+        .min()
+        .unwrap_or(0);
+
+    let mut lines: Vec<String> = input
+        .lines()
+        // Trim leading empty/whitespace lines
+        .skip_while(|line| line.trim().is_empty())
+        // Add a leading space to non-empty lines to prevent misinterpreting leading symbols and
+        // mirror the behaviour of single-line doc comments, which already have a leading space.
+        .map(|s| {
+            if s.trim().is_empty() {
+                String::new()
+            } else {
+                format!(" {}", s.chars().skip(common_indent).collect::<String>())
+            }
+        })
+        .collect();
+    // Remove trailing empty/whitespace lines
+    while lines.last().is_some_and(|line| line.trim().is_empty()) {
+        lines.pop();
+    }
+
+    lines
 }
