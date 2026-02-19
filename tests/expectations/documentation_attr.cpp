@@ -10,14 +10,15 @@ extern "C" {
 ///like this one with a new line character at its end
 ///and this one as well. So they are in the same paragraph
 ///
-///Line ends with one new line should not break
+///We treat empty doc comments as empty lines, so they break to the next paragraph.
 ///
-///Line ends with two spaces and a new line
-///should break to next line
+/// Newlines are preserved with leading spaces added
+/// to prettify and avoid misinterpreting leading symbols.
+///like headings and lists.
 ///
-///Line ends with two new lines
+/// Line ends with two new lines
 ///
-///Should break to next paragraph
+/// Should break to next paragraph
 void root();
 
 }  // extern "C"
