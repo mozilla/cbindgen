@@ -55,6 +55,7 @@ path = "src/lib.rs"
 
 [workspace]
 exclude = [
+  "cbindgen-macro",
   "tests/depfile/single_crate_config",
   "tests/depfile/single_crate_default_config",
   "tests/depfile/single_crate",
