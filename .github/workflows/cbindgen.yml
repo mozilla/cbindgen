@@ -8,12 +8,11 @@ on:
     branches:
       - main
   merge_group:
-    types:
-      - checks_requested
+    branches:
+      - main
 
 jobs:
   rustfmt-clippy:
-
     runs-on: ubuntu-24.04
 
     steps:
@@ -121,4 +120,18 @@ jobs:
     - name: Test minimal-versions
       run: |
         cargo +nightly update -Zminimal-versions
-        cargo +nightly test
+
+  # One job that "summarizes" the success state of this pipeline. This can then
+  # be added to branch protection, rather than having to add each job
+  # separately.
+  success:
+    runs-on: ubuntu-24.04
+    needs: [rustfmt-clippy, build]
+    # GitHub branch protection is exceedingly silly and treats "jobs skipped
+    # because a dependency failed" as success. So we have to do some
+    # contortions to ensure the job fails if any of its dependencies fails.
+    if: always() # make sure this is never "skipped"
+    steps:
+      # Manually check the status of all dependencies. `if: failure()` does not work.
+      - name: check if any dependency failed
+        run: jq --exit-status 'all(.result == "success")' <<< '${{ toJson(needs) }}'
