@@ -34,7 +34,7 @@ jobs:
 
     - name: Install minimum supported Rust version
       id: msrv
-      uses: dtolnay/rust-toolchain@1.74
+      uses: dtolnay/rust-toolchain@1.82
 
     - name: Build with minimum supported Rust version
       env:
