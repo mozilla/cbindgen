@@ -1,5 +1,9 @@
 # unreleased
 
+# 0.29.3
+     
+      * Expose the line_endings config option to use with the builder
+
 # 0.29.2
 
       * Request serde's std feature to avoid issues with newer toml versions.
