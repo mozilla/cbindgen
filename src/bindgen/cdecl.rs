@@ -199,7 +199,7 @@ impl CDecl {
             write!(out, "{} ", self.type_qualifers);
         }
 
-        if config.language != Language::Cython {
+        if config.language != Language::Cython && !config.gobject {
             if let Some(ref ctype) = self.type_ctype {
                 write!(out, "{} ", ctype.to_str());
             }
