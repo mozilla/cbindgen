@@ -3,6 +3,9 @@
 # 0.29.3
      
       * Expose the line_endings config option to use with the builder
+      * Fix doc attribute parsing to properly handle block comments
+      * Check for CMSE ABI's as well
+      * ci: Add a meta job to block the merge queue on it.
 
 # 0.29.2
 
