@@ -14,31 +14,39 @@
 #include <stdlib.h>
 
 enum DEPRECATED_ENUM DeprecatedEnum
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   A = 0,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum DeprecatedEnum DeprecatedEnum;
+#else
 typedef int32_t DeprecatedEnum;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum DEPRECATED_ENUM_WITH_NOTE("This is a note") DeprecatedEnumWithNote
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   B = 0,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum DeprecatedEnumWithNote DeprecatedEnumWithNote;
+#else
 typedef int32_t DeprecatedEnumWithNote;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum EnumWithDeprecatedVariants
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   C = 0,
   D DEPRECATED_ENUM_VARIANT = 1,
@@ -46,7 +54,11 @@ enum EnumWithDeprecatedVariants
   F DEPRECATED_ENUM_VARIANT_WITH_NOTE("This is a note") = 3,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum EnumWithDeprecatedVariants EnumWithDeprecatedVariants;
+#else
 typedef int32_t EnumWithDeprecatedVariants;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct DEPRECATED_STRUCT {
@@ -58,16 +70,20 @@ typedef struct DEPRECATED_STRUCT_WITH_NOTE("This is a note") {
 } DeprecatedStructWithNote;
 
 enum EnumWithDeprecatedStructVariants_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Foo,
   Bar DEPRECATED_ENUM_VARIANT,
   Baz DEPRECATED_ENUM_VARIANT_WITH_NOTE("This is a note"),
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum EnumWithDeprecatedStructVariants_Tag EnumWithDeprecatedStructVariants_Tag;
+#else
 typedef uint8_t EnumWithDeprecatedStructVariants_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct DEPRECATED_STRUCT {

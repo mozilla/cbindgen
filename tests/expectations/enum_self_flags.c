@@ -22,7 +22,11 @@
  * Specifies which tracks(s) on the axis that the position-area span occupies.
  * Represented as 3 bits: start, center, end track.
  */
-enum PositionAreaTrack {
+enum PositionAreaTrack
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   /**
    * First track
    */
@@ -48,14 +52,22 @@ enum PositionAreaTrack {
    */
   SpanAll = 7,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum PositionAreaTrack PositionAreaTrack;
+#else
 typedef uint8_t PositionAreaTrack;
+#endif // __STDC_VERSION__ >= 202311L
 
 /**
  * A three-bit value that represents the axis in which position-area operates on.
  * Represented as 3 bits: axis type (physical or logical), direction type (physical or logical),
  * axis value.
  */
-enum PositionAreaAxis {
+enum PositionAreaAxis
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Horizontal = 0,
   Vertical = 1,
   X = 2,
@@ -63,7 +75,11 @@ enum PositionAreaAxis {
   Inline = 6,
   Block = 7,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum PositionAreaAxis PositionAreaAxis;
+#else
 typedef uint8_t PositionAreaAxis;
+#endif // __STDC_VERSION__ >= 202311L
 
 /**
  * Possible values for the `position-area` property's keywords.
@@ -71,7 +87,11 @@ typedef uint8_t PositionAreaAxis;
  * PositionAreaAxis and yyy is the PositionAreaTrack
  * https://drafts.csswg.org/css-anchor-position-1/#propdef-position-area
  */
-enum PositionAreaKeyword {
+enum PositionAreaKeyword
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   None = 0,
   Center = (uint8_t)PositionAreaTrack_Center,
   SpanAll = (uint8_t)PositionAreaTrack_SpanAll,
@@ -82,7 +102,11 @@ enum PositionAreaKeyword {
   Top = (((uint8_t)PositionAreaAxis_Vertical << AXIS_SHIFT) | (uint8_t)PositionAreaTrack_Start),
   Bottom = (((uint8_t)PositionAreaAxis_Vertical << AXIS_SHIFT) | (uint8_t)PositionAreaTrack_End),
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum PositionAreaKeyword PositionAreaKeyword;
+#else
 typedef uint8_t PositionAreaKeyword;
+#endif // __STDC_VERSION__ >= 202311L
 
 void root(PositionAreaKeyword, PositionAreaTrack, PositionAreaAxis);
 

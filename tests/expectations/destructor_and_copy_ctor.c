@@ -7,11 +7,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum FillRule {
+enum FillRule
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   A,
   B,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum FillRule FillRule;
+#else
 typedef uint8_t FillRule;
+#endif // __STDC_VERSION__ >= 202311L
 
 /**
  * This will have a destructor manually implemented via variant_body, and
@@ -36,7 +44,11 @@ typedef struct {
   int32_t *ptr;
 } OwnedSlice_i32;
 
-enum Foo_u32_Tag {
+enum Foo_u32_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Bar_u32,
   Polygon1_u32,
   Slice1_u32,
@@ -44,7 +56,11 @@ enum Foo_u32_Tag {
   Slice3_u32,
   Slice4_u32,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Foo_u32_Tag Foo_u32_Tag;
+#else
 typedef uint8_t Foo_u32_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct {
   FillRule fill;
@@ -78,7 +94,11 @@ typedef struct {
   OwnedSlice_i32 coordinates;
 } Polygon_i32;
 
-enum Baz_i32_Tag {
+enum Baz_i32_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Bar2_i32,
   Polygon21_i32,
   Slice21_i32,
@@ -86,7 +106,11 @@ enum Baz_i32_Tag {
   Slice23_i32,
   Slice24_i32,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Baz_i32_Tag Baz_i32_Tag;
+#else
 typedef uint8_t Baz_i32_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct {
   Baz_i32_Tag tag;
@@ -118,12 +142,20 @@ typedef union {
   Slice24_Body_i32 slice24;
 } Baz_i32;
 
-enum Taz_Tag {
+enum Taz_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Bar3,
   Taz1,
   Taz3,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Taz_Tag Taz_Tag;
+#else
 typedef uint8_t Taz_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef union {
   Taz_Tag tag;
@@ -137,11 +169,19 @@ typedef union {
   };
 } Taz;
 
-enum Tazz_Tag {
+enum Tazz_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Bar4,
   Taz2,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Tazz_Tag Tazz_Tag;
+#else
 typedef uint8_t Tazz_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef union {
   Tazz_Tag tag;
@@ -151,11 +191,19 @@ typedef union {
   };
 } Tazz;
 
-enum Tazzz_Tag {
+enum Tazzz_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Bar5,
   Taz5,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Tazzz_Tag Tazzz_Tag;
+#else
 typedef uint8_t Tazzz_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef union {
   Tazzz_Tag tag;
@@ -165,11 +213,19 @@ typedef union {
   };
 } Tazzz;
 
-enum Tazzzz_Tag {
+enum Tazzzz_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Taz6,
   Taz7,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Tazzzz_Tag Tazzzz_Tag;
+#else
 typedef uint8_t Tazzzz_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef union {
   Tazzzz_Tag tag;
@@ -183,11 +239,19 @@ typedef union {
   };
 } Tazzzz;
 
-enum Qux_Tag {
+enum Qux_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Qux1,
   Qux2,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Qux_Tag Qux_Tag;
+#else
 typedef uint8_t Qux_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef union {
   Qux_Tag tag;

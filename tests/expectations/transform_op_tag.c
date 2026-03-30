@@ -13,13 +13,21 @@ struct StylePoint_f32 {
   float y;
 };
 
-enum StyleFoo_i32_Tag {
+enum StyleFoo_i32_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Foo_i32,
   Bar_i32,
   Baz_i32,
   Bazz_i32,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum StyleFoo_i32_Tag StyleFoo_i32_Tag;
+#else
 typedef uint8_t StyleFoo_i32_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 struct StyleFoo_Body_i32 {
   StyleFoo_i32_Tag tag;
@@ -100,12 +108,20 @@ struct StyleBar_u32 {
   };
 };
 
-enum StyleBaz_Tag {
+enum StyleBaz_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Baz1,
   Baz2,
   Baz3,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum StyleBaz_Tag StyleBaz_Tag;
+#else
 typedef uint8_t StyleBaz_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 union StyleBaz {
   StyleBaz_Tag tag;
@@ -119,12 +135,20 @@ union StyleBaz {
   };
 };
 
-enum StyleTaz_Tag {
+enum StyleTaz_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Taz1,
   Taz2,
   Taz3,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum StyleTaz_Tag StyleTaz_Tag;
+#else
 typedef uint8_t StyleTaz_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 struct StyleTaz {
   StyleTaz_Tag tag;

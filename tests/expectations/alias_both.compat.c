@@ -4,15 +4,19 @@
 #include <stdlib.h>
 
 enum Status
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Ok,
   Err,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum Status Status;
+#else
 typedef uint32_t Status;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct Dep {

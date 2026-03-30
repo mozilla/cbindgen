@@ -9,9 +9,9 @@ struct Foo {
 };
 
 enum Bar_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Baz,
   Bazz,
@@ -19,7 +19,11 @@ enum Bar_Tag
   FooParen,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum Bar_Tag Bar_Tag;
+#else
 typedef uint8_t Bar_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 struct Bazz_Body {

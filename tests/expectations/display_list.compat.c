@@ -18,16 +18,20 @@ typedef struct {
 } Color;
 
 enum DisplayItem_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Fill,
   Image,
   ClearScreen,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum DisplayItem_Tag DisplayItem_Tag;
+#else
 typedef uint8_t DisplayItem_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct {

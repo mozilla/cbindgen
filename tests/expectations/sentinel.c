@@ -3,7 +3,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum A {
+enum A
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   A_A1,
   A_A2,
   A_A3,
@@ -12,9 +16,17 @@ enum A {
    */
   A_Sentinel,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum A A;
+#else
 typedef uint8_t A;
+#endif // __STDC_VERSION__ >= 202311L
 
-enum B {
+enum B
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   B_B1,
   B_B2,
   B_B3,
@@ -23,9 +35,17 @@ enum B {
    */
   B_Sentinel,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum B B;
+#else
 typedef uint8_t B;
+#endif // __STDC_VERSION__ >= 202311L
 
-enum C_Tag {
+enum C_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   C_C1,
   C_C2,
   C_C3,
@@ -34,7 +54,11 @@ enum C_Tag {
    */
   C_Sentinel,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum C_Tag C_Tag;
+#else
 typedef uint8_t C_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct {
   C_Tag tag;

@@ -23,9 +23,9 @@
  * Represented as 3 bits: start, center, end track.
  */
 enum PositionAreaTrack
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   /**
    * First track
@@ -53,7 +53,11 @@ enum PositionAreaTrack
   SpanAll = 7,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum PositionAreaTrack PositionAreaTrack;
+#else
 typedef uint8_t PositionAreaTrack;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 /**
@@ -62,9 +66,9 @@ typedef uint8_t PositionAreaTrack;
  * axis value.
  */
 enum PositionAreaAxis
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Horizontal = 0,
   Vertical = 1,
@@ -74,7 +78,11 @@ enum PositionAreaAxis
   Block = 7,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum PositionAreaAxis PositionAreaAxis;
+#else
 typedef uint8_t PositionAreaAxis;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 /**
@@ -84,9 +92,9 @@ typedef uint8_t PositionAreaAxis;
  * https://drafts.csswg.org/css-anchor-position-1/#propdef-position-area
  */
 enum PositionAreaKeyword
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   None = 0,
   Center = (uint8_t)PositionAreaTrack_Center,
@@ -99,7 +107,11 @@ enum PositionAreaKeyword
   Bottom = (((uint8_t)PositionAreaAxis_Vertical << AXIS_SHIFT) | (uint8_t)PositionAreaTrack_End),
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum PositionAreaKeyword PositionAreaKeyword;
+#else
 typedef uint8_t PositionAreaKeyword;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 #ifdef __cplusplus

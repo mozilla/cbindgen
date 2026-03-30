@@ -4,15 +4,31 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum UE {
+enum UE
+#if __STDC_VERSION__ >= 202311L
+  : size_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   UV,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum UE UE;
+#else
 typedef size_t UE;
+#endif // __STDC_VERSION__ >= 202311L
 
-enum IE {
+enum IE
+#if __STDC_VERSION__ >= 202311L
+  : ptrdiff_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   IV,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum IE IE;
+#else
 typedef ptrdiff_t IE;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef size_t Usize;
 

@@ -3,11 +3,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum Status {
+enum Status
+#if __STDC_VERSION__ >= 202311L
+  : uint32_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Ok,
   Err,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Status Status;
+#else
 typedef uint32_t Status;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct {
   int32_t a;

@@ -680,15 +680,20 @@ impl Enum {
                     }
                     write!(out, " {tag_name}");
 
-                    if config.cpp_compatible_c() {
-                        out.new_line();
-                        out.write("#ifdef __cplusplus");
-                        out.new_line();
-                        write!(out, "  : {prim}");
-                        out.new_line();
-                        out.write("#endif // __cplusplus");
-                        out.new_line();
-                    }
+                    // Emit typed enum syntax (valid in C23 or later or C++)
+                    let cond = if config.cpp_compatible_c() {
+                        "defined(__cplusplus) || __STDC_VERSION__ >= 202311L"
+                    } else {
+                        "__STDC_VERSION__ >= 202311L"
+                    };
+
+                    out.new_line();
+                    write!(out, "#if {cond}");
+                    out.new_line();
+                    write!(out, "  : {prim}");
+                    out.new_line();
+                    write!(out, "#endif // {cond}");
+                    out.new_line();
                 } else {
                     if config.style.generate_typedef() {
                         out.write("typedef ");
@@ -759,8 +764,8 @@ impl Enum {
         }
 
         // Emit typedef specifying the tag enum's size if necessary.
-        // In C++ enums can "inherit" from numeric types (`enum E: uint8_t { ... }`),
-        // but in C `typedef uint8_t E` is the only way to give a fixed size to `E`.
+        // In C++ or C23 enums can "inherit" from numeric types (`enum E: uint8_t { ... }`),
+        // but in older versions of C `typedef uint8_t E` is the only way to give a fixed size to `E`.
         if let Some(prim) = size {
             if config.cpp_compatible_c() {
                 out.new_line_if_not_start();
@@ -768,8 +773,30 @@ impl Enum {
             }
 
             if config.language != Language::Cxx {
+                if config.language == Language::C {
+                    out.new_line();
+                    out.write("#if __STDC_VERSION__ >= 202311L");
+
+                    out.new_line();
+                    write!(
+                        out,
+                        "{} enum {} {};",
+                        config.language.typedef(),
+                        tag_name,
+                        tag_name
+                    );
+
+                    out.new_line();
+                    out.write("#else");
+                }
+
                 out.new_line();
                 write!(out, "{} {} {};", config.language.typedef(), prim, tag_name);
+
+                if config.language == Language::C {
+                    out.new_line();
+                    out.write("#endif // __STDC_VERSION__ >= 202311L");
+                }
             }
 
             if config.cpp_compatible_c() {

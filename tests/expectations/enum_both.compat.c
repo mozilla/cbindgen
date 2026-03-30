@@ -18,9 +18,9 @@ using Box = T*;
 #include <stdlib.h>
 
 enum A
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint64_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   a1 = 0,
   a2 = 2,
@@ -28,13 +28,17 @@ enum A
   a4 = 5,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum A A;
+#else
 typedef uint64_t A;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum B
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   b1 = 0,
   b2 = 2,
@@ -42,13 +46,17 @@ enum B
   b4 = 5,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum B B;
+#else
 typedef uint32_t B;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum C
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint16_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   c1 = 0,
   c2 = 2,
@@ -56,13 +64,17 @@ enum C
   c4 = 5,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum C C;
+#else
 typedef uint16_t C;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum D
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   d1 = 0,
   d2 = 2,
@@ -70,13 +82,17 @@ enum D
   d4 = 5,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum D D;
+#else
 typedef uint8_t D;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum E
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uintptr_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   e1 = 0,
   e2 = 2,
@@ -84,13 +100,17 @@ enum E
   e4 = 5,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum E E;
+#else
 typedef uintptr_t E;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum F
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : intptr_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   f1 = 0,
   f2 = 2,
@@ -98,7 +118,11 @@ enum F
   f4 = 5,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum F F;
+#else
 typedef intptr_t F;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef enum L {
@@ -109,16 +133,20 @@ typedef enum L {
 } L;
 
 enum M
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   m1 = -1,
   m2 = 0,
   m3 = 1,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum M M;
+#else
 typedef int8_t M;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef enum N {
@@ -129,9 +157,9 @@ typedef enum N {
 } N;
 
 enum O
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   o1,
   o2,
@@ -139,7 +167,11 @@ enum O
   o4,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum O O;
+#else
 typedef int8_t O;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct J J;
@@ -149,16 +181,20 @@ typedef struct K K;
 typedef struct Opaque Opaque;
 
 enum G_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Foo,
   Bar,
   Baz,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum G_Tag G_Tag;
+#else
 typedef uint8_t G_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct Bar_Body {
@@ -198,16 +234,20 @@ typedef struct H {
 } H;
 
 enum ExI_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   ExI_Foo,
   ExI_Bar,
   ExI_Baz,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum ExI_Tag ExI_Tag;
+#else
 typedef uint8_t ExI_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct ExI_Bar_Body {
@@ -226,15 +266,19 @@ typedef struct ExI {
 } ExI;
 
 enum P_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   P0,
   P1,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum P_Tag P_Tag;
+#else
 typedef uint8_t P_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct P1_Body {

@@ -13,10 +13,18 @@ typedef struct B {
   float float_;
 } B;
 
-enum C_Tag {
+enum C_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   D,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum C_Tag C_Tag;
+#else
 typedef uint8_t C_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct D_Body {
   int32_t namespace_;
@@ -30,11 +38,19 @@ typedef struct C {
   };
 } C;
 
-enum E_Tag {
+enum E_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Double,
   Float,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum E_Tag E_Tag;
+#else
 typedef uint8_t E_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct E {
   E_Tag tag;
@@ -48,11 +64,19 @@ typedef struct E {
   };
 } E;
 
-enum F_Tag {
+enum F_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   double_,
   float_,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum F_Tag F_Tag;
+#else
 typedef uint8_t F_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct F {
   F_Tag tag;

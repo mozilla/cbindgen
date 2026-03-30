@@ -9,15 +9,19 @@
 #include <stdlib.h>
 
 enum MaybeOwnedPtr_i32_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Owned_i32,
   None_i32,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum MaybeOwnedPtr_i32_Tag MaybeOwnedPtr_i32_Tag;
+#else
 typedef uint8_t MaybeOwnedPtr_i32_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct MUST_USE_STRUCT {

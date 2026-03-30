@@ -13,21 +13,37 @@ DEF M_32 = 0
 #include <stdlib.h>
 
 #if (defined(PLATFORM_UNIX) && defined(X11))
-enum FooType {
+enum FooType
+#if __STDC_VERSION__ >= 202311L
+  : uint32_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   A,
   B,
   C,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum FooType FooType;
+#else
 typedef uint32_t FooType;
+#endif // __STDC_VERSION__ >= 202311L
 #endif
 
 #if (defined(PLATFORM_WIN) || defined(M_32))
-enum BarType {
+enum BarType
+#if __STDC_VERSION__ >= 202311L
+  : uint32_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   A,
   B,
   C,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum BarType BarType;
+#else
 typedef uint32_t BarType;
+#endif // __STDC_VERSION__ >= 202311L
 #endif
 
 typedef struct {
@@ -59,7 +75,11 @@ typedef struct {
 } FooHandle;
 #endif
 
-enum C_Tag {
+enum C_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   C1,
   C2,
 #if defined(PLATFORM_WIN)
@@ -69,7 +89,11 @@ enum C_Tag {
   C5,
 #endif
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum C_Tag C_Tag;
+#else
 typedef uint8_t C_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 #if defined(PLATFORM_UNIX)
 typedef struct {
