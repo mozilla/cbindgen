@@ -682,11 +682,11 @@ impl Enum {
 
                     if config.cpp_compatible_c() {
                         out.new_line();
-                        out.write("#ifdef __cplusplus");
+                        out.write("#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
                         out.new_line();
                         write!(out, "  : {prim}");
                         out.new_line();
-                        out.write("#endif // __cplusplus");
+                        out.write("#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L");
                         out.new_line();
                     }
                 } else {
@@ -759,12 +759,12 @@ impl Enum {
         }
 
         // Emit typedef specifying the tag enum's size if necessary.
-        // In C++ enums can "inherit" from numeric types (`enum E: uint8_t { ... }`),
-        // but in C `typedef uint8_t E` is the only way to give a fixed size to `E`.
+        // In C++ or C23 enums can "inherit" from numeric types (`enum E: uint8_t { ... }`),
+        // but in olders versions of C `typedef uint8_t E` is the only way to give a fixed size to `E`.
         if let Some(prim) = size {
             if config.cpp_compatible_c() {
                 out.new_line_if_not_start();
-                out.write("#ifndef __cplusplus");
+                out.write("#if !defined(__cplusplus) && __STDC_VERSION__ < 202311L");
             }
 
             if config.language != Language::Cxx {
@@ -774,7 +774,7 @@ impl Enum {
 
             if config.cpp_compatible_c() {
                 out.new_line_if_not_start();
-                out.write("#endif // __cplusplus");
+                out.write("#endif // !defined(__cplusplus) && __STDC_VERSION__ < 202311L");
             }
         }
 
