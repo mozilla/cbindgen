@@ -10,7 +10,7 @@ use crate::bindgen::config::{Config, Language, SortKey};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::error::Error;
-use crate::bindgen::ir::{Constant, Enum, Function, Item, ItemContainer, ItemMap};
+use crate::bindgen::ir::{Constant, Enum, Function, GObject, GType, Item, ItemContainer, ItemMap};
 use crate::bindgen::ir::{OpaqueItem, Path, Static, Struct, Typedef, Union};
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::ItemType;
@@ -28,6 +28,7 @@ pub struct Library {
     functions: Vec<Function>,
     source_files: Vec<PathBuf>,
     package_version: String,
+    gobjects: ItemMap<GObject>,
 }
 
 impl Library {
@@ -44,6 +45,7 @@ impl Library {
         functions: Vec<Function>,
         source_files: Vec<PathBuf>,
         package_version: String,
+        gobjects: ItemMap<GObject>,
     ) -> Library {
         Library {
             config,
@@ -57,12 +59,14 @@ impl Library {
             functions,
             source_files,
             package_version,
+            gobjects,
         }
     }
 
     pub fn generate(mut self) -> Result<Bindings, Error> {
         self.transfer_annotations();
         self.simplify_standard_types();
+        self.gobject_config();
 
         match self.config.function.sort_by.unwrap_or(self.config.sort_by) {
             SortKey::Name => self.functions.sort_by(|x, y| x.path.cmp(&y.path)),
@@ -89,6 +93,9 @@ impl Library {
         });
         self.constants.for_all_items(|constant| {
             constant.add_dependencies(&self, &mut dependencies);
+        });
+        self.gobjects.for_all_items(|gobject| {
+            gobject.add_dependencies(&self, &mut dependencies);
         });
         for name in &self.config.export.include {
             let path = Path::new(name.clone());
@@ -145,6 +152,7 @@ impl Library {
             self.source_files,
             false,
             self.package_version,
+            self.gobjects.to_vec(),
         ))
     }
 
@@ -357,8 +365,55 @@ impl Library {
         self.globals
             .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
 
+        self.gobjects
+            .for_all_items_mut(|x| x.resolve_declaration_types(&resolver));
+
         for item in &mut self.functions {
             item.resolve_declaration_types(&resolver);
+        }
+    }
+
+    fn gobject_config(&mut self) {
+        let mut needs_gobject = false;
+
+        for x in self.gobjects.to_vec() {
+            if !matches!(x.gtype, GType::Boxed) {
+                self.typedefs.filter(|o| o.name() == x.export_name());
+                self.opaque_items.filter(|o| o.name() == x.export_name());
+            }
+            match x.gtype {
+                GType::Object { class, .. } => {
+                    self.config
+                        .export
+                        .rename
+                        .insert(x.path.name().into(), x.name.clone());
+                    self.config.export.rename.insert(
+                        class.unwrap().get_root_path().unwrap().to_string(),
+                        format!("{}Class", x.name),
+                    );
+                }
+                GType::Interface { .. } => {
+                    self.config
+                        .export
+                        .rename
+                        .insert(x.path.name().into(), format!("{}Interface", x.name));
+                    self.config.export.rename.insert(
+                        x.path.name().strip_suffix("Interface").unwrap().to_string(),
+                        x.name,
+                    );
+                }
+                GType::Boxed | GType::Enum { .. } | GType::Error { .. } => {
+                    self.config
+                        .export
+                        .rename
+                        .insert(x.path.name().into(), x.name.clone());
+                }
+            }
+            needs_gobject = true;
+        }
+
+        if needs_gobject {
+            self.config.sys_includes.push("glib-object.h".into())
         }
     }
 

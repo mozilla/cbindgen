@@ -15,8 +15,8 @@ use crate::bindgen::cargo::{Cargo, PackageRef};
 use crate::bindgen::config::{Config, ParseConfig};
 use crate::bindgen::error::Error;
 use crate::bindgen::ir::{
-    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GenericParam,
-    GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
+    AnnotationSet, AnnotationValue, Cfg, Constant, Documentation, Enum, Function, GObject, GType,
+    GenericParam, GenericParams, ItemMap, OpaqueItem, Path, Static, Struct, Type, Typedef, Union,
 };
 use crate::bindgen::utilities::{SynAbiHelpers, SynAttributeHelpers, SynItemHelpers};
 
@@ -420,6 +420,7 @@ pub struct Parse {
     pub functions: Vec<Function>,
     pub source_files: Vec<FilePathBuf>,
     pub package_version: String,
+    pub gobjects: ItemMap<GObject>,
 }
 
 impl Parse {
@@ -435,10 +436,11 @@ impl Parse {
             functions: Vec::new(),
             source_files: Vec::new(),
             package_version: String::new(),
+            gobjects: ItemMap::default(),
         }
     }
 
-    pub fn add_std_types(&mut self) {
+    pub fn add_std_types(&mut self, _config: &Config) {
         let mut add_opaque = |path: &str, generic_params: Vec<&str>| {
             let path = Path::new(path);
             let generic_params: Vec<_> = generic_params
@@ -471,6 +473,12 @@ impl Parse {
         add_opaque("VecDeque", vec!["T"]);
         add_opaque("ManuallyDrop", vec!["T"]);
         add_opaque("MaybeUninit", vec!["T"]);
+
+        // if config.gobject {
+        //     add_opaque("GType", vec![]);
+        //     add_opaque("GObject", vec![""]);
+        //     add_opaque("GObjectClass", vec![""]);
+        // }
     }
 
     pub fn extend_with(&mut self, other: &Parse) {
@@ -481,6 +489,7 @@ impl Parse {
         self.unions.extend_with(&other.unions);
         self.opaque_items.extend_with(&other.opaque_items);
         self.typedefs.extend_with(&other.typedefs);
+        self.gobjects.extend_with(&other.gobjects);
         self.functions.extend_from_slice(&other.functions);
         self.source_files.extend_from_slice(&other.source_files);
         self.package_version.clone_from(&other.package_version);
@@ -522,12 +531,18 @@ impl Parse {
                 }
                 syn::Item::Struct(ref item) => {
                     self.load_syn_struct(config, crate_name, mod_cfg, item);
+                    if config.gobject {
+                        self.load_syn_gboxed(mod_cfg, item);
+                    }
                 }
                 syn::Item::Union(ref item) => {
                     self.load_syn_union(config, crate_name, mod_cfg, item);
                 }
                 syn::Item::Enum(ref item) => {
                     self.load_syn_enum(config, crate_name, mod_cfg, item);
+                    if config.gobject {
+                        self.load_syn_genum(mod_cfg, item);
+                    }
                 }
                 syn::Item::Type(ref item) => {
                     self.load_syn_ty(crate_name, mod_cfg, item);
@@ -540,7 +555,6 @@ impl Parse {
                     if has_assoc_const {
                         impls_with_assoc_consts.push(item_impl);
                     }
-
                     if let syn::Type::Path(ref path) = *item_impl.self_ty {
                         if let Some(type_name) = path.path.get_ident() {
                             for method in item_impl.items.iter().filter_map(|item| match item {
@@ -557,6 +571,18 @@ impl Parse {
                                     &Path::new(type_name.unraw().to_string()),
                                     method,
                                 )
+                            }
+                            if config.gobject {
+                                if let Some((_, trait_path, _)) = &item_impl.trait_ {
+                                    self.load_syn_gobject(
+                                        config,
+                                        crate_name,
+                                        mod_cfg,
+                                        trait_path,
+                                        Path::new(type_name.to_string()),
+                                        item_impl,
+                                    );
+                                }
                             }
                         }
                     }
@@ -989,6 +1015,174 @@ impl Parse {
                 self.opaque_items.try_insert(
                     OpaqueItem::load(path, &item.generics, &item.attrs, mod_cfg).unwrap(),
                 );
+            }
+        }
+    }
+
+    fn load_syn_genum(&mut self, mod_cfg: Option<&Cfg>, item: &syn::ItemEnum) {
+        for attr in item.attrs.iter() {
+            if let syn::Meta::List(ref list) = attr.meta {
+                if list.path.is_ident("enum_type") || list.path.is_ident("flags") {
+                    match GObject::load_enum(mod_cfg, item, list) {
+                        Ok(gi) => {
+                            info!("Take {}.", item.ident);
+                            self.gobjects.try_insert(gi);
+                        }
+                        Err(msg) => {
+                            error!("Cannot use GEnum/GFlags {} ({}).", item.ident, msg);
+                        }
+                    }
+                }
+                if list.path.is_ident("error_domain") {
+                    match GObject::load_error_domain(mod_cfg, item, list) {
+                        Ok(gi) => {
+                            info!("Take {}.", item.ident);
+                            self.gobjects.try_insert(gi);
+                        }
+                        Err(msg) => {
+                            error!("Cannot use GErrorDomain {} ({}).", item.ident, msg);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn load_syn_gboxed(&mut self, mod_cfg: Option<&Cfg>, item: &syn::ItemStruct) {
+        for attr in item.attrs.iter() {
+            if let syn::Meta::List(ref list) = attr.meta {
+                if list.path.is_ident("boxed_type") {
+                    match GObject::load_boxed(mod_cfg, item, list) {
+                        Ok(gi) => {
+                            info!("Take {}.", item.ident);
+                            self.gobjects.try_insert(gi);
+                        }
+                        Err(msg) => {
+                            error!("Cannot use GBoxed {} ({}).", item.ident, msg);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn load_syn_gobject(
+        &mut self,
+        config: &Config,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        trait_path: &syn::Path,
+        self_type: Path,
+        item: &syn::ItemImpl,
+    ) {
+        if trait_path.is_ident("ObjectSubclass") {
+            self.load_syn_gobject_subclass(config, crate_name, mod_cfg, self_type, item);
+        } else if trait_path.is_ident("ObjectInterface") {
+            self.load_syn_gobject_interface(mod_cfg, self_type, item);
+        }
+    }
+
+    fn load_syn_gobject_interface(
+        &mut self,
+        mod_cfg: Option<&Cfg>,
+        self_type: Path,
+        item: &syn::ItemImpl,
+    ) {
+        match GObject::load_interface(&self_type, mod_cfg, item) {
+            Ok(gi) => {
+                info!("Take {}.", self_type);
+                self.gobjects.try_insert(gi);
+            }
+            Err(msg) => {
+                error!("Cannot use GInterface {} ({}).", self_type, msg);
+            }
+        }
+    }
+
+    fn load_syn_gobject_subclass(
+        &mut self,
+        config: &Config,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        self_type: Path,
+        item: &syn::ItemImpl,
+    ) {
+        match GObject::load_object(&self_type, mod_cfg, item) {
+            Ok(mut gobject) => {
+                let (class, instance, parent_type) = match &mut gobject.gtype {
+                    GType::Object {
+                        class,
+                        instance,
+                        parent_type,
+                    } => (class, instance, parent_type),
+                    _ => panic!(),
+                };
+                let parent_type = parent_type
+                    .as_ref()
+                    .and_then(|p| p.get_root_path())
+                    .map(|p| p.to_string())
+                    .unwrap_or("Object".to_string());
+                if instance.is_none() {
+                    let ident =
+                        syn::Ident::new(&gobject.path.name(), proc_macro2::Span::call_site());
+                    let parent = if parent_type == "Object" {
+                        quote!(glib::gobject_ffi::GObject)
+                    } else {
+                        let parent = syn::Ident::new(&parent_type, proc_macro2::Span::call_site());
+                        parse_quote! { #parent }
+                    };
+                    let struct_ = parse_quote! {
+                        #[repr(C)]
+                        pub struct #ident {
+                            pub parent: #parent,
+                        }
+                    };
+                    self.load_syn_struct(config, crate_name, mod_cfg, &struct_);
+                    *instance = Some(
+                        Type::load(&syn::Type::Path(syn::TypePath {
+                            path: syn::Path::from(ident),
+                            qself: None,
+                        }))
+                        .unwrap()
+                        .unwrap(),
+                    );
+                }
+                if class.is_none() {
+                    let class_ident = syn::Ident::new(
+                        &format!("{}Class", gobject.path),
+                        proc_macro2::Span::call_site(),
+                    );
+                    let parent_class = if parent_type == "Object" {
+                        quote!(glib::gobject_ffi::GObjectClass)
+                    } else {
+                        let parent_class = syn::Ident::new(
+                            &format!("{}Class", parent_type),
+                            proc_macro2::Span::call_site(),
+                        );
+                        parse_quote! { #parent_class }
+                    };
+                    let struct_ = parse_quote! {
+                        #[repr(C)]
+                        pub struct #class_ident {
+                            pub parent_class: #parent_class,
+                        }
+                    };
+                    self.load_syn_struct(config, crate_name, mod_cfg, &struct_);
+                    *class = Some(
+                        Type::load(&syn::Type::Path(syn::TypePath {
+                            path: syn::Path::from(class_ident),
+                            qself: None,
+                        }))
+                        .unwrap()
+                        .unwrap(),
+                    );
+                }
+
+                info!("Take {}.", self_type);
+                self.gobjects.try_insert(gobject);
+            }
+            Err(msg) => {
+                error!("Cannot use GObject {} ({}).", self_type, msg);
             }
         }
     }
