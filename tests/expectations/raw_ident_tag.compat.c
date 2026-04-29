@@ -4,15 +4,19 @@
 #include <stdlib.h>
 
 enum Enum
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   a,
   b,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum Enum Enum;
+#else
 typedef uint8_t Enum;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 struct Struct {

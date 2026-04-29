@@ -7,12 +7,20 @@ struct Foo_Bar {
   const int32_t *something;
 };
 
-enum Bar_Tag {
+enum Bar_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Min,
   Max,
   Other,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum Bar_Tag Bar_Tag;
+#else
 typedef uint8_t Bar_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 union Bar {
   Bar_Tag tag;

@@ -6,15 +6,19 @@
 #define C_H 10
 
 enum C_E
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   x = 0,
   y = 1,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum C_E C_E;
+#else
 typedef uint8_t C_E;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 struct C_A;

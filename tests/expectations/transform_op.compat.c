@@ -14,9 +14,9 @@ typedef struct {
 } StylePoint_f32;
 
 enum StyleFoo_i32_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Foo_i32,
   Bar_i32,
@@ -24,7 +24,11 @@ enum StyleFoo_i32_Tag
   Bazz_i32,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum StyleFoo_i32_Tag StyleFoo_i32_Tag;
+#else
 typedef uint8_t StyleFoo_i32_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct {
@@ -107,16 +111,20 @@ typedef struct {
 } StyleBar_u32;
 
 enum StyleBaz_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Baz1,
   Baz2,
   Baz3,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum StyleBaz_Tag StyleBaz_Tag;
+#else
 typedef uint8_t StyleBaz_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef union {
@@ -132,16 +140,20 @@ typedef union {
 } StyleBaz;
 
 enum StyleTaz_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Taz1,
   Taz2,
   Taz3,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum StyleTaz_Tag StyleTaz_Tag;
+#else
 typedef uint8_t StyleTaz_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef struct {

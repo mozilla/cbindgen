@@ -14,16 +14,20 @@ typedef int32_t PREFIX_NamedLenArray[PREFIX_LEN];
 typedef int32_t PREFIX_ValuedLenArray[22];
 
 enum PREFIX_AbsoluteFontWeight_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   Weight,
   Normal,
   Bold,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum PREFIX_AbsoluteFontWeight_Tag PREFIX_AbsoluteFontWeight_Tag;
+#else
 typedef uint8_t PREFIX_AbsoluteFontWeight_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef union {

@@ -5,11 +5,19 @@
 
 #define C_H 10
 
-enum C_E {
+enum C_E
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   x = 0,
   y = 1,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum C_E C_E;
+#else
 typedef uint8_t C_E;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct C_A C_A;
 

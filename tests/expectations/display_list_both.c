@@ -17,12 +17,20 @@ typedef struct Color {
   uint8_t a;
 } Color;
 
-enum DisplayItem_Tag {
+enum DisplayItem_Tag
+#if __STDC_VERSION__ >= 202311L
+  : uint8_t
+#endif // __STDC_VERSION__ >= 202311L
+ {
   Fill,
   Image,
   ClearScreen,
 };
+#if __STDC_VERSION__ >= 202311L
+typedef enum DisplayItem_Tag DisplayItem_Tag;
+#else
 typedef uint8_t DisplayItem_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 
 typedef struct Fill_Body {
   DisplayItem_Tag tag;

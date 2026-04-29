@@ -6,9 +6,9 @@
 #define FOURTY_FOUR 4
 
 enum E
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   A = 1,
   B = -1,
@@ -19,7 +19,11 @@ enum E
   H = (int8_t)false,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum E E;
+#else
 typedef int8_t E;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 #ifdef __cplusplus

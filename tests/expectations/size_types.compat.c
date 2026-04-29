@@ -5,25 +5,33 @@
 #include <stdlib.h>
 
 enum UE
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : size_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   UV,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum UE UE;
+#else
 typedef size_t UE;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum IE
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : ptrdiff_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   IV,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum IE IE;
+#else
 typedef ptrdiff_t IE;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 typedef size_t Usize;

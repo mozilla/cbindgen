@@ -4,9 +4,9 @@
 #include <stdlib.h>
 
 enum A
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   A_A1,
   A_A2,
@@ -17,13 +17,17 @@ enum A
   A_Sentinel,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum A A;
+#else
 typedef uint8_t A;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum B
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   B_B1,
   B_B2,
@@ -34,13 +38,17 @@ enum B
   B_Sentinel,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum B B;
+#else
 typedef uint8_t B;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 enum C_Tag
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : uint8_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   C_C1,
   C_C2,
@@ -51,7 +59,11 @@ enum C_Tag
   C_Sentinel,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum C_Tag C_Tag;
+#else
 typedef uint8_t C_Tag;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 struct C_C1_Body {
