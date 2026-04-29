@@ -680,7 +680,7 @@ impl Enum {
                     }
                     write!(out, " {tag_name}");
 
-                    // Write typed enum syntax (valid in C23 or later or C++)
+                    // Emit typed enum syntax (valid in C23 or later or C++)
                     let cond = if config.cpp_compatible_c() {
                         "defined(__cplusplus) || __STDC_VERSION__ >= 202311L"
                     } else {
