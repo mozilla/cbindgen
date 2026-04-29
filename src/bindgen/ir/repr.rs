@@ -14,8 +14,8 @@ pub enum ReprStyle {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ReprType {
-    kind: IntKind,
-    signed: bool,
+    pub kind: IntKind,
+    pub signed: bool,
 }
 
 impl ReprType {
