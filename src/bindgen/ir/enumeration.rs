@@ -760,7 +760,7 @@ impl Enum {
 
         // Emit typedef specifying the tag enum's size if necessary.
         // In C++ or C23 enums can "inherit" from numeric types (`enum E: uint8_t { ... }`),
-        // but in olders versions of C `typedef uint8_t E` is the only way to give a fixed size to `E`.
+        // but in older versions of C `typedef uint8_t E` is the only way to give a fixed size to `E`.
         if let Some(prim) = size {
             if config.cpp_compatible_c() {
                 out.new_line_if_not_start();
