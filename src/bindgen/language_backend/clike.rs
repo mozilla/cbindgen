@@ -1,13 +1,14 @@
 use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
-    Typedef, Union,
+    Field, Function, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct,
+    ToCondition, Type, Typedef, Union,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{cdecl, Bindings, Config, Language};
 use crate::bindgen::{DocumentationLength, DocumentationStyle};
+use std::collections::BTreeMap;
 use std::io::Write;
 
 pub struct CLikeLanguageBackend<'a> {
@@ -114,6 +115,81 @@ impl<'a> CLikeLanguageBackend<'a> {
 
     fn generate_typedef(&self) -> bool {
         self.config.language == Language::C && self.config.style.generate_typedef()
+    }
+
+    /// Writes functions, grouping those with per-item namespace attributes into
+    /// nested namespace blocks (for C++ output only).
+    fn write_functions_with_namespaces<W: Write>(
+        &mut self,
+        out: &mut SourceWriter<W>,
+        b: &Bindings,
+    ) where
+        Self: LanguageBackend,
+    {
+        // Only apply per-item namespace grouping for C++ output
+        if b.config.language != Language::Cxx {
+            self.write_functions_default(out, b);
+            return;
+        }
+
+        // Group functions by their per-item namespace
+        // Functions without a namespace go to the `None` key
+        let mut grouped: BTreeMap<Option<Vec<String>>, Vec<&Function>> = BTreeMap::new();
+
+        for function in &b.functions {
+            if !function.annotations.should_export() {
+                continue;
+            }
+            grouped
+                .entry(function.namespace.clone())
+                .or_default()
+                .push(function);
+        }
+
+        // Write functions without per-item namespace first (they use global namespace)
+        if let Some(functions) = grouped.remove(&None) {
+            for function in functions {
+                out.new_line_if_not_start();
+                self.write_function(&b.config, out, function);
+                out.new_line();
+            }
+        }
+
+        // Write functions with per-item namespaces
+        for (namespace, functions) in grouped {
+            if let Some(ns_parts) = namespace {
+                if ns_parts.is_empty() {
+                    // Empty namespace means no namespace wrapping
+                    for function in functions {
+                        out.new_line_if_not_start();
+                        self.write_function(&b.config, out, function);
+                        out.new_line();
+                    }
+                } else {
+                    // Open nested namespaces
+                    out.new_line_if_not_start();
+                    for ns in &ns_parts {
+                        out.new_line();
+                        write!(out, "namespace {ns} {{");
+                    }
+                    out.new_line();
+
+                    // Write functions inside the namespace
+                    for function in functions {
+                        out.new_line_if_not_start();
+                        self.write_function(&b.config, out, function);
+                        out.new_line();
+                    }
+
+                    // Close nested namespaces in reverse order
+                    for ns in ns_parts.iter().rev() {
+                        out.new_line();
+                        write!(out, "}}  // namespace {ns}");
+                    }
+                    out.new_line();
+                }
+            }
+        }
     }
 
     fn write_derived_cpp_ops<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Struct) {
@@ -990,7 +1066,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
         // Override default method to close various blocks containing both globals and functions
         // these blocks are opened in [`write_globals`] that is also overridden
         if !b.functions.is_empty() || !b.globals.is_empty() {
-            self.write_functions_default(out, b);
+            self.write_functions_with_namespaces(out, b);
 
             if b.config.cpp_compatible_c() {
                 out.new_line();

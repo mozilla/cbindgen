@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "no_extern"
-version = "0.1.0"
+name = "expand-dep-2-dep-2"
+version = "0.2.0"
