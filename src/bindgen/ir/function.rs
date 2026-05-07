@@ -9,7 +9,9 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{
+    AnnotationSet, AssocTypeResolver, Cfg, Documentation, GenericPath, Path, Type,
+};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
@@ -214,6 +216,14 @@ impl Function {
                 };
                 arg.array_length = ptrs_as_arrays.get(name).cloned();
             }
+        }
+    }
+
+    pub fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        self.ret.resolve_assoc_types(resolver);
+
+        for arg in self.args.iter_mut() {
+            arg.ty.resolve_assoc_types(resolver);
         }
     }
 }
