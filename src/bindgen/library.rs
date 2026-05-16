@@ -72,6 +72,9 @@ impl Library {
         if self.config.language != Language::Cxx {
             self.instantiate_monomorphs();
         }
+        if !self.config.export.whitelist.is_empty() {
+            self.remove_non_whitelisted();
+        }
         self.remove_excluded();
         if self.config.language == Language::C {
             self.resolve_declaration_types();
@@ -90,7 +93,14 @@ impl Library {
         self.constants.for_all_items(|constant| {
             constant.add_dependencies(&self, &mut dependencies);
         });
-        for name in &self.config.export.include {
+
+        let inclusions = self
+            .config
+            .export
+            .include
+            .iter()
+            .chain(self.config.export.whitelist.iter());
+        for name in inclusions {
             let path = Path::new(name.clone());
             if let Some(items) = self.get_items(&path) {
                 if dependencies.items.insert(path) {
@@ -170,6 +180,32 @@ impl Library {
 
     pub fn get_config(&self) -> &Config {
         &self.config
+    }
+
+    fn remove_non_whitelisted(&mut self) {
+        let whitelist = self
+            .config
+            .export
+            .whitelist
+            .iter()
+            .chain(self.config.export.include.iter());
+
+        self.functions
+            .retain(|x| whitelist.clone().any(|y| y == x.path().name()));
+        self.enums
+            .filter(|x| !whitelist.clone().any(|y| y == x.path().name()));
+        self.structs
+            .filter(|x| !whitelist.clone().any(|y| y == x.path().name()));
+        self.unions
+            .filter(|x| !whitelist.clone().any(|y| y == x.path().name()));
+        self.opaque_items
+            .filter(|x| !whitelist.clone().any(|y| y == x.path().name()));
+        self.typedefs
+            .filter(|x| !whitelist.clone().any(|y| y == x.path().name()));
+        self.globals
+            .filter(|x| !whitelist.clone().any(|y| y == x.path().name()));
+        self.constants
+            .filter(|x| !whitelist.clone().any(|y| y == x.path().name()));
     }
 
     fn remove_excluded(&mut self) {
