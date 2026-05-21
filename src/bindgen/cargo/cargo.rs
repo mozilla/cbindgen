@@ -109,10 +109,7 @@ impl Cargo {
             // If the version is not on the lockfile then it shouldn't be
             // ambiguous.
             if root.name == package.name
-                && package
-                    .version
-                    .as_ref()
-                    .map_or(true, |v| *v == root.version)
+                && package.version.as_ref().is_none_or(|v| *v == root.version)
             {
                 dependencies = root.dependencies.as_ref();
             }
@@ -124,7 +121,7 @@ impl Cargo {
                         && package
                             .version
                             .as_ref()
-                            .map_or(true, |v| *v == lock_package.version)
+                            .is_none_or(|v| *v == lock_package.version)
                     {
                         dependencies = lock_package.dependencies.as_ref();
                         break;
