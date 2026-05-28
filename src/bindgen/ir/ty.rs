@@ -526,8 +526,16 @@ impl Type {
             _ => return None,
         };
 
-        if path.generics().is_empty() {
-            return None;
+        // Special-case: when a ZST like `()` is used as the generic parameter of `NonNull`, it
+        // evaporates during parsing and `NonNull` ends up with zero generics. In that case, treat
+        // it as `void*` so aliases like `type Id = NonNull<()>;` lower correctly.
+        if path.generics().is_empty() && path.name() == "NonNull" {
+            return Some(Type::Ptr {
+                ty: Box::new(Type::Primitive(PrimitiveType::Void)),
+                is_const: false,
+                is_nullable: false,
+                is_ref: false,
+            });
         }
 
         if path.generics().len() != 1 {
