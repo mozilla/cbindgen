@@ -165,6 +165,10 @@ fn compile(
             // clang also warns about returning non-instantiated templates (they could
             // be specialized, but they're not so it's fine).
             command.arg("-Wno-return-type-c-linkage");
+            // Similar gcc equivalent, but only for C++.
+            if language == Language::Cxx {
+                command.arg("-Wno-non-c-typedef-for-linkage");
+            }
             // deprecated warnings should not be errors as it's intended
             command.arg("-Wno-deprecated-declarations");
 
