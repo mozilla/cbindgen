@@ -1,10 +1,10 @@
 use crate::bindgen::ir::{
-    cfg::ConditionWrite, DeprecatedNoteKind, Documentation, Enum, Function, ItemContainer, Literal,
-    OpaqueItem, Static, Struct, ToCondition, Type, Typedef, Union,
+    cfg::ConditionWrite, DeprecatedNoteKind, Documentation, Enum, Function, GObject, ItemContainer,
+    Literal, OpaqueItem, Static, Struct, ToCondition, Type, Typedef, Union,
 };
 use crate::bindgen::writer::SourceWriter;
+use crate::bindgen::Config;
 use crate::bindgen::{cdecl, Bindings, Layout};
-use crate::Config;
 
 use std::io::Write;
 
@@ -25,6 +25,7 @@ pub trait LanguageBackend: Sized {
     fn write_opaque_item<W: Write>(&mut self, out: &mut SourceWriter<W>, o: &OpaqueItem);
     fn write_type_def<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Typedef);
     fn write_static<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Static);
+    fn write_gobject<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &GObject);
 
     fn write_function<W: Write>(
         &mut self,
@@ -122,11 +123,20 @@ pub trait LanguageBackend: Sized {
         self.write_primitive_constants(out, b);
         self.write_items(out, b);
         self.write_non_primitive_constants(out, b);
+        self.write_gobjects(out, b);
         self.write_globals(out, b);
         self.write_functions(out, b);
         self.close_namespaces(out);
         self.write_footers(out);
         self.write_trailer(out, b);
+    }
+
+    fn write_gobjects<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
+        for gobject in &b.gobjects {
+            out.new_line_if_not_start();
+            gobject.write(&b.config, self, out, None);
+            out.new_line();
+        }
     }
 
     fn write_primitive_constants<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
@@ -172,6 +182,7 @@ pub trait LanguageBackend: Sized {
                 ItemContainer::Union(ref x) => self.write_union(out, x),
                 ItemContainer::OpaqueItem(ref x) => self.write_opaque_item(out, x),
                 ItemContainer::Typedef(ref x) => self.write_type_def(out, x),
+                ItemContainer::GObject(ref x) => self.write_gobject(out, x),
             }
             out.new_line();
         }

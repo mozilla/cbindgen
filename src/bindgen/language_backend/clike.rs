@@ -1,7 +1,7 @@
 use crate::bindgen::ir::{
     to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
-    Typedef, Union,
+    Field, GObject, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct,
+    ToCondition, Type, Typedef, Union,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::rename::IdentifierType;
@@ -1008,5 +1008,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 out.new_line();
             }
         }
+    }
+
+    fn write_gobject<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &GObject) {
+        t.write_clike(out, self);
     }
 }
