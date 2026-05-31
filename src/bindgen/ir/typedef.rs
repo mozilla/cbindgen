@@ -10,8 +10,8 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Struct, Type,
+    AnnotationSet, AssocTypeResolver, Cfg, Documentation, Field, GenericArgument, GenericParams,
+    Item, ItemContainer, Path, Struct, Type,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -190,5 +190,10 @@ impl Item for Typedef {
         );
 
         out.insert_typedef(library, self, monomorph, generic_values.to_owned());
+    }
+
+    fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        self.generic_params.resolve_assoc_types(resolver);
+        self.aliased.resolve_assoc_types(resolver);
     }
 }
