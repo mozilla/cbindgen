@@ -1,5 +1,9 @@
 # unreleased
 
+# 0.29.4
+
+      * Support constant enums and arrays.
+
 # 0.29.3
 
       * Expose the line_endings config option to use with the builder
