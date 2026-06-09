@@ -114,6 +114,9 @@ pub enum Literal {
         ty: Type,
         value: Box<Literal>,
     },
+    Array {
+        items: Vec<Literal>,
+    },
 }
 
 impl Literal {
@@ -182,6 +185,11 @@ impl Literal {
                     }
                 }
             }
+            Literal::Array { ref mut items } => {
+                for item in items {
+                    item.replace_self_with(self_ty);
+                }
+            }
             Literal::Expr(..) => {}
         }
     }
@@ -189,6 +197,7 @@ impl Literal {
     fn is_valid(&self, bindings: &Bindings) -> bool {
         match *self {
             Literal::Expr(..) => true,
+            Literal::Array { ref items } => items.iter().all(|i| i.is_valid(bindings)),
             Literal::Path {
                 ref associated_to,
                 ref name,
@@ -228,6 +237,14 @@ impl Literal {
                 ref right,
                 ..
             } => left.visit(visitor) && right.visit(visitor),
+            Literal::Array { ref items } => {
+                for item in items {
+                    if !item.visit(visitor) {
+                        return false;
+                    }
+                }
+                true
+            }
             Literal::FieldAccess { ref base, .. } => base.visit(visitor),
             Literal::Struct { ref fields, .. } => {
                 for (_name, field) in fields.iter() {
@@ -304,6 +321,11 @@ impl Literal {
             } => {
                 left.rename_for_config(config);
                 right.rename_for_config(config);
+            }
+            Literal::Array { ref mut items } => {
+                for item in items {
+                    item.rename_for_config(config);
+                }
             }
             Literal::Expr(_) => {}
             Literal::Cast {
@@ -506,6 +528,14 @@ impl Literal {
                 }
             }
 
+            syn::Expr::Array(syn::ExprArray { ref elems, .. }) => {
+                let mut items = vec![];
+                for elem in elems {
+                    items.push(Self::load(elem)?);
+                }
+                Ok(Literal::Array { items })
+            }
+
             _ => Err(format!("Unsupported expression. {:?}", *expr)),
         }
     }
@@ -665,8 +695,14 @@ impl Constant {
         } else {
             out.write("static const ");
         }
-        language_backend.write_type(out, &self.ty);
-        write!(out, " {};", self.export_name());
+        crate::bindgen::cdecl::write_field(
+            language_backend,
+            out,
+            &self.ty,
+            self.export_name(),
+            config,
+        );
+        write!(out, ";");
         condition.write_after(config, out);
     }
 
@@ -759,9 +795,8 @@ impl Constant {
                 } else {
                     out.write("const ");
                 }
-
-                language_backend.write_type(out, &self.ty);
-                write!(out, " {name} = ");
+                crate::bindgen::cdecl::write_field(language_backend, out, &self.ty, &name, config);
+                write!(out, " = ");
                 language_backend.write_literal(out, value);
                 write!(out, ";");
             }
@@ -771,10 +806,10 @@ impl Constant {
             }
             Language::Cython => {
                 out.write("const ");
-                language_backend.write_type(out, &self.ty);
                 // For extern Cython declarations the initializer is ignored,
                 // but still useful as documentation, so we write it as a comment.
-                write!(out, " {name} # = ");
+                crate::bindgen::cdecl::write_field(language_backend, out, &self.ty, &name, config);
+                write!(out, " # = ");
                 language_backend.write_literal(out, value);
             }
         }

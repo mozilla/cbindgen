@@ -384,6 +384,14 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
                 out.write(">");
                 self.write_literal(out, value);
             }
+            Literal::Array { ref items } => {
+                write!(out, "[ ");
+                for item in items {
+                    self.write_literal(out, item);
+                    write!(out, ", ");
+                }
+                write!(out, "]");
+            }
             Literal::Struct {
                 export_name,
                 fields,

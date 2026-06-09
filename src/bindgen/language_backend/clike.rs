@@ -840,6 +840,14 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
     fn write_literal<W: Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal) {
         match l {
             Literal::Expr(v) => write!(out, "{v}"),
+            Literal::Array { items } => {
+                write!(out, "{{ ");
+                for item in items {
+                    self.write_literal(out, item);
+                    write!(out, ", ");
+                }
+                write!(out, "}}");
+            }
             Literal::Path {
                 ref associated_to,
                 ref name,
