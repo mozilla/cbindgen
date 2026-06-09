@@ -229,7 +229,7 @@ impl GenericArgument {
     pub fn rename_for_config(&mut self, config: &Config, generic_params: &GenericParams) {
         match *self {
             GenericArgument::Type(ref mut ty) => ty.rename_for_config(config, generic_params),
-            GenericArgument::Const(ref mut expr) => expr.rename_for_config(config),
+            GenericArgument::Const(ref mut expr) => expr.rename_for_config(config, generic_params),
         }
     }
 }

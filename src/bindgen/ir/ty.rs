@@ -237,20 +237,21 @@ impl PrimitiveType {
 /// limited vocabulary here: only identifiers and literals.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ConstExpr {
-    Name(String),
+    Path(GenericPath),
     Value(String),
 }
 
 impl ConstExpr {
     pub fn as_str(&self) -> &str {
         match *self {
-            ConstExpr::Name(ref string) | ConstExpr::Value(ref string) => string,
+            ConstExpr::Path(ref path) => path.export_name(),
+            ConstExpr::Value(ref string) => string,
         }
     }
 
-    pub fn rename_for_config(&mut self, config: &Config) {
-        if let ConstExpr::Name(ref mut name) = self {
-            config.export.rename(name);
+    pub fn rename_for_config(&mut self, config: &Config, generic_params: &GenericParams) {
+        if let ConstExpr::Path(ref mut path) = self {
+            path.rename_for_config(config, generic_params);
         }
     }
 
@@ -266,27 +267,23 @@ impl ConstExpr {
                 };
                 Ok(ConstExpr::Value(val))
             }
-            syn::Expr::Path(ref path) => {
-                let generic_path = GenericPath::load(&path.path)?;
-                Ok(ConstExpr::Name(generic_path.export_name().to_owned()))
-            }
+            syn::Expr::Path(ref path) => Ok(ConstExpr::Path(GenericPath::load(&path.path)?)),
             syn::Expr::Cast(ref cast) => Ok(ConstExpr::load(&cast.expr)?),
             _ => Err(format!("can't handle const expression {expr:?}")),
         }
     }
 
     pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> ConstExpr {
-        match *self {
-            ConstExpr::Name(ref name) => {
-                let path = Path::new(name);
+        if let ConstExpr::Path(ref path) = *self {
+            if path.is_single_identifier() {
                 for &(param, value) in mappings {
-                    if path == *param {
+                    if *param == *path.path() {
                         match *value {
                             GenericArgument::Type(Type::Path(ref path))
                                 if path.is_single_identifier() =>
                             {
                                 // This happens when the generic argument is a path.
-                                return ConstExpr::Name(path.name().to_string());
+                                return ConstExpr::Path(path.clone());
                             }
                             GenericArgument::Const(ref expr) => {
                                 return expr.clone();
@@ -298,7 +295,6 @@ impl ConstExpr {
                     }
                 }
             }
-            ConstExpr::Value(_) => {}
         }
         self.clone()
     }
@@ -766,7 +762,7 @@ impl Type {
             Type::Primitive(_) => {}
             Type::Array(ref mut ty, ref mut len) => {
                 ty.rename_for_config(config, generic_params);
-                len.rename_for_config(config);
+                len.rename_for_config(config, generic_params);
             }
             Type::FuncPtr {
                 ref mut ret,
