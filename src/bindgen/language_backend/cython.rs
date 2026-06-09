@@ -348,6 +348,9 @@ impl LanguageBackend for CythonLanguageBackend<'_> {
                     if let Some(known) = to_known_assoc_constant(path, name) {
                         return write!(out, "{known}");
                     }
+                    if let Some(variant) = out.bindings().enum_variant_reference(path, name) {
+                        return write!(out, "{variant}");
+                    }
                     write!(out, "{export_name}_")
                 }
                 write!(out, "{name}")

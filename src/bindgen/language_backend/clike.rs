@@ -848,6 +848,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                     if let Some(known) = to_known_assoc_constant(path, name) {
                         return write!(out, "{known}");
                     }
+                    if let Some(variant) = out.bindings().enum_variant_reference(path, name) {
+                        return write!(out, "{variant}");
+                    }
                     let path_separator = if self.config.language == Language::C {
                         "_"
                     } else if self.config.structure.associated_constants_in_body {

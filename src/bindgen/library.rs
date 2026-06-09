@@ -137,6 +137,7 @@ impl Library {
         Ok(Bindings::new(
             self.config,
             self.structs,
+            self.enums,
             self.typedefs,
             constants,
             globals,

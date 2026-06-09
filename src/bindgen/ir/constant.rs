@@ -195,6 +195,7 @@ impl Literal {
             } => {
                 if let Some((ref path, _export_name)) = associated_to {
                     return bindings.struct_exists(path)
+                        || bindings.enum_exists(path)
                         || to_known_assoc_constant(path, name).is_some();
                 }
                 true

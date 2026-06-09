@@ -56,14 +56,14 @@ cdef extern from *:
   # https://drafts.csswg.org/css-anchor-position-1/#propdef-position-area
   cdef enum:
     None # = 0,
-    Center # = <uint8_t>PositionAreaTrack_Center,
-    SpanAll # = <uint8_t>PositionAreaTrack_SpanAll,
-    Start # = <uint8_t>PositionAreaTrack_Start,
-    End # = <uint8_t>PositionAreaTrack_End,
-    SpanStart # = <uint8_t>PositionAreaTrack_SpanStart,
-    SpanEnd # = <uint8_t>PositionAreaTrack_SpanEnd,
-    Top # = ((<uint8_t>PositionAreaAxis_Vertical << AXIS_SHIFT) | <uint8_t>PositionAreaTrack_Start),
-    Bottom # = ((<uint8_t>PositionAreaAxis_Vertical << AXIS_SHIFT) | <uint8_t>PositionAreaTrack_End),
+    Center # = <uint8_t>Center,
+    SpanAll # = <uint8_t>SpanAll,
+    Start # = <uint8_t>Start,
+    End # = <uint8_t>End,
+    SpanStart # = <uint8_t>SpanStart,
+    SpanEnd # = <uint8_t>SpanEnd,
+    Top # = ((<uint8_t>Vertical << AXIS_SHIFT) | <uint8_t>Start),
+    Bottom # = ((<uint8_t>Vertical << AXIS_SHIFT) | <uint8_t>End),
   ctypedef uint8_t PositionAreaKeyword;
 
   void root(PositionAreaKeyword, PositionAreaTrack, PositionAreaAxis);
