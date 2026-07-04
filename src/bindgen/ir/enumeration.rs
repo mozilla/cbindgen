@@ -1204,7 +1204,7 @@ impl Enum {
                 write!(out, ")");
                 out.open_brace();
 
-                write!(out, "{} result;", self.export_name);
+                write!(out, "{} result{{}};", self.export_name);
 
                 if let VariantBody::Body {
                     name: ref variant_name,
