@@ -48,4 +48,6 @@ cdef extern from *:
   ctypedef struct Foo:
     int32_t x[FOO];
 
+  const char BAR[] # = "hello world"
+
   void root(Foo x);

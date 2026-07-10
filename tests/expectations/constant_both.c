@@ -50,4 +50,6 @@ typedef struct Foo {
   int32_t x[FOO];
 } Foo;
 
+#define BAR "hello world"
+
 void root(struct Foo x);

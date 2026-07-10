@@ -6,10 +6,10 @@ cdef extern from *:
 
 cdef extern from *:
 
-  cdef struct Foo:
-    pass
-  const int32_t Foo_GA # = 10
-  const char Foo_BU[] # = "hello world"
-  const float Foo_ZO # = 3.14
+  const char C_STRING[] # = "winner"
 
-  void root(Foo x);
+  const uint8_t BYTES[3] # = [ 97, 98, 99, ]
+
+  const char *ARRAY[2] # = [ "first", "second", ]
+
+  void root();

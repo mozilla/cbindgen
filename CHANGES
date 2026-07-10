@@ -1,5 +1,8 @@
 # unreleased
 
+      * Emit `&str`, `&CStr`, and arrays thereof as C string literals, and byte-string
+        (`b"..."`) constants as `uint8_t[]` arrays, instead of dropping them.
+
 # 0.29.4
 
       * Support constant enums and arrays.

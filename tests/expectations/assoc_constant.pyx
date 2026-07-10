@@ -9,6 +9,7 @@ cdef extern from *:
   ctypedef struct Foo:
     pass
   const int32_t Foo_GA # = 10
+  const char Foo_BU[] # = "hello world"
   const float Foo_ZO # = 3.14
 
   void root(Foo x);

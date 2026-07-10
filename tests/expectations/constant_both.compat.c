@@ -50,6 +50,8 @@ typedef struct Foo {
   int32_t x[FOO];
 } Foo;
 
+#define BAR "hello world"
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
