@@ -147,7 +147,7 @@ union C {
 #endif
 
   static C C1() {
-    C result;
+    C result{};
     result.tag = Tag::C1;
     return result;
   }
@@ -157,7 +157,7 @@ union C {
   }
 
   static C C2() {
-    C result;
+    C result{};
     result.tag = Tag::C2;
     return result;
   }
@@ -168,7 +168,7 @@ union C {
 
 #if defined(PLATFORM_WIN)
   static C C3() {
-    C result;
+    C result{};
     result.tag = Tag::C3;
     return result;
   }
@@ -180,7 +180,7 @@ union C {
 
 #if defined(PLATFORM_UNIX)
   static C C5(const int32_t &int_) {
-    C result;
+    C result{};
     ::new (&result.c5.int_) (int32_t)(int_);
     result.tag = Tag::C5;
     return result;

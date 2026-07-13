@@ -33,7 +33,7 @@ struct H {
   };
 
   static H H_Foo(const int16_t &_0) {
-    H result;
+    H result{};
     ::new (&result.foo._0) (int16_t)(_0);
     result.tag = Tag::H_Foo;
     return result;
@@ -55,7 +55,7 @@ struct H {
 
   static H H_Bar(const uint8_t &x,
                  const int16_t &y) {
-    H result;
+    H result{};
     ::new (&result.bar.x) (uint8_t)(x);
     ::new (&result.bar.y) (int16_t)(y);
     result.tag = Tag::H_Bar;
@@ -77,7 +77,7 @@ struct H {
   }
 
   static H H_Baz() {
-    H result;
+    H result{};
     result.tag = Tag::H_Baz;
     return result;
   }
@@ -110,7 +110,7 @@ struct J {
   };
 
   static J J_Foo(const int16_t &_0) {
-    J result;
+    J result{};
     ::new (&result.foo._0) (int16_t)(_0);
     result.tag = Tag::J_Foo;
     return result;
@@ -132,7 +132,7 @@ struct J {
 
   static J J_Bar(const uint8_t &x,
                  const int16_t &y) {
-    J result;
+    J result{};
     ::new (&result.bar.x) (uint8_t)(x);
     ::new (&result.bar.y) (int16_t)(y);
     result.tag = Tag::J_Bar;
@@ -154,7 +154,7 @@ struct J {
   }
 
   static J J_Baz() {
-    J result;
+    J result{};
     result.tag = Tag::J_Baz;
     return result;
   }
@@ -189,7 +189,7 @@ union K {
   K_Bar_Body bar;
 
   static K K_Foo(const int16_t &_0) {
-    K result;
+    K result{};
     ::new (&result.foo._0) (int16_t)(_0);
     result.tag = Tag::K_Foo;
     return result;
@@ -211,7 +211,7 @@ union K {
 
   static K K_Bar(const uint8_t &x,
                  const int16_t &y) {
-    K result;
+    K result{};
     ::new (&result.bar.x) (uint8_t)(x);
     ::new (&result.bar.y) (int16_t)(y);
     result.tag = Tag::K_Bar;
@@ -233,7 +233,7 @@ union K {
   }
 
   static K K_Baz() {
-    K result;
+    K result{};
     result.tag = Tag::K_Baz;
     return result;
   }
