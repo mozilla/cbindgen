@@ -1,0 +1,3 @@
+[defines]
+"feature = enabled" = "DEFINED"
+"feature = disabled" = "UNDEFINED"

@@ -21,6 +21,7 @@ pub struct FunctionArgument {
     pub name: Option<String>,
     pub ty: Type,
     pub array_length: Option<String>,
+    pub cfg: Option<Cfg>,
 }
 
 #[derive(Debug, Clone)]
@@ -53,6 +54,7 @@ impl Function {
                 name: None,
                 ty: Type::Primitive(super::PrimitiveType::VaList),
                 array_length: None,
+                cfg: None,
             })
         }
 
@@ -171,6 +173,7 @@ impl Function {
                         name,
                         ty: arg.ty,
                         array_length: None,
+                        cfg: arg.cfg,
                     }
                 })
                 .collect()
@@ -247,7 +250,10 @@ impl SynFnArgHelpers for syn::FnArg {
     fn as_argument(&self) -> Result<Option<FunctionArgument>, String> {
         match *self {
             syn::FnArg::Typed(syn::PatType {
-                ref pat, ref ty, ..
+                ref attrs,
+                ref pat,
+                ref ty,
+                ..
             }) => {
                 let ty = match Type::load(ty)? {
                     Some(x) => x,
@@ -275,12 +281,14 @@ impl SynFnArgHelpers for syn::FnArg {
                     name,
                     ty,
                     array_length: None,
+                    cfg: Cfg::load(attrs),
                 }))
             }
             syn::FnArg::Receiver(ref receiver) => Ok(Some(FunctionArgument {
                 name: Some("self".to_string()),
                 ty: gen_self_type(receiver)?,
                 array_length: None,
+                cfg: Cfg::load(&receiver.attrs),
             })),
         }
     }
