@@ -14,6 +14,11 @@ use std::str::{from_utf8, Utf8Error};
 extern crate tempfile;
 use self::tempfile::Builder;
 
+fn set_target_dir(cmd: &mut Command, path: &Path) {
+    cmd.env("CARGO_TARGET_DIR", path);
+    cmd.env("CARGO_BUILD_BUILD_DIR", path);
+}
+
 #[derive(Debug)]
 /// Possible errors that can occur during `rustc -Zunpretty=expanded`.
 pub enum Error {
@@ -75,15 +80,15 @@ pub fn expand(
     let mut _temp_dir = None; // drop guard
     if use_tempdir {
         _temp_dir = Some(Builder::new().prefix("cbindgen-expand").tempdir()?);
-        cmd.env("CARGO_TARGET_DIR", _temp_dir.unwrap().path());
+        set_target_dir(&mut cmd, _temp_dir.unwrap().path());
     } else if let Ok(ref path) = env::var("CARGO_EXPAND_TARGET_DIR") {
-        cmd.env("CARGO_TARGET_DIR", path);
+        set_target_dir(&mut cmd, Path::new(path));
     } else if let Ok(ref path) = env::var("OUT_DIR") {
         // When cbindgen was started programatically from a build.rs file, Cargo is running and
-        // locking the default target directory. In this case we need to use another directory,
-        // else we would end up in a deadlock. If Cargo is running `OUT_DIR` will be set, so we
-        // can use a directory relative to that.
-        cmd.env("CARGO_TARGET_DIR", PathBuf::from(path).join("expanded"));
+        // locking the default target and build directories. In this case we need to use another
+        // directory, else we would end up in a deadlock. If Cargo is running `OUT_DIR` will be
+        // set, so we can use a directory relative to that.
+        set_target_dir(&mut cmd, &PathBuf::from(path).join("expanded"));
     }
 
     // Set this variable so that we don't call it recursively if we expand a crate that is using
