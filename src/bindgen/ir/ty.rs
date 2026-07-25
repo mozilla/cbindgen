@@ -375,7 +375,7 @@ impl Type {
                     None => Type::Primitive(PrimitiveType::Void),
                 };
 
-                let is_const = pointer.mutability.is_none();
+                let is_const = matches!(pointer.mutability, syn::PointerMutability::Const(_));
                 Type::Ptr {
                     ty: Box::new(converted),
                     is_const,
@@ -412,7 +412,7 @@ impl Type {
                 let len = ConstExpr::load(len)?;
                 Type::Array(Box::new(converted), len)
             }
-            syn::Type::BareFn(ref function) => {
+            syn::Type::FnPtr(ref function) => {
                 let mut wildcard_counter = 0;
                 let mut args = function.inputs.iter().try_skip_map(|x| {
                     Type::load(&x.ty).map(|opt_ty| {
