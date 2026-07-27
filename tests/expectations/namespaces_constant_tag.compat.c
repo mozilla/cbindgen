@@ -16,6 +16,8 @@ struct Foo {
   int32_t x[FOO];
 };
 
+#define BAR "hello world"
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

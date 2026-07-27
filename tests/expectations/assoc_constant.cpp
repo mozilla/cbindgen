@@ -8,6 +8,7 @@ struct Foo {
 
 };
 constexpr static const int32_t Foo_GA = 10;
+constexpr static const char Foo_BU[] = "hello world";
 constexpr static const float Foo_ZO = 3.14;
 
 extern "C" {

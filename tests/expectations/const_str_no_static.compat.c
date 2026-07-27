@@ -3,18 +3,17 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-struct Foo {
+#define C_STRING "winner"
 
-};
-#define Foo_GA 10
-#define Foo_BU "hello world"
-#define Foo_ZO 3.14
+#define BYTES { 97, 98, 99, }
+
+#define ARRAY { "first", "second", }
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
-void root(struct Foo x);
+void root(void);
 
 #ifdef __cplusplus
 }  // extern "C"
