@@ -381,7 +381,7 @@ impl Builder {
             result.extend_with(&parser::parse_src(x, &self.config)?);
         }
 
-        if let Some((lib_dir, binding_lib_name)) = self.lib.clone() {
+        if let Some((lib_dir, binding_lib_name)) = self.lib {
             let lockfile = self.lockfile.as_deref();
 
             let cargo = Cargo::load(
@@ -395,7 +395,7 @@ impl Builder {
             )?;
 
             result.extend_with(&parser::parse_lib(cargo, &self.config)?);
-        } else if let Some(cargo) = self.lib_cargo.clone() {
+        } else if let Some(cargo) = self.lib_cargo {
             result.extend_with(&parser::parse_lib(cargo, &self.config)?);
         }
 
