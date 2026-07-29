@@ -6,7 +6,9 @@ use std::io::Write;
 
 use crate::bindgen::config::Layout;
 use crate::bindgen::declarationtyperesolver::DeclarationType;
-use crate::bindgen::ir::{ConstExpr, Function, GenericArgument, Type};
+use crate::bindgen::ir::{
+    Condition, ConditionWrite, ConstExpr, Function, GenericArgument, ToCondition, Type,
+};
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{Config, Language};
@@ -23,10 +25,16 @@ enum CDeclarator {
     },
     Array(String),
     Func {
-        args: Vec<(Option<String>, CDecl)>,
+        args: Vec<CFuncArg>,
         layout: Layout,
         never_return: bool,
     },
+}
+
+struct CFuncArg {
+    ident: Option<String>,
+    decl: CDecl,
+    condition: Option<Condition>,
 }
 
 impl CDeclarator {
@@ -90,11 +98,14 @@ impl CDecl {
         let args = f
             .args
             .iter()
-            .map(|arg| {
-                (
-                    arg.name.clone(),
-                    CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref(), config),
-                )
+            .map(|arg| CFuncArg {
+                ident: arg.name.clone(),
+                decl: CDecl::from_func_arg(&arg.ty, arg.array_length.as_deref(), config),
+                condition: if config.language == Language::Cython {
+                    None
+                } else {
+                    arg.cfg.to_condition(config)
+                },
             })
             .collect();
         self.declarators.push(CDeclarator::Func {
@@ -170,7 +181,11 @@ impl CDecl {
             } => {
                 let args = args
                     .iter()
-                    .map(|(ref name, ref ty)| (name.clone(), CDecl::from_type(ty, config)))
+                    .map(|(ref name, ref ty)| CFuncArg {
+                        ident: name.clone(),
+                        decl: CDecl::from_type(ty, config),
+                        condition: None,
+                    })
                     .collect();
                 self.declarators.push(CDeclarator::Ptr {
                     is_const: false,
@@ -308,20 +323,18 @@ impl CDecl {
                         language_backend: &mut LB,
                         out: &mut SourceWriter<F>,
                         config: &Config,
-                        args: &[(Option<String>, CDecl)],
+                        args: &[CFuncArg],
                     ) {
                         let align_length = out.line_length_for_align();
                         out.push_set_spaces(align_length);
-                        for (i, (arg_ident, arg_ty)) in args.iter().enumerate() {
+                        for (i, arg) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(",");
                                 out.new_line();
                             }
 
-                            // Convert &Option<String> to Option<&str>
-                            let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
-
-                            arg_ty.write(language_backend, out, arg_ident, config);
+                            arg.decl
+                                .write(language_backend, out, arg.ident.as_deref(), config);
                         }
                         out.pop_tab();
                     }
@@ -330,29 +343,91 @@ impl CDecl {
                         language_backend: &mut LB,
                         out: &mut SourceWriter<F>,
                         config: &Config,
-                        args: &[(Option<String>, CDecl)],
+                        args: &[CFuncArg],
                     ) {
-                        for (i, (arg_ident, arg_ty)) in args.iter().enumerate() {
+                        for (i, arg) in args.iter().enumerate() {
                             if i != 0 {
                                 out.write(", ");
                             }
 
-                            // Convert &Option<String> to Option<&str>
-                            let arg_ident = arg_ident.as_ref().map(|x| x.as_ref());
-
-                            arg_ty.write(language_backend, out, arg_ident, config);
+                            arg.decl
+                                .write(language_backend, out, arg.ident.as_deref(), config);
                         }
                     }
 
-                    match layout {
-                        Layout::Vertical => write_vertical(language_backend, out, config, args),
-                        Layout::Horizontal => write_horizontal(language_backend, out, config, args),
-                        Layout::Auto => {
-                            if !out.try_write(
-                                |out| write_horizontal(language_backend, out, config, args),
-                                config.line_length,
-                            ) {
-                                write_vertical(language_backend, out, config, args)
+                    fn write_conditional<F: Write, LB: LanguageBackend>(
+                        language_backend: &mut LB,
+                        out: &mut SourceWriter<F>,
+                        config: &Config,
+                        args: &[CFuncArg],
+                    ) {
+                        let align_length = out.line_length_for_align();
+                        out.push_set_spaces(align_length);
+                        out.new_line();
+
+                        let mut has_unconditional_arg = false;
+                        let mut previous_conditions = Vec::new();
+
+                        // Keep the declaration valid when every cfg argument is disabled.
+                        if args.iter().all(|arg| arg.condition.is_some()) {
+                            let no_args_condition = Some(Condition::Not(Box::new(Condition::Any(
+                                args.iter()
+                                    .filter_map(|arg| arg.condition.clone())
+                                    .collect(),
+                            ))));
+                            no_args_condition.write_before(config, out);
+                            out.write("void");
+                            no_args_condition.write_after(config, out);
+                            out.new_line();
+                        }
+
+                        for arg in args {
+                            if arg.condition.is_some() {
+                                arg.condition.write_before(config, out);
+                            }
+
+                            if has_unconditional_arg {
+                                out.write(", ");
+                            } else if !previous_conditions.is_empty() {
+                                // Emit a comma only when an earlier cfg argument is present.
+                                let comma_condition =
+                                    Some(Condition::Any(previous_conditions.clone()));
+                                comma_condition.write_before(config, out);
+                                out.write(",");
+                                comma_condition.write_after(config, out);
+                                out.new_line();
+                            }
+
+                            arg.decl
+                                .write(language_backend, out, arg.ident.as_deref(), config);
+
+                            if let Some(condition) = &arg.condition {
+                                arg.condition.write_after(config, out);
+                                previous_conditions.push(condition.clone());
+                            } else {
+                                has_unconditional_arg = true;
+                            }
+                            out.new_line();
+                        }
+
+                        out.pop_tab();
+                    }
+
+                    if args.iter().any(|arg| arg.condition.is_some()) {
+                        write_conditional(language_backend, out, config, args);
+                    } else {
+                        match layout {
+                            Layout::Vertical => write_vertical(language_backend, out, config, args),
+                            Layout::Horizontal => {
+                                write_horizontal(language_backend, out, config, args)
+                            }
+                            Layout::Auto => {
+                                if !out.try_write(
+                                    |out| write_horizontal(language_backend, out, config, args),
+                                    config.line_length,
+                                ) {
+                                    write_vertical(language_backend, out, config, args)
+                                }
                             }
                         }
                     }
