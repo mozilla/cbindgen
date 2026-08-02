@@ -164,33 +164,35 @@ impl EnumVariant {
         let body = match variant.fields {
             syn::Fields::Unit => VariantBody::Empty(annotations),
             syn::Fields::Named(ref fields) => {
-                let path = Path::new(format!("{}_Body", variant.ident));
+                let path = Path::new(format!("{}_{}_Body", self_path.name(), variant.ident));
                 let name = body_rule
                     .apply(
                         &variant.ident.unraw().to_string(),
                         IdentifierType::StructMember,
                     )
                     .into_owned();
+                let mut body = Struct::new(
+                    path,
+                    generic_params,
+                    parse_fields(inline_tag_field, &fields.named, self_path, None)?,
+                    inline_tag_field,
+                    true,
+                    None,
+                    false,
+                    None,
+                    annotations,
+                    Documentation::none(),
+                );
+                body.export_name = format!("{}_Body", variant.ident);
                 VariantBody::Body {
-                    body: Struct::new(
-                        path,
-                        generic_params,
-                        parse_fields(inline_tag_field, &fields.named, self_path, None)?,
-                        inline_tag_field,
-                        true,
-                        None,
-                        false,
-                        None,
-                        annotations,
-                        Documentation::none(),
-                    ),
+                    body,
                     name,
                     inline: false,
                     inline_casts: false,
                 }
             }
             syn::Fields::Unnamed(ref fields) => {
-                let path = Path::new(format!("{}_Body", variant.ident));
+                let path = Path::new(format!("{}_{}_Body", self_path.name(), variant.ident));
                 let name = body_rule
                     .apply(
                         &variant.ident.unraw().to_string(),
@@ -205,19 +207,21 @@ impl EnumVariant {
                 // As a result we don't currently inline variant definitions in C++ mode at all.
                 let inline = inline_casts && config.language != Language::Cxx;
                 let inline_name = if inline { Some(&*name) } else { None };
+                let mut body = Struct::new(
+                    path,
+                    generic_params,
+                    parse_fields(inline_tag_field, &fields.unnamed, self_path, inline_name)?,
+                    inline_tag_field,
+                    true,
+                    None,
+                    false,
+                    None,
+                    annotations,
+                    Documentation::none(),
+                );
+                body.export_name = format!("{}_Body", variant.ident);
                 VariantBody::Body {
-                    body: Struct::new(
-                        path,
-                        generic_params,
-                        parse_fields(inline_tag_field, &fields.unnamed, self_path, inline_name)?,
-                        inline_tag_field,
-                        true,
-                        None,
-                        false,
-                        None,
-                        annotations,
-                        Documentation::none(),
-                    ),
+                    body,
                     name,
                     inline,
                     inline_casts,
