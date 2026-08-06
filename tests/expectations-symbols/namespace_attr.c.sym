@@ -1,0 +1,7 @@
+{
+global_function;
+ffi_function;
+nested_function;
+another_nested_function;
+other_namespace_function;
+};

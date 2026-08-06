@@ -3,12 +3,5 @@
 version = 4
 
 [[package]]
-name = "no_extern"
+name = "dependency"
 version = "0.1.0"
-
-[[package]]
-name = "old_dep_name"
-version = "0.1.0"
-dependencies = [
- "no_extern",
-]

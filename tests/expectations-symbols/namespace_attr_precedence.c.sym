@@ -1,0 +1,5 @@
+{
+uses_global_namespace;
+uses_item_namespace;
+also_uses_global_namespace;
+};
