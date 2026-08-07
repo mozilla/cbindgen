@@ -1,0 +1,3 @@
+[export]
+prefix = "PREFIX_"
+prefix_excludes = ["Type2", "Struct1"]
