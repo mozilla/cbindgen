@@ -120,10 +120,8 @@ impl<'a> CLikeLanguageBackend<'a> {
         let mut wrote_start_newline = false;
 
         if self.config.structure.derive_constructor(&s.annotations) && !s.fields.is_empty() {
-            if !wrote_start_newline {
-                wrote_start_newline = true;
-                out.new_line();
-            }
+            wrote_start_newline = true;
+            out.new_line();
 
             out.new_line();
 
