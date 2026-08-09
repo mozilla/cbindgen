@@ -1,3 +1,5 @@
+#define CF_SWIFT_NAME(_name) __attribute__((swift_name(#_name)))
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>

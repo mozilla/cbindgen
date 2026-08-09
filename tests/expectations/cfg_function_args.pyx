@@ -1,3 +1,5 @@
+#define CF_SWIFT_NAME(_name) __attribute__((swift_name(#_name)))
+
 from libc.stdint cimport int8_t, int16_t, int32_t, int64_t, intptr_t
 from libc.stdint cimport uint8_t, uint16_t, uint32_t, uint64_t, uintptr_t
 cdef extern from *:

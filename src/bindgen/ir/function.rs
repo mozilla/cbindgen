@@ -9,7 +9,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, ToCondition, Type};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
@@ -82,6 +82,16 @@ impl Function {
 
     pub fn swift_name(&self, config: &Config) -> Option<String> {
         if config.language == Language::Cython {
+            return None;
+        }
+        // A conditional argument changes the function's arity, but swift_name attributes have a
+        // fixed argument list. Omit the attribute rather than emitting one that is invalid for
+        // some configurations.
+        if self
+            .args
+            .iter()
+            .any(|arg| arg.cfg.to_condition(config).is_some())
+        {
             return None;
         }
         // If the symbol name starts with the type name, separate the two components with '.'

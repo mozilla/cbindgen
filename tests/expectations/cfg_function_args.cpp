@@ -1,3 +1,5 @@
+#define CF_SWIFT_NAME(_name) __attribute__((swift_name(#_name)))
+
 #include <cstdarg>
 #include <cstdint>
 #include <cstdlib>
