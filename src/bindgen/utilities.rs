@@ -269,29 +269,32 @@ pub trait SynAttributeHelpers {
     }
 
     fn unsafe_attr_name_value_lookup(&self, name: &str) -> Option<String> {
-        self.attrs()
-            .iter()
-            .filter_map(|attr| {
-                let syn::Meta::List(list) = &attr.meta else { return None };
-                if !list.path.is_ident("unsafe") {
-                    return None;
+        self.attrs().iter().find_map(|attr| {
+            let syn::Meta::List(list) = &attr.meta else {
+                return None;
+            };
+            if !list.path.is_ident("unsafe") {
+                return None;
+            }
+            let parser =
+                syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
+            let Ok(args) = list.parse_args_with(parser) else {
+                return None;
+            };
+            for arg in args {
+                if !arg.path.is_ident(name) {
+                    continue;
                 }
-                let parser = syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated;
-                let Ok(args) = list.parse_args_with(parser) else { return None };
-                for arg in args {
-                    if !arg.path.is_ident(name) {
-                        continue;
-                    }
-                    if let syn::Expr::Lit(syn::ExprLit {
-                        lit: syn::Lit::Str(lit),
-                        ..
-                    }) = arg.value {
-                        return Some(lit.value());
-                    }
+                if let syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Str(lit),
+                    ..
+                }) = arg.value
+                {
+                    return Some(lit.value());
                 }
-                None
-            })
-            .next()
+            }
+            None
+        })
     }
 
     fn get_comment_lines(&self) -> Vec<String> {

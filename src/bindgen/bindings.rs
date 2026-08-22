@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
-use std::io::{BufWriter, Read, Write};
+use std::io::{BufWriter, Write};
 use std::path;
 use std::rc::Rc;
 
@@ -243,7 +243,7 @@ impl Bindings {
 
         // Don't compare files if we've never written this file before
         if !path.as_ref().is_file() {
-            if let Some(parent) = path::Path::new(path.as_ref()).parent() {
+            if let Some(parent) = path.as_ref().parent() {
                 fs::create_dir_all(parent).unwrap();
             }
             self.write(File::create(path).unwrap());
@@ -253,15 +253,10 @@ impl Bindings {
         let mut new_file_contents = Vec::new();
         self.write(&mut new_file_contents);
 
-        let mut old_file_contents = Vec::new();
-        {
-            let mut old_file = File::open(&path).unwrap();
-            old_file.read_to_end(&mut old_file_contents).unwrap();
-        }
+        let old_file_contents = std::fs::read(&path).unwrap();
 
         if old_file_contents != new_file_contents {
-            let mut new_file = File::create(&path).unwrap();
-            new_file.write_all(&new_file_contents).unwrap();
+            std::fs::write(&path, &new_file_contents).unwrap();
             true
         } else {
             false

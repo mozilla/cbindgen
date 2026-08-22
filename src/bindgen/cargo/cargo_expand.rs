@@ -105,14 +105,7 @@ pub fn expand(
     cmd.arg(manifest_path);
     if let Some(features) = expand_features {
         cmd.arg("--features");
-        let mut features_str = String::new();
-        for (index, feature) in features.iter().enumerate() {
-            if index != 0 {
-                features_str.push(' ');
-            }
-            features_str.push_str(feature);
-        }
-        cmd.arg(features_str);
+        cmd.arg(features.join(" "));
     }
     if expand_all_features {
         cmd.arg("--all-features");

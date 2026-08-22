@@ -101,13 +101,11 @@ impl Function {
             .trim_start_matches(type_name)
             .trim_start_matches('_');
 
-        let item_args = {
-            let mut items = Vec::with_capacity(self.args.len());
-            for arg in self.args.iter() {
-                items.push(format!("{}:", arg.name.as_ref()?.as_str()));
-            }
-            items.join("")
-        };
+        let item_args = self
+            .args
+            .iter()
+            .map(|arg| Some(format!("{}:", arg.name.as_ref()?.as_str())))
+            .collect::<Option<String>>()?;
         Some(format!("{type_prefix}{item_name}({item_args})"))
     }
 
@@ -188,8 +186,7 @@ impl Function {
         // Save the array length of the pointer arguments which need to use
         // the C-array notation
         if let Some(tuples) = self.annotations.list("ptrs-as-arrays") {
-            let mut ptrs_as_arrays: HashMap<String, String> = HashMap::new();
-            for str_tuple in tuples {
+            let ptrs_as_arrays: HashMap<String, String> = tuples.iter().filter_map(|str_tuple| {
                 let parts: Vec<&str> = str_tuple[1..str_tuple.len() - 1]
                     .split(';')
                     .map(|x| x.trim())
@@ -198,10 +195,10 @@ impl Function {
                     warn!(
                         "{parts:?} does not follow the correct syntax, so the annotation is being ignored"
                     );
-                    continue;
+                    return None;
                 }
-                ptrs_as_arrays.insert(parts[0].to_string(), parts[1].to_string());
-            }
+                Some((parts[0].to_string(), parts[1].to_string()))
+            }).collect();
 
             for arg in &mut self.args {
                 match arg.ty {

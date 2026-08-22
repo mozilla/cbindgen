@@ -3,10 +3,10 @@ fn generate_tests() {
     use std::ffi::OsStr;
     use std::fs::{self, File};
     use std::io::Write;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let mut dst = File::create(Path::new(&out_dir).join("tests.rs")).unwrap();
+    let mut dst = File::create(out_dir.join("tests.rs")).unwrap();
 
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let tests_dir = manifest_dir.join("tests").join("rust");
@@ -55,10 +55,10 @@ fn generate_depfile_tests() {
     use std::env;
     use std::fs::{self, File};
     use std::io::Write;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    let mut dst = File::create(Path::new(&out_dir).join("depfile_tests.rs")).unwrap();
+    let mut dst = File::create(out_dir.join("depfile_tests.rs")).unwrap();
 
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let tests_dir = manifest_dir.join("tests").join("depfile");

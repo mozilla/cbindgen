@@ -4,9 +4,7 @@
 
 use std::error;
 use std::fmt;
-use std::fs::File;
 use std::io;
-use std::io::Read;
 use std::path::Path;
 
 #[derive(Debug)]
@@ -59,9 +57,6 @@ pub struct Package {
 
 /// Parse the Cargo.toml for a given path
 pub fn manifest(manifest_path: &Path) -> Result<Manifest, Error> {
-    let mut s = String::new();
-    let mut f = File::open(manifest_path)?;
-    f.read_to_string(&mut s)?;
-
+    let s = std::fs::read_to_string(manifest_path)?;
     toml::from_str::<Manifest>(&s).map_err(|x| x.into())
 }

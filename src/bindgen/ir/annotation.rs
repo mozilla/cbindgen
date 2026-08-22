@@ -210,17 +210,11 @@ impl AnnotationSet {
 
 /// Parse lists like "[x, y, z]". This is not implemented efficiently or well.
 fn parse_list(list: &str) -> Option<Vec<String>> {
-    if list.len() < 2 {
-        return None;
-    }
-
-    match (list.chars().next(), list.chars().last()) {
-        (Some('['), Some(']')) => Some(
-            list[1..list.len() - 1]
-                .split(',')
-                .map(|x| x.trim().to_string())
-                .collect(),
-        ),
-        _ => None,
-    }
+    let parsed = list
+        .strip_prefix('[')?
+        .strip_suffix(']')?
+        .split(',')
+        .map(|x| x.trim().to_string())
+        .collect();
+    Some(parsed)
 }

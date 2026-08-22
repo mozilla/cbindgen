@@ -2,15 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::fs::File;
 use std::io;
-use std::io::Read;
 use std::path::Path;
 
 #[derive(Debug)]
-/// Possible errors that can occur during Cargo.toml parsing.
+/// Possible errors that can occur during Cargo.lock parsing.
 pub enum Error {
-    /// Error during reading of Cargo.toml
+    /// Error during reading of Cargo.lock
     #[allow(dead_code)]
     Io(io::Error),
     /// Deserialization error
@@ -43,11 +41,8 @@ pub struct Package {
     pub dependencies: Option<Vec<String>>,
 }
 
-/// Parse the Cargo.toml for a given path
+/// Parse the Cargo.lock for a given path
 pub fn lock(manifest_path: &Path) -> Result<Lock, Error> {
-    let mut s = String::new();
-    let mut f = File::open(manifest_path)?;
-    f.read_to_string(&mut s)?;
-
+    let s = std::fs::read_to_string(manifest_path)?;
     toml::from_str::<Lock>(&s).map_err(|x| x.into())
 }
