@@ -45,3 +45,8 @@ pub extern "C" fn root(
     f: F,
 ) { }
 
+#[repr(C)]
+enum AvCodecId {
+    H264,
+    H265,
+}

@@ -52,6 +52,12 @@ pub enum RenameRule {
     QualifiedScreamingSnakeCase,
     /// Adds a given prefix
     Prefix(String),
+    /// Adds a given prefix and converts the identifier to a specific case,
+    /// The prefix is applied before the conversion.
+    /// For example:
+    ///  - `prefix:Foo + CamelCase` applied to `bar` with `CamelCase` would result in `FooBar`.
+    ///  - `prefix:FOO_ + ScreamingSnakeCase` applied to `Bar` with `ScreamingSnakeCase` would result in `FOO_BAR`.
+    PrefixWithConversion(String, Box<Self>),
 }
 
 impl RenameRule {
@@ -93,6 +99,10 @@ impl RenameRule {
                 result
             }
             RenameRule::Prefix(prefix) => prefix.to_owned() + text,
+            RenameRule::PrefixWithConversion(prefix, rule) => {
+                let converted = rule.apply(text, context);
+                prefix.to_owned() + &converted
+            }
         })
     }
 }
@@ -138,7 +148,33 @@ impl FromStr for RenameRule {
             "QualifiedScreamingSnakeCase" => Ok(RenameRule::QualifiedScreamingSnakeCase),
             "qualified_screaming_snake_case" => Ok(RenameRule::QualifiedScreamingSnakeCase),
 
-            s if s.starts_with(PREFIX) => Ok(RenameRule::Prefix(s[PREFIX_LEN..].to_string())),
+            s if s.starts_with(PREFIX) => {
+                if s.contains('+') {
+                    let parts: Vec<&str> = s.split('+').collect();
+                    if parts.len() != 2 {
+                        return Err(format!(
+                            "Invalid RenameRule: '{s}', expected 'prefix:... + Conversion'."
+                        ));
+                    }
+                    let prefix = parts[0][PREFIX_LEN..].trim().to_string();
+                    let convert = parts[1].trim();
+                    if convert.is_empty() {
+                        return Err(format!(
+                            "Invalid RenameRule: '{s}', no conversion specified."
+                        ));
+                    }
+                    let convert_rule = RenameRule::from_str(convert)?;
+                    if let RenameRule::Prefix(_) = convert_rule {
+                        return Err(format!("Invalid conversion rule: '{convert}', Prefix with conversion must not be a prefix."));
+                    }
+                    Ok(RenameRule::PrefixWithConversion(
+                        prefix,
+                        Box::new(convert_rule),
+                    ))
+                } else {
+                    Ok(RenameRule::Prefix(s[PREFIX_LEN..].to_string()))
+                }
+            }
 
             _ => Err(format!("Unrecognized RenameRule: '{s}'.")),
         }
