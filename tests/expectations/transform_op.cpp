@@ -47,7 +47,7 @@ union StyleFoo {
   static StyleFoo Foo(const int32_t &x,
                       const StylePoint<T> &y,
                       const StylePoint<float> &z) {
-    StyleFoo result;
+    StyleFoo result{};
     ::new (&result.foo.x) (int32_t)(x);
     ::new (&result.foo.y) (StylePoint<T>)(y);
     ::new (&result.foo.z) (StylePoint<float>)(z);
@@ -70,7 +70,7 @@ union StyleFoo {
   }
 
   static StyleFoo Bar(const T &_0) {
-    StyleFoo result;
+    StyleFoo result{};
     ::new (&result.bar._0) (T)(_0);
     result.tag = Tag::Bar;
     return result;
@@ -91,7 +91,7 @@ union StyleFoo {
   }
 
   static StyleFoo Baz(const StylePoint<T> &_0) {
-    StyleFoo result;
+    StyleFoo result{};
     ::new (&result.baz._0) (StylePoint<T>)(_0);
     result.tag = Tag::Baz;
     return result;
@@ -112,7 +112,7 @@ union StyleFoo {
   }
 
   static StyleFoo Bazz() {
-    StyleFoo result;
+    StyleFoo result{};
     result.tag = Tag::Bazz;
     return result;
   }
@@ -157,7 +157,7 @@ struct StyleBar {
                        const StylePoint<T> &y,
                        const StylePoint<float> &z,
                        int32_t (*&u)(int32_t)) {
-    StyleBar result;
+    StyleBar result{};
     ::new (&result.bar1.x) (int32_t)(x);
     ::new (&result.bar1.y) (StylePoint<T>)(y);
     ::new (&result.bar1.z) (StylePoint<float>)(z);
@@ -181,7 +181,7 @@ struct StyleBar {
   }
 
   static StyleBar Bar2(const T &_0) {
-    StyleBar result;
+    StyleBar result{};
     ::new (&result.bar2._0) (T)(_0);
     result.tag = Tag::Bar2;
     return result;
@@ -202,7 +202,7 @@ struct StyleBar {
   }
 
   static StyleBar Bar3(const StylePoint<T> &_0) {
-    StyleBar result;
+    StyleBar result{};
     ::new (&result.bar3._0) (StylePoint<T>)(_0);
     result.tag = Tag::Bar3;
     return result;
@@ -223,7 +223,7 @@ struct StyleBar {
   }
 
   static StyleBar Bar4() {
-    StyleBar result;
+    StyleBar result{};
     result.tag = Tag::Bar4;
     return result;
   }
@@ -257,7 +257,7 @@ union StyleBaz {
   Baz2_Body baz2;
 
   static StyleBaz Baz1(const StyleBar<uint32_t> &_0) {
-    StyleBaz result;
+    StyleBaz result{};
     ::new (&result.baz1._0) (StyleBar<uint32_t>)(_0);
     result.tag = Tag::Baz1;
     return result;
@@ -278,7 +278,7 @@ union StyleBaz {
   }
 
   static StyleBaz Baz2(const StylePoint<int32_t> &_0) {
-    StyleBaz result;
+    StyleBaz result{};
     ::new (&result.baz2._0) (StylePoint<int32_t>)(_0);
     result.tag = Tag::Baz2;
     return result;
@@ -299,7 +299,7 @@ union StyleBaz {
   }
 
   static StyleBaz Baz3() {
-    StyleBaz result;
+    StyleBaz result{};
     result.tag = Tag::Baz3;
     return result;
   }
@@ -331,7 +331,7 @@ struct StyleTaz {
   };
 
   static StyleTaz Taz1(const StyleBar<uint32_t> &_0) {
-    StyleTaz result;
+    StyleTaz result{};
     ::new (&result.taz1._0) (StyleBar<uint32_t>)(_0);
     result.tag = Tag::Taz1;
     return result;
@@ -352,7 +352,7 @@ struct StyleTaz {
   }
 
   static StyleTaz Taz2(const StyleBaz &_0) {
-    StyleTaz result;
+    StyleTaz result{};
     ::new (&result.taz2._0) (StyleBaz)(_0);
     result.tag = Tag::Taz2;
     return result;
@@ -373,7 +373,7 @@ struct StyleTaz {
   }
 
   static StyleTaz Taz3() {
-    StyleTaz result;
+    StyleTaz result{};
     result.tag = Tag::Taz3;
     return result;
   }

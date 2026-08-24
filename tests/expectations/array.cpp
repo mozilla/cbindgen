@@ -19,7 +19,7 @@ struct Foo {
   };
 
   static Foo A(const float (&_0)[20]) {
-    Foo result;
+    Foo result{};
     for (int i = 0; i < 20; i++) {
       ::new (&result.a._0[i]) (float)(_0[i]);
     }

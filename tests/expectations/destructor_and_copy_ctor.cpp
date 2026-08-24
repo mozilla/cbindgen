@@ -71,7 +71,7 @@ struct Foo {
   };
 
   static Foo Bar() {
-    Foo result;
+    Foo result{};
     result.tag = Tag::Bar;
     return result;
   }
@@ -81,7 +81,7 @@ struct Foo {
   }
 
   static Foo Polygon1(const Polygon<T> &_0) {
-    Foo result;
+    Foo result{};
     ::new (&result.polygon1._0) (Polygon<T>)(_0);
     result.tag = Tag::Polygon1;
     return result;
@@ -92,7 +92,7 @@ struct Foo {
   }
 
   static Foo Slice1(const OwnedSlice<T> &_0) {
-    Foo result;
+    Foo result{};
     ::new (&result.slice1._0) (OwnedSlice<T>)(_0);
     result.tag = Tag::Slice1;
     return result;
@@ -103,7 +103,7 @@ struct Foo {
   }
 
   static Foo Slice2(const OwnedSlice<int32_t> &_0) {
-    Foo result;
+    Foo result{};
     ::new (&result.slice2._0) (OwnedSlice<int32_t>)(_0);
     result.tag = Tag::Slice2;
     return result;
@@ -115,7 +115,7 @@ struct Foo {
 
   static Foo Slice3(const FillRule &fill,
                     const OwnedSlice<T> &coords) {
-    Foo result;
+    Foo result{};
     ::new (&result.slice3.fill) (FillRule)(fill);
     ::new (&result.slice3.coords) (OwnedSlice<T>)(coords);
     result.tag = Tag::Slice3;
@@ -128,7 +128,7 @@ struct Foo {
 
   static Foo Slice4(const FillRule &fill,
                     const OwnedSlice<int32_t> &coords) {
-    Foo result;
+    Foo result{};
     ::new (&result.slice4.fill) (FillRule)(fill);
     ::new (&result.slice4.coords) (OwnedSlice<int32_t>)(coords);
     result.tag = Tag::Slice4;
@@ -225,7 +225,7 @@ union Baz {
   Slice24_Body slice24;
 
   static Baz Bar2() {
-    Baz result;
+    Baz result{};
     result.tag = Tag::Bar2;
     return result;
   }
@@ -235,7 +235,7 @@ union Baz {
   }
 
   static Baz Polygon21(const Polygon<T> &_0) {
-    Baz result;
+    Baz result{};
     ::new (&result.polygon21._0) (Polygon<T>)(_0);
     result.tag = Tag::Polygon21;
     return result;
@@ -246,7 +246,7 @@ union Baz {
   }
 
   static Baz Slice21(const OwnedSlice<T> &_0) {
-    Baz result;
+    Baz result{};
     ::new (&result.slice21._0) (OwnedSlice<T>)(_0);
     result.tag = Tag::Slice21;
     return result;
@@ -257,7 +257,7 @@ union Baz {
   }
 
   static Baz Slice22(const OwnedSlice<int32_t> &_0) {
-    Baz result;
+    Baz result{};
     ::new (&result.slice22._0) (OwnedSlice<int32_t>)(_0);
     result.tag = Tag::Slice22;
     return result;
@@ -269,7 +269,7 @@ union Baz {
 
   static Baz Slice23(const FillRule &fill,
                      const OwnedSlice<T> &coords) {
-    Baz result;
+    Baz result{};
     ::new (&result.slice23.fill) (FillRule)(fill);
     ::new (&result.slice23.coords) (OwnedSlice<T>)(coords);
     result.tag = Tag::Slice23;
@@ -282,7 +282,7 @@ union Baz {
 
   static Baz Slice24(const FillRule &fill,
                      const OwnedSlice<int32_t> &coords) {
-    Baz result;
+    Baz result{};
     ::new (&result.slice24.fill) (FillRule)(fill);
     ::new (&result.slice24.coords) (OwnedSlice<int32_t>)(coords);
     result.tag = Tag::Slice24;
@@ -355,7 +355,7 @@ union Taz {
   Taz3_Body taz3;
 
   static Taz Bar3() {
-    Taz result;
+    Taz result{};
     result.tag = Tag::Bar3;
     return result;
   }
@@ -365,7 +365,7 @@ union Taz {
   }
 
   static Taz Taz1(const int32_t &_0) {
-    Taz result;
+    Taz result{};
     ::new (&result.taz1._0) (int32_t)(_0);
     result.tag = Tag::Taz1;
     return result;
@@ -376,7 +376,7 @@ union Taz {
   }
 
   static Taz Taz3(const OwnedSlice<int32_t> &_0) {
-    Taz result;
+    Taz result{};
     ::new (&result.taz3._0) (OwnedSlice<int32_t>)(_0);
     result.tag = Tag::Taz3;
     return result;
@@ -435,7 +435,7 @@ union Tazz {
   Taz2_Body taz2;
 
   static Tazz Bar4() {
-    Tazz result;
+    Tazz result{};
     result.tag = Tag::Bar4;
     return result;
   }
@@ -445,7 +445,7 @@ union Tazz {
   }
 
   static Tazz Taz2(const int32_t &_0) {
-    Tazz result;
+    Tazz result{};
     ::new (&result.taz2._0) (int32_t)(_0);
     result.tag = Tag::Taz2;
     return result;
@@ -480,7 +480,7 @@ union Tazzz {
   Taz5_Body taz5;
 
   static Tazzz Bar5() {
-    Tazzz result;
+    Tazzz result{};
     result.tag = Tag::Bar5;
     return result;
   }
@@ -490,7 +490,7 @@ union Tazzz {
   }
 
   static Tazzz Taz5(const int32_t &_0) {
-    Tazzz result;
+    Tazzz result{};
     ::new (&result.taz5._0) (int32_t)(_0);
     result.tag = Tag::Taz5;
     return result;
@@ -546,7 +546,7 @@ union Tazzzz {
   Taz7_Body taz7;
 
   static Tazzzz Taz6(const int32_t &_0) {
-    Tazzzz result;
+    Tazzzz result{};
     ::new (&result.taz6._0) (int32_t)(_0);
     result.tag = Tag::Taz6;
     return result;
@@ -557,7 +557,7 @@ union Tazzzz {
   }
 
   static Tazzzz Taz7(const uint32_t &_0) {
-    Tazzzz result;
+    Tazzzz result{};
     ::new (&result.taz7._0) (uint32_t)(_0);
     result.tag = Tag::Taz7;
     return result;
@@ -630,7 +630,7 @@ union Qux {
   Qux2_Body qux2;
 
   static Qux Qux1(const int32_t &_0) {
-    Qux result;
+    Qux result{};
     ::new (&result.qux1._0) (int32_t)(_0);
     result.tag = Tag::Qux1;
     return result;
@@ -641,7 +641,7 @@ union Qux {
   }
 
   static Qux Qux2(const uint32_t &_0) {
-    Qux result;
+    Qux result{};
     ::new (&result.qux2._0) (uint32_t)(_0);
     result.tag = Tag::Qux2;
     return result;

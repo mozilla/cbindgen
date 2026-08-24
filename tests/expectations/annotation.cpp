@@ -54,7 +54,7 @@ union F {
   Bar_Body bar;
 
   static F Foo(const int16_t &_0) {
-    F result;
+    F result{};
     ::new (&result.foo._0) (int16_t)(_0);
     result.tag = Tag::Foo;
     return result;
@@ -66,7 +66,7 @@ union F {
 
   static F Bar(const uint8_t &x,
                const int16_t &y) {
-    F result;
+    F result{};
     ::new (&result.bar.x) (uint8_t)(x);
     ::new (&result.bar.y) (int16_t)(y);
     result.tag = Tag::Bar;
@@ -78,7 +78,7 @@ union F {
   }
 
   static F Baz() {
-    F result;
+    F result{};
     result.tag = Tag::Baz;
     return result;
   }
@@ -111,7 +111,7 @@ struct H {
   };
 
   static H Hello(const int16_t &_0) {
-    H result;
+    H result{};
     ::new (&result.hello._0) (int16_t)(_0);
     result.tag = Tag::Hello;
     return result;
@@ -123,7 +123,7 @@ struct H {
 
   static H There(const uint8_t &x,
                  const int16_t &y) {
-    H result;
+    H result{};
     ::new (&result.there.x) (uint8_t)(x);
     ::new (&result.there.y) (int16_t)(y);
     result.tag = Tag::There;
@@ -135,7 +135,7 @@ struct H {
   }
 
   static H Everyone() {
-    H result;
+    H result{};
     result.tag = Tag::Everyone;
     return result;
   }
