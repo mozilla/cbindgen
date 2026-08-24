@@ -609,6 +609,10 @@ exclude = ["Bad"]
 # default: no prefix is added
 prefix = "CAPI_"
 
+# If specific items should not get above prefix, they can be listed here
+# default: []
+prefix_excludes = ["ItemWithoutPrefix"]
+
 # Types of items that we'll generate. If empty, then all types of item are emitted.
 #
 # possible items: (TODO: explain these in detail)
