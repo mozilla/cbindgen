@@ -199,7 +199,9 @@ impl Struct {
         config: &Config,
     ) -> Self {
         let mangled_path = mangle::mangle_path(&self.path, generic_values, &config.export.mangle);
-        Struct::new(
+        let mangled_export_name =
+            mangle::mangle_name(&self.export_name, generic_values, &config.export.mangle);
+        let mut specialized = Struct::new(
             mangled_path,
             GenericParams::default(),
             self.fields
@@ -219,7 +221,9 @@ impl Struct {
             self.cfg.clone(),
             self.annotations.clone(),
             self.documentation.clone(),
-        )
+        );
+        specialized.export_name = mangled_export_name;
+        specialized
     }
 
     pub(crate) fn emit_bitflags_binop<F: Write>(
