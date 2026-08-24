@@ -680,6 +680,8 @@ pub struct ConstantConfig {
     pub allow_static_const: bool,
     /// Whether a generated constant should be constexpr in C++ mode.
     pub allow_constexpr: bool,
+    /// Whether a generated constexpr should be inlined
+    pub allow_inline: bool,
     /// Sort key for constants
     pub sort_by: Option<SortKey>,
 }
@@ -689,6 +691,7 @@ impl Default for ConstantConfig {
         ConstantConfig {
             allow_static_const: true,
             allow_constexpr: true,
+            allow_inline: true,
             sort_by: None,
         }
     }

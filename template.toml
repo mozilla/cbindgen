@@ -129,6 +129,7 @@ private_default_tagged_enum_constructor = false
 [const]
 allow_static_const = true
 allow_constexpr = false
+allow_inline = true # Set to 'false' if compiling before C++17
 sort_by = "Name"
 
 
