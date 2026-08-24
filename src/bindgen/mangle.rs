@@ -67,7 +67,7 @@ impl<'a> Mangler<'a> {
         } else {
             "_"
         };
-        self.output.extend(std::iter::repeat(separator).take(count));
+        self.output.extend(std::iter::repeat_n(separator, count));
     }
 
     fn append_mangled_argument(&mut self, arg: &GenericArgument, last: bool) {

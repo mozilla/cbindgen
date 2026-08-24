@@ -13,13 +13,13 @@ keywords = ["bindings", "ffi", "code-generation"]
 categories = ["external-ffi-bindings", "development-tools::ffi"]
 repository = "https://github.com/mozilla/cbindgen"
 edition = "2021"
-rust-version = "1.74"
+rust-version = "1.82"
 exclude = [
   "tests/profile.rs", # Test relies in a sub-crate, see https://github.com/rust-lang/cargo/issues/9017
 ]
 
 [dependencies]
-clap = { version = "4.3", optional = true }
+clap = { version = "4.5", optional = true }
 indexmap = "2.1.0"
 log = "0.4"
 serde = { version = "1.0.103", default-features = false, features = ["derive", "std"] }
@@ -36,7 +36,7 @@ default-features = false
 features = ["clone-impls", "extra-traits", "fold", "full", "parsing", "printing"]
 
 [dev-dependencies]
-serial_test = { version = "2.0.0", default-features = false }
+serial_test = { version = "3.0.0", default-features = false }
 pretty_assertions = "1.4.0"
 
 [features]
