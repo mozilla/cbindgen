@@ -9,7 +9,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, ToCondition, Type};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
@@ -21,6 +21,7 @@ pub struct FunctionArgument {
     pub name: Option<String>,
     pub ty: Type,
     pub array_length: Option<String>,
+    pub cfg: Option<Cfg>,
 }
 
 #[derive(Debug, Clone)]
@@ -53,6 +54,7 @@ impl Function {
                 name: None,
                 ty: Type::Primitive(super::PrimitiveType::VaList),
                 array_length: None,
+                cfg: None,
             })
         }
 
@@ -80,6 +82,16 @@ impl Function {
 
     pub fn swift_name(&self, config: &Config) -> Option<String> {
         if config.language == Language::Cython {
+            return None;
+        }
+        // A conditional argument changes the function's arity, but swift_name attributes have a
+        // fixed argument list. Omit the attribute rather than emitting one that is invalid for
+        // some configurations.
+        if self
+            .args
+            .iter()
+            .any(|arg| arg.cfg.to_condition(config).is_some())
+        {
             return None;
         }
         // If the symbol name starts with the type name, separate the two components with '.'
@@ -169,6 +181,7 @@ impl Function {
                         name,
                         ty: arg.ty,
                         array_length: None,
+                        cfg: arg.cfg,
                     }
                 })
                 .collect()
@@ -249,7 +262,10 @@ impl SynFnArgHelpers for syn::FnArg {
     fn as_argument(&self) -> Result<Option<FunctionArgument>, String> {
         match *self {
             syn::FnArg::Typed(syn::PatType {
-                ref pat, ref ty, ..
+                ref attrs,
+                ref pat,
+                ref ty,
+                ..
             }) => {
                 let ty = match Type::load(ty)? {
                     Some(x) => x,
@@ -277,12 +293,14 @@ impl SynFnArgHelpers for syn::FnArg {
                     name,
                     ty,
                     array_length: None,
+                    cfg: Cfg::load(attrs),
                 }))
             }
             syn::FnArg::Receiver(ref receiver) => Ok(Some(FunctionArgument {
                 name: Some("self".to_string()),
                 ty: gen_self_type(receiver)?,
                 array_length: None,
+                cfg: Cfg::load(&receiver.attrs),
             })),
         }
     }
