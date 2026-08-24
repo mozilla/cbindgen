@@ -46,6 +46,57 @@ impl Typedef {
         }
     }
 
+    pub fn load_impl(
+        item: &syn::ImplItemType,
+        mod_cfg: Option<&Cfg>,
+        trait_ident: &syn::Ident,
+        self_ty: &Type,
+    ) -> Result<Typedef, String> {
+        let ty_path = match Type::load(&item.ty) {
+            Ok(t) => t,
+            Err(err) => {
+                return Err(format!(
+                    "Failed to load the type {}::{} {}",
+                    trait_ident, item.ident, err,
+                ));
+            }
+        };
+
+        let impl_ty_path = match self_ty.get_root_path() {
+            Some(path) => path,
+            None => {
+                return Err(format!(
+                    "Couldn't find path for {self_ty:?}, skipping associated type"
+                ));
+            }
+        };
+
+        if let Some(ty_path) = ty_path {
+            let path = Path::new(format!(
+                "{}_{}_{}",
+                impl_ty_path.name(),
+                trait_ident,
+                item.ident,
+            ));
+            let aliased = if ty_path.name_is_self() {
+                self_ty.clone()
+            } else {
+                ty_path
+            };
+
+            Ok(Typedef::new(
+                path,
+                GenericParams::load(&item.generics)?,
+                aliased,
+                Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+                AnnotationSet::load(&item.attrs)?,
+                Documentation::load(&item.attrs),
+            ))
+        } else {
+            Err("Cannot have a typedef of a zero sized type.".to_owned())
+        }
+    }
+
     pub fn new(
         path: Path,
         generic_params: GenericParams,
