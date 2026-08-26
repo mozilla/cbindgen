@@ -73,8 +73,9 @@ pub fn expand(
     expand_default_features: bool,
     expand_features: &Option<Vec<String>>,
     profile: Profile,
+    cargo_bin: Option<&str>,
 ) -> Result<String, Error> {
-    let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
+    let cargo = super::resolve_cargo_bin(cargo_bin);
     let mut cmd = Command::new(cargo);
 
     let mut _temp_dir = None; // drop guard

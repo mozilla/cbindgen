@@ -2,6 +2,8 @@
 
       * Emit `&str`, `&CStr`, and arrays thereof as C string literals, and byte-string
         (`b"..."`) constants as `uint8_t[]` arrays, instead of dropping them.
+      * Add a `--cargo-bin` flag to pick the cargo binary used for `cargo metadata`
+        and `cargo expand`, taking precedence over the `CARGO` environment variable.
 
 # 0.29.4
 

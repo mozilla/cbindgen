@@ -110,6 +110,7 @@ fn load_bindings(input: &Path, matches: &ArgMatches) -> Result<Bindings, Error> 
         matches.get_flag("clean"),
         matches.get_flag("only-target-dependencies"),
         matches.get_one::<PathBuf>("metadata").map(|p| p.as_path()),
+        matches.get_one::<String>("cargo-bin").map(|s| s.as_str()),
     )?;
 
     // Load any config specified or search in the binding crate directory
@@ -249,6 +250,17 @@ fn main() {
                     same folder as the Cargo.toml file. This option is useful for \
                     projects that use workspaces.")
                 .value_parser(value_parser!(PathBuf))
+                .required(false),
+        )
+        .arg(
+            Arg::new("cargo-bin")
+                .long("cargo-bin")
+                .value_name("BIN")
+                .help(
+                    "Specify the cargo binary to invoke when running \
+                    `cargo metadata` and `cargo expand`. If this is not \
+                    specified, the CARGO environment variable is used, \
+                    falling back to `cargo` on PATH.")
                 .required(false),
         )
         .arg(

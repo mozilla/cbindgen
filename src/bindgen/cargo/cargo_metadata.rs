@@ -212,6 +212,7 @@ pub fn metadata(
     manifest_path: &Path,
     existing_metadata_file: Option<&Path>,
     only_target: bool,
+    cargo_bin: Option<&str>,
 ) -> Result<Metadata, Error> {
     let output;
     let metadata = match existing_metadata_file {
@@ -230,7 +231,7 @@ pub fn metadata(
                 None
             };
 
-            let cargo = env::var("CARGO").unwrap_or_else(|_| String::from("cargo"));
+            let cargo = super::resolve_cargo_bin(cargo_bin);
             let mut cmd = Command::new(cargo);
             cmd.arg("metadata");
             cmd.arg("--all-features");

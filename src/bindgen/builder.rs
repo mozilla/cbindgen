@@ -20,6 +20,7 @@ pub struct Builder {
     lib_cargo: Option<Cargo>,
     std_types: bool,
     lockfile: Option<path::PathBuf>,
+    cargo_bin: Option<String>,
 }
 
 impl Builder {
@@ -32,6 +33,7 @@ impl Builder {
             lib_cargo: None,
             std_types: true,
             lockfile: None,
+            cargo_bin: None,
         }
     }
 
@@ -344,6 +346,14 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_cargo_bin<S: Into<String>>(mut self, cargo_bin: S) -> Builder {
+        debug_assert!(self.cargo_bin.is_none());
+        debug_assert!(self.lib_cargo.is_none());
+        self.cargo_bin = Some(cargo_bin.into());
+        self
+    }
+
+    #[allow(unused)]
     pub fn with_line_endings(mut self, line_ending_style: LineEndingStyle) -> Builder {
         self.config.line_endings = line_ending_style;
         self
@@ -392,6 +402,7 @@ impl Builder {
                 self.config.parse.clean,
                 self.config.only_target_dependencies,
                 /* existing_metadata = */ None,
+                self.cargo_bin.as_deref(),
             )?;
 
             result.extend_with(&parser::parse_lib(cargo, &self.config)?);

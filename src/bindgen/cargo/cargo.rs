@@ -28,12 +28,14 @@ pub(crate) struct Cargo {
     lock: Option<Lock>,
     metadata: Metadata,
     clean: bool,
+    cargo_bin: Option<String>,
 }
 
 impl Cargo {
     /// Gather metadata from cargo for a specific library and binding crate
     /// name. If dependency finding isn't needed then Cargo.lock files don't
     /// need to be parsed.
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn load(
         crate_dir: &Path,
         lock_file: Option<&Path>,
@@ -42,11 +44,16 @@ impl Cargo {
         clean: bool,
         only_target_dependencies: bool,
         existing_metadata_file: Option<&Path>,
+        cargo_bin: Option<&str>,
     ) -> Result<Cargo, Error> {
         let toml_path = crate_dir.join("Cargo.toml");
-        let metadata =
-            cargo_metadata::metadata(&toml_path, existing_metadata_file, only_target_dependencies)
-                .map_err(|x| Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x))?;
+        let metadata = cargo_metadata::metadata(
+            &toml_path,
+            existing_metadata_file,
+            only_target_dependencies,
+            cargo_bin,
+        )
+        .map_err(|x| Error::CargoMetadata(toml_path.to_str().unwrap().to_owned(), x))?;
         let lock_path = lock_file
             .map(PathBuf::from)
             .unwrap_or_else(|| Path::new(&metadata.workspace_root).join("Cargo.lock"));
@@ -79,6 +86,7 @@ impl Cargo {
             lock,
             metadata,
             clean,
+            cargo_bin: cargo_bin.map(String::from),
         })
     }
 
@@ -250,6 +258,7 @@ impl Cargo {
             expand_default_features,
             expand_features,
             profile,
+            self.cargo_bin.as_deref(),
         )
     }
 }
