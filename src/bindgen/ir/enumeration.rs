@@ -402,7 +402,7 @@ impl Enum {
 
         if config.enumeration.add_sentinel(&annotations) {
             variants.push(EnumVariant::new(
-                "Sentinel".to_owned(),
+                config.enumeration.sentinel_variant_name(&annotations),
                 None,
                 VariantBody::empty(),
                 None,

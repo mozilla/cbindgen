@@ -113,6 +113,7 @@ rename_variants = "None"
 # deprecated = "DEPRECATED_ENUM"
 # deprecated_with_note = "DEPRECATED_ENUM_WITH_NOTE"
 add_sentinel = false
+# sentinel_variant_name = "Sentinel"
 prefix_with_name = false
 derive_helper_methods = false
 derive_const_casts = false

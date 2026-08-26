@@ -357,6 +357,7 @@ The rest are just local overrides for the same options found in the cbindgen.tom
 
 * rename-all=RenameRule
 * add-sentinel
+* sentinel-variant-name=NewName
 * derive-helper-methods
 * derive-const-casts
 * derive-mut-casts
@@ -907,6 +908,13 @@ rename_variants = "None"
 #
 # default: false
 add_sentinel = false
+
+# The name of the sentinel variant added when add_sentinel is enabled. Together
+# with prefix_with_name this lets you produce names like MyEnum_MAX instead of
+# MyEnum_Sentinel.
+#
+# default: "Sentinel"
+sentinel_variant_name = "Sentinel"
 
 # Whether enum variant names should be prefixed with the name of the enum.
 # default: false
