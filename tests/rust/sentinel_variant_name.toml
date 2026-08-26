@@ -1,0 +1,4 @@
+[enum]
+add_sentinel = true
+prefix_with_name = true
+sentinel_variant_name = "Terminator"

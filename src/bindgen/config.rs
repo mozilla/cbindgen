@@ -548,6 +548,9 @@ pub struct EnumConfig {
     /// Whether to add a `Sentinel` value at the end of every enum
     /// This is useful in Gecko for IPC serialization
     pub add_sentinel: bool,
+    /// The name of the sentinel variant added when `add_sentinel` is enabled.
+    /// Defaults to `Sentinel`.
+    pub sentinel_variant_name: String,
     /// Whether the enum variants should be prefixed with the enum name
     pub prefix_with_name: bool,
     /// Whether to generate static `::X(..)` constructors and `IsX()`
@@ -596,6 +599,7 @@ impl Default for EnumConfig {
             rename_variants: RenameRule::None,
             rename_variant_name_fields: RenameRule::SnakeCase,
             add_sentinel: false,
+            sentinel_variant_name: "Sentinel".to_owned(),
             prefix_with_name: false,
             derive_helper_methods: false,
             derive_const_casts: false,
@@ -621,6 +625,12 @@ impl EnumConfig {
         annotations
             .bool("add-sentinel")
             .unwrap_or(self.add_sentinel)
+    }
+    pub(crate) fn sentinel_variant_name(&self, annotations: &AnnotationSet) -> String {
+        annotations
+            .atom("sentinel-variant-name")
+            .flatten()
+            .unwrap_or_else(|| self.sentinel_variant_name.clone())
     }
     pub(crate) fn derive_helper_methods(&self, annotations: &AnnotationSet) -> bool {
         annotations

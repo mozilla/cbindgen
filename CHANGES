@@ -2,6 +2,9 @@
 
       * Emit `&str`, `&CStr`, and arrays thereof as C string literals, and byte-string
         (`b"..."`) constants as `uint8_t[]` arrays, instead of dropping them.
+      * Add a `sentinel_variant_name` enum option (and matching
+        `sentinel-variant-name` annotation) to rename the variant emitted by
+        `add_sentinel`.
 
 # 0.29.4
 
