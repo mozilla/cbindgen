@@ -1,0 +1,10 @@
+[defines]
+"a" = "A"
+"b_c" = "B_C"
+"a_b" = "A_B"
+"c" = "C"
+"windows" = "PLATFORM_WIN"
+
+[const]
+allow_static_const = false
+allow_constexpr = true

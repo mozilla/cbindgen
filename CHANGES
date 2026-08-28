@@ -2,6 +2,8 @@
 
       * Emit `&str`, `&CStr`, and arrays thereof as C string literals, and byte-string
         (`b"..."`) constants as `uint8_t[]` arrays, instead of dropping them.
+      * Respect `#[cfg]` on struct fields in `#define` constants by emitting a
+        helper macro per condition (`#if` cannot appear inside a `#define`).
 
 # 0.29.4
 

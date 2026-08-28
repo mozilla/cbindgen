@@ -257,7 +257,7 @@ impl ToCondition for Cfg {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Condition {
     Define(String),
     Any(Vec<Condition>),
@@ -266,6 +266,63 @@ pub enum Condition {
 }
 
 impl Condition {
+    /// Name of the preprocessor helper macro that expands to its arguments iff this
+    /// condition holds. Used so `#define` constants can mention cfg-gated
+    /// struct fields (`#if` is not legal inside a `#define`).
+    pub fn match_macro_name(&self) -> String {
+        let mut name = String::from("__CBINDGEN_CFG_");
+        self.append_macro_ident(&mut name);
+        name
+    }
+
+    fn append_macro_ident(&self, out: &mut String) {
+        match self {
+            Condition::Define(define) => {
+                out.push('D');
+                out.push_str(&define.len().to_string());
+                out.push('_');
+                out.push_str(define);
+            }
+            Condition::Not(inner) => {
+                out.push_str("N_");
+                inner.append_macro_ident(out);
+            }
+            Condition::All(conditions) => {
+                out.push('A');
+                out.push_str(&conditions.len().to_string());
+                for condition in conditions {
+                    out.push('_');
+                    condition.append_macro_ident(out);
+                }
+            }
+            Condition::Any(conditions) => {
+                out.push('O');
+                out.push_str(&conditions.len().to_string());
+                for condition in conditions {
+                    out.push('_');
+                    condition.append_macro_ident(out);
+                }
+            }
+        }
+    }
+
+    /// `#define NAME(...) __VA_ARGS__` when `self` holds, empty otherwise.
+    pub fn write_match_macro<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
+        let name = self.match_macro_name();
+        out.push_set_spaces(0);
+        out.write("#if ");
+        self.write(config, out);
+        out.pop_set_spaces();
+        out.new_line();
+        write!(out, "#define {name}(...) __VA_ARGS__");
+        out.new_line();
+        out.write("#else");
+        out.new_line();
+        write!(out, "#define {name}(...)");
+        out.new_line();
+        out.write("#endif");
+    }
+
     fn write<F: Write>(&self, config: &Config, out: &mut SourceWriter<F>) {
         match *self {
             Condition::Define(ref define) => {
@@ -350,5 +407,34 @@ impl ConditionWrite for Option<Condition> {
                 out.pop_set_spaces();
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Condition;
+
+    #[test]
+    fn match_macro_names_encode_condition_structure() {
+        let first = Condition::All(vec![
+            Condition::Define("A".to_owned()),
+            Condition::Define("B_C".to_owned()),
+        ]);
+        let second = Condition::All(vec![
+            Condition::Define("A_B".to_owned()),
+            Condition::Define("C".to_owned()),
+        ]);
+
+        assert_eq!(first.match_macro_name(), "__CBINDGEN_CFG_A2_D1_A_D3_B_C");
+        assert_eq!(second.match_macro_name(), "__CBINDGEN_CFG_A2_D3_A_B_D1_C");
+        assert_ne!(first.match_macro_name(), second.match_macro_name());
+    }
+
+    #[test]
+    fn match_macro_names_distinguish_nodes_from_define_text() {
+        let define = Condition::Define("N_D1_A".to_owned());
+        let negated = Condition::Not(Box::new(Condition::Define("A".to_owned())));
+
+        assert_ne!(define.match_macro_name(), negated.match_macro_name());
     }
 }

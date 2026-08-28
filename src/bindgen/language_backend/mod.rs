@@ -18,6 +18,7 @@ pub trait LanguageBackend: Sized {
     fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>);
     fn close_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>);
     fn write_headers<W: Write>(&self, out: &mut SourceWriter<W>, package_version: &str);
+    fn write_cfg_macros<W: Write>(&mut self, _out: &mut SourceWriter<W>, _b: &Bindings) {}
     fn write_footers<W: Write>(&mut self, out: &mut SourceWriter<W>);
     fn write_enum<W: Write>(&mut self, out: &mut SourceWriter<W>, e: &Enum);
     fn write_struct<W: Write>(&mut self, out: &mut SourceWriter<W>, s: &Struct);
@@ -115,9 +116,13 @@ pub trait LanguageBackend: Sized {
     fn write_type<W: Write>(&mut self, out: &mut SourceWriter<W>, t: &Type);
     fn write_documentation<W: Write>(&mut self, out: &mut SourceWriter<W>, d: &Documentation);
     fn write_literal<W: Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal);
+    fn write_macro_literal<W: Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal) {
+        self.write_literal(out, l);
+    }
 
     fn write_bindings<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         self.write_headers(out, &b.package_version);
+        self.write_cfg_macros(out, b);
         self.open_namespaces(out);
         self.write_primitive_constants(out, b);
         self.write_items(out, b);

@@ -1,22 +1,27 @@
 use crate::bindgen::ir::{
-    to_known_assoc_constant, ConditionWrite, DeprecatedNoteKind, Documentation, Enum, EnumVariant,
-    Field, GenericParams, Item, Literal, OpaqueItem, ReprAlign, Static, Struct, ToCondition, Type,
-    Typedef, Union,
+    to_known_assoc_constant, Condition, ConditionWrite, DeprecatedNoteKind, Documentation, Enum,
+    EnumVariant, Field, GenericParams, Item, ItemContainer, Literal, OpaqueItem, ReprAlign, Static,
+    Struct, ToCondition, Type, Typedef, Union,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::rename::IdentifierType;
 use crate::bindgen::writer::{ListType, SourceWriter};
 use crate::bindgen::{cdecl, Bindings, Config, Language};
 use crate::bindgen::{DocumentationLength, DocumentationStyle};
+use std::collections::BTreeSet;
 use std::io::Write;
 
 pub struct CLikeLanguageBackend<'a> {
     config: &'a Config,
+    writing_macro: bool,
 }
 
 impl<'a> CLikeLanguageBackend<'a> {
     pub fn new(config: &'a Config) -> Self {
-        Self { config }
+        Self {
+            config,
+            writing_macro: false,
+        }
     }
 
     fn write_enum_variant<W: Write>(&mut self, out: &mut SourceWriter<W>, u: &EnumVariant) {
@@ -443,6 +448,22 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             write!(out, "{line}");
             out.new_line();
         }
+    }
+
+    fn write_cfg_macros<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
+        let conditions = collect_cfg_field_conditions(b, self.config);
+        if conditions.is_empty() {
+            return;
+        }
+
+        out.new_line_if_not_start();
+        for (i, condition) in conditions.iter().enumerate() {
+            if i > 0 {
+                out.new_line();
+            }
+            condition.write_match_macro(self.config, out);
+        }
+        out.new_line();
     }
 
     fn open_namespaces<W: Write>(&mut self, out: &mut SourceWriter<W>) {
@@ -905,7 +926,8 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 path,
             } => {
                 let allow_constexpr = self.config.constant.allow_constexpr && l.can_be_constexpr();
-                let is_constexpr = self.config.language == Language::Cxx
+                let is_constexpr = !self.writing_macro
+                    && self.config.language == Language::Cxx
                     && (self.config.constant.allow_static_const || allow_constexpr);
                 if self.config.language == Language::C {
                     write!(out, "({export_name})");
@@ -921,9 +943,11 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 }
                 // In C++, same order as defined is required.
                 let ordered_fields = out.bindings().struct_field_names(path);
+                let mut separator = "";
                 for (i, ordered_key) in ordered_fields.iter().enumerate() {
                     if let Some(lit) = fields.get(ordered_key) {
                         let condition = lit.cfg.to_condition(self.config);
+                        let use_match_macro = condition.is_some() && !is_constexpr;
                         if is_constexpr {
                             out.new_line();
 
@@ -937,8 +961,9 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                             }
                             condition.write_after(self.config, out);
                         } else {
-                            if i > 0 {
-                                write!(out, ", ");
+                            out.write(separator);
+                            if use_match_macro {
+                                write!(out, "{}(", condition.as_ref().unwrap().match_macro_name());
                             }
 
                             if self.config.language == Language::Cxx {
@@ -949,6 +974,14 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                                 write!(out, ".{ordered_key} = ");
                             }
                             self.write_literal(out, &lit.value);
+                            // The trailing comma lives inside the macro so the
+                            // initializer stays valid when the field is omitted.
+                            separator = if use_match_macro {
+                                write!(out, ",)");
+                                " "
+                            } else {
+                                ", "
+                            };
                         }
                     }
                 }
@@ -961,6 +994,13 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 write!(out, "}}");
             }
         }
+    }
+
+    fn write_macro_literal<W: Write>(&mut self, out: &mut SourceWriter<W>, l: &Literal) {
+        let was_writing_macro = self.writing_macro;
+        self.writing_macro = true;
+        self.write_literal(out, l);
+        self.writing_macro = was_writing_macro;
     }
 
     fn write_globals<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
@@ -1020,4 +1060,55 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             }
         }
     }
+}
+
+/// Collect structurally unique field-level conditions needed by macro output.
+fn collect_cfg_field_conditions(b: &Bindings, config: &Config) -> Vec<Condition> {
+    let mut conditions = BTreeSet::new();
+
+    for item in &b.items {
+        if let ItemContainer::Struct(s) = item {
+            for constant in &s.associated_constants {
+                if constant_uses_macro(&constant.value, config) {
+                    add_literal_cfg_conditions(&mut conditions, &constant.value, config);
+                }
+            }
+        }
+    }
+
+    for constant in &b.constants {
+        if constant_uses_macro(&constant.value, config) {
+            add_literal_cfg_conditions(&mut conditions, &constant.value, config);
+        }
+    }
+
+    conditions.into_iter().collect()
+}
+
+fn constant_uses_macro(lit: &Literal, config: &Config) -> bool {
+    match config.language {
+        Language::C => true,
+        Language::Cxx => {
+            !config.constant.allow_static_const
+                && !(config.constant.allow_constexpr && lit.can_be_constexpr())
+        }
+        Language::Cython => false,
+    }
+}
+
+fn add_literal_cfg_conditions(
+    conditions: &mut BTreeSet<Condition>,
+    lit: &Literal,
+    config: &Config,
+) {
+    lit.visit(&mut |inner| {
+        if let Literal::Struct { fields, .. } = inner {
+            for field in fields.values() {
+                if let Some(condition) = field.cfg.to_condition(config) {
+                    conditions.insert(condition);
+                }
+            }
+        }
+        true
+    });
 }

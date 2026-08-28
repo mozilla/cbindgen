@@ -254,6 +254,8 @@ As cbindgen spiders through your crate, it will make note of all the cfgs it fou
 
 However cbindgen has no way of knowing how you want to map those cfgs to defines. You will need to use the `[defines]` section in your cbindgen.toml to specify all the different mappings. It natively understands concepts like any() and all(), so you only need to tell it how you want to translate base concepts like `target_os = "freebsd"` or `feature = "serde"`.
 
+When a struct-literal constant is emitted as a `#define`, `#[cfg]`-gated fields cannot be wrapped in `#if` because preprocessor directives are not allowed inside a macro replacement list. Instead, cbindgen emits one helper macro per condition (`__CBINDGEN_CFG_<condition>(...)`, which expands to its arguments when the condition holds and to nothing otherwise) and wraps each gated field initializer, including its trailing comma, in it. These helpers stay defined because the constants expand to them at their use sites.
+
 Note that because cbindgen just parses the source of your crate, you mostly don't need to worry about what crate features or what platform you're targetting. Every possible configuration should be visible to the parser. Our primitive mappings should also be completely platform agnostic (i32 is int32_t regardless of your target).
 
 While modules within a crate form a tree with uniquely defined paths to each item, and therefore uniquely defined cfgs for those items, dependencies do not. If you depend on a crate in multiple ways, and those ways produce different cfgs, one of them will be arbitrarily chosen for any types found in that crate.

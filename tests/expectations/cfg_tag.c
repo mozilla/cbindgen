@@ -12,6 +12,12 @@ DEF M_32 = 0
 #include <stdint.h>
 #include <stdlib.h>
 
+#if defined(X11)
+#define __CBINDGEN_CFG_D3_X11(...) __VA_ARGS__
+#else
+#define __CBINDGEN_CFG_D3_X11(...)
+#endif
+
 #if (defined(PLATFORM_UNIX) && defined(X11))
 enum FooType
 #if __STDC_VERSION__ >= 202311L
@@ -123,8 +129,8 @@ struct ConditionalField {
 #endif
   ;
 };
-#define ConditionalField_ZERO (ConditionalField){ .field = 0 }
-#define ConditionalField_ONE (ConditionalField){ .field = 1 }
+#define ConditionalField_ZERO (ConditionalField){ __CBINDGEN_CFG_D3_X11(.field = 0,) }
+#define ConditionalField_ONE (ConditionalField){ __CBINDGEN_CFG_D3_X11(.field = 1,) }
 
 struct Normal {
   int32_t x;

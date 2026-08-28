@@ -356,7 +356,7 @@ impl Literal {
         !self.has_pointer_casts()
     }
 
-    fn visit(&self, visitor: &mut impl FnMut(&Self) -> bool) -> bool {
+    pub(crate) fn visit(&self, visitor: &mut impl FnMut(&Self) -> bool) -> bool {
         if !visitor(self) {
             return false;
         }
@@ -939,7 +939,7 @@ impl Constant {
             }
             Language::Cxx | Language::C => {
                 write!(out, "#define {name} ");
-                language_backend.write_literal(out, value);
+                language_backend.write_macro_literal(out, value);
             }
             Language::Cython => {
                 if !write_field_prepends_const(&self.ty) {
