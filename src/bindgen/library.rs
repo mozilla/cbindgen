@@ -26,6 +26,10 @@ pub struct Library {
     opaque_items: ItemMap<OpaqueItem>,
     typedefs: ItemMap<Typedef>,
     functions: Vec<Function>,
+    /// Paths of the `pub`, non-opaque types declared by the crates that are
+    /// allowed to contribute top-level items. Used as dependency roots when
+    /// `export.include_all` is set.
+    public_types: Vec<Path>,
     source_files: Vec<PathBuf>,
     package_version: String,
 }
@@ -42,6 +46,7 @@ impl Library {
         opaque_items: ItemMap<OpaqueItem>,
         typedefs: ItemMap<Typedef>,
         functions: Vec<Function>,
+        public_types: Vec<Path>,
         source_files: Vec<PathBuf>,
         package_version: String,
     ) -> Library {
@@ -55,6 +60,7 @@ impl Library {
             opaque_items,
             typedefs,
             functions,
+            public_types,
             source_files,
             package_version,
         }
@@ -90,18 +96,13 @@ impl Library {
         self.constants.for_all_items(|constant| {
             constant.add_dependencies(&self, &mut dependencies);
         });
-        for name in &self.config.export.include {
-            let path = Path::new(name.clone());
-            if let Some(items) = self.get_items(&path) {
-                if dependencies.items.insert(path) {
-                    for item in &items {
-                        item.deref().add_dependencies(&self, &mut dependencies);
-                    }
-                    for item in items {
-                        dependencies.order.push(item);
-                    }
-                }
+        if self.config.export.include_all {
+            for path in &self.public_types {
+                self.add_root(&mut dependencies, path.clone());
             }
+        }
+        for name in &self.config.export.include {
+            self.add_root(&mut dependencies, Path::new(name.clone()));
         }
 
         dependencies.sort();
@@ -147,6 +148,21 @@ impl Library {
             false,
             self.package_version,
         ))
+    }
+
+    /// Adds `path`, and everything it depends on, to `dependencies`. Paths that
+    /// don't resolve to a generated item are silently ignored.
+    fn add_root(&self, dependencies: &mut Dependencies, path: Path) {
+        let Some(items) = self.get_items(&path) else {
+            return;
+        };
+        if !dependencies.items.insert(path) {
+            return;
+        }
+        for item in &items {
+            item.deref().add_dependencies(self, dependencies);
+        }
+        dependencies.order.extend(items);
     }
 
     pub fn get_items(&self, p: &Path) -> Option<Vec<ItemContainer>> {

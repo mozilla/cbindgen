@@ -420,6 +420,10 @@ pub struct Parse {
     pub functions: Vec<Function>,
     pub source_files: Vec<FilePathBuf>,
     pub package_version: String,
+    /// Paths of the `pub`, non-opaque types declared by the crates that are
+    /// allowed to contribute top-level items. Used as dependency roots when
+    /// `export.include_all` is set.
+    pub public_types: Vec<Path>,
 }
 
 impl Parse {
@@ -435,6 +439,7 @@ impl Parse {
             functions: Vec::new(),
             source_files: Vec::new(),
             package_version: String::new(),
+            public_types: Vec::new(),
         }
     }
 
@@ -484,6 +489,13 @@ impl Parse {
         self.functions.extend_from_slice(&other.functions);
         self.source_files.extend_from_slice(&other.source_files);
         self.package_version.clone_from(&other.package_version);
+        self.public_types.extend_from_slice(&other.public_types);
+    }
+
+    fn record_public_type(&mut self, record: bool, vis: &syn::Visibility, path: &Path) {
+        if record && matches!(vis, syn::Visibility::Public(_)) {
+            self.public_types.push(path.clone());
+        }
     }
 
     fn load_syn_crate_mod<'a>(
@@ -496,6 +508,13 @@ impl Parse {
     ) -> Vec<&'a syn::ItemMod> {
         let mut impls_with_assoc_consts = Vec::new();
         let mut nested_modules = Vec::new();
+
+        // Types are parsed from every crate, since exported items may reference
+        // them, but only the crates that contribute top-level items may seed the
+        // root set of `export.include_all`.
+        let record_public_types = config
+            .parse
+            .should_generate_top_level_item(crate_name, binding_crate_name);
 
         for item in items {
             if item.should_skip_parsing() {
@@ -521,16 +540,16 @@ impl Parse {
                     self.load_syn_static(config, binding_crate_name, crate_name, mod_cfg, item);
                 }
                 syn::Item::Struct(ref item) => {
-                    self.load_syn_struct(config, crate_name, mod_cfg, item);
+                    self.load_syn_struct(config, record_public_types, crate_name, mod_cfg, item);
                 }
                 syn::Item::Union(ref item) => {
-                    self.load_syn_union(config, crate_name, mod_cfg, item);
+                    self.load_syn_union(config, record_public_types, crate_name, mod_cfg, item);
                 }
                 syn::Item::Enum(ref item) => {
-                    self.load_syn_enum(config, crate_name, mod_cfg, item);
+                    self.load_syn_enum(config, record_public_types, crate_name, mod_cfg, item);
                 }
                 syn::Item::Type(ref item) => {
-                    self.load_syn_ty(crate_name, mod_cfg, item);
+                    self.load_syn_ty(record_public_types, crate_name, mod_cfg, item);
                 }
                 syn::Item::Impl(ref item_impl) => {
                     let has_assoc_const = item_impl
@@ -562,7 +581,7 @@ impl Parse {
                     }
                 }
                 syn::Item::Macro(ref item) => {
-                    self.load_builtin_macro(config, crate_name, mod_cfg, item);
+                    self.load_builtin_macro(config, record_public_types, crate_name, mod_cfg, item);
                 }
                 syn::Item::Mod(ref item) => {
                     nested_modules.push(item);
@@ -909,6 +928,7 @@ impl Parse {
     fn load_syn_struct(
         &mut self,
         config: &Config,
+        record_public_types: bool,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemStruct,
@@ -916,6 +936,7 @@ impl Parse {
         match Struct::load(&config.layout, item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, item.ident);
+                self.record_public_type(record_public_types, &item.vis, &st.path);
                 self.structs.try_insert(st);
             }
             Err(msg) => {
@@ -932,6 +953,7 @@ impl Parse {
     fn load_syn_union(
         &mut self,
         config: &Config,
+        record_public_types: bool,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemUnion,
@@ -939,7 +961,7 @@ impl Parse {
         match Union::load(&config.layout, item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, item.ident);
-
+                self.record_public_type(record_public_types, &item.vis, &st.path);
                 self.unions.try_insert(st);
             }
             Err(msg) => {
@@ -956,6 +978,7 @@ impl Parse {
     fn load_syn_enum(
         &mut self,
         config: &Config,
+        record_public_types: bool,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemEnum,
@@ -963,6 +986,7 @@ impl Parse {
         match Enum::load(item, mod_cfg, config) {
             Ok(en) => {
                 info!("Take {}::{}.", crate_name, item.ident);
+                self.record_public_type(record_public_types, &item.vis, &en.path);
                 self.enums.try_insert(en);
             }
             Err(msg) => {
@@ -976,11 +1000,17 @@ impl Parse {
     }
 
     /// Loads a `type` declaration
-    fn load_syn_ty(&mut self, crate_name: &str, mod_cfg: Option<&Cfg>, item: &syn::ItemType) {
+    fn load_syn_ty(
+        &mut self,
+        record_public_types: bool,
+        crate_name: &str,
+        mod_cfg: Option<&Cfg>,
+        item: &syn::ItemType,
+    ) {
         match Typedef::load(item, mod_cfg) {
             Ok(st) => {
                 info!("Take {}::{}.", crate_name, item.ident);
-
+                self.record_public_type(record_public_types, &item.vis, &st.path);
                 self.typedefs.try_insert(st);
             }
             Err(msg) => {
@@ -996,6 +1026,7 @@ impl Parse {
     fn load_builtin_macro(
         &mut self,
         config: &Config,
+        record_public_types: bool,
         crate_name: &str,
         mod_cfg: Option<&Cfg>,
         item: &syn::ItemMacro,
@@ -1028,7 +1059,7 @@ impl Parse {
 
         let (struct_, impl_) = bitflags.expand(out_of_line_transparent);
         if let Some(struct_) = struct_ {
-            self.load_syn_struct(config, crate_name, mod_cfg, &struct_);
+            self.load_syn_struct(config, record_public_types, crate_name, mod_cfg, &struct_);
         }
         if let syn::Type::Path(ref path) = *impl_.self_ty {
             if let Some(type_name) = path.path.get_ident() {

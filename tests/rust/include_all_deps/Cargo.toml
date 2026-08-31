@@ -1,0 +1,8 @@
+[package]
+name = "include-all-deps"
+version = "0.1.0"
+authors = ["cbindgen"]
+edition = "2018"
+
+[dependencies]
+include-all-deps-dep = { path = "dep" }

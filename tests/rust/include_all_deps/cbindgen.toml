@@ -1,0 +1,6 @@
+[parse]
+parse_deps = true
+include = ["include-all-deps-dep"]
+
+[export]
+include_all = true

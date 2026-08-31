@@ -72,6 +72,8 @@ exclude = [
   "tests/rust/expand_no_default_features",
   "tests/rust/expand",
   "tests/rust/external_workspace_child",
+  "tests/rust/include_all_deps",
+  "tests/rust/include_all_deps/dep",
   "tests/rust/literal_target",
   "tests/rust/mod_2015",
   "tests/rust/mod_2018",

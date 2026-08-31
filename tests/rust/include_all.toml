@@ -1,0 +1,4 @@
+[export]
+include_all = true
+include = ["ExplicitOpaque"]
+exclude = ["ExcludedStruct"]

@@ -59,6 +59,7 @@ usize_is_size_t = true
 
 [export]
 include = []
+include_all = false
 exclude = []
 # prefix = "CAPI_"
 item_types = []

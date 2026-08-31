@@ -171,6 +171,12 @@ impl Builder {
     }
 
     #[allow(unused)]
+    pub fn with_include_all(mut self, include_all: bool) -> Builder {
+        self.config.export.include_all = include_all;
+        self
+    }
+
+    #[allow(unused)]
     pub fn exclude_item<S: AsRef<str>>(mut self, item_name: S) -> Builder {
         self.config
             .export
@@ -411,6 +417,7 @@ impl Builder {
             result.opaque_items,
             result.typedefs,
             result.functions,
+            result.public_types,
             result.source_files,
             result.package_version,
         )
