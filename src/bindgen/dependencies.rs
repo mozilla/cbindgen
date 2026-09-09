@@ -37,7 +37,7 @@ impl Dependencies {
         }
         self.items.insert(path.clone());
         for item in &items {
-            item.deref().add_dependencies(library, self);
+            item.add_dependencies(library, self);
         }
         for item in items {
             self.order.push(item);

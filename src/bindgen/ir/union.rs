@@ -15,6 +15,7 @@ use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
+use crate::bindgen::transparent::{CowIsOwned, ResolveTransparentTypes};
 use crate::bindgen::utilities::IterHelpers;
 
 #[derive(Debug, Clone)]
@@ -37,6 +38,10 @@ impl Union {
         mod_cfg: Option<&Cfg>,
     ) -> Result<Union, String> {
         let repr = Repr::load(&item.attrs)?;
+        let annotations = AnnotationSet::load(&item.attrs)?;
+        if annotations.force_opaque() {
+            return Err("Union is marked with explicit opaque annotation.".to_owned());
+        }
         if repr.style != ReprStyle::C {
             return Err("Union is not marked #[repr(C)].".to_owned());
         }
@@ -64,7 +69,7 @@ impl Union {
             repr.align,
             tuple_union,
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-            AnnotationSet::load(&item.attrs)?,
+            annotations,
             Documentation::load(&item.attrs),
         ))
     }
@@ -91,12 +96,6 @@ impl Union {
             cfg,
             annotations,
             documentation,
-        }
-    }
-
-    pub fn simplify_standard_types(&mut self, config: &Config) {
-        for field in &mut self.fields {
-            field.ty.simplify_standard_types(config);
         }
     }
 
@@ -255,5 +254,17 @@ impl Item for Union {
         );
 
         out.insert_union(library, self, monomorph, generic_values.to_owned());
+    }
+}
+
+impl ResolveTransparentTypes for Union {
+    fn resolve_transparent_types(&self, library: &Library) -> Option<Self> {
+        let params = Self::resolve_generic_params(library, &self.generic_params);
+        let fields = Self::resolve_fields(library, &self.fields, &params, None);
+        (params.cow_is_owned() || fields.cow_is_owned()).then(|| Union {
+            generic_params: params.into_owned(),
+            fields: fields.into_owned(),
+            ..self.clone()
+        })
     }
 }

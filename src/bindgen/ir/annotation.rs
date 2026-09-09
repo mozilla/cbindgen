@@ -63,6 +63,10 @@ impl AnnotationSet {
         self.must_use && config.language != Language::Cython
     }
 
+    pub(crate) fn force_opaque(&self) -> bool {
+        self.bool("opaque").unwrap_or(false)
+    }
+
     pub(crate) fn should_export(&self) -> bool {
         !self.bool("no-export").unwrap_or(false)
     }

@@ -159,7 +159,7 @@ pub trait LanguageBackend: Sized {
 
     fn write_items<W: Write>(&mut self, out: &mut SourceWriter<W>, b: &Bindings) {
         for item in &b.items {
-            if !item.deref().annotations().should_export() {
+            if !item.annotations().should_export() {
                 continue;
             }
 

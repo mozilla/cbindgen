@@ -12,6 +12,9 @@ cdef extern from *:
   cdef struct EnumWithAssociatedConstantInImpl:
     pass
 
+  cdef struct StructWithAssociatedConstantInImpl:
+    pass
+
   ctypedef DummyStruct TransparentComplexWrappingStructTuple;
 
   ctypedef uint32_t TransparentPrimitiveWrappingStructTuple;
@@ -31,7 +34,21 @@ cdef extern from *:
   cdef struct TransparentEmptyStructure:
     pass
 
-  const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_TEN # = 10
+  ctypedef const uint32_t *TransparentPointerWrappingStructure;
+
+  ctypedef int32_t TransparentIntStruct;
+
+  ctypedef DummyStruct TransparentComplexStruct;
+
+  ctypedef TransparentPrimitiveWrappingStructure TransparentTransparentStruct;
+
+  ctypedef uint32_t *TransparentNonNullStruct;
+
+  ctypedef uint32_t *TransparentOptionNonNullStruct;
+
+  const TransparentPrimitiveWrappingStructure StructWithAssociatedConstantInImpl_STRUCT_TEN # = 10
+
+  const TransparentPrimitiveWrappingStructure EnumWithAssociatedConstantInImpl_ENUM_TEN # = 10
 
   void root(TransparentComplexWrappingStructTuple a,
             TransparentPrimitiveWrappingStructTuple b,
@@ -41,4 +58,21 @@ cdef extern from *:
             TransparentPrimitiveWrapper_i32 f,
             TransparentPrimitiveWithAssociatedConstants g,
             TransparentEmptyStructure h,
-            EnumWithAssociatedConstantInImpl i);
+            TransparentPointerWrappingStructure i,
+            StructWithAssociatedConstantInImpl j,
+            EnumWithAssociatedConstantInImpl k);
+
+  void erased_root(uint32_t *a,
+                   uint32_t *b,
+                   TransparentPrimitiveWrappingStructure c,
+                   uint32_t *d,
+                   TransparentIntStruct e,
+                   int32_t f,
+                   DummyStruct g,
+                   uint32_t *h,
+                   int32_t i,
+                   TransparentIntStruct j,
+                   TransparentComplexStruct k,
+                   TransparentTransparentStruct l,
+                   TransparentNonNullStruct m,
+                   TransparentOptionNonNullStruct n);
