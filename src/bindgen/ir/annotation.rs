@@ -199,10 +199,16 @@ impl AnnotationSet {
         T: Default + FromStr,
     {
         match self.annotations.get(name) {
-            Some(AnnotationValue::Atom(x)) => Some(
-                x.as_ref()
-                    .map_or(T::default(), |y| y.parse::<T>().ok().unwrap()),
-            ),
+            Some(AnnotationValue::Atom(None)) => Some(T::default()),
+            Some(AnnotationValue::Atom(Some(x))) => match x.parse::<T>() {
+                Ok(value) => Some(value),
+                Err(_) => {
+                    warn!(
+                        "Couldn't parse value {x:?} of annotation \"cbindgen:{name}\", ignoring it."
+                    );
+                    None
+                }
+            },
             _ => None,
         }
     }
@@ -217,4 +223,30 @@ fn parse_list(list: &str) -> Option<Vec<String>> {
         .map(|x| x.trim().to_string())
         .collect();
     Some(parsed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::bindgen::rename::RenameRule;
+
+    fn load(line: &str) -> AnnotationSet {
+        let attr: syn::Attribute = parse_quote!(#[doc = #line]);
+        AnnotationSet::load(&[attr]).unwrap()
+    }
+
+    #[test]
+    fn parse_atom_valid() {
+        let annotations = load(" cbindgen:rename-all=SnakeCase");
+        assert!(matches!(
+            annotations.parse_atom::<RenameRule>("rename-all"),
+            Some(RenameRule::SnakeCase)
+        ));
+    }
+
+    #[test]
+    fn parse_atom_invalid() {
+        let annotations = load(" cbindgen:rename-all=not-a-valid-rename-rule");
+        assert!(annotations.parse_atom::<RenameRule>("rename-all").is_none());
+    }
 }
