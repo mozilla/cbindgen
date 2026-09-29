@@ -2,6 +2,8 @@
 
       * Emit `&str`, `&CStr`, and arrays thereof as C string literals, and byte-string
         (`b"..."`) constants as `uint8_t[]` arrays, instead of dropping them.
+      * Do not use Windows long path syntax in depfiles by default.
+        Added --longpath flag.
 
 # 0.29.4
 

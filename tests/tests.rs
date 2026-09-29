@@ -301,7 +301,7 @@ fn run_compile_test(
     if generate_depfile {
         let depfile = depfile_content.expect("No depfile generated");
         assert!(!depfile.is_empty());
-        let mut rules = depfile.split(':');
+        let mut rules = depfile.split(": ");
         let target = rules.next().expect("No target found");
         assert_eq!(target, generated_file.as_os_str().to_str().unwrap());
         let sources = rules.next().unwrap();
