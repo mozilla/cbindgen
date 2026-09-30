@@ -195,18 +195,26 @@ impl Bindings {
         write!(&mut writer, "}};").expect("writing symbol file footer failed");
     }
 
+    fn canonicalize<P: AsRef<path::Path>>(&self, path: P) -> std::io::Result<path::PathBuf> {
+        if self.config.longpath {
+            fs::canonicalize(path)
+        } else {
+            dunce::canonicalize(path)
+        }
+    }
+
     pub fn generate_depfile<P: AsRef<path::Path>>(&self, header_path: P, depfile_path: P) {
         if let Some(dir) = depfile_path.as_ref().parent() {
             if !dir.exists() {
                 std::fs::create_dir_all(dir).unwrap()
             }
         }
-        let canon_header_path = header_path.as_ref().canonicalize().unwrap();
+        let canon_header_path = self.canonicalize(header_path).unwrap();
         let mut canon_source_files: Vec<_> = self
             .source_files
             .iter()
             .chain(self.config.config_path.as_ref())
-            .map(|p| p.canonicalize().unwrap())
+            .map(|p| self.canonicalize(p).unwrap())
             .collect();
         // Sorting makes testing easier by ensuring the output is ordered.
         canon_source_files.sort_unstable();

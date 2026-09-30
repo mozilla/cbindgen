@@ -64,11 +64,15 @@ fn test_project(project_path: &str) {
         expected_dependencies_filepath.exists(),
         "Test did not define expected dependencies. Please read the Readme.md"
     );
-    let expected_deps =
-        read_to_string(expected_dependencies_filepath).expect("Failed to read dependencies");
-    let depinfo = read_to_string(depfile_path).expect("Failed to read dependencies");
-    // Assumes a single rule in the file - all deps are listed to the rhs of the `:`.
-    let actual_deps = depinfo.split(':').collect::<Vec<_>>()[1];
+    let expected_deps = read_to_string(expected_dependencies_filepath)
+        .expect("Failed to read dependencies")
+        .replace("/", std::path::MAIN_SEPARATOR_STR);
+    let depinfo = read_to_string(depfile_path)
+        .expect("Failed to read dependencies")
+        .replace("/", std::path::MAIN_SEPARATOR_STR);
+    // Assumes a single rule in the file - all deps are listed to the rhs of the `: `.
+    // Mind the whitespace, otherwise it breaks with windows
+    let actual_deps = depinfo.split(": ").collect::<Vec<_>>()[1];
     // Strip the line breaks.
     let actual_deps = actual_deps.replace("\\\n", " ");
     // I don't want to deal with supporting escaped whitespace when splitting at whitespace,

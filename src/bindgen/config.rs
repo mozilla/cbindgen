@@ -998,6 +998,8 @@ pub struct Config {
     /// and creating a new InternalConfig struct would require more breaking
     /// changes to our public API.
     pub config_path: Option<StdPathBuf>,
+    /// Use Windows long path syntax on Windows in depfiles.
+    pub longpath: bool,
 }
 
 impl Default for Config {
@@ -1042,6 +1044,7 @@ impl Default for Config {
             only_target_dependencies: false,
             cython: CythonConfig::default(),
             config_path: None,
+            longpath: false,
         }
     }
 }

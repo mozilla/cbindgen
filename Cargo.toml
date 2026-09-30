@@ -29,6 +29,7 @@ toml = { version = "0.9", default-features = false, features = ["parse", "serde"
 proc-macro2 = "1.0.60"
 quote = "1"
 heck = "0.5"
+dunce = "1.0.5"
 
 [dependencies.syn]
 version = "3.0"

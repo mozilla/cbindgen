@@ -78,6 +78,10 @@ fn apply_config_overrides(config: &mut Config, matches: &ArgMatches) {
     if matches.get_flag("d") {
         config.parse.parse_deps = true;
     }
+
+    if matches.get_flag("longpath") {
+        config.longpath = true;
+    }
 }
 
 fn load_bindings(input: &Path, matches: &ArgMatches) -> Result<Bindings, Error> {
@@ -308,6 +312,14 @@ fn main() {
                     given to a linker in order to compile an application that exposes \
                     dynamic symbols. Useful when creating a plugin system with a C interface."
                 )
+        )
+        .arg(
+            Arg::new("longpath")
+                .value_name("enabled")
+                .long("longpath")
+                .action(ArgAction::SetTrue)
+                .required(false)
+                .help("Use Windows long path syntax in depfiles. (Windows only)")
         )
         .get_matches();
 
