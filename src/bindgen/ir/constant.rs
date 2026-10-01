@@ -14,8 +14,8 @@ use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, ConditionWrite, ConstExpr, Documentation, GenericParams, IntKind, Item,
-    ItemContainer, Path, PrimitiveType, Struct, ToCondition, Type,
+    AnnotationSet, AssocTypeResolver, Cfg, ConditionWrite, ConstExpr, Documentation, GenericParams,
+    IntKind, Item, ItemContainer, Path, PrimitiveType, Struct, ToCondition, Type,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -414,6 +414,31 @@ impl Literal {
         });
         uses_only_primitive_types
     }
+
+    pub fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        match self {
+            Literal::PostfixUnaryOp { value, .. } => {
+                value.resolve_assoc_types(resolver);
+            }
+            Literal::BinOp { left, right, .. } => {
+                left.resolve_assoc_types(resolver);
+                right.resolve_assoc_types(resolver);
+            }
+            Literal::FieldAccess { base, .. } => {
+                base.resolve_assoc_types(resolver);
+            }
+            Literal::Struct { fields, .. } => {
+                for literal in fields.values_mut() {
+                    literal.value.resolve_assoc_types(resolver);
+                }
+            }
+            Literal::Cast { ty, value } => {
+                value.resolve_assoc_types(resolver);
+                ty.resolve_assoc_types(resolver);
+            }
+            _ => {}
+        }
+    }
 }
 
 impl Literal {
@@ -810,6 +835,11 @@ impl Item for Constant {
 
     fn generic_params(&self) -> &GenericParams {
         GenericParams::empty()
+    }
+
+    fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        self.ty.resolve_assoc_types(resolver);
+        self.value.resolve_assoc_types(resolver);
     }
 }
 

@@ -10,8 +10,8 @@ use crate::bindgen::config::{Config, Language, LayoutConfig};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
+    AnnotationSet, AssocTypeResolver, Cfg, Constant, Documentation, Field, GenericArgument,
+    GenericParams, Item, ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -400,5 +400,15 @@ impl Item for Struct {
         let mappings = self.generic_params.call(self.path.name(), generic_values);
         let monomorph = self.specialize(generic_values, &mappings, library.get_config());
         out.insert_struct(library, self, monomorph, generic_values.to_owned());
+    }
+
+    fn resolve_assoc_types(&mut self, resolver: &AssocTypeResolver) {
+        self.generic_params.resolve_assoc_types(resolver);
+        for field in self.fields.iter_mut() {
+            field.ty.resolve_assoc_types(resolver);
+        }
+        for const_ in self.associated_constants.iter_mut() {
+            const_.resolve_assoc_types(resolver);
+        }
     }
 }
