@@ -15,7 +15,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, ConditionWrite, ConstExpr, Documentation, GenericParams, IntKind, Item,
-    ItemContainer, Path, PrimitiveType, Struct, ToCondition, Type,
+    ItemContainer, Path, PrimitiveType, Struct, ToCondition, Type, Zst,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -659,11 +659,11 @@ impl Literal {
             }) => {
                 let val = Self::load(expr)?;
                 match Type::load(ty)? {
-                    Some(ty) => Ok(Literal::Cast {
+                    Ok(ty) => Ok(Literal::Cast {
                         ty,
                         value: Box::new(val),
                     }),
-                    None => Err("Cannot cast to zero sized type.".to_owned()),
+                    Err::<_, Zst>(_) => Err("Cannot cast to zero sized type.".to_owned()),
                 }
             }
 
@@ -705,7 +705,7 @@ impl Constant {
             Some(byte_string) => byte_string,
             None => {
                 let mut ty = Type::load(ty)?
-                    .ok_or_else(|| "Cannot have a zero sized const definition.".to_owned())?;
+                    .map_err(|_| "Cannot have a zero sized const definition.".to_owned())?;
                 rewrite_string_reference_type(&mut ty);
                 (ty, Literal::load(expr)?)
             }

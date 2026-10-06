@@ -9,7 +9,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
-use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type};
+use crate::bindgen::ir::{AnnotationSet, Cfg, Documentation, GenericPath, Path, Type, Zst};
 use crate::bindgen::library::Library;
 use crate::bindgen::monomorph::Monomorphs;
 use crate::bindgen::rename::{IdentifierType, RenameRule};
@@ -252,8 +252,9 @@ impl SynFnArgHelpers for syn::FnArg {
                 ref pat, ref ty, ..
             }) => {
                 let ty = match Type::load(ty)? {
-                    Some(x) => x,
-                    None => return Ok(None),
+                    Ok(x) => x,
+                    // skip the zero-sized arguments
+                    Err::<_, Zst>(_) => return Ok(None),
                 };
                 let name = match **pat {
                     syn::Pat::Wild(..) => None,

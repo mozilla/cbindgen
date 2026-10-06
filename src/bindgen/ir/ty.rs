@@ -300,6 +300,12 @@ impl ConstExpr {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Zst {
+    /// 1-aligned ZST; will be useful for null pointer optimization later
+    Zst1,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Type {
     Ptr {
@@ -348,14 +354,14 @@ impl Type {
         Ok((ty, never_return))
     }
 
-    pub fn load(ty: &syn::Type) -> Result<Option<Type>, String> {
+    pub fn load(ty: &syn::Type) -> Result<Result<Type, Zst>, String> {
         let converted = match *ty {
             syn::Type::Reference(ref reference) => {
                 let converted = Type::load(&reference.elem)?;
 
                 let converted = match converted {
-                    Some(converted) => converted,
-                    None => Type::Primitive(PrimitiveType::Void),
+                    Ok(converted) => converted,
+                    Err::<_, Zst>(_) => Type::Primitive(PrimitiveType::Void),
                 };
 
                 // TODO(emilio): we could make these use is_ref: true.
@@ -371,8 +377,8 @@ impl Type {
                 let converted = Type::load(&pointer.elem)?;
 
                 let converted = match converted {
-                    Some(converted) => converted,
-                    None => Type::Primitive(PrimitiveType::Void),
+                    Ok(converted) => converted,
+                    Err::<_, Zst>(_) => Type::Primitive(PrimitiveType::Void),
                 };
 
                 let is_const = matches!(pointer.mutability, syn::PointerMutability::Const(_));
@@ -387,7 +393,7 @@ impl Type {
                 let generic_path = GenericPath::load(&path.path)?;
 
                 if generic_path.name() == "PhantomData" || generic_path.name() == "PhantomPinned" {
-                    return Ok(None);
+                    return Ok(Err(Zst::Zst1));
                 }
 
                 if let Some(prim) = PrimitiveType::maybe(generic_path.name()) {
@@ -405,8 +411,10 @@ impl Type {
                 let converted = Type::load(elem)?;
 
                 let converted = match converted {
-                    Some(converted) => converted,
-                    None => return Err("Cannot have an array of zero sized types.".to_owned()),
+                    Ok(converted) => converted,
+                    Err::<_, Zst>(_) => {
+                        return Err("Cannot have an array of zero sized types.".to_owned())
+                    }
                 };
 
                 let len = ConstExpr::load(len)?;
@@ -416,7 +424,7 @@ impl Type {
                 let mut wildcard_counter = 0;
                 let mut args = function.inputs.iter().try_skip_map(|x| {
                     Type::load(&x.ty).map(|opt_ty| {
-                        opt_ty.map(|ty| {
+                        opt_ty.ok().map(|ty| {
                             (
                                 x.name.as_ref().map(|(ref ident, _)| {
                                     if ident == "_" {
@@ -448,7 +456,8 @@ impl Type {
             }
             syn::Type::Tuple(ref tuple) => {
                 if tuple.elems.is_empty() {
-                    return Ok(None);
+                    // unit type
+                    return Ok(Err(Zst::Zst1));
                 }
                 return Err("Tuples are not supported types.".to_owned());
             }
@@ -458,7 +467,7 @@ impl Type {
             _ => return Err(format!("Unsupported type: {ty:?}")),
         };
 
-        Ok(Some(converted))
+        Ok(Ok(converted))
     }
 
     pub fn is_ptr(&self) -> bool {
@@ -532,7 +541,7 @@ impl Type {
 
         let unsimplified_generic = match path.generics()[0] {
             GenericArgument::Type(ref ty) => ty,
-            GenericArgument::Const(_) => return None,
+            GenericArgument::Const(_) | GenericArgument::Zst(_) => return None,
         };
 
         let generic = match unsimplified_generic.simplified_type(config) {
@@ -585,7 +594,7 @@ impl Type {
                 for generic in path.generics_mut() {
                     match *generic {
                         GenericArgument::Type(ref mut ty) => visitor(ty),
-                        GenericArgument::Const(_) => {}
+                        GenericArgument::Const(_) | GenericArgument::Zst(_) => {}
                     }
                 }
             }
@@ -624,24 +633,31 @@ impl Type {
         }
     }
 
-    pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> Type {
+    pub fn specialize(&self, mappings: &[(&Path, &GenericArgument)]) -> Result<Type, Zst> {
         match *self {
             Type::Ptr {
                 ref ty,
                 is_const,
                 is_nullable,
                 is_ref,
-            } => Type::Ptr {
-                ty: Box::new(ty.specialize(mappings)),
-                is_const,
-                is_nullable,
-                is_ref,
-            },
+            } => {
+                let inner = ty
+                    .specialize(mappings)
+                    .unwrap_or(Type::Primitive(PrimitiveType::Void));
+                Ok(Type::Ptr {
+                    ty: Box::new(inner),
+                    is_const,
+                    is_nullable,
+                    is_ref,
+                })
+            }
             Type::Path(ref generic_path) => {
                 for &(param, value) in mappings {
                     if generic_path.path() == param {
-                        if let GenericArgument::Type(ref ty) = *value {
-                            return ty.clone();
+                        match *value {
+                            GenericArgument::Type(ref ty) => return Ok(ty.clone()),
+                            GenericArgument::Zst(zst) => return Err(zst),
+                            GenericArgument::Const(_) => {}
                         }
                     }
                 }
@@ -654,28 +670,42 @@ impl Type {
                         .map(|x| x.specialize(mappings))
                         .collect(),
                 );
-                Type::Path(specialized)
+                Ok(Type::Path(specialized))
             }
-            Type::Primitive(ref primitive) => Type::Primitive(primitive.clone()),
-            Type::Array(ref ty, ref constant) => Type::Array(
-                Box::new(ty.specialize(mappings)),
-                constant.specialize(mappings),
-            ),
+            Type::Primitive(ref primitive) => Ok(Type::Primitive(primitive.clone())),
+            Type::Array(ref ty, ref constant) => {
+                // An array of 1-ZSTs is itself a 1-ZST, so propagate it.
+                // This doesn't match the behavior of Type::load (which explicitly prohibits it),
+                // but we cannot rule out monomorphizations ahead of time,
+                // so we just proceed with ZST here
+                let inner = ty.specialize(mappings)?;
+                Ok(Type::Array(Box::new(inner), constant.specialize(mappings)))
+            }
             Type::FuncPtr {
                 ref ret,
                 ref args,
                 is_nullable,
                 never_return,
-            } => Type::FuncPtr {
-                ret: Box::new(ret.specialize(mappings)),
-                args: args
+            } => {
+                let spec_ret = ret
+                    .specialize(mappings)
+                    .unwrap_or(Type::Primitive(PrimitiveType::Void));
+                let spec_args = args
                     .iter()
                     .cloned()
-                    .map(|(name, ty)| (name, ty.specialize(mappings)))
-                    .collect(),
-                is_nullable,
-                never_return,
-            },
+                    .filter_map(|(name, ty)| {
+                        ty.specialize(mappings)
+                            .ok() // ZST arguments are dropped here
+                            .map(|sty| (name, sty))
+                    })
+                    .collect();
+                Ok(Type::FuncPtr {
+                    ret: Box::new(spec_ret),
+                    args: spec_args,
+                    is_nullable,
+                    never_return,
+                })
+            }
         }
     }
 

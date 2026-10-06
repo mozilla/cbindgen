@@ -26,7 +26,7 @@ cdef extern from *:
   ctypedef struct HashMap_i32__i32__BuildHasherDefault_DefaultHasher:
     pass
 
-  ctypedef struct Result_Foo:
+  ctypedef struct Result_Foo__1Z:
     pass
 
   # Fast hash map used internally.
@@ -34,6 +34,6 @@ cdef extern from *:
 
   ctypedef FastHashMap_i32__i32 Foo;
 
-  ctypedef Result_Foo Bar;
+  ctypedef Result_Foo__1Z Bar;
 
   void root(const Foo *a, const Bar *b);

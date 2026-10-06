@@ -22,7 +22,7 @@ struct DefaultHasher;
 
 typedef struct HashMap_i32__i32__BuildHasherDefault_DefaultHasher HashMap_i32__i32__BuildHasherDefault_DefaultHasher;
 
-typedef struct Result_Foo Result_Foo;
+typedef struct Result_Foo__1Z Result_Foo__1Z;
 
 /**
  * Fast hash map used internally.
@@ -31,7 +31,7 @@ typedef struct HashMap_i32__i32__BuildHasherDefault_DefaultHasher FastHashMap_i3
 
 typedef FastHashMap_i32__i32 Foo;
 
-typedef struct Result_Foo Bar;
+typedef struct Result_Foo__1Z Bar;
 
 #ifdef __cplusplus
 extern "C" {

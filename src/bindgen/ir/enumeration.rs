@@ -12,7 +12,7 @@ use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, AnnotationValue, Cfg, ConditionWrite, DeprecatedNoteKind, Documentation, Field,
     GenericArgument, GenericParams, GenericPath, Item, ItemContainer, Literal, Path, Repr,
-    ReprStyle, Struct, ToCondition, Type,
+    ReprStyle, Struct, ToCondition, Type, Zst,
 };
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::library::Library;
@@ -129,22 +129,26 @@ impl EnumVariant {
             }
 
             for (i, field) in fields.iter().enumerate() {
-                if let Some(mut ty) = Type::load(&field.ty)? {
-                    ty.replace_self_with(self_path);
-                    res.push(Field {
-                        name: inline_name.map_or_else(
-                            || match field.ident {
-                                Some(ref ident) => ident.unraw().to_string(),
-                                None => i.to_string(),
-                            },
-                            |name| name.to_string(),
-                        ),
-                        ty,
-                        cfg: Cfg::load(&field.attrs),
-                        annotations: AnnotationSet::load(&field.attrs)?,
-                        documentation: Documentation::load(&field.attrs),
-                    });
-                }
+                let mut ty = match Type::load(&field.ty)? {
+                    Ok(ty) => ty,
+                    // Right now we account only for ZSTs with 1-alignment,
+                    // so it's safe to skip them
+                    Err(Zst::Zst1) => continue,
+                };
+                ty.replace_self_with(self_path);
+                res.push(Field {
+                    name: inline_name.map_or_else(
+                        || match field.ident {
+                            Some(ref ident) => ident.unraw().to_string(),
+                            None => i.to_string(),
+                        },
+                        |name| name.to_string(),
+                    ),
+                    ty,
+                    cfg: Cfg::load(&field.attrs),
+                    annotations: AnnotationSet::load(&field.attrs)?,
+                    documentation: Documentation::load(&field.attrs),
+                });
             }
 
             Ok(res)

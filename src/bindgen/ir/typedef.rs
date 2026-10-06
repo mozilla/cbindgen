@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Documentation, Field, GenericArgument, GenericParams, Item, ItemContainer,
-    Path, Struct, Type,
+    Path, Struct, Type, Zst,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -31,19 +31,21 @@ pub struct Typedef {
 
 impl Typedef {
     pub fn load(item: &syn::ItemType, mod_cfg: Option<&Cfg>) -> Result<Typedef, String> {
-        if let Some(x) = Type::load(&item.ty)? {
-            let path = Path::new(item.ident.unraw().to_string());
-            Ok(Typedef::new(
-                path,
-                GenericParams::load(&item.generics)?,
-                x,
-                Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
-                AnnotationSet::load(&item.attrs)?,
-                Documentation::load(&item.attrs),
-            ))
-        } else {
-            Err("Cannot have a typedef of a zero sized type.".to_owned())
-        }
+        let x = match Type::load(&item.ty)? {
+            Ok(ty) => ty,
+            Err::<_, Zst>(_) => {
+                return Err("Cannot have a typedef of a zero sized type.".to_owned())
+            }
+        };
+        let path = Path::new(item.ident.unraw().to_string());
+        Ok(Typedef::new(
+            path,
+            GenericParams::load(&item.generics)?,
+            x,
+            Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
+            AnnotationSet::load(&item.attrs)?,
+            Documentation::load(&item.attrs),
+        ))
     }
 
     pub fn new(
@@ -180,15 +182,31 @@ impl Item for Typedef {
             &library.get_config().export.mangle,
         );
 
-        let monomorph = Typedef::new(
-            mangled_path,
-            GenericParams::default(),
-            self.aliased.specialize(&mappings),
-            self.cfg.clone(),
-            self.annotations.clone(),
-            self.documentation.clone(),
-        );
-
-        out.insert_typedef(library, self, monomorph, generic_values.to_owned());
+        // Like Typedef::load, we don't emit ZST typedefs
+        // (even though `typedef void X` is valid C/C++).
+        // However, here we don't emit an opaque struct.
+        // Name mangling has to still work in C,
+        // so we register the mangled path
+        match self.aliased.specialize(&mappings) {
+            Ok(ty) => {
+                let monomorph = Typedef::new(
+                    mangled_path.clone(),
+                    GenericParams::default(),
+                    ty,
+                    self.cfg.clone(),
+                    self.annotations.clone(),
+                    self.documentation.clone(),
+                );
+                out.insert_typedef(library, self, monomorph, generic_values.to_owned());
+            }
+            Err::<_, Zst>(_) => {
+                warn!(
+                    "Skipping a typedef alias {} of a zero sized type (instantiation of {})",
+                    mangled_path.name(),
+                    self.path.name()
+                );
+                out.register_typedef(self, &mangled_path, generic_values.to_owned());
+            }
+        }
     }
 }

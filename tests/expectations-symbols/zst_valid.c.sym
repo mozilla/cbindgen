@@ -1,0 +1,9 @@
+{
+option_u32;
+option_unit;
+result_zsts;
+use_cg;
+use_valid_positions;
+CResultNoneAPIError_free;
+bar;
+};

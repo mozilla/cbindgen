@@ -71,6 +71,10 @@ impl Library {
 
         if self.config.language != Language::Cxx {
             self.instantiate_monomorphs();
+        } else {
+            // C++ doesn't really need monomorphization,
+            // but we run it to detect improper instantiations arising from ZSTs
+            self.collect_monomorphs().warn_zst_instantiations();
         }
         self.remove_excluded();
         if self.config.language == Language::C {
@@ -386,8 +390,7 @@ impl Library {
         }
     }
 
-    fn instantiate_monomorphs(&mut self) {
-        // Collect a list of monomorphs
+    fn collect_monomorphs(&self) -> Monomorphs {
         let mut monomorphs = Monomorphs::default();
 
         self.structs.for_all_items(|x| {
@@ -405,6 +408,12 @@ impl Library {
         for x in &self.functions {
             x.add_monomorphs(self, &mut monomorphs);
         }
+
+        monomorphs
+    }
+
+    fn instantiate_monomorphs(&mut self) {
+        let mut monomorphs = self.collect_monomorphs();
 
         // Insert the monomorphs into self
         for monomorph in monomorphs.drain_structs() {

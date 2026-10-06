@@ -6,7 +6,7 @@ use crate::bindgen::config::Config;
 use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
-    AnnotationSet, Cfg, Documentation, GenericParams, Item, ItemContainer, Path, Type,
+    AnnotationSet, Cfg, Documentation, GenericParams, Item, ItemContainer, Path, Type, Zst,
 };
 use crate::bindgen::library::Library;
 
@@ -27,15 +27,15 @@ impl Static {
         item: &syn::ItemStatic,
         mod_cfg: Option<&Cfg>,
     ) -> Result<Static, String> {
-        let ty = Type::load(&item.ty)?;
-
-        if ty.is_none() {
-            return Err("Cannot have a zero sized static definition.".to_owned());
-        }
-
+        let ty = match Type::load(&item.ty)? {
+            Ok(ty) => ty,
+            Err::<_, Zst>(_) => {
+                return Err("Cannot have a zero sized static definition.".to_owned())
+            }
+        };
         Ok(Static::new(
             path,
-            ty.unwrap(),
+            ty,
             matches!(item.mutability, syn::StaticMutability::Mut(_)),
             Cfg::append(mod_cfg, Cfg::load(&item.attrs)),
             AnnotationSet::load(&item.attrs)?,

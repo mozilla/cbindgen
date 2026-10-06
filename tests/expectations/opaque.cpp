@@ -33,7 +33,7 @@ using FastHashMap = HashMap<K, V, BuildHasherDefault<DefaultHasher>>;
 
 using Foo = FastHashMap<int32_t, int32_t>;
 
-using Bar = Result<Foo>;
+using Bar = Result<Foo, void>;
 
 extern "C" {
 

@@ -6,7 +6,7 @@ use syn::ext::IdentExt;
 use crate::bindgen::cdecl;
 use crate::bindgen::config::{Config, Language};
 use crate::bindgen::declarationtyperesolver::{DeclarationType, DeclarationTypeResolver};
-use crate::bindgen::ir::{ConstExpr, Path, PrimitiveType, Type};
+use crate::bindgen::ir::{ConstExpr, Path, Type, Zst};
 use crate::bindgen::language_backend::LanguageBackend;
 use crate::bindgen::utilities::IterHelpers;
 use crate::bindgen::writer::SourceWriter;
@@ -42,8 +42,8 @@ impl GenericParam {
             }) => {
                 let default = match default.as_ref().map(|(_, ty)| Type::load(ty)).transpose()? {
                     None => None,
-                    Some(None) => Some(GenericArgument::Type(Type::Primitive(PrimitiveType::Void))),
-                    Some(Some(ty)) => Some(GenericArgument::Type(ty)),
+                    Some(Err(Zst::Zst1)) => Some(GenericArgument::Zst(Zst::Zst1)),
+                    Some(Ok(ty)) => Some(GenericArgument::Type(ty)),
                 };
                 Ok(Some(GenericParam {
                     name: Path::new(ident.unraw().to_string()),
@@ -60,11 +60,11 @@ impl GenericParam {
                 ref default,
                 ..
             }) => match Type::load(ty)? {
-                None => {
+                Err(_) => {
                     // A type that evaporates, like PhantomData.
                     Err(format!("unsupported const generic type: {ty:?}"))
                 }
-                Some(ty) => Ok(Some(GenericParam {
+                Ok(ty) => Ok(Some(GenericParam {
                     name: Path::new(ident.unraw().to_string()),
                     ty: GenericParamType::Const(ty),
                     default: default
@@ -157,6 +157,8 @@ impl GenericParams {
                         if let Some(GenericArgument::Type(ref ty)) = item.default {
                             write!(out, " = ");
                             cdecl::write_type(language_backend, out, ty, config);
+                        } else if let Some(GenericArgument::Zst(Zst::Zst1)) = item.default {
+                            write!(out, " = void");
                         } else if with_default {
                             write!(out, " = void");
                         }
@@ -203,6 +205,7 @@ impl Deref for GenericParams {
 pub enum GenericArgument {
     Type(Type),
     Const(ConstExpr),
+    Zst(Zst),
 }
 
 impl GenericArgument {
@@ -220,9 +223,11 @@ impl GenericArgument {
                         }
                     }
                 }
-                GenericArgument::Type(ty.specialize(mappings))
+                ty.specialize(mappings)
+                    .map_or_else(GenericArgument::Zst, GenericArgument::Type)
             }
             GenericArgument::Const(ref expr) => GenericArgument::Const(expr.clone()),
+            GenericArgument::Zst(ref zst) => GenericArgument::Zst(zst.clone()),
         }
     }
 
@@ -230,6 +235,7 @@ impl GenericArgument {
         match *self {
             GenericArgument::Type(ref mut ty) => ty.rename_for_config(config, generic_params),
             GenericArgument::Const(ref mut expr) => expr.rename_for_config(config, generic_params),
+            GenericArgument::Zst(_) => {}
         }
     }
 }
@@ -324,7 +330,9 @@ impl GenericPath {
                 ref args,
                 ..
             }) => args.iter().try_skip_map(|x| match *x {
-                syn::GenericArgument::Type(ref x) => Ok(Type::load(x)?.map(GenericArgument::Type)),
+                syn::GenericArgument::Type(ref x) => Ok(Some(
+                    Type::load(x)?.map_or_else(GenericArgument::Zst, GenericArgument::Type),
+                )),
                 syn::GenericArgument::Lifetime(_) => Ok(None),
                 syn::GenericArgument::Const(ref x) => {
                     Ok(Some(GenericArgument::Const(ConstExpr::load(x)?)))

@@ -11,7 +11,7 @@ use crate::bindgen::declarationtyperesolver::DeclarationTypeResolver;
 use crate::bindgen::dependencies::Dependencies;
 use crate::bindgen::ir::{
     AnnotationSet, Cfg, Constant, Documentation, Field, GenericArgument, GenericParams, Item,
-    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef,
+    ItemContainer, Path, Repr, ReprAlign, ReprStyle, Type, Typedef, Zst,
 };
 use crate::bindgen::library::Library;
 use crate::bindgen::mangle;
@@ -81,17 +81,21 @@ impl Struct {
                 let mut out = Vec::new();
                 let mut current = 0;
                 for field in fields.unnamed.iter() {
-                    if let Some(mut ty) = Type::load(&field.ty)? {
-                        ty.replace_self_with(&path);
-                        out.push(Field {
-                            name: format!("{current}"),
-                            ty,
-                            cfg: Cfg::load(&field.attrs),
-                            annotations: AnnotationSet::load(&field.attrs)?,
-                            documentation: Documentation::load(&field.attrs),
-                        });
-                        current += 1;
-                    }
+                    let mut ty = match Type::load(&field.ty)? {
+                        Ok(ty) => ty,
+                        // Right now we account only for ZSTs with 1-alignment,
+                        // so it's safe to skip them
+                        Err(Zst::Zst1) => continue,
+                    };
+                    ty.replace_self_with(&path);
+                    out.push(Field {
+                        name: format!("{current}"),
+                        ty,
+                        cfg: Cfg::load(&field.attrs),
+                        annotations: AnnotationSet::load(&field.attrs)?,
+                        documentation: Documentation::load(&field.attrs),
+                    });
+                    current += 1;
                 }
                 out
             }
@@ -199,19 +203,25 @@ impl Struct {
         config: &Config,
     ) -> Self {
         let mangled_path = mangle::mangle_path(&self.path, generic_values, &config.export.mangle);
+        let mk_field = |field: &Field, ty: Type| Field {
+            ty,
+            ..field.clone()
+        };
+        let fields = self
+            .fields
+            .iter()
+            .filter_map(|field| {
+                field
+                    .ty
+                    .specialize(mappings)
+                    .ok()
+                    .map(|ty| mk_field(field, ty))
+            })
+            .collect();
         Struct::new(
             mangled_path,
             GenericParams::default(),
-            self.fields
-                .iter()
-                .map(|field| Field {
-                    name: field.name.clone(),
-                    ty: field.ty.specialize(mappings),
-                    cfg: field.cfg.clone(),
-                    annotations: field.annotations.clone(),
-                    documentation: field.documentation.clone(),
-                })
-                .collect(),
+            fields,
             self.has_tag_field,
             self.is_enum_variant_body,
             self.alignment,
