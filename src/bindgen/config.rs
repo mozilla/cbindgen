@@ -680,6 +680,9 @@ pub struct ConstantConfig {
     pub allow_static_const: bool,
     /// Whether a generated constant should be constexpr in C++ mode.
     pub allow_constexpr: bool,
+    /// Whether supported primitive constants should be constexpr in C23 mode.
+    /// This is independent of `allow_constexpr` and defaults to false.
+    pub allow_constexpr_in_c: bool,
     /// Sort key for constants
     pub sort_by: Option<SortKey>,
 }
@@ -689,6 +692,7 @@ impl Default for ConstantConfig {
         ConstantConfig {
             allow_static_const: true,
             allow_constexpr: true,
+            allow_constexpr_in_c: false,
             sort_by: None,
         }
     }

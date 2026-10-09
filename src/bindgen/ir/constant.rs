@@ -814,6 +814,14 @@ impl Item for Constant {
 }
 
 impl Constant {
+    fn can_be_c_constexpr(&self) -> bool {
+        match self.ty {
+            Type::Primitive(PrimitiveType::Void | PrimitiveType::VaList) => false,
+            Type::Primitive(_) => self.value.can_be_constexpr(),
+            _ => false,
+        }
+    }
+
     pub fn write_declaration<F: Write, LB: LanguageBackend>(
         &self,
         config: &Config,
@@ -920,6 +928,16 @@ impl Constant {
 
         let allow_constexpr = config.constant.allow_constexpr && self.value.can_be_constexpr();
         match config.language {
+            Language::C if config.constant.allow_constexpr_in_c && self.can_be_c_constexpr() => {
+                out.write("constexpr static const ");
+                crate::bindgen::cdecl::write_field(language_backend, out, &self.ty, &name, config);
+                // C23 doesn't do implicit conversions on constexpr constants.
+                out.write(" = (");
+                language_backend.write_type(out, &self.ty);
+                out.write(")(");
+                language_backend.write_literal(out, value);
+                out.write(");");
+            }
             Language::Cxx if config.constant.allow_static_const || allow_constexpr => {
                 if allow_constexpr {
                     out.write("constexpr ")

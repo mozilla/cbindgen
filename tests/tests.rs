@@ -128,6 +128,7 @@ fn run_cbindgen(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn compile(
     cbindgen_output: &Path,
     tests_path: &Path,
@@ -136,6 +137,7 @@ fn compile(
     style: Option<Style>,
     skip_warning_as_error: bool,
     cpp_compat: bool,
+    c23: bool,
 ) {
     let cc = match language {
         Language::Cxx => env::var("CXX").unwrap_or_else(|_| "g++".to_owned()),
@@ -181,8 +183,13 @@ fn compile(
                 if let Ok(extra_flags) = env::var("CXXFLAGS") {
                     command.args(extra_flags.split_whitespace());
                 }
-            } else if let Ok(extra_flags) = env::var("CFLAGS") {
-                command.args(extra_flags.split_whitespace());
+            } else {
+                if c23 {
+                    command.arg("-std=c23");
+                }
+                if let Ok(extra_flags) = env::var("CFLAGS") {
+                    command.args(extra_flags.split_whitespace());
+                }
             }
 
             if let Some(style) = style {
@@ -245,6 +252,12 @@ fn run_compile_test(
 
     let verify = env::var_os("CBINDGEN_TEST_VERIFY").is_some();
     let no_compile = env::var_os("CBINDGEN_TEST_NO_COMPILE").is_some();
+    let config = path.with_extension("toml");
+    let c23 = config.exists()
+        && Config::from_file(config)
+            .unwrap()
+            .constant
+            .allow_constexpr_in_c;
 
     let style_ext = style
         // Cython is sensitive to dots, so we can't include any dots.
@@ -349,6 +362,7 @@ fn run_compile_test(
             style,
             skip_warning_as_error,
             cpp_compat,
+            c23,
         );
 
         if language == Language::C && cpp_compat {
@@ -360,6 +374,7 @@ fn run_compile_test(
                 style,
                 skip_warning_as_error,
                 cpp_compat,
+                c23,
             );
         }
     }

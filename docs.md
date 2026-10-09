@@ -1033,6 +1033,24 @@ allow_static_const = true
 # default: true
 allow_constexpr = false
 
+# Whether supported primitive constants should be typed constexpr objects in C.
+# Requires a C23 compiler. Independent of the C++ allow_constexpr and
+# allow_static_const settings; does not affect C++ or Cython output.
+#
+# Supports integer, floating-point, boolean and character constants, using
+# the same initializer rendering as C++. Explicit conversions to the declared
+# type satisfy C23's exact-representability requirement. The generated
+# initializer must be a valid C23 constant expression; compiler diagnostics
+# apply to unsupported expressions and overflowing intermediate values.
+#
+# Pointers, arrays, aggregates and aliases retain their existing macro output.
+#
+# Unlike macros, constexpr objects cannot be used in preprocessor #if/#ifdef
+# expressions. Enable this only when consumers use these constants in C code.
+#
+# default: false
+allow_constexpr_in_c = false
+
 # This rule specifies the order in which constants will be sorted.
 #
 # "Name": sort by the name of the constant

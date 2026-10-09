@@ -91,6 +91,9 @@ jobs:
         python -m pip install --upgrade pip wheel
         pip install Cython==3.0.2
 
+    - name: Install C23 compiler
+      run: sudo apt-get update && sudo apt-get install -y gcc-14
+
     - name: Build
       run: |
         cargo +stable build --verbose
@@ -102,6 +105,7 @@ jobs:
     - name: Test package
       env:
         CBINDGEN_TEST_VERIFY: 1
+        CC: gcc-14
       run: |
         cargo +stable package --verbose
         (cd target/package/cbindgen-$(cargo +stable run -- --version | cut -d ' ' -f 2) && cargo +stable test --verbose)
@@ -114,6 +118,7 @@ jobs:
     - name: Test
       env:
         CBINDGEN_TEST_VERIFY: 1
+        CC: gcc-14
       run: |
         cargo +nightly test --verbose
 
