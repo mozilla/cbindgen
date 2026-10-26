@@ -60,9 +60,6 @@ struct BarHandle {
     y: f32,
 }
 
-// FIXME(#634): Support deriving methods for structs with conditional fields.
-/// cbindgen:derive-eq=false
-/// cbindgen:derive-neq=false
 #[repr(C)]
 struct ConditionalField {
     #[cfg(x11)]

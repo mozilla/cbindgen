@@ -1,5 +1,8 @@
 # unreleased
 
+      * Wrap conditional fields in `#if` blocks in generated C++ `operator==` and
+        `operator!=`, so headers still compile when a feature is disabled (#937).
+
       * Emit `&str`, `&CStr`, and arrays thereof as C string literals, and byte-string
         (`b"..."`) constants as `uint8_t[]` arrays, instead of dropping them.
 

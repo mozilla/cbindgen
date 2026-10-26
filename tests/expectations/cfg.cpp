@@ -266,6 +266,21 @@ struct ConditionalField {
   int32_t field
 #endif
   ;
+
+  bool operator==(const ConditionalField& other) const {
+    return
+#if defined(X11)
+    field == other.field &&
+#endif
+    true;
+  }
+  bool operator!=(const ConditionalField& other) const {
+    return
+#if defined(X11)
+    field != other.field ||
+#endif
+    false;
+  }
 };
 constexpr static const ConditionalField ConditionalField_ZERO = ConditionalField{
 #if defined(X11)

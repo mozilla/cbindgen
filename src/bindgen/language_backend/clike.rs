@@ -287,19 +287,36 @@ impl<'a> CLikeLanguageBackend<'a> {
                     other
                 );
                 out.open_brace();
-                out.write("return ");
-                let vec: Vec<_> = s
-                    .fields
-                    .iter()
-                    .skip(skip_fields)
-                    .map(|field| format!("{} {} {}.{}", field.name, $op, other, field.name))
-                    .collect();
-                out.write_vertical_source_list(
-                    self,
-                    &vec[..],
-                    ListType::Join(&format!(" {}", $conjuc)),
-                    |_, out, s| write!(out, "{}", s),
-                );
+                out.write("return");
+                let fields = &s.fields[skip_fields..];
+                if matches!($op, "==" | "!=") && fields.iter().any(|field| field.cfg.is_some()) {
+                    out.new_line();
+                    for field in fields {
+                        let condition = field.cfg.to_condition(self.config);
+                        condition.write_before(self.config, out);
+                        write!(
+                            out,
+                            "{} {} {}.{} {}",
+                            field.name, $op, other, field.name, $conjuc
+                        );
+                        condition.write_after(self.config, out);
+                        out.new_line();
+                    }
+                    // A neutral operand keeps the expression valid even if all fields are absent.
+                    write!(out, "{}", $op == "==");
+                } else {
+                    out.write(" ");
+                    let vec: Vec<_> = fields
+                        .iter()
+                        .map(|field| format!("{} {} {}.{}", field.name, $op, other, field.name))
+                        .collect();
+                    out.write_vertical_source_list(
+                        self,
+                        &vec[..],
+                        ListType::Join(&format!(" {}", $conjuc)),
+                        |_, out, s| write!(out, "{}", s),
+                    );
+                }
                 out.write(";");
                 out.close_brace(false);
             }};
