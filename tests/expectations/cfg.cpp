@@ -263,9 +263,8 @@ struct BarHandle {
 
 struct ConditionalField {
 #if defined(X11)
-  int32_t field
+  int32_t field;
 #endif
-  ;
 };
 constexpr static const ConditionalField ConditionalField_ZERO = ConditionalField{
 #if defined(X11)

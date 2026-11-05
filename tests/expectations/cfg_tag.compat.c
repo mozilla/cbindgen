@@ -125,9 +125,8 @@ struct BarHandle {
 
 struct ConditionalField {
 #if defined(X11)
-  int32_t field
+  int32_t field;
 #endif
-  ;
 };
 #define ConditionalField_ZERO (ConditionalField){ .field = 0 }
 #define ConditionalField_ONE (ConditionalField){ .field = 1 }
