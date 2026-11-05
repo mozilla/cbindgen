@@ -43,6 +43,21 @@ impl<'a> CLikeLanguageBackend<'a> {
     }
 
     fn write_field<W: Write>(&mut self, out: &mut SourceWriter<W>, f: &Field) {
+        self.write_field_with_terminator(out, f, None);
+    }
+
+    /// Writes a struct or union member, putting the `;` before the closing
+    /// `#endif` so that a `#[cfg]`'d field doesn't leave a stray `;` behind.
+    fn write_member<W: Write>(&mut self, out: &mut SourceWriter<W>, f: &Field) {
+        self.write_field_with_terminator(out, f, Some(";"));
+    }
+
+    fn write_field_with_terminator<W: Write>(
+        &mut self,
+        out: &mut SourceWriter<W>,
+        f: &Field,
+        terminator: Option<&str>,
+    ) {
         let condition = f.cfg.to_condition(self.config);
         condition.write_before(self.config, out);
 
@@ -53,11 +68,15 @@ impl<'a> CLikeLanguageBackend<'a> {
             write!(out, ": {}", bitfield.unwrap_or_default());
         }
 
+        if let Some(terminator) = terminator {
+            write!(out, "{terminator}");
+        }
+
         condition.write_after(self.config, out);
         // FIXME(#634): `write_vertical_source_list` should support
         // configuring list elements natively. For now we print a newline
-        // here to avoid printing `#endif;` with semicolon.
-        if condition.is_some() {
+        // here to avoid printing `#endif,` with the list separator.
+        if condition.is_some() && terminator.is_none() {
             out.new_line();
         }
     }
@@ -602,7 +621,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             out.new_line();
         }
 
-        out.write_vertical_source_list(self, &s.fields, ListType::Cap(";"), Self::write_field);
+        out.write_vertical_source_list(self, &s.fields, ListType::Join(""), Self::write_member);
 
         if self.config.language == Language::Cxx {
             self.write_derived_cpp_ops(out, s);
@@ -687,7 +706,7 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
             out.new_line();
         }
 
-        out.write_vertical_source_list(self, &u.fields, ListType::Cap(";"), Self::write_field);
+        out.write_vertical_source_list(self, &u.fields, ListType::Join(""), Self::write_member);
 
         // Emit the post_body section, if relevant
         if let Some(body) = self.config.export.post_body(&u.path) {
