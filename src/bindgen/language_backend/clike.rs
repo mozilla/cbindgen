@@ -818,7 +818,14 @@ impl LanguageBackend for CLikeLanguageBackend<'_> {
                 DocumentationStyle::Auto => unreachable!(), // Auto case should always be covered
             }
 
-            write!(out, "{line}");
+            match style {
+                // C comments do not nest: a `*/` in the text would end the comment
+                // early, and a `/*` is diagnosed by `-Wcomment`.
+                DocumentationStyle::C | DocumentationStyle::Doxy => {
+                    write!(out, "{}", line.replace("*/", "*\\/").replace("/*", "/\\*"))
+                }
+                _ => write!(out, "{line}"),
+            }
             out.new_line();
         }
 
