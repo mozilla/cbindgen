@@ -2,6 +2,8 @@
 
       * Emit `&str`, `&CStr`, and arrays thereof as C string literals, and byte-string
         (`b"..."`) constants as `uint8_t[]` arrays, instead of dropping them.
+      * Escape `/*` and `*/` in documentation emitted as C block comments, so a
+        doc comment containing them no longer breaks the generated header.
 
 # 0.29.4
 
